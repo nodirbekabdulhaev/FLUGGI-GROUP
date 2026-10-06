@@ -1,0 +1,138 @@
+# Бизнес-правила и формулы
+
+> Статус: **черновик на согласование**. Все формулы реализуются как чистые функции в
+> `packages/domain` и покрываются unit-тестами.
+
+## 1. Критические правила (§77)
+
+| # | Правило | Где обеспечивается |
+|---|---|---|
+| R1 | Нельзя создать проект без клиента и сделки | `projects.client_id`, `projects.deal_id` NOT NULL + проверка в сервисе |
+| R2 | Нельзя перевести сделку дальше без обязательных полей стадии | `deal_stages.required_fields` проверяется в `DealService.changeStage` (см. §3) |
+| R3 | Payment → PAID создаёт Project | `PaymentService.confirm` в одной транзакции; идемпотентно — один проект на сделку |
+| R4 | При создании проекта назначается РОП | `rop_id` NOT NULL; берётся из `team.head_id` сделки; без РОП — ошибка |
+| R5 | Задача всегда имеет исполнителя | `tasks.assignee_id` NOT NULL |
+| R6 | Просроченная задача помечается overdue | `deadline < now() AND status NOT IN (DONE, CANCELLED)`; флаг ставит ежечасный job, UI считает «на лету» |
+| R7 | После оплаты создаётся комиссия | `PaymentService.confirm`, та же транзакция, что R3 |
+| R8 | После завершения проекта — follow-up | `ProjectService.complete` создаёт follow_ups на +30/+60/+90 дней (интервалы из settings) |
+| R9 | Изменения критических данных — в Audit Log | interceptor + явные вызовы в сервисах для денег, стадий, прав, ролей |
+| R10 | Финансы — только соответствующим ролям | permission `finance.read` + policy полей |
+
+Дополнительные:
+- **R11** Перевод в LOST требует `lost_reason_id` (§39); при «Другая причина» — обязательный комментарий.
+- **R12** Подтвердить оплату (PAID) может только пользователь с `payment.confirm` (CEO, РОП).
+- **R13** Оплату нельзя удалить; ошибочная → CANCELLED, возврат — отдельная запись `REFUND` (отрицательная в отчётах), которая сторнирует комиссию.
+- **R14** Изменение КП после отправки создаёт новую версию (§16); версия неизменяема.
+- **R15** Договор SIGNED переводит сделку в «Ожидаем оплату»; первый PAID платёж — в «Оплачено» (`deal.status = WON`).
+- **R16** История стадий, activities и audit log не редактируются и не удаляются никем через приложение.
+
+## 2. Жизненный цикл
+
+```
+LEAD:  NEW → CONTACTED → QUALIFICATION → MEETING_SCHEDULED → MEETING_DONE
+         └──────────── convert (qualify) ──────────────┐
+                                                       ▼
+DEAL:  NEED_DEFINED → PROPOSAL_SENT → NEGOTIATION → CONTRACT → AWAITING_PAYMENT → PAID (WON)
+Финальные для обоих: LOST · REJECTED · PAUSED · NO_RESPONSE
+```
+
+Конвертация допускается с любой стадии лида (например, клиент пришёл по рекомендации
+и сразу готов). Пропуск стадий вперёд разрешён, но проверка обязательных полей
+целевой стадии выполняется всегда.
+
+## 3. Обязательные поля по стадиям (progressive disclosure, §78)
+
+| Переход в… | Требуется |
+|---|---|
+| Создание лида | имя или компания, телефон **или** Telegram, источник, менеджер, услуга |
+| MEETING_SCHEDULED | встреча с датой |
+| Конвертация в сделку | клиент (новый/существующий), бюджет, валюта |
+| PROPOSAL_SENT | КП в статусе SENT |
+| CONTRACT | договор (любой статус кроме CANCELLED) |
+| AWAITING_PAYMENT | договор SIGNED |
+| PAID | ≥1 платёж PAID |
+| LOST | причина потери |
+
+## 4. Формулы
+
+**Финансы проекта (§25)**
+```
+Revenue      = projects.price_uzs
+Expenses     = Σ expenses.amount_uzs (scope = PROJECT, не удалённые)
+Gross Profit = Revenue − Expenses
+Margin %     = Revenue > 0 ? Gross Profit / Revenue × 100 : 0
+```
+
+**Финансы компании за период (§27)**
+```
+Revenue (контрактная)  = Σ contracts.amount_uzs, status = SIGNED, signed_at ∈ период
+Collected              = Σ payments.amount_uzs, status = PAID, type ≠ REFUND, paid_at ∈ период
+Refunds                = Σ payments.amount_uzs, type = REFUND, status = PAID
+Receivables            = Σ по подписанным договорам (amount − оплачено + возвраты), на дату
+Expenses               = Σ expenses.amount_uzs (PROJECT + COMPANY)
+Commissions            = Σ commissions.amount_uzs, status ≠ CANCELLED
+Gross Profit           = Collected − Refunds − project expenses
+Operating Profit       = Gross Profit − company expenses − Commissions
+```
+
+**Комиссия (§33–34)**
+```
+для каждого получателя (менеджер сделки, РОП отдела):
+  metrics = метрики получателя за окно правила (avg_check_usd, orders_count, revenue …)
+  rule    = активное правило с max(priority), у которого conditions(metrics) = true
+  base    = PERCENT_OF_PAYMENT → payment.amount_uzs
+            PERCENT_OF_PROFIT  → payment.amount_uzs × margin проекта
+            FIXED_PER_DEAL     → только на первый PAID платёж сделки
+  amount  = base × rate / 100   (или фиксированная сумма)
+```
+DSL условий: `{ "all" | "any": [ { "metric": <код>, "op": ">"|">="|"<"|"<="|"=", "value": <число> } ] }`, вложенность до 2 уровней.
+Seed: менеджер 10% от оплаты; РОП 10% от оплаты; РОП 15% если `avg_check_usd > 3000` **или** `orders_count > 15`.
+
+**Зарплата (§32)**
+```
+Final Salary = Base Salary + KPI Bonus + Commission + Other Bonus − Penalty
+```
+
+**KPI / конверсия (§28–31)**
+```
+Конверсия лид→оплата = лиды с оплаченной сделкой / все лиды за период × 100
+Конверсия по этапам  = дошедшие до этапа N+1 / дошедшие до этапа N
+Средний чек          = Collected / количество оплаченных сделок
+Выполнение цели %    = факт / цель × 100
+Среднее время задачи = avg(completed_at − started_at)
+Переделки            = кол-во переходов REVIEW → IN_PROGRESS
+```
+
+**Прогноз (§40)**
+```
+Pipeline          = Σ deals.amount_uzs (status = OPEN)
+Weighted Forecast = Σ deals.amount_uzs × (probability_override ?? stage.probability) / 100
+```
+
+**LTV (§63)** — `Σ payments.amount_uzs (PAID) − refunds` по всем сделкам клиента.
+
+**Lead score (§10)** — взвешенная сумма факторов (веса в settings), каждый фактор 0–1:
+бюджет относительно `service.min_price`, срочность, соответствие услугам, размер
+компании, интерес (1–5), стадия, вероятность. `score = round(Σ wᵢ·fᵢ / Σ wᵢ × 100)`.
+Уровни: 0–30 Low · 31–60 Medium · 61–80 High · 81–100 Hot.
+
+**Client health (§64)** — штрафные баллы: дней без коммуникации (>14 / >30), просроченные
+платежи, просроченные проекты, переделки > N, негативная отметка менеджера.
+0–20 Healthy · 21–50 Attention · 51+ Risk · нет активных сделок 180+ дней или отказ — Lost.
+
+## 5. Наш ответ на сценарий приёмки (§84)
+
+| Шаг | Что происходит в системе |
+|---|---|
+| 1–2 | CEO → Команда → «Добавить сотрудника» (роль Менеджер, отдел); менеджер входит |
+| 3–4 | Лид создаётся → `lead.created` → карточка в колонке «Новый лид» воронки |
+| 5–6 | Встреча → `meeting.created` → уведомление РОП (in-app + Telegram) |
+| 7–8 | Встреча «Проведена»; РОП нажимает «Квалифицировать» → Client + Deal |
+| 9–11 | КП v1 → Отправлено → Принято (сделка → Переговоры/Договор) |
+| 12–13 | Договор из КП → Подписан (сделка → Ожидаем оплату) |
+| 14–16 | Платёж → PAID → транзакция: Project (+ задачи из шаблона услуги) + Commission + `payment.paid` |
+| 17–19 | РОП добавляет исполнителей, назначает задачи → Telegram исполнителям |
+| 20–21 | Kanban → Done; проект → Завершён → follow-up 30/60/90 |
+| 22–24 | Расходы проекта → финансовая карточка: выручка, расходы, прибыль, маржа |
+| 25–27 | Комиссия видна в «Финансы → Комиссии»; KPI менеджера и CEO-дашборд пересчитаны по данным БД |
+| 28 | У клиента статус «доступен для повторной продажи», follow-up в задачах менеджера |
