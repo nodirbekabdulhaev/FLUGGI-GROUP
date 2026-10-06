@@ -112,3 +112,74 @@ export type PricingType = (typeof PRICING_TYPES)[number];
 /** Человекочитаемые номера: L-00001, C-00001, D-00001. */
 export const formatNumber = (prefix: string, n: number) =>
   `${prefix}-${String(n).padStart(5, '0')}`;
+
+// ─── Продажи (Phase 3) ───
+
+export const PROPOSAL_STATUSES = [
+  'DRAFT',
+  'SENT',
+  'VIEWED',
+  'IN_APPROVAL',
+  'ACCEPTED',
+  'REJECTED',
+  'EXPIRED',
+] as const;
+export type ProposalStatus = (typeof PROPOSAL_STATUSES)[number];
+
+export const CONTRACT_STATUSES = ['DRAFT', 'SENT', 'IN_APPROVAL', 'SIGNED', 'CANCELLED'] as const;
+export type ContractStatus = (typeof CONTRACT_STATUSES)[number];
+
+export const PAYMENT_TYPES = ['PREPAYMENT', 'PARTIAL', 'FULL', 'FINAL', 'REFUND'] as const;
+export type PaymentType = (typeof PAYMENT_TYPES)[number];
+
+export const PAYMENT_METHODS = ['CASH', 'BANK', 'CARD', 'TRANSFER', 'OTHER'] as const;
+export type PaymentMethod = (typeof PAYMENT_METHODS)[number];
+
+export const PAYMENT_STATUSES = ['PENDING', 'PAID', 'CANCELLED'] as const;
+export type PaymentStatus = (typeof PAYMENT_STATUSES)[number];
+
+export const PROJECT_STATUSES = [
+  'NEW',
+  'PLANNING',
+  'IN_PROGRESS',
+  'REVIEW',
+  'WAITING_CLIENT',
+  'PAUSED',
+  'COMPLETED',
+  'CANCELLED',
+] as const;
+export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
+
+export const COMMISSION_STATUSES = ['ACCRUED', 'APPROVED', 'PAID', 'CANCELLED'] as const;
+export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
+
+export const COMMISSION_CALC_TYPES = [
+  'PERCENT_OF_PAYMENT',
+  'PERCENT_OF_PROFIT',
+  'FIXED_PER_DEAL',
+] as const;
+export type CommissionCalcType = (typeof COMMISSION_CALC_TYPES)[number];
+
+export const FILE_CATEGORIES = [
+  'PROPOSAL',
+  'CONTRACT',
+  'PAYMENT',
+  'PHOTO',
+  'VIDEO',
+  'DESIGN',
+  'DOCUMENT',
+  'OTHER',
+] as const;
+export type FileCategory = (typeof FILE_CATEGORIES)[number];
+
+/** Разрешённые типы файлов и лимит (ТЗ §46: secure file upload). */
+export const ALLOWED_FILE_TYPES: Record<string, string[]> = {
+  'application/pdf': ['pdf'],
+  'image/png': ['png'],
+  'image/jpeg': ['jpg', 'jpeg'],
+  'image/webp': ['webp'],
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['docx'],
+  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['xlsx'],
+  'application/zip': ['zip'],
+};
+export const MAX_FILE_BYTES = 25 * 1024 * 1024;

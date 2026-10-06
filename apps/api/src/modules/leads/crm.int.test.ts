@@ -245,10 +245,11 @@ describe('Бизнес-правила', () => {
     });
     const res = await m.post(`/api/v1/deals/${conv.body.dealId}/stage`, { stageCode: 'PAID' });
     expect(res.status).toBe(422);
+    // Вперёд по этапам — только с документами: без отправленного КП нельзя (BUSINESS_RULES §3)
     expect(
       (await m.post(`/api/v1/deals/${conv.body.dealId}/stage`, { stageCode: 'PROPOSAL_SENT' }))
         .status,
-    ).toBe(200);
+    ).toBe(422);
   });
 
   it('история этапов и таймлайн неизменяемы в БД', async () => {

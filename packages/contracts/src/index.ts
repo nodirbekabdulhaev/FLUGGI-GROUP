@@ -11,3 +11,4 @@ export * from './schemas/audit';
 export * from './schemas/fields';
 export * from './schemas/references';
 export * from './schemas/crm';
+export * from './schemas/sales';

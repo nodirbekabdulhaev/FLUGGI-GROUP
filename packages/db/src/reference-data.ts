@@ -129,6 +129,40 @@ export async function seedReferences(prisma: PrismaClient) {
       },
     });
   }
+  // Правила комиссий по умолчанию (ТЗ §33–34). Создаются один раз, дальше меняются в настройках.
+  if ((await prisma.commissionRule.count()) === 0) {
+    await prisma.commissionRule.createMany({
+      data: [
+        {
+          name: 'Менеджер — 10% от оплаты',
+          appliesTo: 'MANAGER',
+          calcType: 'PERCENT_OF_PAYMENT',
+          value: 10,
+          priority: 0,
+        },
+        {
+          name: 'РОП — 10% от оплаты',
+          appliesTo: 'ROP',
+          calcType: 'PERCENT_OF_PAYMENT',
+          value: 10,
+          priority: 0,
+        },
+        {
+          name: 'РОП — 15%, если средний чек > 3000 USD или заказов > 15 за месяц',
+          appliesTo: 'ROP',
+          calcType: 'PERCENT_OF_PAYMENT',
+          value: 15,
+          priority: 10,
+          conditions: {
+            any: [
+              { metric: 'avg_check_usd', op: '>', value: 3000 },
+              { metric: 'orders_count', op: '>', value: 15 },
+            ],
+          },
+        },
+      ],
+    });
+  }
   return {
     services: SERVICES.length,
     sources: SOURCES.length,

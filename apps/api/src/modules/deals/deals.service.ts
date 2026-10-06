@@ -16,7 +16,7 @@ import { AuditService, diffFields } from '../../core/audit/audit.service';
 import { businessRule, notFound } from '../../core/http/app.exception';
 import { parseDate } from '../../core/http/serialize';
 import { OutboxService } from '../../core/outbox/outbox.service';
-import { PrismaService } from '../../core/prisma/prisma.service';
+import { PrismaService, type Tx } from '../../core/prisma/prisma.service';
 import { ActivityService } from '../crm/activity.service';
 import { CrmAccessService } from '../crm/crm-access.service';
 import { ExchangeRateService } from '../references/exchange-rate.service';
@@ -238,8 +238,8 @@ export class DealsService {
   }
 
   /**
-   * Переход по этапам сделки. «Оплачено» ставится только подтверждением оплаты (Phase 3, ТЗ Rule 3);
-   * этапы КП/договора будут требовать соответствующих документов после Phase 3.
+   * Переход по этапам сделки с проверкой документов (BUSINESS_RULES §3).
+   * «Оплачено» ставится только подтверждением оплаты (ТЗ Rule 3). Назад — без проверок.
    */
   async changeStage(
     auth: AuthContext,
@@ -248,48 +248,98 @@ export class DealsService {
     meta: RequestMeta,
   ): Promise<DealDto> {
     const deal = await this.access.deal(auth, id, 'deal.change_stage');
-    if (deal.status !== 'OPEN') throw businessRule('Сделка закрыта. Сначала верните её в работу');
-    if (code === 'PAID') {
+    return this.prisma.$transaction(async (tx) => {
+      await this.moveStage(tx, deal, code, auth.userId, meta);
+      return toDealDto(await tx.deal.findUniqueOrThrow({ where: { id }, include: dealInclude }));
+    });
+  }
+
+  async moveStage(
+    tx: Tx,
+    deal: Deal,
+    code: DealStageCode,
+    actorId: string,
+    meta?: RequestMeta,
+    auto = false,
+  ) {
+    if (deal.status !== 'OPEN' && !(auto && code === 'PAID')) {
+      throw businessRule('Сделка закрыта. Сначала верните её в работу');
+    }
+    if (code === 'PAID' && !auto) {
       throw businessRule('Этап «Оплачено» устанавливается автоматически при подтверждении оплаты');
     }
-    if (
-      DEAL_STAGE_CODES.indexOf(code) >= DEAL_STAGE_CODES.indexOf('PROPOSAL_SENT') &&
-      deal.amount.lte(0)
-    ) {
-      throw businessRule('Укажите сумму сделки', [
-        { path: 'amount', message: 'Сумма должна быть больше нуля' },
-      ]);
-    }
-    const target = await this.prisma.dealStage.findUnique({ where: { code } });
+    const target = await tx.dealStage.findUnique({ where: { code } });
     if (!target) throw notFound('Этап');
-    if (target.id === deal.stageId) return this.get(auth, id);
-    const from = await this.prisma.dealStage.findUniqueOrThrow({ where: { id: deal.stageId } });
+    if (target.id === deal.stageId) return;
+    const from = await tx.dealStage.findUniqueOrThrow({ where: { id: deal.stageId } });
+    const forward =
+      DEAL_STAGE_CODES.indexOf(code) > DEAL_STAGE_CODES.indexOf(from.code as DealStageCode);
 
-    return this.prisma.$transaction(async (tx) => {
-      await tx.deal.update({ where: { id }, data: { stageId: target.id } });
-      await this.activity.stageChange(tx, { dealId: id }, from.id, target.id, auth.userId);
-      await this.activity.log(tx, {
-        type: 'deal.stage_changed',
-        actorId: auth.userId,
-        dealId: id,
-        payload: { from: from.nameRu, to: target.nameRu },
-      });
+    if (forward && !auto) await this.checkGate(tx, deal, code);
+
+    await tx.deal.update({ where: { id: deal.id }, data: { stageId: target.id } });
+    await this.activity.stageChange(tx, { dealId: deal.id }, from.id, target.id, actorId);
+    await this.activity.log(tx, {
+      type: 'deal.stage_changed',
+      actorId,
+      dealId: deal.id,
+      payload: { from: from.nameRu, to: target.nameRu, auto },
+    });
+    if (meta) {
       await this.audit.log(tx, {
-        actorId: auth.userId,
+        actorId,
         action: 'deal.stage_change',
         entityType: 'deal',
-        entityId: id,
+        entityId: deal.id,
         changes: { stage: { old: from.code, new: target.code } },
         meta,
       });
-      await this.outbox.publish(
-        tx,
-        'deal.stage_changed',
-        { dealId: id, from: from.code, to: target.code },
-        auth.userId,
-      );
-      return toDealDto(await tx.deal.findUniqueOrThrow({ where: { id }, include: dealInclude }));
+    }
+    await this.outbox.publish(
+      tx,
+      'deal.stage_changed',
+      { dealId: deal.id, from: from.code, to: target.code },
+      actorId,
+    );
+  }
+
+  /** Двигает сделку вперёд (не назад) — для автоматических переходов от КП, договоров и оплат. */
+  async advanceTo(tx: Tx, dealId: string, code: DealStageCode, actorId: string) {
+    const deal = await tx.deal.findUniqueOrThrow({
+      where: { id: dealId },
+      include: { stage: true },
     });
+    if (deal.status !== 'OPEN' && code !== 'PAID') return;
+    if (
+      DEAL_STAGE_CODES.indexOf(deal.stage.code as DealStageCode) >= DEAL_STAGE_CODES.indexOf(code)
+    )
+      return;
+    await this.moveStage(tx, deal, code, actorId, undefined, true);
+  }
+
+  private async checkGate(tx: Tx, deal: Deal, code: DealStageCode) {
+    const idx = DEAL_STAGE_CODES.indexOf(code);
+    if (idx >= DEAL_STAGE_CODES.indexOf('PROPOSAL_SENT')) {
+      if (deal.amount.lte(0)) {
+        throw businessRule('Укажите сумму сделки', [
+          { path: 'amount', message: 'Сумма должна быть больше нуля' },
+        ]);
+      }
+      const sent = await tx.proposal.count({
+        where: { dealId: deal.id, status: { in: ['SENT', 'VIEWED', 'ACCEPTED'] } },
+      });
+      if (!sent) throw businessRule('Сначала отправьте клиенту КП');
+    }
+    if (idx >= DEAL_STAGE_CODES.indexOf('CONTRACT')) {
+      const contracts = await tx.contract.count({
+        where: { dealId: deal.id, status: { not: 'CANCELLED' } },
+      });
+      if (!contracts) throw businessRule('Сначала создайте договор');
+    }
+    if (idx >= DEAL_STAGE_CODES.indexOf('AWAITING_PAYMENT')) {
+      const signed = await tx.contract.count({ where: { dealId: deal.id, status: 'SIGNED' } });
+      if (!signed) throw businessRule('Договор ещё не подписан');
+    }
   }
 
   async close(

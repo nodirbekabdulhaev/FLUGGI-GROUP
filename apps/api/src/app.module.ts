@@ -24,6 +24,13 @@ import { MeetingsModule } from './modules/meetings/meetings.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
 import { PipelineModule } from './modules/pipeline/pipeline.module';
 import { ReferencesModule } from './modules/references/references.module';
+import { CommissionsModule } from './modules/commissions/commissions.module';
+import { ContractsModule } from './modules/contracts/contracts.module';
+import { FilesModule } from './modules/files/files.module';
+import { PaymentsModule } from './modules/payments/payments.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { ProposalsModule } from './modules/proposals/proposals.module';
+import { StorageModule } from './core/storage/storage.module';
 import { IdempotencyInterceptor } from './core/idempotency/idempotency.interceptor';
 
 const env = loadEnv();
@@ -70,6 +77,13 @@ const env = loadEnv();
     MeetingsModule,
     PipelineModule,
     NotificationsModule,
+    StorageModule,
+    FilesModule,
+    ProposalsModule,
+    ContractsModule,
+    CommissionsModule,
+    PaymentsModule,
+    ProjectsModule,
   ],
   controllers: [HealthController],
   providers: [

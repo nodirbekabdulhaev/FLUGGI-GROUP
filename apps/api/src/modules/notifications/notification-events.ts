@@ -107,6 +107,73 @@ export class NotificationEvents implements OnModuleInit {
       );
     });
 
+    this.dispatcher.on('proposal.approval_requested', async (e, meta) => {
+      const p = await this.prisma.proposal.findUnique({ where: { id: e.proposalId } });
+      if (!p) return;
+      await this.notifications.notify(
+        [await this.teamHead(e.teamId)],
+        {
+          type: 'proposal.approval',
+          title: 'КП на согласование',
+          body: `${p.title} — ${fmt(p.totalUzs.toString())}`,
+          link: `/sales/deals/${p.dealId}`,
+        },
+        meta.actorId,
+      );
+    });
+
+    this.dispatcher.on('contract.signed', async (e, meta) => {
+      const deal = await this.prisma.deal.findUnique({
+        where: { id: e.dealId },
+        include: { client: true },
+      });
+      if (!deal) return;
+      await this.notifications.notify(
+        [e.managerId, await this.teamHead(e.teamId)],
+        {
+          type: 'contract.signed',
+          title: 'Договор подписан',
+          body: `${deal.client.name} · ${deal.title}`,
+          link: `/sales/deals/${deal.id}`,
+        },
+        meta.actorId,
+      );
+    });
+
+    // Оплата: менеджеру, РОП и CEO (ТЗ §14).
+    this.dispatcher.on('payment.paid', async (e, meta) => {
+      const deal = await this.prisma.deal.findUnique({
+        where: { id: e.dealId },
+        include: { client: true },
+      });
+      if (!deal) return;
+      await this.notifications.notify(
+        [e.managerId, await this.teamHead(e.teamId), ...(await this.ceoIds())],
+        {
+          type: 'payment.paid',
+          title: 'Оплата получена',
+          body: `${deal.client.name}: ${fmt(e.amountUzs)}`,
+          link: `/sales/deals/${deal.id}`,
+        },
+        meta.actorId,
+      );
+    });
+
+    this.dispatcher.on('project.created', async (e, meta) => {
+      const project = await this.prisma.project.findUnique({ where: { id: e.projectId } });
+      if (!project) return;
+      await this.notifications.notify(
+        [e.ropId, e.managerId],
+        {
+          type: 'project.created',
+          title: 'Новый проект',
+          body: `${formatNumber('P', project.number)} ${project.name} — назначьте исполнителей`,
+          link: `/sales/deals/${project.dealId}`,
+        },
+        meta.actorId,
+      );
+    });
+
     // Шаг 6 сценария приёмки: РОП получает уведомление о новой встрече.
     this.dispatcher.on('meeting.created', async (e, meta) => {
       const m = await this.prisma.meeting.findUnique({

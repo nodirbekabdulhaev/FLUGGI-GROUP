@@ -33,6 +33,29 @@ export interface DomainEvents {
     startsAt: string;
   };
   'meeting.completed': { meetingId: string; managerId: string; ropId: string | null };
+
+  'proposal.approval_requested': { proposalId: string; dealId: string; teamId: string | null };
+  'proposal.sent': { proposalId: string; dealId: string };
+  'proposal.accepted': { proposalId: string; dealId: string };
+  'contract.signed': {
+    contractId: string;
+    dealId: string;
+    managerId: string;
+    teamId: string | null;
+  };
+  'payment.created': { paymentId: string; dealId: string };
+  'payment.paid': {
+    paymentId: string;
+    dealId: string;
+    amountUzs: string;
+    managerId: string;
+    teamId: string | null;
+    projectId: string;
+    projectCreated: boolean;
+  };
+  'payment.refunded': { paymentId: string; dealId: string; amountUzs: string };
+  'deal.won': { dealId: string; ownerId: string; teamId: string | null; amountUzs: string };
+  'project.created': { projectId: string; dealId: string; ropId: string; managerId: string };
 }
 
 export type DomainEventType = keyof DomainEvents;
