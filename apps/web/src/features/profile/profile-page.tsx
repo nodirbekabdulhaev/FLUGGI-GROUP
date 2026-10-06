@@ -8,7 +8,7 @@ import {
 } from '@fluggi/contracts';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Monitor } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/shared/page-header';
@@ -90,6 +90,8 @@ function ChangePassword() {
 function Sessions() {
   const t = useTranslations('profile');
   const format = useFormatter();
+  // Явное «сейчас» с обновлением раз в минуту — «5 минут назад» не устаревает.
+  const now = useNow({ updateInterval: 60_000 });
   const qc = useQueryClient();
   const sessions = useQuery({
     queryKey: ['sessions'],
@@ -118,7 +120,7 @@ function Sessions() {
                 <p className="truncate">{s.userAgent ?? '—'}</p>
                 <p className="text-xs text-muted-foreground">
                   {s.ip ?? ''} ·{' '}
-                  {t('lastSeen', { date: format.relativeTime(new Date(s.lastSeenAt)) })}
+                  {t('lastSeen', { date: format.relativeTime(new Date(s.lastSeenAt), now) })}
                 </p>
               </div>
               {s.current ? (

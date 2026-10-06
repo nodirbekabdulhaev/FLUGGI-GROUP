@@ -8,7 +8,7 @@ import {
   type UserStatus,
 } from '@fluggi/contracts';
 import { KeyRound, Lock, MoreHorizontal, Pencil, Plus, Search, Send, Unlock } from 'lucide-react';
-import { useFormatter, useTranslations } from 'next-intl';
+import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/shared/page-header';
@@ -52,6 +52,8 @@ function useDebounced<T>(value: T, ms = 300) {
 export function EmployeesPage({ fixedRole }: { fixedRole?: RoleCode }) {
   const t = useTranslations();
   const format = useFormatter();
+  // Явное «сейчас» с обновлением раз в минуту — «5 минут назад» не устаревает.
+  const now = useNow({ updateInterval: 60_000 });
   const can = useCan();
   const me = useMe();
   const canManage = can('employee.manage', 'ALL');
@@ -299,7 +301,7 @@ export function EmployeesPage({ fixedRole }: { fixedRole?: RoleCode }) {
                       <TD>{statusBadge(user)}</TD>
                       <TD className="whitespace-nowrap text-muted-foreground">
                         {user.lastLoginAt
-                          ? format.relativeTime(new Date(user.lastLoginAt))
+                          ? format.relativeTime(new Date(user.lastLoginAt), now)
                           : t('common.never')}
                       </TD>
                       <TD className="text-right">{rowActions(user)}</TD>

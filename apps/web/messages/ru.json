@@ -225,21 +225,29 @@
     "auditEmpty": "Записей пока нет"
   },
   "audit": {
-    "auth.login": "Вход в систему",
-    "auth.logout": "Выход",
-    "auth.login_failed": "Неудачная попытка входа",
-    "auth.locked": "Вход временно заблокирован",
-    "auth.password_changed": "Смена пароля",
-    "auth.session_revoked": "Завершение сеанса",
-    "user.create": "Создан сотрудник",
-    "user.update": "Изменён сотрудник",
-    "user.block": "Сотрудник заблокирован",
-    "user.unblock": "Сотрудник разблокирован",
-    "user.reset_password": "Сброс пароля",
-    "team.create": "Создан отдел",
-    "team.update": "Изменён отдел",
-    "team.delete": "Удалён отдел",
-    "role.permissions_update": "Изменены права роли"
+    "auth": {
+      "login": "Вход в систему",
+      "logout": "Выход",
+      "login_failed": "Неудачная попытка входа",
+      "locked": "Вход временно заблокирован",
+      "password_changed": "Смена пароля",
+      "session_revoked": "Завершение сеанса"
+    },
+    "user": {
+      "create": "Создан сотрудник",
+      "update": "Изменён сотрудник",
+      "block": "Сотрудник заблокирован",
+      "unblock": "Сотрудник разблокирован",
+      "reset_password": "Сброс пароля"
+    },
+    "team": {
+      "create": "Создан отдел",
+      "update": "Изменён отдел",
+      "delete": "Удалён отдел"
+    },
+    "role": {
+      "permissions_update": "Изменены права роли"
+    }
   },
   "profile": {
     "title": "Профиль",
