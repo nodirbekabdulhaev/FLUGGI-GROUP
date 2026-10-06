@@ -42,7 +42,7 @@ export function DealFormDialog({
   const [errors, setErrors] = useState<Record<string, string>>({});
   const key = useMemo(() => (open ? newIdempotencyKey() : ''), [open]);
   const clients = useClients({ pageSize: 100 }, open && !deal && !fixedClientId);
-  const client = useClient(deal?.client.id ?? fixedClientId ?? v.clientId ?? '');
+  const client = useClient(open ? (deal?.client.id ?? fixedClientId ?? v.clientId) : null);
 
   useEffect(() => {
     if (!open) return;
@@ -147,7 +147,7 @@ export function DealFormDialog({
             <Field label={t('crm.fields.contact')} htmlFor="d-contact">
               <NativeSelect id="d-contact" value={v.contactId ?? ''} onChange={set('contactId')}>
                 <option value="">{t('crm.common.none')}</option>
-                {client.data?.contacts.map((c) => (
+                {client.data?.contacts?.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.fullName}
                   </option>

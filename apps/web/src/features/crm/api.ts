@@ -77,10 +77,12 @@ export function useClients(p: ClientListQuery, enabled = true) {
     enabled,
   });
 }
-export function useClient(id: string) {
+export function useClient(id: string | null | undefined) {
   return useQuery({
-    queryKey: crmKeys.client(id),
+    queryKey: crmKeys.client(id ?? ''),
     queryFn: () => api<ClientDetailDto>(`/clients/${id}`),
+    // Без id запрос не отправляется: иначе `/clients/` вернул бы список клиентов.
+    enabled: Boolean(id),
   });
 }
 export function usePipeline(p: PipelineQuery) {

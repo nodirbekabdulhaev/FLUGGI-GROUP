@@ -81,3 +81,21 @@ test('исполнитель не видит продажи', async ({ page }) =
   await expect(page.getByText('Нет доступа')).toBeVisible();
   expect(await page.evaluate(async () => (await fetch('/api/v1/leads')).status)).toBe(403);
 });
+
+test('новая сделка для существующего клиента со страницы «Сделки»', async ({ page, isMobile }) => {
+  test.skip(isMobile, 'desktop');
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  await login(page, 'manager1@fluggi.demo');
+  await page.goto('/sales/deals');
+  await page.getByRole('button', { name: 'Новая сделка' }).first().click();
+  const dialog = page.getByRole('dialog');
+  await dialog.getByLabel('Клиент').selectOption({ index: 1 });
+  await expect(dialog.getByLabel('Контакт').locator('option')).not.toHaveCount(1);
+  await dialog.getByLabel('Название').fill('E2E повторная продажа');
+  await dialog.getByLabel('Сумма').fill('5000000');
+  await dialog.getByRole('button', { name: 'Создать сделку' }).click();
+  await expect(page).toHaveURL(/\/sales\/deals\/[0-9a-f-]{36}$/);
+  await expect(page.getByText('Повторная продажа').first()).toBeVisible();
+  expect(errors).toEqual([]);
+});
