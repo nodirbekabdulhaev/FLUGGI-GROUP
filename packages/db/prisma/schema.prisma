@@ -77,6 +77,19 @@ model User {
   sessions    Session[]
   auditLogs   AuditLog[]
 
+  ownedLeads       Lead[]         @relation("LeadOwner")
+  createdLeads     Lead[]         @relation("LeadCreator")
+  ownedClients     Client[]       @relation("ClientOwner")
+  ownedDeals       Deal[]         @relation("DealOwner")
+  createdDeals     Deal[]         @relation("DealCreator")
+  managedMeetings  Meeting[]      @relation("MeetingManager")
+  ropMeetings      Meeting[]      @relation("MeetingRop")
+  activities       Activity[]
+  comments         Comment[]
+  stageChanges     StageHistory[]
+  notifications    Notification[]
+  exchangeRatesSet ExchangeRate[]
+
   @@index([roleId])
   @@index([teamId])
   @@index([status])
@@ -132,20 +145,25 @@ model Team {
   head    User?  @relation("TeamHead", fields: [headId], references: [id])
   members User[] @relation("TeamMembers")
 
+  leads    Lead[]
+  clients  Client[]
+  deals    Deal[]
+  meetings Meeting[]
+
   @@index([headId])
   @@map("teams")
 }
 
 /// HR-данные сотрудника. Отделены от users, чтобы не попадать в CRM-выборки.
 model Employee {
-  id         String             @id @default(uuid()) @db.Uuid
-  userId     String             @unique @map("user_id") @db.Uuid
-  position   String?
-  specialty  ExecutorSpecialty?
-  hiredAt    DateTime?          @map("hired_at") @db.Date
-  firedAt    DateTime?          @map("fired_at") @db.Date
-  createdAt  DateTime           @default(now()) @map("created_at")
-  updatedAt  DateTime           @updatedAt @map("updated_at")
+  id        String             @id @default(uuid()) @db.Uuid
+  userId    String             @unique @map("user_id") @db.Uuid
+  position  String?
+  specialty ExecutorSpecialty?
+  hiredAt   DateTime?          @map("hired_at") @db.Date
+  firedAt   DateTime?          @map("fired_at") @db.Date
+  createdAt DateTime           @default(now()) @map("created_at")
+  updatedAt DateTime           @updatedAt @map("updated_at")
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -210,4 +228,505 @@ model OutboxEvent {
 
   @@index([processedAt, availableAt])
   @@map("outbox_events")
+}
+
+// ═══════════════════════════════ Phase 2 — CRM ═══════════════════════════════
+
+enum Currency {
+  UZS
+  USD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ScoreLevel {
+  LOW
+  MEDIUM
+  HIGH
+  HOT
+}
+
+enum CompanySize {
+  SOLO
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+/// Итоговое состояние лида; этап воронки хранится отдельно (stage).
+enum LeadStatus {
+  OPEN
+  CONVERTED
+  LOST
+  REJECTED
+  PAUSED
+  NO_RESPONSE
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+  REJECTED
+  PAUSED
+  NO_RESPONSE
+}
+
+enum StageEntity {
+  LEAD
+  DEAL
+}
+
+enum ClientType {
+  COMPANY
+  PERSON
+}
+
+enum ClientHealth {
+  HEALTHY
+  ATTENTION
+  RISK
+  LOST
+}
+
+enum MeetingType {
+  ONLINE
+  OFFLINE
+  PHONE
+  TELEGRAM
+  GOOGLE_MEET
+  ZOOM
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CONFIRMED
+  DONE
+  RESCHEDULED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PricingType {
+  FIXED
+  MONTHLY
+  HOURLY
+  CUSTOM
+}
+
+// ─────────────────────────────── Справочники ───────────────────────────────
+
+/// Каталог услуг (ТЗ §61).
+model Service {
+  id          String      @id @default(uuid()) @db.Uuid
+  code        String      @unique
+  nameRu      String      @map("name_ru")
+  nameUz      String?     @map("name_uz")
+  nameEn      String?     @map("name_en")
+  description String?
+  basePrice   Decimal?    @map("base_price") @db.Decimal(18, 2)
+  minPrice    Decimal?    @map("min_price") @db.Decimal(18, 2)
+  currency    Currency    @default(UZS)
+  pricingType PricingType @default(FIXED) @map("pricing_type")
+  isActive    Boolean     @default(true) @map("is_active")
+  sort        Int         @default(0)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  leads Lead[]
+  deals Deal[]
+
+  @@map("services")
+}
+
+model LeadSource {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique
+  nameRu    String   @map("name_ru")
+  nameUz    String?  @map("name_uz")
+  nameEn    String?  @map("name_en")
+  isActive  Boolean  @default(true) @map("is_active")
+  sort      Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  leads   Lead[]
+  clients Client[]
+
+  @@map("lead_sources")
+}
+
+model LossReason {
+  id              String   @id @default(uuid()) @db.Uuid
+  code            String   @unique
+  nameRu          String   @map("name_ru")
+  nameUz          String?  @map("name_uz")
+  nameEn          String?  @map("name_en")
+  /// «Другая причина» — комментарий обязателен.
+  requiresComment Boolean  @default(false) @map("requires_comment")
+  isActive        Boolean  @default(true) @map("is_active")
+  sort            Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  leads Lead[]
+  deals Deal[]
+
+  @@map("loss_reasons")
+}
+
+/// Этапы воронки (ТЗ §7). code фиксирован и используется бизнес-правилами;
+/// название, порядок, вероятность и цвет редактируются.
+model DealStage {
+  id          String      @id @default(uuid()) @db.Uuid
+  code        String      @unique
+  entity      StageEntity
+  nameRu      String      @map("name_ru")
+  nameUz      String?     @map("name_uz")
+  nameEn      String?     @map("name_en")
+  sort        Int
+  /// Вероятность закрытия, % — для взвешенного прогноза (ТЗ §40).
+  probability Int         @default(0)
+  color       String      @default("#71717a")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  leads    Lead[]
+  deals    Deal[]
+  fromHist StageHistory[] @relation("FromStage")
+  toHist   StageHistory[] @relation("ToStage")
+
+  @@map("deal_stages")
+}
+
+/// Курс валюты к UZS на дату. Суммы фиксируют курс в момент сохранения.
+model ExchangeRate {
+  id        String   @id @default(uuid()) @db.Uuid
+  date      DateTime @db.Date
+  currency  Currency
+  rateToUzs Decimal  @map("rate_to_uzs") @db.Decimal(18, 6)
+  setById   String?  @map("set_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at")
+
+  setBy User? @relation(fields: [setById], references: [id])
+
+  @@unique([date, currency])
+  @@map("exchange_rates")
+}
+
+// ─────────────────────────────── CRM ───────────────────────────────
+
+/// Лид (ТЗ §8): входящий запрос до квалификации. После квалификации
+/// конвертируется в клиента + сделку (docs/BUSINESS_RULES.md §2).
+model Lead {
+  id            String       @id @default(uuid()) @db.Uuid
+  number        Int          @unique @default(autoincrement())
+  title         String
+  contactName   String?      @map("contact_name")
+  companyName   String?      @map("company_name")
+  phone         String?
+  telegram      String?
+  whatsapp      String?
+  instagram     String?
+  email         String?
+  website       String?
+  city          String?
+  country       String?
+  sourceId      String       @map("source_id") @db.Uuid
+  ownerId       String       @map("owner_id") @db.Uuid
+  teamId        String?      @map("team_id") @db.Uuid
+  serviceId     String?      @map("service_id") @db.Uuid
+  budget        Decimal?     @db.Decimal(18, 2)
+  currency      Currency     @default(UZS)
+  budgetUzs     Decimal?     @map("budget_uzs") @db.Decimal(18, 2)
+  desiredDate   DateTime?    @map("desired_date") @db.Date
+  priority      Priority     @default(MEDIUM)
+  companySize   CompanySize? @map("company_size")
+  /// Интерес клиента 1–5 (оценка менеджера).
+  interest      Int?
+  stageId       String       @map("stage_id") @db.Uuid
+  status        LeadStatus   @default(OPEN)
+  score         Int          @default(0)
+  scoreLevel    ScoreLevel   @default(LOW) @map("score_level")
+  nextContactAt DateTime?    @map("next_contact_at")
+  lastContactAt DateTime?    @map("last_contact_at")
+  comment       String?
+  clientId      String?      @map("client_id") @db.Uuid
+  dealId        String?      @unique @map("deal_id") @db.Uuid
+  convertedAt   DateTime?    @map("converted_at")
+  lossReasonId  String?      @map("loss_reason_id") @db.Uuid
+  lossComment   String?      @map("loss_comment")
+  closedAt      DateTime?    @map("closed_at")
+  createdById   String       @map("created_by_id") @db.Uuid
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  source     LeadSource  @relation(fields: [sourceId], references: [id])
+  owner      User        @relation("LeadOwner", fields: [ownerId], references: [id])
+  team       Team?       @relation(fields: [teamId], references: [id])
+  service    Service?    @relation(fields: [serviceId], references: [id])
+  stage      DealStage   @relation(fields: [stageId], references: [id])
+  client     Client?     @relation(fields: [clientId], references: [id])
+  deal       Deal?       @relation("LeadDeal", fields: [dealId], references: [id])
+  lossReason LossReason? @relation(fields: [lossReasonId], references: [id])
+  createdBy  User        @relation("LeadCreator", fields: [createdById], references: [id])
+
+  meetings     Meeting[]
+  activities   Activity[]
+  comments     Comment[]
+  stageHistory StageHistory[]
+
+  @@index([ownerId])
+  @@index([teamId])
+  @@index([status, stageId])
+  @@index([sourceId])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model Client {
+  id        String       @id @default(uuid()) @db.Uuid
+  number    Int          @unique @default(autoincrement())
+  name      String
+  type      ClientType   @default(COMPANY)
+  industry  String?
+  phone     String?
+  email     String?
+  telegram  String?
+  website   String?
+  city      String?
+  country   String?
+  ownerId   String       @map("owner_id") @db.Uuid
+  teamId    String?      @map("team_id") @db.Uuid
+  sourceId  String?      @map("source_id") @db.Uuid
+  health    ClientHealth @default(HEALTHY)
+  comment   String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  deletedAt DateTime?    @map("deleted_at")
+
+  owner  User        @relation("ClientOwner", fields: [ownerId], references: [id])
+  team   Team?       @relation(fields: [teamId], references: [id])
+  source LeadSource? @relation(fields: [sourceId], references: [id])
+
+  contacts   Contact[]
+  leads      Lead[]
+  deals      Deal[]
+  meetings   Meeting[]
+  activities Activity[]
+  comments   Comment[]
+
+  @@index([ownerId])
+  @@index([teamId])
+  @@map("clients")
+}
+
+model Contact {
+  id        String   @id @default(uuid()) @db.Uuid
+  clientId  String   @map("client_id") @db.Uuid
+  fullName  String   @map("full_name")
+  position  String?
+  phone     String?
+  telegram  String?
+  whatsapp  String?
+  instagram String?
+  email     String?
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deals  Deal[]
+
+  @@index([clientId])
+  @@map("contacts")
+}
+
+model Deal {
+  id                  String     @id @default(uuid()) @db.Uuid
+  number              Int        @unique @default(autoincrement())
+  title               String
+  clientId            String     @map("client_id") @db.Uuid
+  contactId           String?    @map("contact_id") @db.Uuid
+  ownerId             String     @map("owner_id") @db.Uuid
+  teamId              String?    @map("team_id") @db.Uuid
+  serviceId           String?    @map("service_id") @db.Uuid
+  amount              Decimal    @db.Decimal(18, 2)
+  currency            Currency   @default(UZS)
+  exchangeRate        Decimal    @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs           Decimal    @map("amount_uzs") @db.Decimal(18, 2)
+  stageId             String     @map("stage_id") @db.Uuid
+  status              DealStatus @default(OPEN)
+  probabilityOverride Int?       @map("probability_override")
+  expectedCloseDate   DateTime?  @map("expected_close_date") @db.Date
+  isRepeat            Boolean    @default(false) @map("is_repeat")
+  lossReasonId        String?    @map("loss_reason_id") @db.Uuid
+  lossComment         String?    @map("loss_comment")
+  wonAt               DateTime?  @map("won_at")
+  closedAt            DateTime?  @map("closed_at")
+  createdById         String     @map("created_by_id") @db.Uuid
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  deletedAt           DateTime?  @map("deleted_at")
+
+  client     Client      @relation(fields: [clientId], references: [id])
+  contact    Contact?    @relation(fields: [contactId], references: [id])
+  owner      User        @relation("DealOwner", fields: [ownerId], references: [id])
+  team       Team?       @relation(fields: [teamId], references: [id])
+  service    Service?    @relation(fields: [serviceId], references: [id])
+  stage      DealStage   @relation(fields: [stageId], references: [id])
+  lossReason LossReason? @relation(fields: [lossReasonId], references: [id])
+  createdBy  User        @relation("DealCreator", fields: [createdById], references: [id])
+  lead       Lead?       @relation("LeadDeal")
+
+  meetings     Meeting[]
+  activities   Activity[]
+  comments     Comment[]
+  stageHistory StageHistory[]
+
+  @@index([ownerId])
+  @@index([teamId])
+  @@index([clientId])
+  @@index([status, stageId])
+  @@map("deals")
+}
+
+/// История переходов по воронке (ТЗ §7). Append-only.
+model StageHistory {
+  id          String   @id @default(uuid()) @db.Uuid
+  leadId      String?  @map("lead_id") @db.Uuid
+  dealId      String?  @map("deal_id") @db.Uuid
+  fromStageId String?  @map("from_stage_id") @db.Uuid
+  toStageId   String   @map("to_stage_id") @db.Uuid
+  changedById String   @map("changed_by_id") @db.Uuid
+  /// Сколько секунд запись провела на предыдущем этапе.
+  durationSec Int?     @map("duration_sec")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  lead      Lead?      @relation(fields: [leadId], references: [id])
+  deal      Deal?      @relation(fields: [dealId], references: [id])
+  fromStage DealStage? @relation("FromStage", fields: [fromStageId], references: [id])
+  toStage   DealStage  @relation("ToStage", fields: [toStageId], references: [id])
+  changedBy User       @relation(fields: [changedById], references: [id])
+
+  @@index([leadId])
+  @@index([dealId])
+  @@map("stage_history")
+}
+
+/// Бизнес-таймлайн (ТЗ §12). Append-only: изменение и удаление запрещены триггером.
+model Activity {
+  id        String   @id @default(uuid()) @db.Uuid
+  type      String
+  actorId   String?  @map("actor_id") @db.Uuid
+  leadId    String?  @map("lead_id") @db.Uuid
+  dealId    String?  @map("deal_id") @db.Uuid
+  clientId  String?  @map("client_id") @db.Uuid
+  meetingId String?  @map("meeting_id") @db.Uuid
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor   User?    @relation(fields: [actorId], references: [id])
+  lead    Lead?    @relation(fields: [leadId], references: [id])
+  deal    Deal?    @relation(fields: [dealId], references: [id])
+  client  Client?  @relation(fields: [clientId], references: [id])
+  meeting Meeting? @relation(fields: [meetingId], references: [id])
+
+  @@index([leadId, createdAt])
+  @@index([dealId, createdAt])
+  @@index([clientId, createdAt])
+  @@map("activities")
+}
+
+model Comment {
+  id        String    @id @default(uuid()) @db.Uuid
+  authorId  String    @map("author_id") @db.Uuid
+  body      String
+  leadId    String?   @map("lead_id") @db.Uuid
+  dealId    String?   @map("deal_id") @db.Uuid
+  clientId  String?   @map("client_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  author User    @relation(fields: [authorId], references: [id])
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+  deal   Deal?   @relation(fields: [dealId], references: [id])
+  client Client? @relation(fields: [clientId], references: [id])
+
+  @@index([leadId])
+  @@index([dealId])
+  @@index([clientId])
+  @@map("comments")
+}
+
+/// Встреча (ТЗ §13).
+model Meeting {
+  id          String        @id @default(uuid()) @db.Uuid
+  leadId      String?       @map("lead_id") @db.Uuid
+  dealId      String?       @map("deal_id") @db.Uuid
+  clientId    String?       @map("client_id") @db.Uuid
+  managerId   String        @map("manager_id") @db.Uuid
+  ropId       String?       @map("rop_id") @db.Uuid
+  teamId      String?       @map("team_id") @db.Uuid
+  startsAt    DateTime      @map("starts_at")
+  durationMin Int           @default(60) @map("duration_min")
+  type        MeetingType
+  link        String?
+  status      MeetingStatus @default(SCHEDULED)
+  comment     String?
+  result      String?
+  createdById String        @map("created_by_id") @db.Uuid
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  lead       Lead?      @relation(fields: [leadId], references: [id])
+  deal       Deal?      @relation(fields: [dealId], references: [id])
+  client     Client?    @relation(fields: [clientId], references: [id])
+  manager    User       @relation("MeetingManager", fields: [managerId], references: [id])
+  rop        User?      @relation("MeetingRop", fields: [ropId], references: [id])
+  team       Team?      @relation(fields: [teamId], references: [id])
+  activities Activity[]
+
+  @@index([managerId, startsAt])
+  @@index([teamId, startsAt])
+  @@index([leadId])
+  @@index([dealId])
+  @@map("meetings")
+}
+
+/// In-app уведомления. Telegram-доставка — Phase 7.
+model Notification {
+  id        String    @id @default(uuid()) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  type      String
+  title     String
+  body      String?
+  link      String?
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+/// Ключи идемпотентности: повторный POST с тем же ключом не создаёт дубль.
+model IdempotencyKey {
+  key        String   @id
+  userId     String   @map("user_id") @db.Uuid
+  route      String
+  statusCode Int      @map("status_code")
+  response   Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("idempotency_keys")
 }

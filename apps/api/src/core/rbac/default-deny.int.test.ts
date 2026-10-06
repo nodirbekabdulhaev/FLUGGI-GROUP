@@ -21,6 +21,8 @@ describe('RBAC', () => {
       const proto = Object.getPrototypeOf(instance) as Record<string, unknown>;
       for (const name of scanner.getAllMethodNames(proto)) {
         const handler = proto[name] as () => unknown;
+        // Только HTTP-обработчики (методы с маршрутом), а не служебные методы контроллера.
+        if (Reflect.getMetadata('path', handler) === undefined) continue;
         const targets = [handler, wrapper.metatype as () => unknown];
         const declared =
           reflector.getAllAndOverride(IS_PUBLIC, targets) ||

@@ -5,3 +5,4 @@ process.env.RATE_LIMIT_DISABLED = 'true';
 process.env.LOG_LEVEL = 'silent';
 process.env.APP_URL = 'http://localhost:3000';
 process.env.AUTH_SECRET ??= 'test-secret-test-secret-test-secret-test-secret';
+process.env.OUTBOX_IN_API = 'false';

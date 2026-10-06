@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD, APP_INTERCEPTOR } from '@nestjs/core';
 import { ThrottlerGuard, ThrottlerModule } from '@nestjs/throttler';
 import { randomUUID } from 'node:crypto';
 import { LoggerModule } from 'nestjs-pino';
@@ -16,6 +16,15 @@ import { HealthController } from './modules/health/health.controller';
 import { RolesModule } from './modules/roles/roles.module';
 import { TeamsModule } from './modules/teams/teams.module';
 import { UsersModule } from './modules/users/users.module';
+import { ClientsModule } from './modules/clients/clients.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { DealsModule } from './modules/deals/deals.module';
+import { LeadsModule } from './modules/leads/leads.module';
+import { MeetingsModule } from './modules/meetings/meetings.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
+import { PipelineModule } from './modules/pipeline/pipeline.module';
+import { ReferencesModule } from './modules/references/references.module';
+import { IdempotencyInterceptor } from './core/idempotency/idempotency.interceptor';
 
 const env = loadEnv();
 
@@ -53,6 +62,14 @@ const env = loadEnv();
     UsersModule,
     TeamsModule,
     RolesModule,
+    ReferencesModule,
+    CrmModule,
+    LeadsModule,
+    ClientsModule,
+    DealsModule,
+    MeetingsModule,
+    PipelineModule,
+    NotificationsModule,
   ],
   controllers: [HealthController],
   providers: [
@@ -62,6 +79,7 @@ const env = loadEnv();
     { provide: APP_GUARD, useClass: SessionGuard },
     { provide: APP_GUARD, useClass: CsrfGuard },
     { provide: APP_GUARD, useClass: PermissionGuard },
+    { provide: APP_INTERCEPTOR, useClass: IdempotencyInterceptor },
   ],
 })
 export class AppModule {}

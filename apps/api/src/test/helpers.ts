@@ -6,6 +6,7 @@ import {
   PERMISSION_CODES,
 } from '@fluggi/contracts';
 import type { RoleCode } from '@fluggi/contracts';
+import { seedReferences } from '@fluggi/db';
 import { hash } from '@node-rs/argon2';
 import type { INestApplication } from '@nestjs/common';
 import request from 'supertest';
@@ -24,9 +25,15 @@ let cachedHash: string | undefined;
 
 /** Полная очистка и базовые данные: роли, права, отделы, по пользователю на роль. */
 export async function resetDatabase(prisma: PrismaService) {
+  const tables = await prisma.$queryRaw<{ tablename: string }[]>`
+    SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
   await prisma.$executeRawUnsafe(
-    'TRUNCATE audit_logs, outbox_events, sessions, employees, users, teams, role_permissions, permissions, roles RESTART IDENTITY CASCADE',
+    `TRUNCATE ${tables.map((t) => `"${t.tablename}"`).join(', ')} RESTART IDENTITY CASCADE`,
   );
+  await seedReferences(prisma);
+  await prisma.exchangeRate.create({
+    data: { currency: 'USD', rateToUzs: 12650, date: new Date('2020-01-01') },
+  });
   await prisma.permission.createMany({
     data: PERMISSION_CODES.map((code) => ({
       code,
@@ -114,15 +121,16 @@ export class Client {
     method: 'post' | 'patch' | 'put' | 'delete',
     url: string,
     body?: object,
-    opts: { csrf?: boolean } = {},
+    opts: { csrf?: boolean; headers?: Record<string, string> } = {},
   ) {
     let req = request(this.app.getHttpServer())[method](url).set('Cookie', this.cookieHeader());
+    for (const [k, v] of Object.entries(opts.headers ?? {})) req = req.set(k, v);
     const csrf = this.cookies.get(CSRF_COOKIE);
     if (csrf && opts.csrf !== false) req = req.set(CSRF_HEADER, csrf);
     return this.store(await (body ? req.send(body) : req));
   }
 
-  post(url: string, body?: object, opts?: { csrf?: boolean }) {
+  post(url: string, body?: object, opts?: { csrf?: boolean; headers?: Record<string, string> }) {
     return this.send('post', url, body, opts);
   }
   patch(url: string, body?: object) {

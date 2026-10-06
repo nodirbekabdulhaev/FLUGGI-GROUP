@@ -8,3 +8,6 @@ export * from './schemas/users';
 export * from './schemas/teams';
 export * from './schemas/roles';
 export * from './schemas/audit';
+export * from './schemas/fields';
+export * from './schemas/references';
+export * from './schemas/crm';

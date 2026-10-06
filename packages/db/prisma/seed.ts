@@ -16,7 +16,9 @@ import {
   type ExecutorSpecialty,
   type RoleCode,
 } from '@fluggi/contracts';
-import { PrismaClient } from '@prisma/client';
+import { computeLeadScore, toUzs } from '@fluggi/domain';
+import { Prisma, PrismaClient } from '@prisma/client';
+import { SOURCES, STAGES, seedReferences } from '../src/reference-data';
 
 const prisma = new PrismaClient();
 
@@ -224,11 +226,336 @@ async function seedDemo() {
   }
 }
 
+// ─────────────────────── Справочники CRM (ТЗ §7, §9, §39, §61) ───────────────────────
+
+// ─────────────────────── Демо-данные CRM (ТЗ §68) ───────────────────────
+
+const DEMO_CLIENTS = [
+  'Hamza Textile',
+  'Samarkand Foods',
+  'Tashkent City Mall',
+  'Navruz Pharm',
+  'Bukhara Ceramics',
+  'Oasis Auto',
+  'Green Line Logistics',
+  'Silk Road Hotel',
+  'Uzbek Fitness Club',
+  'Nur Education',
+];
+
+const DEMO_LEADS: {
+  contact: string;
+  company: string;
+  phone: string;
+  service: string;
+  source: string;
+  budget: number;
+  currency: 'UZS' | 'USD';
+  stage: string;
+}[] = [
+  {
+    contact: 'Бехзод',
+    company: 'Chorsu Market',
+    phone: '+998901112201',
+    service: 'SMM',
+    source: 'INSTAGRAM',
+    budget: 6_000_000,
+    currency: 'UZS',
+    stage: 'NEW',
+  },
+  {
+    contact: 'Нигора',
+    company: 'Lola Beauty',
+    phone: '+998901112202',
+    service: 'TARGET',
+    source: 'TELEGRAM',
+    budget: 4_500_000,
+    currency: 'UZS',
+    stage: 'NEW',
+  },
+  {
+    contact: 'Ильхом',
+    company: 'Ilm Akademiya',
+    phone: '+998901112203',
+    service: 'WEBSITE',
+    source: 'WEBSITE',
+    budget: 2_000,
+    currency: 'USD',
+    stage: 'NEW',
+  },
+  {
+    contact: 'Фарход',
+    company: 'Farhod Mebel',
+    phone: '+998901112204',
+    service: 'BRANDING',
+    source: 'REFERRAL',
+    budget: 15_000_000,
+    currency: 'UZS',
+    stage: 'CONTACTED',
+  },
+  {
+    contact: 'Дильшод',
+    company: 'Dilshod Stroy',
+    phone: '+998901112205',
+    service: 'CRM',
+    source: 'COLD_OUTREACH',
+    budget: 4_000,
+    currency: 'USD',
+    stage: 'CONTACTED',
+  },
+  {
+    contact: 'Мадина',
+    company: 'Madina Kids',
+    phone: '+998901112206',
+    service: 'PHOTO',
+    source: 'INSTAGRAM',
+    budget: 3_000_000,
+    currency: 'UZS',
+    stage: 'CONTACTED',
+  },
+  {
+    contact: 'Улугбек',
+    company: 'Ulug Tech',
+    phone: '+998901112207',
+    service: 'ERP',
+    source: 'REFERRAL',
+    budget: 12_000,
+    currency: 'USD',
+    stage: 'QUALIFICATION',
+  },
+  {
+    contact: 'Гульчехра',
+    company: 'Gul Flowers',
+    phone: '+998901112208',
+    service: 'SMM',
+    source: 'WHATSAPP',
+    budget: 5_000_000,
+    currency: 'UZS',
+    stage: 'QUALIFICATION',
+  },
+  {
+    contact: 'Санжар',
+    company: 'Sanjar Motors',
+    phone: '+998901112209',
+    service: 'VIDEO',
+    source: 'ADVERTISEMENT',
+    budget: 9_000_000,
+    currency: 'UZS',
+    stage: 'MEETING_SCHEDULED',
+  },
+  {
+    contact: 'Зарина',
+    company: 'Zarina Fashion',
+    phone: '+998901112210',
+    service: 'MARKETING',
+    source: 'INSTAGRAM',
+    budget: 20_000_000,
+    currency: 'UZS',
+    stage: 'MEETING_SCHEDULED',
+  },
+  {
+    contact: 'Акмаль',
+    company: 'Akmal Group',
+    phone: '+998901112211',
+    service: 'WEBSITE',
+    source: 'PHONE',
+    budget: 3_500,
+    currency: 'USD',
+    stage: 'MEETING_DONE',
+  },
+  {
+    contact: 'Шахноза',
+    company: 'Shahnoza Dental',
+    phone: '+998901112212',
+    service: 'TARGET',
+    source: 'TELEGRAM',
+    budget: 6_500_000,
+    currency: 'UZS',
+    stage: 'MEETING_DONE',
+  },
+];
+
+async function seedDemoCrm(rate: Prisma.Decimal) {
+  if ((await prisma.lead.count()) > 0) {
+    console.log('• Демо-данные CRM уже есть');
+    return;
+  }
+  const stages = new Map((await prisma.dealStage.findMany()).map((s) => [s.code, s]));
+  const services = new Map((await prisma.service.findMany()).map((s) => [s.code, s]));
+  const sources = new Map((await prisma.leadSource.findMany()).map((s) => [s.code, s]));
+  const managers = await prisma.user.findMany({
+    where: { role: { code: 'MANAGER' } },
+    orderBy: { email: 'asc' },
+  });
+  const leadStageCodes = STAGES.filter((s) => s.entity === 'LEAD').map((s) => s.code);
+
+  // 12 лидов в работе
+  for (const [i, l] of DEMO_LEADS.entries()) {
+    const owner = managers[i % managers.length]!;
+    const budgetUzs = toUzs(l.budget, l.currency, rate.toString());
+    const { score, level } = computeLeadScore({
+      budgetUzs: budgetUzs.toNumber(),
+      hasService: true,
+      priority: i % 3 === 0 ? 'HIGH' : 'MEDIUM',
+      interest: (i % 5) + 1,
+      stageIndex: leadStageCodes.indexOf(l.stage),
+      stageCount: leadStageCodes.length,
+    });
+    await prisma.lead.create({
+      data: {
+        title: `${l.company} — ${services.get(l.service)!.nameRu}`,
+        contactName: l.contact,
+        companyName: l.company,
+        phone: l.phone,
+        sourceId: sources.get(l.source)!.id,
+        serviceId: services.get(l.service)!.id,
+        ownerId: owner.id,
+        teamId: owner.teamId,
+        budget: l.budget,
+        currency: l.currency,
+        budgetUzs: budgetUzs.toString(),
+        priority: i % 3 === 0 ? 'HIGH' : 'MEDIUM',
+        interest: (i % 5) + 1,
+        stageId: stages.get(l.stage)!.id,
+        score,
+        scoreLevel: level,
+        createdById: owner.id,
+        activities: {
+          create: { type: 'lead.created', actorId: owner.id, payload: { seed: true } },
+        },
+      },
+    });
+  }
+
+  // 10 клиентов, у 10 из них — сделки (8 лидов уже сконвертированы)
+  const dealStageCodes = [
+    'NEED_DEFINED',
+    'NEED_DEFINED',
+    'PROPOSAL_SENT',
+    'PROPOSAL_SENT',
+    'NEGOTIATION',
+    'NEGOTIATION',
+    'CONTRACT',
+    'AWAITING_PAYMENT',
+    'NEED_DEFINED',
+    'PROPOSAL_SENT',
+  ];
+  const amounts: [number, 'UZS' | 'USD'][] = [
+    [9_000_000, 'UZS'],
+    [25_000_000, 'UZS'],
+    [15_000_000, 'UZS'],
+    [3_000, 'USD'],
+    [7_500_000, 'UZS'],
+    [12_000_000, 'UZS'],
+    [5_000, 'USD'],
+    [18_000_000, 'UZS'],
+    [4_000_000, 'UZS'],
+    [30_000_000, 'UZS'],
+  ];
+  const serviceCodes = [
+    'SMM',
+    'WEBSITE',
+    'BRANDING',
+    'CRM',
+    'TARGET',
+    'VIDEO',
+    'ERP',
+    'MARKETING',
+    'PHOTO',
+    'WEBSITE',
+  ];
+  for (const [i, name] of DEMO_CLIENTS.entries()) {
+    const owner = managers[i % managers.length]!;
+    const client = await prisma.client.create({
+      data: {
+        name,
+        type: 'COMPANY',
+        phone: `+99890222330${i}`,
+        city: 'Ташкент',
+        country: 'Узбекистан',
+        ownerId: owner.id,
+        teamId: owner.teamId,
+        sourceId: sources.get(SOURCES[i % SOURCES.length]![0])!.id,
+        contacts: {
+          create: { fullName: `Контакт ${name}`, phone: `+99890333440${i}`, isPrimary: true },
+        },
+      },
+    });
+    const [amount, currency] = amounts[i]!;
+    const service = services.get(serviceCodes[i]!)!;
+    const stage = stages.get(dealStageCodes[i]!)!;
+    const lead = await prisma.lead.create({
+      data: {
+        title: `${name} — ${service.nameRu}`,
+        companyName: name,
+        contactName: `Контакт ${name}`,
+        phone: `+99890333440${i}`,
+        sourceId: client.sourceId!,
+        serviceId: service.id,
+        ownerId: owner.id,
+        teamId: owner.teamId,
+        stageId: stages.get('MEETING_DONE')!.id,
+        status: 'CONVERTED',
+        convertedAt: new Date(),
+        clientId: client.id,
+        createdById: owner.id,
+      },
+    });
+    const deal = await prisma.deal.create({
+      data: {
+        title: `${service.nameRu} для ${name}`,
+        clientId: client.id,
+        ownerId: owner.id,
+        teamId: owner.teamId,
+        serviceId: service.id,
+        amount,
+        currency,
+        exchangeRate: currency === 'USD' ? rate : 1,
+        amountUzs: toUzs(amount, currency, rate.toString()).toString(),
+        stageId: stage.id,
+        createdById: owner.id,
+        activities: {
+          create: { type: 'deal.created', actorId: owner.id, payload: { seed: true } },
+        },
+      },
+    });
+    await prisma.lead.update({ where: { id: lead.id }, data: { dealId: deal.id } });
+  }
+  console.log(
+    `✓ Демо CRM: клиентов ${DEMO_CLIENTS.length}, лидов ${DEMO_LEADS.length + DEMO_CLIENTS.length}, сделок ${DEMO_CLIENTS.length}`,
+  );
+}
+
+async function seedDemoRate(): Promise<Prisma.Decimal> {
+  const existing = await prisma.exchangeRate.findFirst({
+    where: { currency: 'USD' },
+    orderBy: { date: 'desc' },
+  });
+  if (existing) return existing.rateToUzs;
+  // Демо-курс. В рабочей системе курс задаёт CEO в «Настройки → Справочники».
+  const rate = await prisma.exchangeRate.create({
+    data: {
+      currency: 'USD',
+      rateToUzs: 12650,
+      date: new Date(new Date().toISOString().slice(0, 10)),
+    },
+  });
+  console.log('✓ Демо-курс USD: 12 650 UZS');
+  return rate.rateToUzs;
+}
+
 async function main() {
   await seedRolesAndPermissions();
+  const refs = await seedReferences(prisma);
+  console.log(
+    `✓ Справочники: ${refs.services} услуг, ${refs.sources} источников, ${refs.lossReasons} причин потерь, ${refs.stages} этапов`,
+  );
   await seedInitialCeo();
   const demo = env('SEED_DEMO') ?? (process.env.NODE_ENV === 'production' ? 'false' : 'true');
-  if (demo === 'true') await seedDemo();
+  if (demo === 'true') {
+    await seedDemo();
+    await seedDemoCrm(await seedDemoRate());
+  }
 }
 
 main()
