@@ -202,8 +202,8 @@ erDiagram
 | Фаза | Таблицы |
 |---|---|
 | 1 ✅ | users, roles, permissions, role_permissions, teams, employees, sessions, audit_logs, outbox_events |
-| 2 | settings, files, services, lead_sources, loss_reasons, deal_stages, leads, clients, contacts, deals, stage_history, activities, comments, meetings, notifications, notification_settings |
-| 3 | proposals, proposal_items, proposal_versions, contracts, payments, exchange_rates, proposal/contract_templates |
+| 2 ✅ | services, lead_sources, loss_reasons, deal_stages, exchange_rates, leads, clients, contacts, deals, stage_history, activities, comments, meetings, notifications, idempotency_keys (settings, files, notification_settings — перенесены в фазы 3 и 7) |
+| 3 | proposals, proposal_items, proposal_versions, contracts, payments, files, proposal/contract_templates |
 | 4 | projects, project_members, tasks, task_status_history, task_comments, project/task_templates |
 | 5 | expenses, commission_rules, commissions |
 | 6 | kpi_targets, kpi_results (MVP); work_schedules, attendance, payroll (после MVP) |

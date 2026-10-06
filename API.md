@@ -2,7 +2,9 @@
 
 > Статус: **согласовано**. Схемы запросов/ответов — в `packages/contracts` (Zod), общие для backend и frontend.
 >
-> ✅ **Реализовано в Phase 1:** `auth/*` (login, logout, me, change-password, sessions), `users` (список, карточка, создание, изменение, block/unblock, reset-password), `teams` (CRUD, soft delete), `roles` (список, каталог прав, изменение прав), `audit-logs`, `health`, `ready`. Остальные endpoint'ы ниже — план следующих фаз.
+> ✅ **Реализовано в Phase 1:** `auth/*` (login, logout, me, change-password, sessions), `users` (список, карточка, создание, изменение, block/unblock, reset-password), `teams` (CRUD, soft delete), `roles` (список, каталог прав, изменение прав), `audit-logs`, `health`, `ready`.
+>
+> ✅ **Реализовано в Phase 2:** `references` (справочники, услуги, источники, причины потерь, этапы, курс USD), `leads` (+ stage, assign, close, reopen, convert), `clients` (+ contacts), `deals` (+ stage, assign, close, reopen), `pipeline`, `meetings` (+ complete), `timeline`, `stage-history`, `comments`, `notifications`. Заголовок `Idempotency-Key` работает для всех POST. Остальные endpoint'ы ниже — план следующих фаз.
 
 ## 1. Соглашения
 

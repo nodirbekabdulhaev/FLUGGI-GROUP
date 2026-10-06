@@ -41,15 +41,15 @@ export const NAVIGATION: NavSection[] = [
     href: '/sales',
     icon: TrendingUp,
     children: [
-      { key: 'leads', href: '/sales/leads', anyOf: ['lead.read'], plannedPhase: 2 },
-      { key: 'deals', href: '/sales/deals', anyOf: ['deal.read'], plannedPhase: 2 },
-      { key: 'pipeline', href: '/sales/pipeline', anyOf: ['deal.read'], plannedPhase: 2 },
-      { key: 'meetings', href: '/sales/meetings', anyOf: ['meeting.read'], plannedPhase: 2 },
+      { key: 'leads', href: '/sales/leads', anyOf: ['lead.read'] },
+      { key: 'deals', href: '/sales/deals', anyOf: ['deal.read'] },
+      { key: 'pipeline', href: '/sales/pipeline', anyOf: ['lead.read', 'deal.read'] },
+      { key: 'meetings', href: '/sales/meetings', anyOf: ['meeting.read'] },
       { key: 'proposals', href: '/sales/proposals', anyOf: ['proposal.read'], plannedPhase: 3 },
       { key: 'contracts', href: '/sales/contracts', anyOf: ['contract.read'], plannedPhase: 3 },
     ],
   },
-  { key: 'clients', href: '/clients', icon: Briefcase, anyOf: ['client.read'], plannedPhase: 2 },
+  { key: 'clients', href: '/clients', icon: Briefcase, anyOf: ['client.read'] },
   {
     key: 'projects',
     href: '/projects',
@@ -115,12 +115,12 @@ export const NAVIGATION: NavSection[] = [
     anyOf: ['analytics.read'],
     plannedPhase: 8,
   },
-  { key: 'notifications', href: '/notifications', icon: Bell, plannedPhase: 2 },
+  { key: 'notifications', href: '/notifications', icon: Bell },
   {
     key: 'settings',
     href: '/settings',
     icon: Settings,
-    anyOf: ['settings.manage', 'role.manage', 'employee.manage', 'audit.read'],
+    anyOf: ['settings.manage', 'role.manage', 'employee.manage', 'audit.read', 'reference.manage'],
   },
 ];
 

@@ -9,6 +9,7 @@ import { useCan } from '@/lib/me-context';
 import { PeriodSelect } from './period-select';
 import { Brand, SidebarNav } from './sidebar-nav';
 import { UserMenu } from './user-menu';
+import { NotificationBell } from '@/features/notifications/notifications-page';
 
 /** Каркас приложения: sidebar на десктопе, drawer на мобильном (ТЗ §73). */
 export function AppShell({ children }: { children: React.ReactNode }) {
@@ -53,6 +54,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ) : (
           <div className="flex-1" />
         )}
+        <NotificationBell />
         <UserMenu />
       </header>
 

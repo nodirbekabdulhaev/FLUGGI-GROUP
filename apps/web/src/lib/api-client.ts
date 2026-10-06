@@ -35,6 +35,8 @@ interface RequestOptions {
   body?: unknown;
   query?: Query;
   signal?: AbortSignal;
+  /** Защита от дублей: повтор с тем же ключом не создаёт запись повторно. */
+  idempotencyKey?: string;
 }
 
 function buildUrl(path: string, query?: Query) {
@@ -49,10 +51,11 @@ function buildUrl(path: string, query?: Query) {
 /** Клиент API для браузера: cookie-сессия, CSRF-заголовок, единый формат ошибок. */
 export async function api<T>(
   path: string,
-  { method = 'GET', body, query, signal }: RequestOptions = {},
+  { method = 'GET', body, query, signal, idempotencyKey }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
   if (body !== undefined) headers['Content-Type'] = 'application/json';
+  if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
   if (method !== 'GET') {
     const csrf = readCookie(CSRF_COOKIE);
     if (csrf) headers[CSRF_HEADER] = csrf;

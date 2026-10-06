@@ -5,7 +5,7 @@ import { OutboxService } from './outbox.service';
 
 @Global()
 @Module({
-  providers: [OutboxService, OutboxDispatcher],
+  providers: [OutboxService, OutboxDispatcher, OutboxRunner],
   exports: [OutboxService, OutboxDispatcher],
 })
 export class OutboxModule {}

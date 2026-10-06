@@ -9,6 +9,7 @@ import { cn } from '@/lib/utils';
 
 export const SETTINGS_TABS: { href: string; key: string; permission: PermissionCode }[] = [
   { href: '/settings/teams', key: 'tabTeams', permission: 'employee.manage' },
+  { href: '/settings/references', key: 'tabReferences', permission: 'reference.manage' },
   { href: '/settings/roles', key: 'tabRoles', permission: 'role.manage' },
   { href: '/settings/audit', key: 'tabAudit', permission: 'audit.read' },
 ];

@@ -34,3 +34,10 @@ describe('RBAC', () => {
     expect(missing).toEqual([]);
   });
 });
+
+describe('Outbox', () => {
+  it('фоновый обработчик событий зарегистрирован в приложении', async () => {
+    const { OutboxRunner } = await import('../outbox/outbox.runner');
+    expect(app.get(OutboxRunner)).toBeInstanceOf(OutboxRunner);
+  });
+});

@@ -222,7 +222,8 @@
     "auditAction": "Действие",
     "auditChanges": "Изменения",
     "auditSystem": "Система",
-    "auditEmpty": "Записей пока нет"
+    "auditEmpty": "Записей пока нет",
+    "tabReferences": "Справочники"
   },
   "audit": {
     "auth": {
@@ -247,6 +248,60 @@
     },
     "role": {
       "permissions_update": "Изменены права роли"
+    },
+    "lead": {
+      "create": "Создан лид",
+      "update": "Изменён лид",
+      "assign": "Сменён ответственный лида",
+      "stage_change": "Смена этапа лида",
+      "close": "Лид закрыт",
+      "reopen": "Лид возвращён",
+      "convert": "Лид квалифицирован",
+      "delete": "Лид удалён"
+    },
+    "deal": {
+      "create": "Создана сделка",
+      "update": "Изменена сделка",
+      "assign": "Сменён ответственный сделки",
+      "stage_change": "Смена этапа сделки",
+      "close": "Сделка закрыта",
+      "reopen": "Сделка возвращена",
+      "delete": "Сделка удалена"
+    },
+    "client": {
+      "create": "Создан клиент",
+      "update": "Изменён клиент"
+    },
+    "contact": {
+      "create": "Добавлен контакт",
+      "update": "Изменён контакт",
+      "delete": "Удалён контакт"
+    },
+    "meeting": {
+      "create": "Назначена встреча",
+      "update": "Изменена встреча",
+      "complete": "Встреча проведена"
+    },
+    "comment": {
+      "delete": "Удалён комментарий"
+    },
+    "service": {
+      "create": "Добавлена услуга",
+      "update": "Изменена услуга"
+    },
+    "sources": {
+      "create": "Добавлен источник",
+      "update": "Изменён источник"
+    },
+    "loss-reasons": {
+      "create": "Добавлена причина потери",
+      "update": "Изменена причина потери"
+    },
+    "stage": {
+      "update": "Изменён этап воронки"
+    },
+    "exchange_rate": {
+      "set": "Установлен курс валюты"
     }
   },
   "profile": {
@@ -293,5 +348,334 @@
     "analytics": "Аналитика",
     "export": "Экспорт",
     "audit": "Аудит"
+  },
+  "crm": {
+    "score": {
+      "LOW": "Low",
+      "MEDIUM": "Medium",
+      "HIGH": "High",
+      "HOT": "Hot"
+    },
+    "priority": {
+      "LOW": "Низкий",
+      "MEDIUM": "Средний",
+      "HIGH": "Высокий",
+      "URGENT": "Срочный"
+    },
+    "companySize": {
+      "SOLO": "Частное лицо / ИП",
+      "SMALL": "Малая компания",
+      "MEDIUM": "Средняя компания",
+      "LARGE": "Крупная компания"
+    },
+    "status": {
+      "lead": {
+        "OPEN": "В работе",
+        "CONVERTED": "Сделка",
+        "LOST": "Потеряно",
+        "REJECTED": "Отказ",
+        "PAUSED": "Пауза",
+        "NO_RESPONSE": "Не отвечает"
+      },
+      "deal": {
+        "OPEN": "В работе",
+        "WON": "Оплачено",
+        "LOST": "Потеряно",
+        "REJECTED": "Отказ",
+        "PAUSED": "Пауза",
+        "NO_RESPONSE": "Не отвечает"
+      }
+    },
+    "closeStatus": {
+      "LOST": "Потеряно",
+      "REJECTED": "Отказ",
+      "PAUSED": "Пауза",
+      "NO_RESPONSE": "Не отвечает"
+    },
+    "clientType": {
+      "COMPANY": "Компания",
+      "PERSON": "Частное лицо"
+    },
+    "health": {
+      "HEALTHY": "Healthy",
+      "ATTENTION": "Attention",
+      "RISK": "Risk",
+      "LOST": "Lost"
+    },
+    "meetingType": {
+      "ONLINE": "Онлайн",
+      "OFFLINE": "Офлайн",
+      "PHONE": "Телефон",
+      "TELEGRAM": "Telegram",
+      "GOOGLE_MEET": "Google Meet",
+      "ZOOM": "Zoom"
+    },
+    "meetingStatus": {
+      "SCHEDULED": "Запланирована",
+      "CONFIRMED": "Подтверждена",
+      "DONE": "Проведена",
+      "RESCHEDULED": "Перенесена",
+      "CANCELLED": "Отменена",
+      "NO_SHOW": "Не состоялась"
+    },
+    "activity": {
+      "lead": {
+        "created": "Создан лид",
+        "updated": "Изменены данные лида",
+        "assigned": "Назначен ответственный",
+        "stage_changed": "Смена этапа",
+        "closed": "Лид закрыт",
+        "reopened": "Лид возвращён в работу",
+        "converted": "Лид квалифицирован → сделка"
+      },
+      "deal": {
+        "created": "Создана сделка",
+        "updated": "Изменены данные сделки",
+        "amount_changed": "Изменена сумма",
+        "assigned": "Назначен ответственный",
+        "stage_changed": "Смена этапа",
+        "closed": "Сделка закрыта",
+        "reopened": "Сделка возвращена в работу"
+      },
+      "meeting": {
+        "created": "Назначена встреча",
+        "updated": "Встреча изменена",
+        "completed": "Встреча проведена"
+      },
+      "comment": {
+        "added": "Комментарий"
+      },
+      "client": {
+        "created": "Создан клиент",
+        "updated": "Изменены данные клиента"
+      }
+    },
+    "fields": {
+      "title": "Название",
+      "contactName": "Имя контакта",
+      "companyName": "Компания",
+      "phone": "Телефон",
+      "telegram": "Telegram",
+      "whatsapp": "WhatsApp",
+      "instagram": "Instagram",
+      "email": "Email",
+      "website": "Сайт",
+      "city": "Город",
+      "country": "Страна",
+      "source": "Источник",
+      "owner": "Ответственный",
+      "rop": "РОП",
+      "team": "Отдел",
+      "service": "Услуга",
+      "budget": "Бюджет",
+      "currency": "Валюта",
+      "desiredDate": "Желаемый срок",
+      "priority": "Приоритет",
+      "companySize": "Размер компании",
+      "interest": "Интерес (1–5)",
+      "stage": "Этап",
+      "status": "Статус",
+      "score": "Оценка",
+      "nextContactAt": "Следующий контакт",
+      "lastContactAt": "Последний контакт",
+      "comment": "Комментарий",
+      "createdAt": "Создан",
+      "amount": "Сумма",
+      "probability": "Вероятность",
+      "expectedCloseDate": "Ожидаемая дата закрытия",
+      "client": "Клиент",
+      "contact": "Контакт",
+      "type": "Тип",
+      "industry": "Отрасль",
+      "position": "Должность",
+      "startsAt": "Дата и время",
+      "durationMin": "Длительность, мин",
+      "link": "Ссылка или адрес",
+      "result": "Результат",
+      "manager": "Менеджер",
+      "lossReason": "Причина",
+      "number": "№"
+    },
+    "common": {
+      "more": "Ещё поля",
+      "less": "Скрыть",
+      "select": "Выберите",
+      "none": "Не выбрано",
+      "all": "Все",
+      "close": "Закрыть",
+      "reopen": "Вернуть в работу",
+      "assign": "Сменить ответственного",
+      "changeStage": "Сменить этап",
+      "edit": "Редактировать",
+      "delete": "Удалить",
+      "deleteConfirm": "Удалить «{name}»? Запись будет скрыта, история сохранится.",
+      "deleted": "Удалено",
+      "saved": "Сохранено",
+      "created": "Создано",
+      "stageChanged": "Этап изменён",
+      "closed": "Запись закрыта",
+      "reopened": "Возвращено в работу",
+      "assigned": "Ответственный изменён",
+      "newMeeting": "Назначить встречу",
+      "completeMeeting": "Отметить проведённой",
+      "meetingCreated": "Встреча назначена",
+      "meetingDone": "Встреча проведена",
+      "meetingUpdated": "Встреча обновлена",
+      "addComment": "Добавить комментарий",
+      "commentPlaceholder": "Напишите комментарий…",
+      "send": "Отправить",
+      "sending": "Отправка...",
+      "noComments": "Комментариев пока нет",
+      "noActivity": "Событий пока нет",
+      "noHistory": "Переходов пока не было",
+      "noMeetings": "Встреч пока нет",
+      "durationOnStage": "на прошлом этапе: {d}",
+      "auto": "автоматически",
+      "planned": "Phase {phase}",
+      "plannedTab": "Раздел появится в Phase {phase}",
+      "closeTitle": "Закрыть запись",
+      "closeHint": "Для «Потеряно» и «Отказ» укажите причину — она попадёт в аналитику потерь.",
+      "byPhone": "Позвонить",
+      "openInTelegram": "Открыть Telegram"
+    }
+  },
+  "leads": {
+    "title": "Лиды",
+    "subtitle": "Входящие запросы до квалификации",
+    "add": "Добавить лид",
+    "emptyTitle": "Пока нет лидов",
+    "emptyText": "Создайте первого лида, чтобы начать работу с продажами.",
+    "emptyFiltered": "Лидов по фильтрам не найдено",
+    "search": "Имя, компания, телефон, Telegram",
+    "createTitle": "Новый лид",
+    "createHint": "Достаточно контакта, источника и услуги — остальное можно заполнить позже.",
+    "editTitle": "Редактирование лида",
+    "convert": "Квалифицировать",
+    "convertTitle": "Квалификация лида",
+    "convertHint": "Будут созданы клиент и сделка. Лид перейдёт в статус «Сделка».",
+    "existingClient": "Существующий клиент",
+    "newClient": "Новый клиент",
+    "clientName": "Название клиента",
+    "converted": "Лид квалифицирован: созданы клиент и сделка",
+    "openDeal": "Открыть сделку",
+    "tabs": {
+      "overview": "Обзор",
+      "activity": "Активность",
+      "tasks": "Задачи",
+      "meetings": "Встречи",
+      "proposals": "КП",
+      "contracts": "Договоры",
+      "payments": "Оплаты",
+      "projects": "Проекты",
+      "files": "Файлы",
+      "comments": "Комментарии",
+      "history": "История"
+    },
+    "filters": {
+      "onlyOpen": "В работе",
+      "allStatuses": "Все статусы"
+    }
+  },
+  "deals": {
+    "title": "Сделки",
+    "subtitle": "Квалифицированные продажи",
+    "add": "Новая сделка",
+    "emptyTitle": "Пока нет сделок",
+    "emptyText": "Сделки появляются после квалификации лида или создаются для существующего клиента.",
+    "emptyFiltered": "Сделок по фильтрам не найдено",
+    "search": "Название, клиент, D-номер",
+    "createTitle": "Новая сделка",
+    "createHint": "Для повторной продажи существующему клиенту.",
+    "editTitle": "Редактирование сделки",
+    "fromLead": "Из лида",
+    "repeat": "Повторная продажа",
+    "weighted": "Взвешенно"
+  },
+  "clients": {
+    "title": "Клиенты",
+    "subtitle": "Компании и люди, с которыми есть сделки",
+    "add": "Добавить клиента",
+    "emptyTitle": "Пока нет клиентов",
+    "emptyText": "Клиенты создаются при квалификации лида или вручную.",
+    "emptyFiltered": "Клиентов не найдено",
+    "search": "Название, телефон, контакт",
+    "createTitle": "Новый клиент",
+    "editTitle": "Редактирование клиента",
+    "deals": "Сделки клиента",
+    "contacts": "Контакты",
+    "addContact": "Добавить контакт",
+    "primary": "Основной",
+    "dealsCount": "{count} сделок · {open} в работе",
+    "newDeal": "Новая сделка",
+    "noDeals": "Сделок пока нет",
+    "noContacts": "Контактов пока нет"
+  },
+  "pipeline": {
+    "title": "Воронка",
+    "subtitle": "Перетащите карточку, чтобы сменить этап",
+    "leadsPart": "Лиды",
+    "dealsPart": "Сделки",
+    "total": "Pipeline",
+    "weighted": "Взвешенный прогноз",
+    "empty": "Пусто",
+    "convertFirst": "Чтобы лид стал сделкой, его нужно квалифицировать — откройте карточку лида.",
+    "wrongBoard": "Сделку нельзя вернуть в этапы лида",
+    "moveTo": "Перенести в этап",
+    "more": "ещё {count}"
+  },
+  "meetings": {
+    "title": "Встречи",
+    "subtitle": "Встречи с клиентами по лидам и сделкам",
+    "upcoming": "Предстоящие",
+    "done": "Проведённые",
+    "all": "Все",
+    "emptyTitle": "Встреч нет",
+    "emptyText": "Назначьте встречу из карточки лида или сделки.",
+    "createTitle": "Новая встреча",
+    "completeTitle": "Встреча проведена",
+    "resultHint": "Что решили, следующие шаги",
+    "cancel": "Отменить встречу",
+    "confirm": "Подтвердить",
+    "cancelled": "Встреча отменена",
+    "noShow": "Не состоялась"
+  },
+  "notifications": {
+    "title": "Уведомления",
+    "subtitle": "События по вашим лидам, сделкам и встречам",
+    "readAll": "Прочитать все",
+    "empty": "Уведомлений нет",
+    "emptyText": "Здесь появятся новые лиды, встречи и другие события.",
+    "telegramSoon": "Дублирование уведомлений в Telegram появится в Phase 7.",
+    "open": "Открыть"
+  },
+  "references": {
+    "tab": "Справочники",
+    "title": "Справочники CRM",
+    "services": "Услуги",
+    "sources": "Источники лидов",
+    "lossReasons": "Причины потерь",
+    "stages": "Этапы воронки",
+    "usdRate": "Курс USD",
+    "rateHint": "Новые суммы в USD пересчитываются в UZS по последнему курсу. Уже сохранённые суммы сохраняют свой курс.",
+    "rateSet": "Курс сохранён",
+    "rate": "1 USD = UZS",
+    "rateMissing": "Курс USD не задан — суммы в USD сохранить нельзя.",
+    "add": "Добавить",
+    "code": "Код",
+    "name": "Название",
+    "active": "Активен",
+    "inactive": "Скрыт",
+    "basePrice": "Базовая цена",
+    "minPrice": "Мин. цена",
+    "pricingType": "Тип расчёта",
+    "probability": "Вероятность, %",
+    "requiresComment": "Требует комментарий",
+    "pricing": {
+      "FIXED": "Фиксированная",
+      "MONTHLY": "Ежемесячно",
+      "HOURLY": "Почасово",
+      "CUSTOM": "Индивидуально"
+    },
+    "lastSetBy": "Задан {date}{by, select, none {} other {, {by}}}"
   }
 }
