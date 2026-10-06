@@ -1,0 +1,213 @@
+// Fluggi OS — схема БД. Изменения только через миграции (prisma migrate).
+// Описание таблиц: DATABASE.md
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = []
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum RoleCode {
+  CEO
+  ROP
+  MANAGER
+  EXECUTOR
+  HR_ADMIN
+}
+
+enum PermissionScope {
+  OWN
+  TEAM
+  ALL
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum Locale {
+  ru
+  uz
+  en
+}
+
+enum ExecutorSpecialty {
+  SMM
+  DESIGNER
+  VIDEOGRAPHER
+  EDITOR
+  TARGETOLOGIST
+  DEVELOPER
+  PHOTOGRAPHER
+  COPYWRITER
+}
+
+// ──────────────────────── Пользователи и доступ ────────────────────────
+
+model User {
+  id               String     @id @default(uuid()) @db.Uuid
+  email            String     @unique
+  phone            String?
+  passwordHash     String     @map("password_hash")
+  fullName         String     @map("full_name")
+  roleId           String     @map("role_id") @db.Uuid
+  teamId           String?    @map("team_id") @db.Uuid
+  status           UserStatus @default(ACTIVE)
+  locale           Locale     @default(ru)
+  telegramChatId   String?    @unique @map("telegram_chat_id")
+  telegramUsername String?    @map("telegram_username")
+  failedLoginCount Int        @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?  @map("locked_until")
+  lastLoginAt      DateTime?  @map("last_login_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  deletedAt        DateTime?  @map("deleted_at")
+
+  role        Role       @relation(fields: [roleId], references: [id])
+  team        Team?      @relation("TeamMembers", fields: [teamId], references: [id])
+  headedTeams Team[]     @relation("TeamHead")
+  employee    Employee?
+  sessions    Session[]
+  auditLogs   AuditLog[]
+
+  @@index([roleId])
+  @@index([teamId])
+  @@index([status])
+  @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      RoleCode @unique
+  name      String
+  isSystem  Boolean  @default(true) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(uuid()) @db.Uuid
+  code        String @unique
+  module      String
+  description String
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String          @map("role_id") @db.Uuid
+  permissionId String          @map("permission_id") @db.Uuid
+  scope        PermissionScope
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// Отдел продаж. Отделов может быть несколько, у каждого свой РОП (head).
+model Team {
+  id        String    @id @default(uuid()) @db.Uuid
+  name      String    @unique
+  headId    String?   @map("head_id") @db.Uuid
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  head    User?  @relation("TeamHead", fields: [headId], references: [id])
+  members User[] @relation("TeamMembers")
+
+  @@index([headId])
+  @@map("teams")
+}
+
+/// HR-данные сотрудника. Отделены от users, чтобы не попадать в CRM-выборки.
+model Employee {
+  id         String             @id @default(uuid()) @db.Uuid
+  userId     String             @unique @map("user_id") @db.Uuid
+  position   String?
+  specialty  ExecutorSpecialty?
+  hiredAt    DateTime?          @map("hired_at") @db.Date
+  firedAt    DateTime?          @map("fired_at") @db.Date
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("employees")
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  /// SHA-256 от токена из cookie. Сам токен в БД не хранится.
+  tokenHash  String    @unique @map("token_hash")
+  ip         String?
+  userAgent  String?   @map("user_agent")
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ──────────────────────── Аудит и события ────────────────────────
+
+/// Append-only: UPDATE и DELETE запрещены триггером в БД (см. миграцию init).
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Uuid
+  /// { field: { old, new } }
+  changes    Json?
+  ip         String?
+  userAgent  String?  @map("user_agent")
+  sessionId  String?  @map("session_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Transactional outbox: событие пишется в той же транзакции, что и изменение данных,
+/// worker доставляет его подписчикам (уведомления, Telegram, пересчёты).
+model OutboxEvent {
+  id          String    @id @default(uuid()) @db.Uuid
+  type        String
+  payload     Json
+  actorId     String?   @map("actor_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  availableAt DateTime  @default(now()) @map("available_at")
+  processedAt DateTime? @map("processed_at")
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error")
+
+  @@index([processedAt, availableAt])
+  @@map("outbox_events")
+}
