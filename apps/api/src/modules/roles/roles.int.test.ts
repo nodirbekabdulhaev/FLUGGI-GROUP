@@ -20,13 +20,18 @@ describe('roles', () => {
     const roles = await ceo.get('/api/v1/roles');
     const managerRole = roles.body.find((r: { code: string }) => r.code === 'MANAGER');
     const granted = { ...DEFAULT_ROLE_PERMISSIONS.MANAGER, 'employee.read': 'OWN' };
-    expect((await ceo.put(`/api/v1/roles/${managerRole.id}/permissions`, { permissions: granted })).status).toBe(200);
+    expect(
+      (await ceo.put(`/api/v1/roles/${managerRole.id}/permissions`, { permissions: granted }))
+        .status,
+    ).toBe(200);
 
     const list = await manager.get('/api/v1/users');
     expect(list.status).toBe(200);
     expect(list.body.items.map((u: { email: string }) => u.email)).toEqual(['manager@test.uz']);
 
-    await ceo.put(`/api/v1/roles/${managerRole.id}/permissions`, { permissions: DEFAULT_ROLE_PERMISSIONS.MANAGER });
+    await ceo.put(`/api/v1/roles/${managerRole.id}/permissions`, {
+      permissions: DEFAULT_ROLE_PERMISSIONS.MANAGER,
+    });
     expect((await manager.get('/api/v1/users')).status).toBe(403);
 
     const logs = await prisma.auditLog.findMany({
@@ -43,7 +48,9 @@ describe('roles', () => {
     const ceo = await Client.login(app, 'ceo@test.uz');
     const roles = await ceo.get('/api/v1/roles');
     const ceoRole = roles.body.find((r: { code: string }) => r.code === 'CEO');
-    const res = await ceo.put(`/api/v1/roles/${ceoRole.id}/permissions`, { permissions: { 'lead.read': 'ALL' } });
+    const res = await ceo.put(`/api/v1/roles/${ceoRole.id}/permissions`, {
+      permissions: { 'lead.read': 'ALL' },
+    });
     expect(res.status).toBe(422);
   });
 });

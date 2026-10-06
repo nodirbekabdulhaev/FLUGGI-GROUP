@@ -1,0 +1,86 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  TZ: Asia/Tashkent
+  DATABASE_URL: postgresql://fluggi:fluggi@localhost:5432/fluggi?schema=public
+  TEST_DATABASE_URL: postgresql://fluggi:fluggi@localhost:5432/fluggi_test?schema=public
+  AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-0000
+  APP_URL: http://localhost:3000
+  API_INTERNAL_URL: http://localhost:4000
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fluggi
+          POSTGRES_PASSWORD: fluggi
+          POSTGRES_DB: fluggi
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U fluggi" --health-interval 5s --health-timeout 5s --health-retries 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Create test database
+        run: PGPASSWORD=fluggi psql -h localhost -U fluggi -c 'CREATE DATABASE fluggi_test'
+      - run: pnpm --filter @fluggi/api exec vitest run --project integration --no-file-parallelism
+      - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: check
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: fluggi
+          POSTGRES_PASSWORD: fluggi
+          POSTGRES_DB: fluggi
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U fluggi" --health-interval 5s --health-timeout 5s --health-retries 10
+    env:
+      SEED_DEMO: 'true'
+      SEED_DEMO_PASSWORD: E2eDemoPass2026
+      RATE_LIMIT_DISABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @fluggi/db exec prisma migrate deploy
+      - run: pnpm --filter @fluggi/db exec tsx prisma/seed.ts
+      - name: Start API and web
+        run: |
+          (cd apps/api && NODE_ENV=production node dist/main.js > ../../api.log 2>&1 &)
+          (cd apps/web && NODE_ENV=production pnpm start > ../../web.log 2>&1 &)
+          npx wait-on -t 60000 http://localhost:4000/api/v1/health http://localhost:3000/login
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - if: failure()
+        run: tail -n 200 api.log web.log

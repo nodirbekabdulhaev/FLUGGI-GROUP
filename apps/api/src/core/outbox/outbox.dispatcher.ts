@@ -33,7 +33,14 @@ export class OutboxDispatcher {
     return this.prisma.$transaction(
       async (tx) => {
         const rows = await tx.$queryRaw<
-          { id: string; type: string; payload: unknown; actor_id: string | null; created_at: Date; attempts: number }[]
+          {
+            id: string;
+            type: string;
+            payload: unknown;
+            actor_id: string | null;
+            created_at: Date;
+            attempts: number;
+          }[]
         >`
           SELECT id, type, payload, actor_id, created_at, attempts
           FROM outbox_events
@@ -59,7 +66,10 @@ export class OutboxDispatcher {
           } catch (err) {
             const attempts = row.attempts + 1;
             const delayMs = Math.min(2 ** attempts * 1000, 60 * 60 * 1000);
-            this.logger.warn({ err, eventId: row.id, type: row.type, attempts }, 'Outbox handler failed');
+            this.logger.warn(
+              { err, eventId: row.id, type: row.type, attempts },
+              'Outbox handler failed',
+            );
             await tx.outboxEvent.update({
               where: { id: row.id },
               data: {

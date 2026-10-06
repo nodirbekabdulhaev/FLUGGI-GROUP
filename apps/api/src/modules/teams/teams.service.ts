@@ -49,7 +49,8 @@ export class TeamsService {
       const team = await tx.team.create({
         data: { name: input.name, headId: input.headId ?? null },
       });
-      if (input.headId) await tx.user.update({ where: { id: input.headId }, data: { teamId: team.id } });
+      if (input.headId)
+        await tx.user.update({ where: { id: input.headId }, data: { teamId: team.id } });
       await this.audit.log(tx, {
         actorId: auth.userId,
         action: 'team.create',
@@ -58,7 +59,9 @@ export class TeamsService {
         changes: { name: { old: null, new: team.name }, headId: { old: null, new: team.headId } },
         meta,
       });
-      return toDto(await tx.team.findUniqueOrThrow({ where: { id: team.id }, include: teamInclude }));
+      return toDto(
+        await tx.team.findUniqueOrThrow({ where: { id: team.id }, include: teamInclude }),
+      );
     });
   }
 
@@ -107,7 +110,11 @@ export class TeamsService {
       // Soft delete: имя освобождается, история сохраняется.
       await tx.team.update({
         where: { id },
-        data: { deletedAt: new Date(), name: `${team.name} (удалён ${id.slice(0, 8)})`, headId: null },
+        data: {
+          deletedAt: new Date(),
+          name: `${team.name} (удалён ${id.slice(0, 8)})`,
+          headId: null,
+        },
       });
       await this.audit.log(tx, {
         actorId: auth.userId,

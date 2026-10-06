@@ -23,7 +23,9 @@ async function bootstrap() {
   // Подписчики событий регистрируются здесь по мере появления модулей
   // (уведомления — Phase 2, Telegram — Phase 7).
   dispatcher.on('user.created', async (payload, meta) => {
-    logger.log(`user.created ${payload.userId} (${payload.roleCode}) by ${meta.actorId ?? 'system'}`);
+    logger.log(
+      `user.created ${payload.userId} (${payload.roleCode}) by ${meta.actorId ?? 'system'}`,
+    );
   });
 
   let stopping = false;

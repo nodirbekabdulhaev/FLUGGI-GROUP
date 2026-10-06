@@ -6,7 +6,7 @@ export const paginationQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(100).default(25),
 });
-export type PaginationQuery = z.infer<typeof paginationQuerySchema>;
+export type PaginationQuery = z.output<typeof paginationQuerySchema>;
 
 export interface Paginated<T> {
   items: T[];
@@ -41,8 +41,3 @@ export interface ApiErrorBody {
     requestId?: string;
   };
 }
-
-/** Имена cookie/заголовков, общие для web и api. */
-export const SESSION_COOKIE = 'fluggi_session';
-export const CSRF_COOKIE = 'fluggi_csrf';
-export const CSRF_HEADER = 'x-csrf-token';

@@ -23,14 +23,20 @@ describe('teams — несколько отделов продаж', () => {
 
   it('руководителем может быть только РОП', async () => {
     const ceo = await Client.login(app, 'ceo@test.uz');
-    const res = await ceo.post('/api/v1/teams', { name: 'Отдел 3', headId: fixtures.users.manager.id });
+    const res = await ceo.post('/api/v1/teams', {
+      name: 'Отдел 3',
+      headId: fixtures.users.manager.id,
+    });
     expect(res.status).toBe(422);
   });
 
   it('нельзя удалить отдел с сотрудниками; пустой удаляется мягко', async () => {
     const ceo = await Client.login(app, 'ceo@test.uz');
     expect((await ceo.delete(`/api/v1/teams/${fixtures.teams.team1.id}`)).status).toBe(422);
-    await prisma.user.update({ where: { id: fixtures.users.otherManager.id }, data: { teamId: null } });
+    await prisma.user.update({
+      where: { id: fixtures.users.otherManager.id },
+      data: { teamId: null },
+    });
     expect((await ceo.delete(`/api/v1/teams/${fixtures.teams.team2.id}`)).status).toBe(204);
     const team = await prisma.team.findUniqueOrThrow({ where: { id: fixtures.teams.team2.id } });
     expect(team.deletedAt).not.toBeNull();

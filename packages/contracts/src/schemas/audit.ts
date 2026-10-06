@@ -8,7 +8,7 @@ export const auditListQuerySchema = paginationQuerySchema.extend({
   dateFrom: z.iso.datetime({ offset: true }).optional(),
   dateTo: z.iso.datetime({ offset: true }).optional(),
 });
-export type AuditListQuery = z.input<typeof auditListQuerySchema>;
+export type AuditListQuery = Partial<z.output<typeof auditListQuerySchema>>;
 
 export interface AuditChange {
   old: unknown;

@@ -77,10 +77,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       return this.simple(status, code, DEFAULT_MESSAGES[code] ?? exception.message, requestId);
     }
 
-    this.logger.error(
-      { err: exception, requestId },
-      `Unhandled error on ${req.method} ${req.url}`,
-    );
+    this.logger.error({ err: exception, requestId }, `Unhandled error on ${req.method} ${req.url}`);
     return this.simple(500, 'INTERNAL', DEFAULT_MESSAGES.INTERNAL!, requestId);
   }
 

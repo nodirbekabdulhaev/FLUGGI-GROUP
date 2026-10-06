@@ -27,8 +27,19 @@ const env = loadEnv();
         genReqId: (req) => (req.headers['x-request-id'] as string | undefined) ?? randomUUID(),
         redact: ['req.headers.cookie', 'req.headers["x-csrf-token"]', 'res.headers["set-cookie"]'],
         transport:
-          env.NODE_ENV === 'development' ? { target: 'pino-pretty', options: { singleLine: true } } : undefined,
+          env.NODE_ENV === 'development'
+            ? { target: 'pino-pretty', options: { singleLine: true } }
+            : undefined,
         autoLogging: { ignore: (req) => req.url === '/api/v1/health' },
+        // В лог — только необходимое: без cookie, заголовков и тел запросов.
+        serializers: {
+          req: (req: { id: string; method: string; url: string }) => ({
+            id: req.id,
+            method: req.method,
+            url: req.url,
+          }),
+          res: (res: { statusCode: number }) => ({ statusCode: res.statusCode }),
+        },
       },
     }),
     ThrottlerModule.forRoot({

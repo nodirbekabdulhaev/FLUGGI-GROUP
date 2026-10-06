@@ -63,13 +63,24 @@ describe('users — разграничение доступа на backend', () 
 
   it('HR создаёт сотрудников, но не может назначить роль CEO или изменить CEO', async () => {
     const hr = await Client.login(app, 'hr@test.uz');
-    const ok = await hr.post('/api/v1/users', { email: 'd@test.uz', fullName: 'Designer', roleCode: 'EXECUTOR', specialty: 'DESIGNER' });
+    const ok = await hr.post('/api/v1/users', {
+      email: 'd@test.uz',
+      fullName: 'Designer',
+      roleCode: 'EXECUTOR',
+      specialty: 'DESIGNER',
+    });
     expect(ok.status).toBe(201);
     expect(ok.body.user.specialty).toBe('DESIGNER');
 
-    const ceoRole = await hr.post('/api/v1/users', { email: 'c@test.uz', fullName: 'CEO 2', roleCode: 'CEO' });
+    const ceoRole = await hr.post('/api/v1/users', {
+      email: 'c@test.uz',
+      fullName: 'CEO 2',
+      roleCode: 'CEO',
+    });
     expect(ceoRole.status).toBe(403);
-    const editCeo = await hr.patch(`/api/v1/users/${fixtures.users.ceo.id}`, { fullName: 'Hacked' });
+    const editCeo = await hr.patch(`/api/v1/users/${fixtures.users.ceo.id}`, {
+      fullName: 'Hacked',
+    });
     expect(editCeo.status).toBe(403);
   });
 
@@ -107,7 +118,9 @@ describe('users — управление', () => {
 
   it('изменение пишет старое и новое значение в аудит', async () => {
     const ceo = await Client.login(app, 'ceo@test.uz');
-    await ceo.patch(`/api/v1/users/${fixtures.users.manager.id}`, { teamId: fixtures.teams.team2.id });
+    await ceo.patch(`/api/v1/users/${fixtures.users.manager.id}`, {
+      teamId: fixtures.teams.team2.id,
+    });
     const log = await prisma.auditLog.findFirstOrThrow({ where: { action: 'user.update' } });
     expect(log.changes).toEqual({
       teamId: { old: fixtures.teams.team1.id, new: fixtures.teams.team2.id },
@@ -116,7 +129,11 @@ describe('users — управление', () => {
 
   it('дубль email → 409', async () => {
     const ceo = await Client.login(app, 'ceo@test.uz');
-    const res = await ceo.post('/api/v1/users', { email: 'manager@test.uz', fullName: 'Dup', roleCode: 'MANAGER' });
+    const res = await ceo.post('/api/v1/users', {
+      email: 'manager@test.uz',
+      fullName: 'Dup',
+      roleCode: 'MANAGER',
+    });
     expect(res.status).toBe(409);
   });
 
@@ -132,7 +149,9 @@ describe('audit log', () => {
   it('записи нельзя изменить или удалить даже напрямую в БД', async () => {
     await Client.login(app, 'ceo@test.uz');
     const log = await prisma.auditLog.findFirstOrThrow();
-    await expect(prisma.auditLog.update({ where: { id: log.id }, data: { action: 'x' } })).rejects.toThrow();
+    await expect(
+      prisma.auditLog.update({ where: { id: log.id }, data: { action: 'x' } }),
+    ).rejects.toThrow();
     await expect(prisma.auditLog.delete({ where: { id: log.id } })).rejects.toThrow();
   });
 });

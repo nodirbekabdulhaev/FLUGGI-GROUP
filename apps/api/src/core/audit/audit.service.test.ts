@@ -5,7 +5,12 @@ describe('diffFields', () => {
   it('возвращает только изменившиеся поля', () => {
     const d = new Date('2026-10-06T10:00:00Z');
     expect(
-      diffFields({ a: 1, b: 'x', c: d, e: null }, { a: 1, b: 'y', c: d, e: undefined }, ['a', 'b', 'c', 'e']),
+      diffFields({ a: 1, b: 'x', c: d, e: null }, { a: 1, b: 'y', c: d, e: undefined }, [
+        'a',
+        'b',
+        'c',
+        'e',
+      ]),
     ).toEqual({ b: { old: 'x', new: 'y' } });
   });
   it('null если изменений нет', () => {

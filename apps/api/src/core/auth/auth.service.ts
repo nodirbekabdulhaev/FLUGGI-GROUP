@@ -59,7 +59,10 @@ export class AuthService {
     }
 
     if (usable.status !== 'ACTIVE') {
-      throw new AppException('FORBIDDEN', 'Учётная запись заблокирована. Обратитесь к администратору');
+      throw new AppException(
+        'FORBIDDEN',
+        'Учётная запись заблокирована. Обратитесь к администратору',
+      );
     }
 
     return this.prisma.$transaction(async (tx) => {

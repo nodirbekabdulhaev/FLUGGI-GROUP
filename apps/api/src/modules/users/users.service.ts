@@ -83,7 +83,11 @@ export class UsersService {
     return toUserDto(user);
   }
 
-  async create(auth: AuthContext, input: CreateUser, meta: RequestMeta): Promise<CreateUserResponse> {
+  async create(
+    auth: AuthContext,
+    input: CreateUser,
+    meta: RequestMeta,
+  ): Promise<CreateUserResponse> {
     this.assertCanAssignRole(auth, input.roleCode);
     if (await this.prisma.user.findUnique({ where: { email: input.email } })) {
       throw conflict('Сотрудник с таким email уже существует');
@@ -137,7 +141,12 @@ export class UsersService {
     return { user: toUserDto(user), temporaryPassword };
   }
 
-  async update(auth: AuthContext, id: string, input: UpdateUser, meta: RequestMeta): Promise<UserDto> {
+  async update(
+    auth: AuthContext,
+    id: string,
+    input: UpdateUser,
+    meta: RequestMeta,
+  ): Promise<UserDto> {
     const before = await this.findManageable(auth, id);
     const newRole = input.roleCode ?? before.role.code;
 
@@ -162,10 +171,11 @@ export class UsersService {
     const specialty =
       newRole === 'EXECUTOR'
         ? input.specialty === undefined
-          ? before.employee?.specialty ?? null
+          ? (before.employee?.specialty ?? null)
           : input.specialty
         : null;
-    const position = input.position === undefined ? before.employee?.position ?? null : input.position;
+    const position =
+      input.position === undefined ? (before.employee?.position ?? null) : input.position;
 
     return this.prisma.$transaction(async (tx) => {
       const updated = await tx.user.update({
@@ -234,7 +244,12 @@ export class UsersService {
     });
   }
 
-  async setBlocked(auth: AuthContext, id: string, blocked: boolean, meta: RequestMeta): Promise<UserDto> {
+  async setBlocked(
+    auth: AuthContext,
+    id: string,
+    blocked: boolean,
+    meta: RequestMeta,
+  ): Promise<UserDto> {
     if (id === auth.userId) throw businessRule('Нельзя заблокировать собственную учётную запись');
     const before = await this.findManageable(auth, id);
     if (blocked && before.role.code === 'CEO') await this.assertNotLastCeo(id);
@@ -307,7 +322,8 @@ export class UsersService {
 
   private async assertTeamExists(teamId: string, tx: Tx = this.prisma) {
     const team = await tx.team.findFirst({ where: { id: teamId, deletedAt: null } });
-    if (!team) throw businessRule('Отдел не найден', [{ path: 'teamId', message: 'Отдел не найден' }]);
+    if (!team)
+      throw businessRule('Отдел не найден', [{ path: 'teamId', message: 'Отдел не найден' }]);
   }
 
   private async assertNotLastCeo(userId: string) {

@@ -1,7 +1,8 @@
 # Fluggi OS — Структура API (предложение)
 
-> Статус: **черновик на согласование**. Схемы запросов/ответов будут лежать в
-> `packages/contracts` (Zod) и использоваться и backend, и frontend.
+> Статус: **согласовано**. Схемы запросов/ответов — в `packages/contracts` (Zod), общие для backend и frontend.
+>
+> ✅ **Реализовано в Phase 1:** `auth/*` (login, logout, me, change-password, sessions), `users` (список, карточка, создание, изменение, block/unblock, reset-password), `teams` (CRUD, soft delete), `roles` (список, каталог прав, изменение прав), `audit-logs`, `health`, `ready`. Остальные endpoint'ы ниже — план следующих фаз.
 
 ## 1. Соглашения
 
@@ -40,9 +41,9 @@ GET    /me/notification-settings    PUT /me/notification-settings
 ### Команда и доступ
 ```
 GET/POST        /users              GET/PATCH /users/:id       POST /users/:id/block|unblock|reset-password
-GET/POST        /teams              PATCH /teams/:id
+GET/POST        /teams              PATCH/DELETE /teams/:id
 GET/PATCH       /employees/:userId  (HR-данные)
-GET             /roles              PUT /roles/:id/permissions
+GET             /roles              GET /roles/permissions     PUT /roles/:id/permissions
 ```
 
 ### CRM

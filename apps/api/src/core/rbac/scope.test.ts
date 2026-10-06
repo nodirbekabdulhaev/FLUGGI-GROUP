@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { AuthContext } from '../auth/auth-context';
-import { scopeWhere } from './scope';
+import { scopeWhere, type OwnershipFields } from './scope';
 
 const base: AuthContext = {
   sessionId: 's',
@@ -17,22 +17,28 @@ const base: AuthContext = {
   telegramLinked: false,
 };
 
-const fields = {
+const fields: OwnershipFields<Record<string, unknown>> = {
   own: (userId: string) => ({ ownerId: userId }),
   team: (teamIds: string[]) => ({ teamId: { in: teamIds } }),
 };
 
 describe('scopeWhere', () => {
   it('ALL — без ограничений', () => {
-    expect(scopeWhere({ ...base, permissions: { 'lead.read': 'ALL' } }, 'lead.read', fields)).toEqual({});
+    expect(
+      scopeWhere({ ...base, permissions: { 'lead.read': 'ALL' } }, 'lead.read', fields),
+    ).toEqual({});
   });
   it('TEAM — отделы руководителя без дублей', () => {
-    expect(scopeWhere({ ...base, permissions: { 'lead.read': 'TEAM' } }, 'lead.read', fields)).toEqual({
+    expect(
+      scopeWhere({ ...base, permissions: { 'lead.read': 'TEAM' } }, 'lead.read', fields),
+    ).toEqual({
       teamId: { in: ['t1', 't2'] },
     });
   });
   it('OWN — только свои', () => {
-    expect(scopeWhere({ ...base, permissions: { 'lead.read': 'OWN' } }, 'lead.read', fields)).toEqual({
+    expect(
+      scopeWhere({ ...base, permissions: { 'lead.read': 'OWN' } }, 'lead.read', fields),
+    ).toEqual({
       ownerId: 'u1',
     });
   });

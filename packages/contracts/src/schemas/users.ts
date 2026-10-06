@@ -57,7 +57,7 @@ export const userListQuerySchema = paginationQuerySchema.extend({
   teamId: z.uuid().optional(),
   status: z.enum(USER_STATUSES).optional(),
 });
-export type UserListQuery = z.input<typeof userListQuerySchema>;
+export type UserListQuery = Partial<z.output<typeof userListQuerySchema>>;
 
 export interface UserDto {
   id: string;

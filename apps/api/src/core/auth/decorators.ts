@@ -24,12 +24,13 @@ export const RequirePermission = (code: PermissionCode, minScope: Scope = 'OWN')
  */
 export const AuthenticatedOnly = () => SetMetadata(AUTHENTICATED_ONLY, true);
 
-export const CurrentUser = createParamDecorator((_: unknown, ctx: ExecutionContext): AuthContext => {
-  const req = ctx.switchToHttp().getRequest<AppRequest>();
-  return req.auth!;
-});
+export const CurrentUser = createParamDecorator(
+  (_: unknown, ctx: ExecutionContext): AuthContext => {
+    const req = ctx.switchToHttp().getRequest<AppRequest>();
+    return req.auth!;
+  },
+);
 
-export const ReqMeta = createParamDecorator(
-  (_: unknown, ctx: ExecutionContext): RequestMeta =>
-    requestMeta(ctx.switchToHttp().getRequest<AppRequest>()),
+export const ReqMeta = createParamDecorator((_: unknown, ctx: ExecutionContext): RequestMeta =>
+  requestMeta(ctx.switchToHttp().getRequest<AppRequest>()),
 );

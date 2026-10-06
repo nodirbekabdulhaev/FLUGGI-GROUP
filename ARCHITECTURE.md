@@ -1,7 +1,6 @@
 # Fluggi OS — Архитектура (предложение, этап 0)
 
-> Статус: **черновик на согласование** (ТЗ §88, шаг 2). Код ещё не пишется.
-> После подтверждения начинается Phase 1 — Foundation.
+> Статус: **согласовано 06.10.2026**. Phase 1 — Foundation реализована (см. §12).
 
 Связанные документы:
 [DATABASE.md](DATABASE.md) · [API.md](API.md) · [docs/PERMISSIONS.md](docs/PERMISSIONS.md) · [docs/BUSINESS_RULES.md](docs/BUSINESS_RULES.md)
@@ -305,3 +304,29 @@ Telegram-уведомления входят в MVP; технически кан
 6. **Хостинг** — Beget. Требуется **Beget VPS / Cloud** (Ubuntu + Docker): Node.js-процессы и PostgreSQL на виртуальном хостинге Beget не запускаются. Файлы — Beget S3 (S3-совместимое). Подробности — DEPLOYMENT.md. ✅
 
 Версии зафиксированы на стабильных ветках с долгой поддержкой: Next.js 15.5, React 19.1, NestJS 11, Prisma 6, TypeScript 5.9.
+
+---
+
+## 12. Phase 1 — что реализовано
+
+| Область | Реализация |
+|---|---|
+| Монорепо | pnpm workspaces + Turborepo: `apps/api`, `apps/web`, `packages/contracts`, `packages/db` |
+| БД | Prisma-схема ядра, миграция `init`, триггер append-only для `audit_logs`, seed (роли, права, 2 отдела, 12 демо-сотрудников, первый CEO для prod) |
+| Аутентификация | argon2id, серверные сессии (в БД — только SHA-256 токена), httpOnly cookie, скользящий срок с продлением cookie, блокировка после 5 неудачных попыток на 15 мин, смена пароля с закрытием других сессий, список и завершение сеансов |
+| CSRF | проверка `Origin` + double-submit токен (`X-CSRF-Token`) + `SameSite=Lax` |
+| RBAC | права из БД с областью OWN/TEAM/ALL; глобальный `PermissionGuard` по принципу default deny (endpoint без объявленных требований недоступен; тест проверяет все endpoint'ы); `scopeWhere()` ограничивает выборки в репозиториях |
+| Сотрудники / отделы / роли | CRUD сотрудников (временный пароль показывается один раз), блокировка, сброс пароля, несколько отделов с РОП, редактор прав ролей; защита: только CEO управляет CEO, нельзя заблокировать себя и последнего CEO, нельзя снять роль с РОП, руководящего отделом |
+| Аудит | `AuditService` пишет «кто / что / когда / старое → новое / IP / сессия» в той же транзакции, что и изменение |
+| События | `OutboxService.publish()` в транзакции; worker доставляет события через `FOR UPDATE SKIP LOCKED` с повторами |
+| Ошибки | единый формат `{error:{code,message,details,requestId}}`, stack trace только в логах |
+| Интерфейс | вход, layout с sidebar / мобильным drawer, меню по правам роли, глобальный период CEO, Dashboard, Команда (4 представления), Настройки (отделы, роли и права, журнал аудита), Профиль; состояния loading / error / empty, блокировка кнопок при отправке |
+| i18n | next-intl: ru — полностью, uz/en — каркас с откатом на ru |
+| Тесты | unit (contracts, api), интеграционные на реальной PostgreSQL, E2E Playwright (desktop + mobile) |
+| CI | GitHub Actions: lint, typecheck, unit, integration, build, E2E |
+
+### Отклонения от плана
+- **pg-boss** перенесён в Phase 7 (там появятся cron-задачи). Для доставки событий сейчас достаточно outbox-worker'а на PostgreSQL (`SKIP LOCKED`) — без новой зависимости.
+- **Idempotency-Key** на create-запросах вводится в Phase 2 вместе с лидами/сделками. В Phase 1 дубли исключены уникальностью email/названия отдела и блокировкой кнопок.
+- Таблицы `settings` и `files` перенесены в Phase 2 — в Phase 1 им нечего хранить.
+- ESLint пока не подключён; `pnpm lint` проверяет форматирование Prettier, типы проверяет `pnpm typecheck`.

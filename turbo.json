@@ -1,7 +1,17 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "agentGuidance": false,
   "globalEnv": ["NODE_ENV"],
-  "globalPassThroughEnv": ["DATABASE_URL", "TEST_DATABASE_URL", "AUTH_SECRET", "API_INTERNAL_URL", "APP_URL", "PORT", "LOG_LEVEL", "TZ"],
+  "globalPassThroughEnv": [
+    "DATABASE_URL",
+    "TEST_DATABASE_URL",
+    "AUTH_SECRET",
+    "API_INTERNAL_URL",
+    "APP_URL",
+    "PORT",
+    "LOG_LEVEL",
+    "TZ"
+  ],
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
@@ -12,9 +22,18 @@
       "cache": false,
       "persistent": true
     },
-    "lint": { "dependsOn": ["^build"] },
-    "typecheck": { "dependsOn": ["^build"] },
-    "test": { "dependsOn": ["^build"] },
-    "test:integration": { "dependsOn": ["^build"], "cache": false }
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "typecheck": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "test:integration": {
+      "dependsOn": ["^build"],
+      "cache": false
+    }
   }
 }

@@ -1,0 +1,120 @@
+# Развёртывание (Beget)
+
+> **Важно.** Виртуальный (shared) хостинг Beget не подходит: на нём нельзя держать постоянно
+> работающие Node.js-процессы и PostgreSQL. Нужен **Beget VPS** (или Beget Cloud) с Ubuntu 22.04/24.04.
+> Рекомендуемый минимум: 2 vCPU, 4 ГБ RAM, 40 ГБ SSD.
+>
+> Статус: `Dockerfile` и `docker-compose.prod.yml` написаны, но сборка образа ещё не проверялась
+> (в среде разработки нет доступа к репозиториям Debian). Проверить при первом развёртывании.
+
+## Схема
+
+```
+Интернет → Nginx (443, TLS Let's Encrypt)
+              ├─ /api/*  → api:4000   (NestJS)
+              └─ /       → web:3000   (Next.js)
+           worker  — фоновые задачи (outbox, позже cron и Telegram)
+           postgres — данные (volume pgdata)
+```
+
+## 1. Подготовка сервера
+
+```bash
+# Docker
+curl -fsSL https://get.docker.com | sh
+# Nginx и certbot
+apt install -y nginx certbot python3-certbot-nginx
+```
+
+Направьте DNS-запись (например `crm.fluggi.uz`) на IP VPS в панели Beget.
+
+## 2. Код и переменные
+
+```bash
+git clone <repo> /opt/fluggi && cd /opt/fluggi
+cp .env.example .env
+```
+
+В `.env` для production:
+
+```env
+NODE_ENV=production
+APP_URL=https://crm.fluggi.uz
+AUTH_SECRET=<openssl rand -base64 48>
+POSTGRES_PASSWORD=<надёжный пароль>
+DATABASE_URL=postgresql://fluggi:<тот же пароль>@postgres:5432/fluggi?schema=public
+API_INTERNAL_URL=http://api:4000
+SEED_DEMO=false
+SEED_CEO_EMAIL=you@fluggi.uz
+SEED_CEO_PASSWORD=<временный пароль, сменить после входа>
+SEED_CEO_NAME=Ваше имя
+```
+
+## 3. Запуск
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Сервис `migrate` применяет миграции и seed (роли, права, первый CEO), затем стартуют `api`,
+`worker`, `web`. Порты 3000/4000 открыты только на `127.0.0.1`.
+
+После первого входа смените пароль CEO в профиле и удалите `SEED_CEO_PASSWORD` из `.env`.
+
+## 4. Nginx
+
+`/etc/nginx/sites-available/fluggi`:
+
+```nginx
+server {
+  server_name crm.fluggi.uz;
+  client_max_body_size 25m;
+
+  location /api/ {
+    proxy_pass http://127.0.0.1:4000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+
+  location / {
+    proxy_pass http://127.0.0.1:3000;
+    proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    proxy_set_header X-Forwarded-Proto $scheme;
+  }
+}
+```
+
+```bash
+ln -s /etc/nginx/sites-available/fluggi /etc/nginx/sites-enabled/
+nginx -t && systemctl reload nginx
+certbot --nginx -d crm.fluggi.uz
+```
+
+## 5. Обновление
+
+```bash
+cd /opt/fluggi && git pull
+docker compose -f docker-compose.prod.yml up -d --build
+```
+
+Миграции применяются автоматически сервисом `migrate`. Ручные изменения production-БД запрещены (ТЗ §67).
+
+## 6. Резервные копии
+
+Ежедневный дамп (cron на хосте):
+
+```bash
+0 3 * * * docker compose -f /opt/fluggi/docker-compose.prod.yml exec -T postgres \
+  pg_dump -U fluggi fluggi | gzip > /var/backups/fluggi-$(date +\%F).sql.gz
+```
+
+Копируйте дампы за пределы VPS (например в Beget S3).
+
+## 7. Проверка
+
+```bash
+curl https://crm.fluggi.uz/api/v1/ready   # {"status":"ok","database":"ok"}
+docker compose -f docker-compose.prod.yml logs -f api worker
+```

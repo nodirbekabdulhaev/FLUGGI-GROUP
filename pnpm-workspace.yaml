@@ -3,10 +3,10 @@ packages:
   - packages/*
 
 onlyBuiltDependencies:
-  - "@prisma/client"
-  - "@prisma/engines"
+  - '@prisma/client'
+  - '@prisma/engines'
   - prisma
-  - "@swc/core"
+  - '@swc/core'
   - esbuild
   - sharp
-  - "@nestjs/core"
+  - '@nestjs/core'

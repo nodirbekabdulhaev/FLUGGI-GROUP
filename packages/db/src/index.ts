@@ -10,10 +10,4 @@ export type {
   AuditLog,
   OutboxEvent,
 } from '@prisma/client';
-export {
-  RoleCode,
-  PermissionScope,
-  UserStatus,
-  Locale,
-  ExecutorSpecialty,
-} from '@prisma/client';
+export { RoleCode, PermissionScope, UserStatus, Locale, ExecutorSpecialty } from '@prisma/client';

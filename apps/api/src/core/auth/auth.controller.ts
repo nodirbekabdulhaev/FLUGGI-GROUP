@@ -37,9 +37,9 @@ export class AuthController {
     const { token, expiresAt } = await this.auth.login(body, meta);
     setSessionCookie(res, token, expiresAt);
     issueCsrfCookie(res);
-    const ctx = await this.sessions.resolve(token);
-    if (!ctx) throw new AppException('INTERNAL', 'Не удалось создать сессию');
-    return this.auth.toMe(ctx);
+    const resolved = await this.sessions.resolve(token);
+    if (!resolved) throw new AppException('INTERNAL', 'Не удалось создать сессию');
+    return this.auth.toMe(resolved.auth);
   }
 
   @Post('logout')

@@ -4,7 +4,7 @@ import { CSRF_COOKIE, SESSION_COOKIE } from '@fluggi/contracts';
 import type { Response } from 'express';
 import { AppException } from '../http/app.exception';
 import type { AppRequest } from './auth-context';
-import { issueCsrfCookie } from './cookies';
+import { issueCsrfCookie, setSessionCookie } from './cookies';
 import { IS_PUBLIC } from './decorators';
 import { SessionService } from './session.service';
 
@@ -23,10 +23,15 @@ export class SessionGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    const res = context.switchToHttp().getResponse<Response>();
     const token: unknown = req.cookies?.[SESSION_COOKIE];
     if (typeof token === 'string' && token.length > 0 && token.length < 200) {
-      const auth = await this.sessions.resolve(token);
-      if (auth) req.auth = auth;
+      const resolved = await this.sessions.resolve(token);
+      if (resolved) {
+        req.auth = resolved.auth;
+        // Скользящая сессия: продлеваем и cookie, иначе браузер удалит её по старому сроку.
+        if (resolved.renewedUntil) setSessionCookie(res, token, resolved.renewedUntil);
+      }
     }
 
     if (isPublic) return true;
@@ -34,8 +39,7 @@ export class SessionGuard implements CanActivate {
 
     // Гарантируем наличие CSRF-cookie у вошедшего пользователя.
     if (!req.cookies?.[CSRF_COOKIE]) {
-      const token = issueCsrfCookie(context.switchToHttp().getResponse<Response>());
-      req.cookies[CSRF_COOKIE] = token;
+      req.cookies[CSRF_COOKIE] = issueCsrfCookie(res);
     }
     return true;
   }

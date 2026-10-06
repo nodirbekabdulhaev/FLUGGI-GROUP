@@ -1,4 +1,10 @@
-import { CSRF_COOKIE, CSRF_HEADER, DEFAULT_ROLE_PERMISSIONS, PERMISSIONS, PERMISSION_CODES } from '@fluggi/contracts';
+import {
+  CSRF_COOKIE,
+  CSRF_HEADER,
+  DEFAULT_ROLE_PERMISSIONS,
+  PERMISSIONS,
+  PERMISSION_CODES,
+} from '@fluggi/contracts';
 import type { RoleCode } from '@fluggi/contracts';
 import { hash } from '@node-rs/argon2';
 import type { INestApplication } from '@nestjs/common';
@@ -22,7 +28,11 @@ export async function resetDatabase(prisma: PrismaService) {
     'TRUNCATE audit_logs, outbox_events, sessions, employees, users, teams, role_permissions, permissions, roles RESTART IDENTITY CASCADE',
   );
   await prisma.permission.createMany({
-    data: PERMISSION_CODES.map((code) => ({ code, description: PERMISSIONS[code], module: code.split('.')[0]! })),
+    data: PERMISSION_CODES.map((code) => ({
+      code,
+      description: PERMISSIONS[code],
+      module: code.split('.')[0]!,
+    })),
   });
   const perms = new Map((await prisma.permission.findMany()).map((p) => [p.code, p.id]));
   for (const code of Object.keys(DEFAULT_ROLE_PERMISSIONS) as RoleCode[]) {
@@ -42,7 +52,14 @@ export async function resetDatabase(prisma: PrismaService) {
   const mk = async (email: string, roleCode: RoleCode, teamId?: string) => {
     const role = await prisma.role.findUniqueOrThrow({ where: { code: roleCode } });
     return prisma.user.create({
-      data: { email, fullName: email.split('@')[0]!, passwordHash: cachedHash!, roleId: role.id, teamId, employee: { create: {} } },
+      data: {
+        email,
+        fullName: email.split('@')[0]!,
+        passwordHash: cachedHash!,
+        roleId: role.id,
+        teamId,
+        employee: { create: {} },
+      },
     });
   };
   const users = {
@@ -66,7 +83,8 @@ export class Client {
   static async login(app: INestApplication, email: string, password = TEST_PASSWORD) {
     const client = new Client(app);
     const res = await client.post('/api/v1/auth/login', { email, password });
-    if (res.status !== 200) throw new Error(`login ${email} failed: ${res.status} ${JSON.stringify(res.body)}`);
+    if (res.status !== 200)
+      throw new Error(`login ${email} failed: ${res.status} ${JSON.stringify(res.body)}`);
     return client;
   }
 
@@ -87,10 +105,17 @@ export class Client {
   }
 
   async get(url: string) {
-    return this.store(await request(this.app.getHttpServer()).get(url).set('Cookie', this.cookieHeader()));
+    return this.store(
+      await request(this.app.getHttpServer()).get(url).set('Cookie', this.cookieHeader()),
+    );
   }
 
-  async send(method: 'post' | 'patch' | 'put' | 'delete', url: string, body?: object, opts: { csrf?: boolean } = {}) {
+  async send(
+    method: 'post' | 'patch' | 'put' | 'delete',
+    url: string,
+    body?: object,
+    opts: { csrf?: boolean } = {},
+  ) {
     let req = request(this.app.getHttpServer())[method](url).set('Cookie', this.cookieHeader());
     const csrf = this.cookies.get(CSRF_COOKIE);
     if (csrf && opts.csrf !== false) req = req.set(CSRF_HEADER, csrf);

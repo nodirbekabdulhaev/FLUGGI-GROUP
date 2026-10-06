@@ -32,7 +32,10 @@ describe('auth', () => {
       .post('/api/v1/auth/login')
       .send({ email: 'manager@test.uz', password: 'wrong-password' });
     expect(res.status).toBe(401);
-    expect(res.body.error).toMatchObject({ code: 'UNAUTHENTICATED', message: 'Неверный email или пароль' });
+    expect(res.body.error).toMatchObject({
+      code: 'UNAUTHENTICATED',
+      message: 'Неверный email или пароль',
+    });
     expect(JSON.stringify(res.body)).not.toMatch(/stack|prisma/i);
   });
 

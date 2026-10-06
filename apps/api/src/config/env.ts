@@ -9,7 +9,7 @@ const envSchema = z.object({
   SESSION_TTL_DAYS: z.coerce.number().int().min(1).max(90).default(7),
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
   /** Значение для express `trust proxy` (за Nginx / Next.js rewrite). */
-  TRUST_PROXY: z.string().default('loopback'),
+  TRUST_PROXY: z.string().default('loopback, linklocal, uniquelocal'),
   /** Отключает rate limit (только для тестов). */
   RATE_LIMIT_DISABLED: z
     .enum(['true', 'false'])

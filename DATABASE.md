@@ -1,7 +1,7 @@
 # Fluggi OS — Схема базы данных (предложение)
 
-> Статус: **черновик на согласование**. В Phase 1 эта схема превращается в
-> `packages/db/prisma/schema.prisma` + первую миграцию. Поля могут уточняться.
+> Статус: **согласовано**. Реализованные таблицы — в `packages/db/prisma/schema.prisma`;
+> каждая следующая фаза добавляет свои таблицы новой миграцией. Поля могут уточняться.
 
 ## 1. Соглашения
 
@@ -193,7 +193,7 @@ erDiagram
 
 **outbox_events** — `id, type, payload jsonb, actor_id, created_at, processed_at, attempts, last_error`
 
-**audit_logs** (§45) — `id, actor_id, action, entity_type, entity_id, changes jsonb ({field:{old,new}}), ip, user_agent, session_id, created_at` — append-only, роль БД приложения имеет только `INSERT, SELECT`
+**audit_logs** (§45) — `id, actor_id, action, entity_type, entity_id, changes jsonb ({field:{old,new}}), ip, user_agent, session_id, created_at` — append-only: `UPDATE`/`DELETE` запрещены триггером `audit_logs_no_update_delete` (миграция `init`)
 
 **files** (§52) — `id, storage_key, original_name, mime_type, size_bytes, checksum, category (PROPOSAL|CONTRACT|PHOTO|VIDEO|DESIGN|DOCUMENT|OTHER), uploaded_by, lead_id, deal_id, client_id, project_id, task_id, contract_id, proposal_id, expense_id, created_at, deleted_at`
 
@@ -201,8 +201,8 @@ erDiagram
 
 | Фаза | Таблицы |
 |---|---|
-| 1 | users, roles, permissions, role_permissions, teams, employees, sessions, settings, audit_logs, outbox_events, files |
-| 2 | services, lead_sources, loss_reasons, deal_stages, leads, clients, contacts, deals, stage_history, activities, comments, meetings, notifications, notification_settings |
+| 1 ✅ | users, roles, permissions, role_permissions, teams, employees, sessions, audit_logs, outbox_events |
+| 2 | settings, files, services, lead_sources, loss_reasons, deal_stages, leads, clients, contacts, deals, stage_history, activities, comments, meetings, notifications, notification_settings |
 | 3 | proposals, proposal_items, proposal_versions, contracts, payments, exchange_rates, proposal/contract_templates |
 | 4 | projects, project_members, tasks, task_status_history, task_comments, project/task_templates |
 | 5 | expenses, commission_rules, commissions |

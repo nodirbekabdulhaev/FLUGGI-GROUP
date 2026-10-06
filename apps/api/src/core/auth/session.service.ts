@@ -26,13 +26,22 @@ export class SessionService {
     const token = randomBytes(32).toString('base64url');
     const expiresAt = new Date(Date.now() + this.ttlMs());
     const session = await tx.session.create({
-      data: { userId, tokenHash: hashToken(token), ip: meta.ip, userAgent: meta.userAgent, expiresAt },
+      data: {
+        userId,
+        tokenHash: hashToken(token),
+        ip: meta.ip,
+        userAgent: meta.userAgent,
+        expiresAt,
+      },
     });
     return { token, sessionId: session.id, expiresAt };
   }
 
-  /** Проверяет токен cookie и возвращает контекст пользователя или null. */
-  async resolve(token: string): Promise<AuthContext | null> {
+  /**
+   * Проверяет токен cookie и возвращает контекст пользователя или null.
+   * `renewedUntil` — новый срок, если скользящая сессия была продлена (нужно обновить cookie).
+   */
+  async resolve(token: string): Promise<{ auth: AuthContext; renewedUntil?: Date } | null> {
     const session = await this.prisma.session.findUnique({
       where: { tokenHash: hashToken(token) },
       include: {
@@ -50,10 +59,12 @@ export class SessionService {
     const { user } = session;
     if (user.status !== 'ACTIVE' || user.deletedAt) return null;
 
+    let renewedUntil: Date | undefined;
     if (now.getTime() - session.lastSeenAt.getTime() > TOUCH_INTERVAL_MS) {
+      renewedUntil = new Date(now.getTime() + this.ttlMs());
       await this.prisma.session.update({
         where: { id: session.id },
-        data: { lastSeenAt: now, expiresAt: new Date(now.getTime() + this.ttlMs()) },
+        data: { lastSeenAt: now, expiresAt: renewedUntil },
       });
     }
 
@@ -62,7 +73,7 @@ export class SessionService {
       (permissions as Record<string, string>)[rp.permission.code] = rp.scope;
     }
 
-    return {
+    const auth: AuthContext = {
       sessionId: session.id,
       userId: user.id,
       email: user.email,
@@ -76,6 +87,7 @@ export class SessionService {
       permissions,
       telegramLinked: user.telegramChatId !== null,
     };
+    return { auth, renewedUntil };
   }
 
   revoke(sessionId: string, tx: Tx = this.prisma) {
@@ -87,7 +99,11 @@ export class SessionService {
 
   revokeAllForUser(userId: string, exceptSessionId?: string, tx: Tx = this.prisma) {
     return tx.session.updateMany({
-      where: { userId, revokedAt: null, ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}) },
+      where: {
+        userId,
+        revokedAt: null,
+        ...(exceptSessionId ? { id: { not: exceptSessionId } } : {}),
+      },
       data: { revokedAt: new Date() },
     });
   }

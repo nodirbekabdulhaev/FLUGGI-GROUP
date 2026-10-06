@@ -18,7 +18,8 @@ describe('DEFAULT_ROLE_PERMISSIONS', () => {
 
   it('CEO имеет все права со scope ALL', () => {
     for (const code of PERMISSION_CODES) expect(DEFAULT_ROLE_PERMISSIONS.CEO[code]).toBe('ALL');
-    for (const code of CEO_LOCKED_PERMISSIONS) expect(DEFAULT_ROLE_PERMISSIONS.CEO[code]).toBe('ALL');
+    for (const code of CEO_LOCKED_PERMISSIONS)
+      expect(DEFAULT_ROLE_PERMISSIONS.CEO[code]).toBe('ALL');
   });
 
   it('финансы компании и зарплаты всех — только у CEO', () => {
