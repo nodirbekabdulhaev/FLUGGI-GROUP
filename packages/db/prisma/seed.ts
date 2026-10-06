@@ -20,6 +20,12 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/** Пустая строка в .env (`SEED_DEMO=`) считается «не задано». */
+function env(name: string): string | undefined {
+  const value = process.env[name]?.trim();
+  return value ? value : undefined;
+}
+
 const ROLE_NAMES: Record<RoleCode, string> = {
   CEO: 'CEO / Владелец',
   ROP: 'Руководитель отдела продаж',
@@ -98,11 +104,11 @@ async function upsertUser(u: SeedUser, password: string, teamIds: Map<string, st
 }
 
 async function seedInitialCeo() {
-  const email = process.env.SEED_CEO_EMAIL?.trim().toLowerCase();
-  const password = process.env.SEED_CEO_PASSWORD;
+  const email = env('SEED_CEO_EMAIL')?.toLowerCase();
+  const password = env('SEED_CEO_PASSWORD');
   if (!email || !password) return;
   const { created } = await upsertUser(
-    { email, fullName: process.env.SEED_CEO_NAME ?? 'CEO', role: 'CEO', position: 'CEO' },
+    { email, fullName: env('SEED_CEO_NAME') ?? 'CEO', role: 'CEO', position: 'CEO' },
     password,
     new Map(),
   );
@@ -198,7 +204,7 @@ async function seedDemo() {
     teamIds.set(name, team.id);
   }
 
-  const sharedPassword = process.env.SEED_DEMO_PASSWORD;
+  const sharedPassword = env('SEED_DEMO_PASSWORD');
   const credentials: { email: string; role: RoleCode; password: string }[] = [];
   for (const u of DEMO_USERS) {
     const password = sharedPassword ?? generatePassword();
@@ -221,7 +227,7 @@ async function seedDemo() {
 async function main() {
   await seedRolesAndPermissions();
   await seedInitialCeo();
-  const demo = process.env.SEED_DEMO ?? (process.env.NODE_ENV === 'production' ? 'false' : 'true');
+  const demo = env('SEED_DEMO') ?? (process.env.NODE_ENV === 'production' ? 'false' : 'true');
   if (demo === 'true') await seedDemo();
 }
 
