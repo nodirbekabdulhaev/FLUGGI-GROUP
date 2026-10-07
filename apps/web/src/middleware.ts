@@ -17,5 +17,6 @@ export function middleware(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/((?!api|login|_next|favicon.ico|.*\\..*).*)'],
+  // /f/* — публичная форма заявки для сайта (без входа)
+  matcher: ['/((?!api|login|f/|_next|favicon.ico|.*\\..*).*)'],
 };

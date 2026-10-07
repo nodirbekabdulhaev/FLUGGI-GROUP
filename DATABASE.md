@@ -226,6 +226,8 @@ erDiagram
 | `project_cost_lines` | План себестоимости проекта: PLANNED → ACCRUED (расход) / CANCELLED |
 | `directions`, `user_directions` | Направления бизнеса (IT, Медиа, Маркетинг) и зона ответственности проект-менеджера |
 | `services.direction_id`, `projects.direction_id` | Направление услуги; проекту — из услуги сделки при создании |
+| `lead_forms`, `form_submissions` | Формы для сайта и журнал заявок (лид / дубль / спам, UTM, страница) |
+| `social_threads`, `social_messages` | Переписки Instagram/Facebook: Директ и комментарии, ответственный, связь с лидом |
 | `employees.kpi_bonus_target` | KPI-бонус при 100% выполнения: бонус месяца = сумма × KPI% (до 120%) |
 | `clients.requisites` (JSONB) | Реквизиты клиента для договора |
 | `settings['documents']` | Город, текст договора, вступление и примечание КП |

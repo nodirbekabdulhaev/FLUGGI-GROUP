@@ -114,9 +114,9 @@ test('пакет для бухгалтера: реквизиты и скачив
   await ceo.getByRole('link', { name: 'Скачать Excel' }).click();
   expect((await download).suggestedFilename()).toMatch(/^fluggi-buhgalter-\d{4}\.xlsx$/);
 
-  // РОП кнопки не видит
+  // РОП финансы компании не видит вовсе
   const rop = await login(browser, 'rop@fluggi.demo');
   await rop.goto('/finance/revenue');
-  await expect(rop.getByRole('heading').first()).toBeVisible();
+  await expect(rop.getByText('Нет доступа')).toBeVisible();
   await expect(rop.getByRole('button', { name: 'Пакет для бухгалтера' })).toHaveCount(0);
 });

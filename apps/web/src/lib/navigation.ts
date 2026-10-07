@@ -1,5 +1,6 @@
 import { hasPermission, type PermissionCode, type PermissionMap } from '@fluggi/contracts';
 import {
+  AtSign,
   BarChart3,
   ListChecks,
   Bell,
@@ -52,6 +53,7 @@ export const NAVIGATION: NavSection[] = [
     ],
   },
   { key: 'clients', href: '/clients', icon: Briefcase, anyOf: ['client.read'] },
+  { key: 'inbox', href: '/inbox', icon: AtSign, anyOf: ['lead.read'] },
   {
     key: 'projects',
     href: '/projects',

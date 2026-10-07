@@ -192,6 +192,20 @@ POST /recurring-todos/tax-calendar   — только CEO; регулярные 
 POST/PUT /proposals         — позиция с тарифом: цену и скидку меняет только proposal.approve (РОП/CEO)
 ```
 
+### Интеграции: формы сайта, Instagram, таргет
+```
+GET/POST /lead-forms   PUT/DELETE /lead-forms/:id   GET /lead-forms/:id/submissions   (settings.manage ALL)
+GET/PUT  /settings/integrations   GET /integrations/meta   (settings.manage ALL)
+GET  /public/forms/:key           → форма для посетителя (без входа, CORS *)
+POST /public/forms/:key           { data, utm?, page?, website?, renderedAt? } или плоская HTML-форма / webhook плагина
+GET  /public/meta/webhook         ?hub.mode&hub.verify_token&hub.challenge — подключение webhook
+POST /public/meta/webhook         Instagram messages/comments, Page feed/leadgen; подпись X-Hub-Signature-256
+GET  /inbox ?channel&unread&page  GET /inbox/:id/messages   (lead.read; видимость как у лидов)
+POST /inbox/:id/reply { text, commentId?, mode: public|private }   (lead.update)
+POST /inbox/:id/lead  — создать лид из переписки   (lead.create)
+POST /client-errors   — ошибка виджета интерфейса в лог API
+```
+
 ### Прочее
 ```
 POST /client-errors   { widget, message, stack?, path?, userAgent? } — ошибка виджета интерфейса → лог API (WARN ClientError)

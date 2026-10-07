@@ -105,23 +105,26 @@ test('финансы: оплата, расходы проекта, дашбор�
   await expect(manager.getByText('Оплата изменена')).toBeVisible();
   await expect(manager.getByText('1 000 000 UZS').first()).toBeVisible();
 
-  // РОП: расход проекта во вкладке «Финансы»
-  await rop.goto(`/projects/${projectId}?tab=finance`);
-  await expect(rop.getByText('Стоимость проекта')).toBeVisible();
-  await rop.getByRole('button', { name: 'Новый расход' }).click();
-  const exp = rop.getByRole('dialog');
+  // Финансы проекта — только CEO: у РОП вкладки нет, CEO вносит расход
+  const ceo = await login(browser, 'ceo@fluggi.demo');
+  await rop.goto(`/projects/${projectId}`);
+  await expect(rop.getByRole('tab', { name: /Задачи/ })).toBeVisible();
+  await expect(rop.getByRole('tab', { name: 'Финансы' })).toHaveCount(0);
+  await ceo.goto(`/projects/${projectId}?tab=finance`);
+  await expect(ceo.getByText('Стоимость проекта')).toBeVisible();
+  await ceo.getByRole('button', { name: 'Новый расход' }).click();
+  const exp = ceo.getByRole('dialog');
   await exp.getByLabel('Сумма').pressSequentially('2500000');
   await exp.getByLabel('Категория').selectOption('DESIGN');
   await exp.getByRole('button', { name: 'Новый расход' }).click();
-  await expect(rop.getByText('Расход добавлен')).toBeVisible();
-  await expect(rop.getByRole('cell', { name: /2 500 000 UZS/ })).toBeVisible();
+  await expect(ceo.getByText('Расход добавлен')).toBeVisible();
+  await expect(ceo.getByRole('cell', { name: /2 500 000 UZS/ })).toBeVisible();
   // 7 000 000 − 2 500 000 = 4 500 000, маржа 64.29%
   // Валовая и чистая прибыль совпадают, пока нет накладных
-  await expect(rop.getByText('4 500 000 UZS').first()).toBeVisible();
-  await expect(rop.getByText('64.29%')).toBeVisible();
+  await expect(ceo.getByText('4 500 000 UZS').first()).toBeVisible();
+  await expect(ceo.getByText('64.29%')).toBeVisible();
 
   // CEO: дашборд, прибыль по проектам, утверждение комиссий
-  const ceo = await login(browser, 'ceo@fluggi.demo');
   await ceo.goto('/finance/revenue?period=month');
   await expect(ceo.getByRole('heading', { name: 'Финансовый обзор' })).toBeVisible();
   await expect(ceo.getByText('Операционная прибыль')).toBeVisible();

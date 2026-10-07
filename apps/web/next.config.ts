@@ -16,6 +16,9 @@ const csp = [
   "form-action 'self'",
 ].join('; ');
 
+// Форма заявки /f/* встраивается на сайт компании (iframe) — только её разрешено показывать в рамке
+const formCsp = csp.replace("frame-ancestors 'none'", 'frame-ancestors *');
+
 const config: NextConfig = {
   poweredByHeader: false,
   reactStrictMode: true,
@@ -26,7 +29,15 @@ const config: NextConfig = {
   async headers() {
     return [
       {
-        source: '/:path*',
+        source: '/f/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: formCsp },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+      {
+        source: '/((?!f/).*)',
         headers: [
           { key: 'Content-Security-Policy', value: csp },
           { key: 'X-Content-Type-Options', value: 'nosniff' },

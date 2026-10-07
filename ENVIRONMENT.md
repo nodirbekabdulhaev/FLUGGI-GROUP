@@ -25,6 +25,10 @@ API проверяет переменные при старте и не запу
 | `TELEGRAM_BOT_USERNAME` | api | — | имя бота без `@`; если не задано — берётся через `getMe` |
 | `TELEGRAM_MODE` | api, worker | `polling` | `polling` — бот сам забирает сообщения (локально, без домена); `webhook` — Telegram присылает их на `/api/v1/telegram/webhook` (production) |
 | `TELEGRAM_WEBHOOK_SECRET` | api | — | секрет заголовка `X-Telegram-Bot-Api-Secret-Token`; без него webhook отвечает 403 |
+| `META_APP_SECRET` | api | — | секрет приложения Meta: проверка подписи webhook (X-Hub-Signature-256) |
+| `META_VERIFY_TOKEN` | api | — | токен проверки при подключении webhook (любое слово) |
+| `META_PAGE_ACCESS_TOKEN` | api | — | долгосрочный токен страницы: ответы в Директ/комментарии, чтение лидов таргета |
+| `META_GRAPH_BASE` | api | `https://graph.facebook.com/v21.0` | адрес Graph API |
 | `TELEGRAM_PROXY_URL` | api, worker | — | прокси для запросов к Telegram, если сервер не видит `api.telegram.org` напрямую: `http://`, `https://` или `socks5://` (можно с логином: `socks5://user:pass@host:port`) |
 | `TELEGRAM_API_BASE` | api, worker | `https://api.telegram.org` | адрес Bot API (меняется только в тестах) |
 | `SCHEDULER_ENABLED` | api, worker | `true` | `false` — выключить задачи по расписанию (отчёты, напоминания, просрочки, отметка отсутствующих) |
