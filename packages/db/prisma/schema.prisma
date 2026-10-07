@@ -118,7 +118,14 @@ model User {
   attendance       Attendance[]   @relation("AttendanceUser")
   attendanceEdited Attendance[]   @relation("AttendanceEditor")
   payroll          PayrollEntry[] @relation("PayrollUser")
-  payrollApproved  PayrollEntry[] @relation("PayrollApprover")
+
+  todosOwned       Todo[]               @relation("TodoOwner")
+  todosCreated     Todo[]               @relation("TodoCreator")
+  recurringOwned   RecurringTodo[]      @relation("RecurringOwner")
+  recurringCreated RecurringTodo[]      @relation("RecurringCreator")
+  chatMemberships  ConversationMember[]
+  chatMessages     ChatMessage[]
+  payrollApproved  PayrollEntry[]       @relation("PayrollApprover")
 
   telegramLinkTokens   TelegramLinkToken[]
   notificationSettings NotificationSetting[]
@@ -523,6 +530,7 @@ model Lead {
   meetings     Meeting[]
   activities   Activity[]
   comments     Comment[]
+  todos        Todo[]
   stageHistory StageHistory[]
 
   @@index([ownerId])
@@ -569,6 +577,7 @@ model Client {
   payments   Payment[]
   projects   Project[]
 
+  todos     Todo[]
   followUps FollowUp[]
 
   @@index([ownerId])
@@ -645,6 +654,7 @@ model Deal {
   commissions  Commission[]
   files        StoredFile[]
 
+  todos           Todo[]
   followUpResults FollowUp[] @relation("FollowUpDeal")
 
   @@index([ownerId])
@@ -1607,4 +1617,136 @@ model StoredFile {
   @@index([projectId])
   @@index([taskId])
   @@map("files")
+}
+
+// ─────────────────────────── Личные дела и регулярные задачи ───────────────────────────
+
+enum TodoKind {
+  TASK
+  CALL
+  EMAIL
+  MEETING
+  PAYMENT
+  REPORT
+}
+
+enum TodoStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+enum RecurrenceFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+/// Личное дело сотрудника (не проектная задача): звонок, письмо, отчёт, платёж.
+model Todo {
+  id           String     @id @default(uuid()) @db.Uuid
+  number       Int        @unique @default(autoincrement())
+  title        String
+  description  String?
+  kind         TodoKind   @default(TASK)
+  priority     Priority   @default(MEDIUM)
+  status       TodoStatus @default(OPEN)
+  ownerId      String     @map("owner_id") @db.Uuid
+  creatorId    String     @map("creator_id") @db.Uuid
+  dueAt        DateTime?  @map("due_at")
+  clientId     String?    @map("client_id") @db.Uuid
+  dealId       String?    @map("deal_id") @db.Uuid
+  leadId       String?    @map("lead_id") @db.Uuid
+  recurringId  String?    @map("recurring_id") @db.Uuid
+  /// Срок по правилу (дата) — защита от повторного создания
+  recurringDue DateTime?  @map("recurring_due") @db.Date
+  completedAt  DateTime?  @map("completed_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  owner     User           @relation("TodoOwner", fields: [ownerId], references: [id])
+  creator   User           @relation("TodoCreator", fields: [creatorId], references: [id])
+  client    Client?        @relation(fields: [clientId], references: [id])
+  deal      Deal?          @relation(fields: [dealId], references: [id])
+  lead      Lead?          @relation(fields: [leadId], references: [id])
+  recurring RecurringTodo? @relation(fields: [recurringId], references: [id])
+
+  @@unique([recurringId, recurringDue])
+  @@index([ownerId, status, dueAt])
+  @@map("todos")
+}
+
+/// Правило регулярного дела: ежемесячно / ежеквартально / ежегодно в заданный день.
+model RecurringTodo {
+  id               String              @id @default(uuid()) @db.Uuid
+  title            String
+  description      String?
+  kind             TodoKind            @default(REPORT)
+  priority         Priority            @default(HIGH)
+  ownerId          String              @map("owner_id") @db.Uuid
+  createdById      String              @map("created_by_id") @db.Uuid
+  frequency        RecurrenceFrequency
+  dayOfMonth       Int                 @map("day_of_month")
+  /// Для ежегодных — месяц 1–12; для ежеквартальных — месяц квартала 1–3 (1 = январь/апрель/июль/октябрь)
+  month            Int?
+  /// За сколько дней до срока дело появляется в списке
+  remindDaysBefore Int                 @default(3) @map("remind_days_before")
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  deletedAt        DateTime?           @map("deleted_at")
+
+  owner     User   @relation("RecurringOwner", fields: [ownerId], references: [id])
+  createdBy User   @relation("RecurringCreator", fields: [createdById], references: [id])
+  todos     Todo[]
+
+  @@index([ownerId])
+  @@map("recurring_todos")
+}
+
+// ─────────────────────────── Чат сотрудников ───────────────────────────
+
+model Conversation {
+  id            String   @id @default(uuid()) @db.Uuid
+  /// Личная переписка двух сотрудников: «меньший_id:больший_id»
+  directKey     String?  @unique @map("direct_key")
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  members  ConversationMember[]
+  messages ChatMessage[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  conversationId String    @map("conversation_id") @db.Uuid
+  userId         String    @map("user_id") @db.Uuid
+  lastReadAt     DateTime  @default(now()) @map("last_read_at")
+  /// Когда отправили уведомление в Telegram о непрочитанных — не чаще одного до прочтения
+  notifiedAt     DateTime? @map("notified_at")
+  joinedAt       DateTime  @default(now()) @map("joined_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid()) @db.Uuid
+  conversationId String   @map("conversation_id") @db.Uuid
+  authorId       String   @map("author_id") @db.Uuid
+  body           String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
 }

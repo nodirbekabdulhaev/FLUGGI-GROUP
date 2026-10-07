@@ -152,6 +152,17 @@ GET             /follow-ups           ?status&due=true&clientId&page
 POST            /follow-ups/:id/complete  { status: DONE|SKIPPED, result?, createDeal? }
 ```
 
+### Дела, регулярные дела, чат
+```
+GET    /todos              ?view=mine|assigned|all&status&clientId&dealId&page
+GET    /todos/dock          → мои открытые дела + мои задачи по проектам («Список дел»)
+POST   /todos              PATCH /todos/:id   POST /todos/:id/complete|reopen   DELETE /todos/:id
+GET    /recurring-todos    POST /recurring-todos   PUT/DELETE /recurring-todos/:id
+POST   /recurring-todos/tax-calendar          → налоговый календарь IT-Park себе (без дублей)
+GET    /chats              GET /chats/unread   GET /chats/contacts   POST /chats/direct { userId }
+GET    /chats/:id/messages ?before&limit      POST /chats/:id/messages { body }   POST /chats/:id/read
+```
+
 ### Внешние
 ```
 POST /telegram/webhook   (проверка X-Telegram-Bot-Api-Secret-Token)

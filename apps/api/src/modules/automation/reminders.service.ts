@@ -266,6 +266,28 @@ export class RemindersService {
         }),
       );
 
+    // Личные дела: «сегодня срок» — утром (с 09:00) один раз; просрочено — один раз
+    if (tashkentTime(now) >= '09:00') {
+      const dayEnd = companyDayStart(addDays(today, 1));
+      const todos = await this.prisma.todo.findMany({
+        where: { status: 'OPEN', deletedAt: null, dueAt: { lt: dayEnd } },
+        select: { id: true, title: true, ownerId: true, dueAt: true },
+        take: 1000,
+      });
+      for (const t of todos) {
+        const overdue = t.dueAt! < now;
+        add(
+          overdue ? 'todo.overdue' : 'todo.today',
+          await this.send(overdue ? 'todo.overdue' : 'todo.today', t.id, [t.ownerId], {
+            type: overdue ? 'todo.overdue' : 'todo.due',
+            title: overdue ? `⏰ Просрочено: ${t.title}` : `Сегодня срок: ${t.title}`,
+            body: `до ${tashkentTime(t.dueAt!)}`,
+            link: '/todos',
+          }),
+        );
+      }
+    }
+
     if (Object.keys(out).length) this.logger.log(`Reminders: ${JSON.stringify(out)}`);
     return out;
   }

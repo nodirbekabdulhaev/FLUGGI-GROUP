@@ -352,6 +352,7 @@ describe('Умные напоминания и планировщик (ТЗ §41
       'daily-report',
       'absences',
       'weekly-report',
+      'recurring-todos',
       'client-health',
       'payroll',
     ]);

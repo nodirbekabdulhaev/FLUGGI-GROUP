@@ -1,6 +1,7 @@
 import { hasPermission, type PermissionCode, type PermissionMap } from '@fluggi/contracts';
 import {
   BarChart3,
+  ListChecks,
   Bell,
   Briefcase,
   CalendarCheck,
@@ -63,6 +64,7 @@ export const NAVIGATION: NavSection[] = [
     ],
   },
   { key: 'tasks', href: '/tasks', icon: CheckSquare, anyOf: ['task.read'] },
+  { key: 'todos', href: '/todos', icon: ListChecks },
   {
     key: 'team',
     href: '/team',

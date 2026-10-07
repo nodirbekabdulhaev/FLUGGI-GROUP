@@ -207,6 +207,14 @@ erDiagram
 
 **files** (§52) — `id, storage_key, original_name, mime_type, size_bytes, checksum, category (PROPOSAL|CONTRACT|PHOTO|VIDEO|DESIGN|DOCUMENT|OTHER), uploaded_by, lead_id, deal_id, client_id, project_id, task_id, contract_id, proposal_id, expense_id, created_at, deleted_at`
 
+### 3.9 Дела и чат
+
+**todos** — `id, number, title, description, kind (TASK|CALL|EMAIL|MEETING|PAYMENT|REPORT), priority, status (OPEN|DONE|CANCELLED), owner_id, creator_id, due_at, client_id, deal_id, lead_id, recurring_id, recurring_due, completed_at, created_at, updated_at, deleted_at` · unique (recurring_id, recurring_due)
+
+**recurring_todos** — `id, title, description, kind, priority, owner_id, created_by_id, frequency (MONTHLY|QUARTERLY|YEARLY), day_of_month, month, remind_days_before, is_active, deleted_at`
+
+**conversations** — `id, direct_key (unique), last_message_at` · **conversation_members** — `conversation_id, user_id, last_read_at, notified_at` · **chat_messages** — `id, conversation_id, author_id, body, created_at`
+
 ## 4. Распределение по фазам
 
 | Фаза | Таблицы |

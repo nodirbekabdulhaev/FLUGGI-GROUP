@@ -7,6 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCan } from '@/lib/me-context';
 import { GlobalSearch } from '@/features/analytics/global-search';
+import { ChatWidget } from '@/features/chat/chat-widget';
+import { TodoDock } from '@/features/todos/todo-dock';
 import { PeriodSelect } from './period-select';
 import { Brand, SidebarNav } from './sidebar-nav';
 import { UserMenu } from './user-menu';
@@ -60,7 +62,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <UserMenu />
       </header>
 
-      <main className="mx-auto w-full max-w-7xl px-4 py-6 sm:px-6 lg:py-8">{children}</main>
+      <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:pt-8">{children}</main>
+      <TodoDock />
+      <Suspense>
+        <ChatWidget />
+      </Suspense>
     </div>
   );
 }

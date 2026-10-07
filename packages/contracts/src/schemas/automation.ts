@@ -46,6 +46,21 @@ export const NOTIFICATION_EVENTS: { type: string; label: string; roles: RoleCode
   { type: 'task.overdue', label: 'Просроченная задача', roles: ['EXECUTOR', 'MANAGER', 'ROP'] },
   { type: 'client.risk', label: 'Клиент в зоне риска', roles: ['MANAGER', 'ROP', 'CEO'] },
   { type: 'followup.due', label: 'Повторный контакт с клиентом', roles: ['MANAGER', 'ROP'] },
+  {
+    type: 'todo.assigned',
+    label: 'Вам поручено дело',
+    roles: ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN'],
+  },
+  {
+    type: 'todo.due',
+    label: 'Срок дела / регулярная задача',
+    roles: ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN'],
+  },
+  {
+    type: 'chat.message',
+    label: 'Сообщение в чате',
+    roles: ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN'],
+  },
   { type: 'report.daily', label: 'Ежедневный отчёт', roles: ['CEO', 'ROP'] },
   { type: 'report.weekly', label: 'Еженедельный отчёт', roles: ['CEO'] },
   { type: 'payroll.calculated', label: 'Предварительный расчёт зарплаты', roles: ['CEO'] },
@@ -55,6 +70,8 @@ export const NOTIFICATION_EVENTS: { type: string; label: string; roles: RoleCode
 export const NOTIFICATION_TYPE_GROUP: Record<string, string> = {
   'task.accepted': 'task.returned',
   'project.cancelled': 'project.completed',
+  'todo.recurring': 'todo.due',
+  'todo.overdue': 'todo.due',
 };
 
 export const notificationSettingsSchema = z.object({

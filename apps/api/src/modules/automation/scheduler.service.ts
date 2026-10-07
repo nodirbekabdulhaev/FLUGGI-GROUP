@@ -9,6 +9,7 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../core/settings/settings.service';
 import { ClientInsightsService } from '../analytics/client-insights.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { RecurringTodosService } from '../todos/recurring.service';
 import { PeopleService } from '../people/people.service';
 import { OverdueScanner } from '../projects/overdue.runner';
 import { backgroundEnabled } from '../telegram/telegram.runners';
@@ -73,6 +74,7 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
     private readonly overdue: OverdueScanner,
     private readonly people: PeopleService,
     private readonly clients: ClientInsightsService,
+    private readonly recurring: RecurringTodosService,
   ) {
     this.jobs = [
       {
@@ -116,6 +118,13 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
         schedule: 'понедельник 09:00',
         due: weeklyAt(1, '09:00'),
         run: (now) => this.weeklyReport(now),
+      },
+      {
+        name: 'recurring-todos',
+        label: 'Регулярные дела (налоговый календарь)',
+        schedule: 'ежедневно 07:00',
+        due: dailyAt('07:00'),
+        run: (now) => this.recurring.generate(now),
       },
       {
         name: 'client-health',

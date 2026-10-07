@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { ClientInsightsModule } from '../analytics/analytics.module';
 import { DealsModule } from '../deals/deals.module';
+import { TodosModule } from '../todos/todos.module';
 import { NotificationsModule } from '../notifications/notifications.module';
 import { PeopleModule } from '../people/people.module';
 import { OverdueModule } from '../projects/overdue.module';
@@ -20,7 +21,14 @@ const providers = [
 ];
 
 @Module({
-  imports: [DealsModule, NotificationsModule, PeopleModule, OverdueModule, ClientInsightsModule],
+  imports: [
+    DealsModule,
+    NotificationsModule,
+    PeopleModule,
+    OverdueModule,
+    ClientInsightsModule,
+    TodosModule,
+  ],
   controllers: [AutomationController],
   providers,
   exports: [SchedulerService, RemindersService, ReportsService],
