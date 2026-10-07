@@ -7,7 +7,7 @@ import {
   type UserDto,
   type UserStatus,
 } from '@fluggi/contracts';
-import { KeyRound, Lock, MoreHorizontal, Pencil, Plus, Search, Send, Unlock } from 'lucide-react';
+import { Coins, KeyRound, Lock, MoreHorizontal, Pencil, Plus, Search, Send, Unlock } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
@@ -30,6 +30,7 @@ import { useCan, useMe } from '@/lib/me-context';
 import { initials } from '@/lib/utils';
 import { useResetPassword, useSetBlocked, useTeams, useUsers } from './api';
 import { EmployeeFormDialog } from './employee-form-dialog';
+import { RatesDialog } from './rates-dialog';
 import { TempPasswordDialog } from './temp-password-dialog';
 
 const TITLE_KEY: Record<string, string> = {
@@ -63,6 +64,7 @@ export function EmployeesPage({
   const can = useCan();
   const me = useMe();
   const canManage = can('employee.manage', 'ALL');
+  const canRates = can('payroll.manage', 'ALL');
 
   const [q, setQ] = useState(initialQuery ?? '');
   const [role, setRole] = useState<RoleCode | ''>(fixedRole ?? '');
@@ -88,6 +90,7 @@ export function EmployeesPage({
   const [formOpen, setFormOpen] = useState(false);
   const [editing, setEditing] = useState<UserDto | null>(null);
   const [tempPassword, setTempPassword] = useState<{ name: string; password: string } | null>(null);
+  const [ratesFor, setRatesFor] = useState<UserDto | null>(null);
 
   const filtered = Boolean(search || (!fixedRole && role) || teamId || status);
   const title = t(`employees.${fixedRole ? TITLE_KEY[fixedRole] : 'title'}`);
@@ -115,7 +118,8 @@ export function EmployeesPage({
 
   const rowActions = (user: UserDto) => {
     const self = user.id === me.id;
-    if (!canManage || (user.role.code === 'CEO' && me.role.code !== 'CEO')) return null;
+    if (!canManage && !canRates) return null;
+    if (user.role.code === 'CEO' && me.role.code !== 'CEO') return null;
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
@@ -124,10 +128,17 @@ export function EmployeesPage({
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent>
-          <DropdownMenuItem onSelect={() => (setEditing(user), setFormOpen(true))}>
-            <Pencil /> {t('common.edit')}
-          </DropdownMenuItem>
-          {!self ? (
+          {canManage ? (
+            <DropdownMenuItem onSelect={() => (setEditing(user), setFormOpen(true))}>
+              <Pencil /> {t('common.edit')}
+            </DropdownMenuItem>
+          ) : null}
+          {canRates ? (
+            <DropdownMenuItem onSelect={() => setRatesFor(user)}>
+              <Coins /> {t('employees.rates')}
+            </DropdownMenuItem>
+          ) : null}
+          {!self && canManage ? (
             <>
               <DropdownMenuItem onSelect={() => doReset(user)}>
                 <KeyRound /> {t('employees.resetPassword')}
@@ -355,6 +366,7 @@ export function EmployeesPage({
         onCreated={(name, password) => password && setTempPassword({ name, password })}
       />
       <TempPasswordDialog value={tempPassword} onClose={() => setTempPassword(null)} />
+      <RatesDialog user={ratesFor} editable={canRates} onClose={() => setRatesFor(null)} />
     </>
   );
 }

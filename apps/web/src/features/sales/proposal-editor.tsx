@@ -12,11 +12,13 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation, useReferences } from '@/features/crm/api';
+import { useTariffs } from '@/features/finance/tariffs-api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { money, newIdempotencyKey } from '@/lib/format';
 
 interface Line {
   serviceId: string;
+  tariffId: string;
   description: string;
   quantity: string;
   unitPrice: string;
@@ -25,6 +27,7 @@ interface Line {
 
 const emptyLine = (): Line => ({
   serviceId: '',
+  tariffId: '',
   description: '',
   quantity: '1',
   unitPrice: '',
@@ -47,6 +50,14 @@ export function ProposalEditor({
 }) {
   const t = useTranslations('sales.proposals');
   const refs = useReferences();
+  const tariffs = useTariffs(open);
+  const usd = Number(refs.data?.usdRate?.rateToUzs ?? 0);
+  /** Цена тарифа в валюте КП (по текущему курсу USD). */
+  const priceIn = (price: string, from: Currency) => {
+    const v = Number(price);
+    if (from === currency || !usd) return String(v);
+    return String(from === 'USD' ? Math.round(v * usd) : Math.round((v / usd) * 100) / 100);
+  };
   const [title, setTitle] = useState('');
   const [currency, setCurrency] = useState<Currency>('UZS');
   const [lines, setLines] = useState<Line[]>([emptyLine()]);
@@ -72,6 +83,7 @@ export function ProposalEditor({
       proposal?.items.length
         ? proposal.items.map((i) => ({
             serviceId: i.service?.id ?? '',
+            tariffId: i.tariff?.id ?? '',
             description: i.description,
             quantity: String(Number(i.quantity)),
             unitPrice: String(Number(i.unitPrice)),
@@ -104,6 +116,7 @@ export function ProposalEditor({
       versionComment: versionComment || undefined,
       items: lines.map((l) => ({
         serviceId: l.serviceId || null,
+        tariffId: l.tariffId || null,
         description: l.description,
         quantity: n(l.quantity),
         unitPrice: l.unitPrice,
@@ -124,7 +137,7 @@ export function ProposalEditor({
       <DialogContent
         title={proposal ? `${t('edit')} ${proposal.number}` : t('new')}
         description={proposal && proposal.status !== 'DRAFT' ? t('editResets') : undefined}
-        className="sm:max-w-4xl"
+        className="sm:max-w-5xl"
       >
         <form
           className="grid gap-4"
@@ -173,7 +186,7 @@ export function ProposalEditor({
                 return (
                   <div
                     key={i}
-                    className="grid grid-cols-2 gap-2 rounded-md border p-2 sm:grid-cols-[10rem_1fr_5rem_8rem_5rem_8rem_2rem] sm:items-center sm:border-0 sm:p-0"
+                    className="grid grid-cols-2 gap-2 rounded-md border p-2 sm:grid-cols-[9rem_8rem_1fr_4rem_8rem_4rem_8rem_2rem] sm:items-center sm:border-0 sm:p-0"
                   >
                     <NativeSelect
                       aria-label="Услуга"
@@ -187,6 +200,7 @@ export function ProposalEditor({
                               ? {
                                   ...x,
                                   serviceId: e.target.value,
+                                  tariffId: '',
                                   description: x.description || svc?.name || '',
                                   unitPrice:
                                     x.unitPrice ||
@@ -203,6 +217,38 @@ export function ProposalEditor({
                         .map((s) => (
                           <option key={s.id} value={s.id}>
                             {s.name}
+                          </option>
+                        ))}
+                    </NativeSelect>
+                    <NativeSelect
+                      aria-label={t('tariff')}
+                      className="h-9"
+                      value={l.tariffId}
+                      disabled={!l.serviceId}
+                      onChange={(e) => {
+                        const tf = tariffs.data?.find((x) => x.id === e.target.value);
+                        setLines((ls) =>
+                          ls.map((x, idx) =>
+                            idx === i
+                              ? tf
+                                ? {
+                                    ...x,
+                                    tariffId: tf.id,
+                                    description: `${tf.service.name} — ${tf.name}${tf.description ? `: ${tf.description}` : ''}`,
+                                    unitPrice: priceIn(tf.price, tf.currency),
+                                  }
+                                : { ...x, tariffId: '' }
+                              : x,
+                          ),
+                        );
+                      }}
+                    >
+                      <option value="">{t('noTariff')}</option>
+                      {tariffs.data
+                        ?.filter((tf) => tf.service.id === l.serviceId)
+                        .map((tf) => (
+                          <option key={tf.id} value={tf.id}>
+                            {tf.name} · {money(tf.price, tf.currency)}
                           </option>
                         ))}
                     </NativeSelect>

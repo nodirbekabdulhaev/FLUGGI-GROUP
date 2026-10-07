@@ -144,6 +144,13 @@ export function FinanceDashboardPage() {
             />
             <Tile label={t('kpi.refunds')} value={money(s.data.refundsUzs)} />
             <Tile label={t('kpi.commissions')} value={money(s.data.commissionsUzs)} />
+            {s.data.otherIncomeUzs !== null ? (
+              <Tile
+                label={t('kpi.otherIncome')}
+                value={money(s.data.otherIncomeUzs)}
+                hint={t('kpi.otherIncomeHint')}
+              />
+            ) : null}
             {s.data.operatingProfitUzs !== null ? (
               <Tile
                 label={t('kpi.operatingProfit')}

@@ -9,6 +9,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Monitor } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
+import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { toast } from 'sonner';
 import { PageHeader } from '@/components/shared/page-header';
@@ -19,7 +20,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Field } from '@/components/ui/label';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
-import { useMe } from '@/lib/me-context';
+import { RatesDialog } from '@/features/team/rates-dialog';
+import { useCan, useMe } from '@/lib/me-context';
 import { NotificationSettingsCard, TelegramCard } from './telegram-card';
 
 function ChangePassword() {
@@ -154,6 +156,8 @@ function Sessions() {
 export function ProfilePage() {
   const t = useTranslations();
   const me = useMe();
+  const can = useCan();
+  const [rates, setRates] = useState(false);
   const rows: [string, string][] = [
     [t('employees.fullName'), me.fullName],
     [t('employees.email'), me.email],
@@ -177,8 +181,16 @@ export function ProfilePage() {
                 </div>
               ))}
             </dl>
+            <Button size="sm" variant="outline" className="mt-4" onClick={() => setRates(true)}>
+              {t('employees.myRates')}
+            </Button>
           </CardContent>
         </Card>
+        <RatesDialog
+          user={rates ? me : null}
+          editable={can('payroll.manage', 'ALL')}
+          onClose={() => setRates(false)}
+        />
         <ChangePassword />
         <TelegramCard />
         <Sessions />

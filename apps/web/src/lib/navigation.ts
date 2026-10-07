@@ -84,6 +84,7 @@ export const NAVIGATION: NavSection[] = [
       { key: 'revenue', href: '/finance/revenue', anyOf: ['finance.read'] },
       { key: 'payments', href: '/finance/payments', anyOf: ['payment.read'] },
       { key: 'expenses', href: '/finance/expenses', anyOf: ['finance.read'] },
+      { key: 'incomes', href: '/finance/incomes', anyOf: ['finance.company.read'] },
       { key: 'profit', href: '/finance/profit', anyOf: ['finance.read'] },
       { key: 'commissions', href: '/finance/commissions', anyOf: ['commission.read'] },
       { key: 'payroll', href: '/finance/payroll', anyOf: ['payroll.read'] },

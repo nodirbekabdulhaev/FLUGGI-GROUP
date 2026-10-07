@@ -4,6 +4,8 @@ import type { PermissionCode } from '@fluggi/contracts';
 export const SETTINGS_TABS: { href: string; key: string; permission: PermissionCode }[] = [
   { href: '/settings/teams', key: 'tabTeams', permission: 'employee.manage' },
   { href: '/settings/references', key: 'tabReferences', permission: 'reference.manage' },
+  { href: '/settings/tariffs', key: 'tabTariffs', permission: 'reference.manage' },
+  { href: '/settings/finance', key: 'tabFinance', permission: 'reference.manage' },
   { href: '/settings/templates', key: 'tabTemplates', permission: 'reference.manage' },
   {
     href: '/settings/commission-rules',
