@@ -84,6 +84,8 @@ export interface TelegramStatusDto {
   botUsername: string | null;
   linked: boolean;
   username: string | null;
+  /** Бот настроен, но не работает: причина для пользователя (неверный токен, нет связи и т.п.). */
+  problem: string | null;
 }
 
 export interface TelegramLinkDto {

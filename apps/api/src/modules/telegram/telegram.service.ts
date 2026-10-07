@@ -4,7 +4,12 @@ import type { TelegramLinkDto, TelegramStatusDto } from '@fluggi/contracts';
 import type { AuthContext } from '../../core/auth/auth-context';
 import { businessRule } from '../../core/http/app.exception';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { TelegramClient, type TelegramUpdate } from './telegram.client';
+import {
+  backgroundEnabled,
+  TelegramApiError,
+  TelegramClient,
+  type TelegramUpdate,
+} from './telegram.client';
 
 const LINK_TTL_MS = 15 * 60_000;
 const hash = (t: string) => createHash('sha256').update(t).digest('hex');
@@ -17,6 +22,29 @@ const hash = (t: string) => createHash('sha256').update(t).digest('hex');
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
   private botUsername: string | null = null;
+  private problem: string | null = null;
+
+  setProblem(problem: string | null) {
+    this.problem = problem;
+  }
+
+  /** Понятная причина сбоя Telegram для CEO. */
+  static explain(err: unknown): string {
+    if (err instanceof TelegramApiError) {
+      if (err.status === 401 || err.status === 404)
+        return 'Токен бота недействителен (возможно, его заменили в @BotFather). Укажите актуальный TELEGRAM_BOT_TOKEN в .env и перезапустите API';
+      if (err.status === 409)
+        return 'Бот получает сообщения в другом месте: у него включён webhook или с этим токеном запущен второй сервер';
+      return `Telegram ответил ошибкой: ${err.description}`;
+    }
+    return `Нет связи с Telegram: ${(err as Error).message}`;
+  }
+
+  /** Почему бот может не отвечать — показывается в профиле (проверка в этом процессе). */
+  currentProblem(): string | null {
+    if (!this.client.configured) return null;
+    return this.problem;
+  }
 
   constructor(
     private readonly prisma: PrismaService,
@@ -42,6 +70,7 @@ export class TelegramService {
       botUsername: await this.username(),
       linked: Boolean(user.telegramChatId),
       username: user.telegramUsername,
+      problem: this.currentProblem(),
     };
   }
 
@@ -50,6 +79,8 @@ export class TelegramService {
       throw businessRule(
         'Telegram-бот не настроен: CEO должен указать TELEGRAM_BOT_TOKEN на сервере',
       );
+    const problem = this.currentProblem();
+    if (problem) throw businessRule(problem);
     const bot = await this.username();
     if (!bot) throw businessRule('Не удалось получить имя бота. Укажите TELEGRAM_BOT_USERNAME');
     const token = randomBytes(18).toString('base64url');

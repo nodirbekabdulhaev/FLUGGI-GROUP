@@ -9,14 +9,19 @@ import { OutboxService } from '../../core/outbox/outbox.service';
 import type { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../core/settings/settings.service';
 import { Client, createTestApp, resetDatabase } from '../../test/helpers';
-import { TelegramSender } from '../telegram/telegram.runners';
+import { TelegramRunner, TelegramSender } from '../telegram/telegram.runners';
 import { RemindersService } from './reminders.service';
 import { ReportsService } from './reports.service';
 import { SchedulerService } from './scheduler.service';
 
 /** Заглушка Telegram Bot API: запоминает вызовы, отвечает ok или ошибкой. */
 const calls: { method: string; body: Record<string, unknown> }[] = [];
-let failNext: { status: number; description: string; retry_after?: number } | null = null;
+let failNext: {
+  status: number;
+  description: string;
+  retry_after?: number;
+  method?: string;
+} | null = null;
 let stub: Server;
 
 const readBody = (req: IncomingMessage) =>
@@ -36,7 +41,7 @@ beforeAll(async () => {
     const body = JSON.parse((await readBody(req)) || '{}');
     calls.push({ method, body });
     res.setHeader('Content-Type', 'application/json');
-    if (failNext && method === 'sendMessage') {
+    if (failNext && method === (failNext.method ?? 'sendMessage')) {
       const f = failNext;
       failNext = null;
       res.statusCode = f.status;
@@ -108,6 +113,7 @@ describe('Telegram-бот (ТЗ §53)', () => {
       botUsername: 'fluggi_test_bot',
       linked: false,
       username: null,
+      problem: null,
     });
 
     const l = await link(manager);
@@ -147,6 +153,21 @@ describe('Telegram-бот (ТЗ §53)', () => {
     await link(rop);
     expect((await rop.delete('/api/v1/me/telegram')).status).toBe(204);
     expect((await rop.get('/api/v1/me/telegram')).body.linked).toBe(false);
+  });
+
+  it('неверный токен: CRM показывает причину и не выдаёт код', async () => {
+    const manager = await Client.login(app, 'manager@test.uz');
+    const runner = app.get(TelegramRunner);
+    failNext = { status: 401, description: 'Unauthorized', method: 'getMe' };
+    expect(await runner.check()).toBe(false);
+    const s = (await manager.get('/api/v1/me/telegram')).body;
+    expect(s.problem).toContain('Токен бота недействителен');
+    const l = await manager.post('/api/v1/me/telegram/link');
+    expect(l.status).toBe(422);
+    expect(l.body.error.message).toContain('TELEGRAM_BOT_TOKEN');
+    // Токен исправлен — проблема уходит
+    expect(await runner.check()).toBe(true);
+    expect((await manager.get('/api/v1/me/telegram')).body.problem).toBeNull();
   });
 
   it('доставка: очередь, повтор после ошибки, личные настройки каналов', async () => {

@@ -1,15 +1,14 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
 import { loadEnv } from '../../config/env';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import { TelegramApiError, TelegramClient } from './telegram.client';
+import { backgroundEnabled, TelegramApiError, TelegramClient } from './telegram.client';
 import { TelegramService } from './telegram.service';
 
 const MAX_ATTEMPTS = 5;
 /** Пауза перед повтором: 30 с, 2 мин, 8 мин, 30 мин. */
 const backoff = (attempt: number) => Math.min(30_000 * 4 ** (attempt - 1), 30 * 60_000);
 
-/** Где работают фоновые циклы: в worker, а в разработке — и в API (как outbox). */
-export const backgroundEnabled = () => process.env.OUTBOX_IN_API !== 'false';
+export { backgroundEnabled } from './telegram.client';
 
 /**
  * Доставка уведомлений в Telegram (ТЗ §53): очередь в БД, повторы с паузой,
@@ -97,8 +96,24 @@ export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShut
 
   onApplicationBootstrap() {
     if (!backgroundEnabled() || !this.client.configured) return;
+    void this.check().then((ok) => {
+      if (ok) this.logger.log(`Telegram-бот подключён, режим ${loadEnv().TELEGRAM_MODE}`);
+    });
     void this.sendLoop();
     if (loadEnv().TELEGRAM_MODE === 'polling') void this.pollLoop();
+  }
+
+  /** Проверка токена (getMe); причина сбоя показывается в профиле и в логе. */
+  async check(): Promise<boolean> {
+    try {
+      await this.client.getMe();
+      this.telegram.setProblem(null);
+      return true;
+    } catch (err) {
+      this.telegram.setProblem(TelegramService.explain(err));
+      this.logger.error(`Telegram: ${TelegramService.explain(err)}`);
+      return false;
+    }
   }
 
   onApplicationShutdown() {
@@ -126,6 +141,7 @@ export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShut
     while (!this.stopped) {
       try {
         const updates = await this.client.getUpdates(this.offset, 25);
+        this.telegram.setProblem(null);
         for (const u of updates) {
           this.offset = u.update_id + 1;
           await this.telegram.handleUpdate(u);
@@ -133,6 +149,7 @@ export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShut
       } catch (err) {
         const e = err as TelegramApiError;
         // 409 — запущен webhook или второй poller; ждём дольше
+        this.telegram.setProblem(TelegramService.explain(err));
         this.logger.warn(`Telegram polling: ${e.message}`);
         await this.sleep(e.status === 409 ? 60_000 : 10_000);
       }

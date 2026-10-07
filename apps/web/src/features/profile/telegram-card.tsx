@@ -70,6 +70,15 @@ export function TelegramCard() {
           <p className="text-sm text-muted-foreground" data-testid="telegram-not-configured">
             {t('notConfigured')}
           </p>
+        ) : status.data.problem ? (
+          <div
+            role="alert"
+            data-testid="telegram-problem"
+            className="rounded-md bg-danger-soft px-3 py-2 text-sm text-danger"
+          >
+            <p className="font-medium">{t('problem')}</p>
+            <p className="mt-1">{status.data.problem}</p>
+          </div>
         ) : status.data.linked ? (
           <div className="grid gap-4">
             <p className="flex flex-wrap items-center gap-2 text-sm">

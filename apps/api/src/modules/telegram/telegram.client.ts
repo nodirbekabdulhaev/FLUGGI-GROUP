@@ -1,6 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { loadEnv } from '../../config/env';
 
+/** Где работают фоновые циклы: в worker, а в разработке — и в API (как outbox). */
+export const backgroundEnabled = () => process.env.OUTBOX_IN_API !== 'false';
+
 export class TelegramApiError extends Error {
   constructor(
     readonly status: number,

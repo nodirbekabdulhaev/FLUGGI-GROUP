@@ -1453,7 +1453,8 @@
     "settingsTitle": "Настройки уведомлений",
     "settingsText": "Выберите, какие уведомления получать в CRM и в Telegram.",
     "event": "Событие",
-    "inApp": "В CRM"
+    "inApp": "В CRM",
+    "problem": "Бот не работает"
   },
   "automation": {
     "settingsTitle": "Параметры",
