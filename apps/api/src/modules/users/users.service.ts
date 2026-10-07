@@ -1,12 +1,15 @@
 import { Injectable } from '@nestjs/common';
-import type {
-  CreateUserResponse,
-  Paginated,
-  RoleCode,
-  UserDto,
-  UserListQuery,
-  createUserSchema,
-  updateUserSchema,
+import {
+  ACTIVE_PROJECT_STATUSES,
+  OPEN_TASK_STATUSES,
+  type CreateUserResponse,
+  type Paginated,
+  type RoleCode,
+  type UserDto,
+  type UserWorkloadDto,
+  type UserListQuery,
+  type createUserSchema,
+  type updateUserSchema,
 } from '@fluggi/contracts';
 import type { Prisma } from '@fluggi/db';
 import type { z } from 'zod';
@@ -306,6 +309,141 @@ export class UsersService {
         meta,
       });
       return toUserDto(updated);
+    });
+  }
+
+  /** Открытая работа сотрудника: что нужно передать перед удалением. */
+  async workload(auth: AuthContext, id: string): Promise<UserWorkloadDto> {
+    await this.findManageable(auth, id);
+    const open = { in: [...OPEN_TASK_STATUSES] };
+    const [leads, deals, clients, projects, tasks, todos, threads] = await Promise.all([
+      this.prisma.lead.count({ where: { ownerId: id, status: 'OPEN', deletedAt: null } }),
+      this.prisma.deal.count({ where: { ownerId: id, status: 'OPEN', deletedAt: null } }),
+      this.prisma.client.count({ where: { ownerId: id, deletedAt: null } }),
+      this.prisma.project.count({
+        where: {
+          deletedAt: null,
+          status: { in: [...ACTIVE_PROJECT_STATUSES] },
+          OR: [{ managerId: id }, { ropId: id }],
+        },
+      }),
+      this.prisma.task.count({ where: { assigneeId: id, deletedAt: null, status: open } }),
+      this.prisma.todo.count({ where: { ownerId: id, status: 'OPEN', deletedAt: null } }),
+      this.prisma.socialThread.count({ where: { ownerId: id } }),
+    ]);
+    const total = leads + deals + clients + projects + tasks + todos + threads;
+    return { leads, deals, clients, projects, tasks, todos, threads, total };
+  }
+
+  /**
+   * Удаление сотрудника: открытая работа передаётся другому сотруднику, история (оплаты,
+   * комиссии, зарплата, аудит) остаётся с его именем. Учётная запись скрывается и не может войти;
+   * email освобождается — его можно выдать новому сотруднику.
+   */
+  async remove(auth: AuthContext, id: string, transferToId: string | null, meta: RequestMeta) {
+    if (id === auth.userId) throw businessRule('Нельзя удалить собственную учётную запись');
+    const before = await this.findManageable(auth, id);
+    if (before.role.code === 'CEO') await this.assertNotLastCeo(id);
+    await this.assertNotTeamHead(id);
+    const work = await this.workload(auth, id);
+    let target: { id: string; teamId: string | null; fullName: string } | null = null;
+    if (transferToId) {
+      if (transferToId === id) throw businessRule('Выберите другого сотрудника');
+      target = await this.prisma.user.findFirst({
+        where: { id: transferToId, status: 'ACTIVE', deletedAt: null },
+        select: { id: true, teamId: true, fullName: true },
+      });
+      if (!target)
+        throw businessRule('Сотрудник для передачи не найден', [
+          { path: 'transferToId', message: 'Выберите активного сотрудника' },
+        ]);
+    } else if (work.total > 0) {
+      throw businessRule('У сотрудника есть открытая работа — выберите, кому её передать', [
+        { path: 'transferToId', message: 'Выберите, кому передать работу' },
+      ]);
+    }
+
+    await this.prisma.$transaction(async (tx) => {
+      if (target) {
+        const to = target;
+        await tx.lead.updateMany({
+          where: { ownerId: id, status: 'OPEN', deletedAt: null },
+          data: { ownerId: to.id, teamId: to.teamId },
+        });
+        await tx.deal.updateMany({
+          where: { ownerId: id, status: 'OPEN', deletedAt: null },
+          data: { ownerId: to.id, teamId: to.teamId },
+        });
+        await tx.client.updateMany({
+          where: { ownerId: id, deletedAt: null },
+          data: { ownerId: to.id, teamId: to.teamId },
+        });
+        const active = { deletedAt: null, status: { in: [...ACTIVE_PROJECT_STATUSES] } };
+        await tx.project.updateMany({
+          where: { ...active, managerId: id },
+          data: { managerId: to.id },
+        });
+        await tx.project.updateMany({ where: { ...active, ropId: id }, data: { ropId: to.id } });
+        // Задачи: новый исполнитель становится участником команды проекта
+        const tasks = await tx.task.findMany({
+          where: { assigneeId: id, deletedAt: null, status: { in: [...OPEN_TASK_STATUSES] } },
+          select: { id: true, projectId: true },
+        });
+        for (const projectId of new Set(tasks.map((t) => t.projectId))) {
+          await tx.projectMember.upsert({
+            where: { projectId_userId: { projectId, userId: to.id } },
+            update: { status: 'ACTIVE' },
+            create: { projectId, userId: to.id, assignedById: auth.userId },
+          });
+        }
+        await tx.task.updateMany({
+          where: { id: { in: tasks.map((t) => t.id) } },
+          data: { assigneeId: to.id },
+        });
+        await tx.todo.updateMany({
+          where: { ownerId: id, status: 'OPEN', deletedAt: null },
+          data: { ownerId: to.id },
+        });
+        await tx.socialThread.updateMany({
+          where: { ownerId: id },
+          data: { ownerId: to.id, teamId: to.teamId },
+        });
+      }
+      await tx.projectMember.updateMany({
+        where: { userId: id, status: 'ACTIVE' },
+        data: { status: 'REMOVED' },
+      });
+      await tx.recurringTodo.updateMany({
+        where: { ownerId: id, deletedAt: null },
+        data: { deletedAt: new Date(), isActive: false },
+      });
+      await tx.leadForm.updateMany({ where: { ownerId: id }, data: { ownerId: null } });
+      await tx.userDirection.deleteMany({ where: { userId: id } });
+      await tx.user.update({
+        where: { id },
+        data: {
+          status: 'BLOCKED',
+          deletedAt: new Date(),
+          // email свободен для нового сотрудника; исходный — в аудите
+          email: `deleted.${id.slice(0, 8)}.${before.email}`,
+          telegramChatId: null,
+        },
+      });
+      await this.sessions.revokeAllForUser(id, undefined, tx);
+      await this.outbox.publish(tx, 'user.blocked', { userId: id }, auth.userId);
+      await this.audit.log(tx, {
+        actorId: auth.userId,
+        action: 'user.delete',
+        entityType: 'user',
+        entityId: id,
+        changes: {
+          email: { old: before.email, new: null },
+          fullName: { old: before.fullName, new: null },
+          transferredTo: { old: null, new: target ? target.fullName : null },
+          workload: { old: work, new: null },
+        },
+        meta,
+      });
     });
   }
 

@@ -69,6 +69,20 @@ export function useSetBlocked() {
   });
 }
 
+/** Удалить сотрудника; открытая работа передаётся transferToId. */
+export function useDeleteUser() {
+  const invalidate = useInvalidateUsers();
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, transferToId }: { id: string; transferToId: string | null }) =>
+      api<void>(`/users/${id}`, {
+        method: 'DELETE',
+        query: transferToId ? { transferToId } : undefined,
+      }),
+    onSuccess: () => Promise.all([invalidate(), qc.invalidateQueries()]),
+  });
+}
+
 export function useResetPassword() {
   return useMutation({
     mutationFn: (id: string) =>

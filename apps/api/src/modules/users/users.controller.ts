@@ -1,11 +1,13 @@
-import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   createUserSchema,
+  deleteUserSchema,
   updateUserSchema,
   userListQuerySchema,
   type CreateUserResponse,
   type Paginated,
   type UserDto,
+  type UserWorkloadDto,
 } from '@fluggi/contracts';
 import type { z } from 'zod';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
@@ -74,6 +76,28 @@ export class UsersController {
     @ReqMeta() meta: RequestMeta,
   ): Promise<UserDto> {
     return this.users.setBlocked(auth, id, false, meta);
+  }
+
+  @Get(':id/workload')
+  @RequirePermission('employee.manage', 'ALL')
+  workload(
+    @CurrentUser() auth: AuthContext,
+    @Param('id', UuidPipe) id: string,
+  ): Promise<UserWorkloadDto> {
+    return this.users.workload(auth, id);
+  }
+
+  /** Удалить сотрудника; открытая работа передаётся transferToId. */
+  @Delete(':id')
+  @HttpCode(204)
+  @RequirePermission('employee.manage', 'ALL')
+  remove(
+    @CurrentUser() auth: AuthContext,
+    @Param('id', UuidPipe) id: string,
+    @Query(zod(deleteUserSchema)) q: z.output<typeof deleteUserSchema>,
+    @ReqMeta() meta: RequestMeta,
+  ): Promise<void> {
+    return this.users.remove(auth, id, q.transferToId ?? null, meta);
   }
 
   @Post(':id/reset-password')

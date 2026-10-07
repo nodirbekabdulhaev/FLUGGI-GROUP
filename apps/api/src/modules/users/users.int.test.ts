@@ -1,4 +1,5 @@
 import type { INestApplication } from '@nestjs/common';
+import request from 'supertest';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import type { PrismaService } from '../../core/prisma/prisma.service';
 import { Client, createTestApp, resetDatabase } from '../../test/helpers';
@@ -153,5 +154,66 @@ describe('audit log', () => {
       prisma.auditLog.update({ where: { id: log.id }, data: { action: 'x' } }),
     ).rejects.toThrow();
     await expect(prisma.auditLog.delete({ where: { id: log.id } })).rejects.toThrow();
+  });
+});
+
+describe('users — удаление сотрудника', () => {
+  it('открытая работа передаётся другому; email освобождается; вход невозможен', async () => {
+    const ceo = await Client.login(app, 'ceo@test.uz');
+    const manager = await Client.login(app, 'manager@test.uz');
+    const refs = (await manager.get('/api/v1/references')).body;
+    await manager.post('/api/v1/leads', {
+      contactName: 'Уходящий лид',
+      phone: '+998901110099',
+      sourceId: refs.sources[0].id,
+      serviceId: refs.services[0].id,
+    });
+    await manager.post('/api/v1/todos', { title: 'Перезвонить' });
+
+    const work = (await ceo.get(`/api/v1/users/${fixtures.users.manager.id}/workload`)).body;
+    expect(work).toMatchObject({ leads: 1, todos: 1 });
+    expect(work.total).toBeGreaterThanOrEqual(2);
+
+    // Без передачи — нельзя; себя и РОП-руководителя отдела — нельзя; HR — только CEO-права
+    const noTarget = await ceo.delete(`/api/v1/users/${fixtures.users.manager.id}`);
+    expect(noTarget.status).toBe(422);
+    expect(noTarget.body.error.details[0].path).toBe('transferToId');
+    expect((await ceo.delete(`/api/v1/users/${fixtures.users.ceo.id}`)).status).toBe(422);
+    expect(
+      (
+        await ceo.delete(
+          `/api/v1/users/${fixtures.users.rop.id}?transferToId=${fixtures.users.ceo.id}`,
+        )
+      ).status,
+    ).toBe(422);
+    expect((await manager.delete(`/api/v1/users/${fixtures.users.otherManager.id}`)).status).toBe(
+      403,
+    );
+
+    const del = await ceo.delete(
+      `/api/v1/users/${fixtures.users.manager.id}?transferToId=${fixtures.users.otherManager.id}`,
+    );
+    expect(del.status, JSON.stringify(del.body)).toBe(204);
+
+    expect(await prisma.lead.count({ where: { ownerId: fixtures.users.otherManager.id } })).toBe(1);
+    expect(await prisma.todo.count({ where: { ownerId: fixtures.users.otherManager.id } })).toBe(1);
+    // Не в списке, не входит, email свободен
+    const list = (await ceo.get('/api/v1/users?pageSize=100')).body.items;
+    expect(list.map((u: { id: string }) => u.id)).not.toContain(fixtures.users.manager.id);
+    expect(
+      (
+        await request(app.getHttpServer())
+          .post('/api/v1/auth/login')
+          .send({ email: 'manager@test.uz', password: 'TestPass2026' })
+      ).status,
+    ).toBe(401);
+    expect((await manager.get('/api/v1/auth/me')).status).toBe(401);
+    const again = await ceo.post('/api/v1/users', {
+      email: 'manager@test.uz',
+      fullName: 'Новый менеджер',
+      roleCode: 'MANAGER',
+    });
+    expect(again.status, JSON.stringify(again.body)).toBe(201);
+    expect(await prisma.auditLog.count({ where: { action: 'user.delete' } })).toBe(1);
   });
 });

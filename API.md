@@ -206,6 +206,12 @@ POST /inbox/:id/lead  — создать лид из переписки   (lead.
 POST /client-errors   — ошибка виджета интерфейса в лог API
 ```
 
+### Сотрудники: удаление
+```
+GET    /users/:id/workload     → открытая работа (лиды, сделки, клиенты, проекты, задачи, дела, переписки)
+DELETE /users/:id?transferToId  — работа передаётся; учётная запись скрывается, email освобождается (employee.manage ALL)
+```
+
 ### Прочее
 ```
 POST /client-errors   { widget, message, stack?, path?, userAgent? } — ошибка виджета интерфейса → лог API (WARN ClientError)

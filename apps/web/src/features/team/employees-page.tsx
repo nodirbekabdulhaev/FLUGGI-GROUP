@@ -16,6 +16,7 @@ import {
   Plus,
   Search,
   Send,
+  Trash2,
   Unlock,
 } from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
@@ -40,6 +41,7 @@ import { useCan, useMe } from '@/lib/me-context';
 import { initials } from '@/lib/utils';
 import { useResetPassword, useSetBlocked, useTeams, useUsers } from './api';
 import { EmployeeFormDialog } from './employee-form-dialog';
+import { DeleteEmployeeDialog } from './delete-employee-dialog';
 import { RatesDialog } from './rates-dialog';
 import { TempPasswordDialog } from './temp-password-dialog';
 
@@ -103,6 +105,7 @@ export function EmployeesPage({
   const [editing, setEditing] = useState<UserDto | null>(null);
   const [tempPassword, setTempPassword] = useState<{ name: string; password: string } | null>(null);
   const [ratesFor, setRatesFor] = useState<UserDto | null>(null);
+  const [deleting, setDeleting] = useState<UserDto | null>(null);
 
   const filtered = Boolean(search || (!fixedRole && role) || teamId || status);
   const title = t(`employees.${fixedRole ? TITLE_KEY[fixedRole] : 'title'}`);
@@ -162,6 +165,11 @@ export function EmployeesPage({
                 {user.status === 'ACTIVE' ? <Lock /> : <Unlock />}
                 {t(user.status === 'ACTIVE' ? 'employees.block' : 'employees.unblock')}
               </DropdownMenuItem>
+              {can('employee.manage', 'ALL') ? (
+                <DropdownMenuItem onSelect={() => setDeleting(user)} destructive>
+                  <Trash2 /> {t('employees.delete')}
+                </DropdownMenuItem>
+              ) : null}
             </>
           ) : null}
         </DropdownMenuContent>
@@ -379,6 +387,7 @@ export function EmployeesPage({
       />
       <TempPasswordDialog value={tempPassword} onClose={() => setTempPassword(null)} />
       <RatesDialog user={ratesFor} editable={canRates} onClose={() => setRatesFor(null)} />
+      <DeleteEmployeeDialog user={deleting} onClose={() => setDeleting(null)} />
     </>
   );
 }

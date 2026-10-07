@@ -85,3 +85,21 @@ export interface CreateUserResponse {
   /** Возвращается только если пароль сгенерирован сервером. Показать один раз. */
   temporaryPassword?: string;
 }
+
+/** Открытая работа сотрудника — перед удалением её нужно передать другому. */
+export interface UserWorkloadDto {
+  leads: number;
+  deals: number;
+  clients: number;
+  projects: number;
+  tasks: number;
+  todos: number;
+  threads: number;
+  total: number;
+}
+
+export const deleteUserSchema = z.object({
+  /** Кому передать открытые лиды, сделки, клиентов, проекты, задачи и переписки */
+  transferToId: z.uuid().nullish(),
+});
+export type DeleteUserInput = z.input<typeof deleteUserSchema>;
