@@ -532,7 +532,8 @@ export function TodosPage() {
   const views: View[] = [
     'mine',
     'assigned',
-    ...(can('task.read', 'ALL') ? (['all'] as const) : []),
+    // «Все»: CEO — вся компания, РОП — свой отдел (проверка — на сервере)
+    ...(can('task.read', 'TEAM') ? (['all'] as const) : []),
     'recurring',
   ];
   const raw = params.get('view') as View | null;
@@ -541,7 +542,10 @@ export function TodosPage() {
     <>
       <PageHeader title={t('pageTitle')} description={t('pageSubtitle')} />
       <Tabs
-        items={views.map((k) => ({ key: k, label: t(`views.${k}`) }))}
+        items={views.map((k) => ({
+          key: k,
+          label: k === 'all' && !can('task.read', 'ALL') ? t('views.team') : t(`views.${k}`),
+        }))}
         value={view}
         onChange={(k) => router.replace(`${pathname}?view=${k}`, { scroll: false })}
       />

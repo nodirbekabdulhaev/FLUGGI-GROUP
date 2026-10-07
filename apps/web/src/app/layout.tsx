@@ -15,7 +15,7 @@ export const viewport: Viewport = { width: 'device-width', initialScale: 1, them
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   return (
-    <html lang={locale}>
+    <html lang={locale} translate="no">
       <body>
         <NextIntlClientProvider>
           <Providers>{children}</Providers>

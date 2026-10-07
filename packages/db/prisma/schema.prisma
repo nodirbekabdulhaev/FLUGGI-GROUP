@@ -210,6 +210,8 @@ model Employee {
   specialty  ExecutorSpecialty?
   /// Оклад (ТЗ §32). Виден только CEO и самому сотруднику — через модуль зарплаты.
   baseSalary Decimal?           @map("base_salary") @db.Decimal(18, 2)
+  /// KPI-бонус при выполнении KPI на 100% (сум); за месяц начисляется пропорционально, до 120%.
+  kpiBonusTarget Decimal?       @map("kpi_bonus_target") @db.Decimal(18, 2)
   /// Индивидуальный график; иначе — график роли.
   scheduleId String?            @map("schedule_id") @db.Uuid
   hiredAt    DateTime?          @map("hired_at") @db.Date

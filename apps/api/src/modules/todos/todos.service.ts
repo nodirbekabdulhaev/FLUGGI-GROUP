@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
   formatNumber,
-  OPEN_TASK_STATUSES,
   type createTodoSchema,
   type Paginated,
   type TodoDockDto,
@@ -29,6 +28,16 @@ type Row = Prisma.TodoGetPayload<{ include: typeof todoInclude }>;
 
 /** Все дела видит только тот, у кого задачи на всю компанию (CEO). */
 const seesAll = (auth: AuthContext) => auth.permissions['task.read'] === 'ALL';
+
+/** Отделы, дела которых видит РОП (task.read на уровне отдела). */
+const teamScope = (auth: AuthContext): string[] =>
+  auth.permissions['task.read'] === 'TEAM'
+    ? auth.headedTeamIds.length
+      ? auth.headedTeamIds
+      : auth.teamId
+        ? [auth.teamId]
+        : []
+    : [];
 
 /**
  * Личные дела (ТЗ: «задачи не только по проектам»): звонки, письма, отчёты, платежи.
@@ -118,8 +127,13 @@ export class TodosService {
     auth: AuthContext,
     q: z.output<typeof todoListQuerySchema>,
   ): Promise<Paginated<TodoDto>> {
-    if (q.view === 'all' && !seesAll(auth)) throw forbidden();
     const and: Prisma.TodoWhereInput[] = [{ deletedAt: null }];
+    // «Все»: CEO — вся компания, РОП — сотрудники своего отдела
+    if (q.view === 'all' && !seesAll(auth)) {
+      const teams = teamScope(auth);
+      if (!teams.length) throw forbidden();
+      and.push({ OR: [{ owner: { teamId: { in: teams } } }, { ownerId: auth.userId }] });
+    }
     if (q.view === 'mine') and.push({ ownerId: auth.userId });
     if (q.view === 'assigned') and.push({ creatorId: auth.userId, ownerId: { not: auth.userId } });
     if (q.status) and.push({ status: q.status });
@@ -148,53 +162,16 @@ export class TodosService {
     };
   }
 
-  /** Панель «Список дел»: открытые личные дела и задачи по проектам, где я исполнитель. */
+  /** Панель «Список дел»: только мои открытые личные дела (задачи проектов — в разделе «Задачи»). */
   async dock(auth: AuthContext): Promise<TodoDockDto> {
     const now = new Date();
-    const [todos, tasks] = await Promise.all([
-      this.prisma.todo.findMany({
-        where: { ownerId: auth.userId, status: 'OPEN', deletedAt: null },
-        include: todoInclude,
-        orderBy: [{ dueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
-        take: 200,
-      }),
-      this.prisma.task.findMany({
-        where: {
-          assigneeId: auth.userId,
-          deletedAt: null,
-          status: { in: [...OPEN_TASK_STATUSES] },
-          project: { deletedAt: null },
-        },
-        select: {
-          id: true,
-          number: true,
-          title: true,
-          priority: true,
-          status: true,
-          deadline: true,
-          project: { select: { id: true, number: true, name: true } },
-        },
-        orderBy: [{ deadline: { sort: 'asc', nulls: 'last' } }],
-        take: 200,
-      }),
-    ]);
-    return {
-      todos: todos.map((t) => this.toDto(t, auth, now)),
-      projectTasks: tasks.map((t) => ({
-        id: t.id,
-        number: formatNumber('T', t.number),
-        title: t.title,
-        priority: t.priority,
-        status: t.status,
-        deadline: t.deadline?.toISOString() ?? null,
-        overdue: Boolean(t.deadline && t.deadline < now),
-        project: {
-          id: t.project.id,
-          number: formatNumber('P', t.project.number),
-          name: t.project.name,
-        },
-      })),
-    };
+    const todos = await this.prisma.todo.findMany({
+      where: { ownerId: auth.userId, status: 'OPEN', deletedAt: null },
+      include: todoInclude,
+      orderBy: [{ dueAt: { sort: 'asc', nulls: 'last' } }, { createdAt: 'desc' }],
+      take: 200,
+    });
+    return { todos: todos.map((t) => this.toDto(t, auth, now)) };
   }
 
   async create(auth: AuthContext, input: z.output<typeof createTodoSchema>): Promise<TodoDto> {

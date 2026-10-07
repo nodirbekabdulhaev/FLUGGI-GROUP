@@ -203,6 +203,8 @@ export const updatePayrollSchema = z.object({
   comment: z.string().trim().max(1000).nullable().optional(),
   /** Сохранить оклад как постоянный для следующих месяцев */
   saveBaseSalary: z.boolean().optional(),
+  /** KPI-бонус при 100% выполнения (постоянно, в карточке сотрудника); null — убрать */
+  kpiBonusTarget: moneySchema.nullable().optional(),
 });
 export type UpdatePayrollInput = z.input<typeof updatePayrollSchema>;
 
@@ -220,6 +222,8 @@ export interface PayrollEntryDto {
   penalty: string;
   finalSalary: string;
   kpiPct: string | null;
+  /** KPI-бонус при 100% из карточки сотрудника; null — не задан (бонус вносится вручную) */
+  kpiBonusTarget: string | null;
   status: PayrollStatus;
   comment: string | null;
   approvedBy: NamedRef | null;
@@ -267,9 +271,26 @@ export interface ExecutorDashboardDto {
   done: number;
 }
 
+/** Мой KPI за месяц: выполнение целей и сумма KPI (оклад виден только самому сотруднику). */
+export interface MyKpiDto {
+  period: string;
+  /** Среднее выполнение целей, % (null — целей на месяц нет) */
+  pct: string | null;
+  targets: TargetProgressDto[];
+  /** KPI-бонус при 100%; null — не задан */
+  bonusTarget: string | null;
+  /** KPI-бонус за месяц по текущему выполнению */
+  bonusUzs: string;
+  commissionUzs: string;
+  baseSalary: string | null;
+  /** Оклад + KPI-бонус + комиссия */
+  expectedUzs: string;
+}
+
 export interface DashboardDto {
   from: string;
   to: string;
+  myKpi?: MyKpiDto;
   ceo?: CeoDashboardDto;
   team?: TeamDashboardDto;
   own?: OwnDashboardDto;

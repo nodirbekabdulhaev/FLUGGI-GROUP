@@ -31,8 +31,14 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
     otherBonus: '',
     penalty: '',
     comment: '',
+    kpiBonusTarget: '',
   });
   const [saveBase, setSaveBase] = useState(true);
+  // KPI-бонус по «бонусу при 100%»: выполнение KPI × сумма (до 120%)
+  const autoBonus = (target: string) =>
+    entry?.kpiPct && Number(target) > 0
+      ? String(Math.round((Number(target) * Math.min(Number(entry.kpiPct), 120)) / 100))
+      : '0';
   useEffect(() => {
     if (!entry) return;
     setV({
@@ -41,6 +47,7 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
       otherBonus: String(Number(entry.otherBonus)),
       penalty: String(Number(entry.penalty)),
       comment: entry.comment ?? '',
+      kpiBonusTarget: entry.kpiBonusTarget ? String(Number(entry.kpiBonusTarget)) : '',
     });
   }, [entry]);
   const save = useCrmMutation(() =>
@@ -53,6 +60,7 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
         penalty: v.penalty || '0',
         comment: v.comment || null,
         saveBaseSalary: saveBase,
+        kpiBonusTarget: v.kpiBonusTarget ? v.kpiBonusTarget : null,
       },
     }),
   );
@@ -91,6 +99,23 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
         >
           <div className="grid gap-4 sm:grid-cols-2">
             {field('baseSalary', t('base'))}
+            <Field
+              label={t('kpiBonusTarget')}
+              htmlFor="pr-kpi-target"
+              hint={t('kpiBonusTargetHint')}
+            >
+              <MoneyInput
+                id="pr-kpi-target"
+                value={v.kpiBonusTarget}
+                onChange={(e) =>
+                  setV((s) => ({
+                    ...s,
+                    kpiBonusTarget: e.target.value,
+                    kpiBonus: e.target.value ? autoBonus(e.target.value) : s.kpiBonus,
+                  }))
+                }
+              />
+            </Field>
             {field('kpiBonus', `${t('kpiBonus')}${entry?.kpiPct ? ` (KPI ${entry.kpiPct}%)` : ''}`)}
             <Field label={t('commission')} htmlFor="pr-comm">
               <Input id="pr-comm" disabled value={money(entry?.commission ?? 0)} />

@@ -56,3 +56,14 @@ describe('KPI и зарплата', () => {
     expect(r.to.toISOString()).toBe('2026-10-31T19:00:00.000Z');
   });
 });
+
+describe('KPI-бонус', () => {
+  it('пропорционален выполнению, перевыполнение — до 120%', async () => {
+    const { kpiBonusFor } = await import('./people');
+    expect(kpiBonusFor('2000000', '75')).toBe('1500000.00');
+    expect(kpiBonusFor('2000000', '150')).toBe('2400000.00');
+    expect(kpiBonusFor('2000000', null)).toBe('0.00');
+    expect(kpiBonusFor(null, '90')).toBe('0.00');
+    expect(kpiBonusFor('1000000', '33.333')).toBe('333330.00');
+  });
+});

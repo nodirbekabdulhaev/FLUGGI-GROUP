@@ -224,6 +224,7 @@ erDiagram
 | `employee_rates` | Личная ставка сотрудника за работу |
 | `tariffs`, `tariff_items` | Тарифы услуг и их позиции (PIECE — сдельно, FIXED — фиксированно) |
 | `project_cost_lines` | План себестоимости проекта: PLANNED → ACCRUED (расход) / CANCELLED |
+| `employees.kpi_bonus_target` | KPI-бонус при 100% выполнения: бонус месяца = сумма × KPI% (до 120%) |
 | `clients.requisites` (JSONB) | Реквизиты клиента для договора |
 | `settings['documents']` | Город, текст договора, вступление и примечание КП |
 | `settings['company']` | Реквизиты компании (юр. название, ИНН, банк, МФО, р/с, подписант) |

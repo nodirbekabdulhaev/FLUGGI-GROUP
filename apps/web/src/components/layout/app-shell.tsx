@@ -64,10 +64,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:pt-8">{children}</main>
-      <WidgetBoundary name="todo-dock">
+      <WidgetBoundary name="todo-dock" label="Список дел" placement="bar">
         <TodoDock />
       </WidgetBoundary>
-      <WidgetBoundary name="chat">
+      <WidgetBoundary name="chat" label="Чат" placement="corner">
         <Suspense>
           <ChatWidget />
         </Suspense>

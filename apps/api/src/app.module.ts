@@ -12,6 +12,7 @@ import { AllExceptionsFilter } from './core/http/all-exceptions.filter';
 import { OutboxModule } from './core/outbox/outbox.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { PermissionGuard } from './core/rbac/permission.guard';
+import { ClientErrorsController } from './modules/health/client-errors.controller';
 import { HealthController } from './modules/health/health.controller';
 import { RolesModule } from './modules/roles/roles.module';
 import { TeamsModule } from './modules/teams/teams.module';
@@ -107,7 +108,7 @@ const env = loadEnv();
     CatalogModule,
     DocumentsModule,
   ],
-  controllers: [HealthController],
+  controllers: [HealthController, ClientErrorsController],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
     // Порядок важен: лимит → сессия → CSRF → права.

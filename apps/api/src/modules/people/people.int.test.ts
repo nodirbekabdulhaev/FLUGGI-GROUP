@@ -301,6 +301,50 @@ describe('Посещаемость и графики (ТЗ §35–36)', () => {
 });
 
 describe('Зарплата (ТЗ §32)', () => {
+  it('KPI-бонус при 100% из карточки: начисляется по выполнению; «Мой KPI» на дашборде', async () => {
+    const manager = await Client.login(app, 'manager@test.uz');
+    const rop = await Client.login(app, 'rop@test.uz');
+    const ceo = await Client.login(app, 'ceo@test.uz');
+    await sale(manager, rop); // продажа на 9 000 000
+    // Цель — 18 000 000: выполнение 50%
+    await ceo.put('/api/v1/kpi/targets', {
+      userId: fx.users.manager.id,
+      period: month(),
+      targets: [{ metric: 'REVENUE', value: '18000000' }],
+    });
+    const calc = (await ceo.post('/api/v1/payroll/calculate', { period: month() })).body;
+    const row = calc.find((e: { user: { id: string } }) => e.user.id === fx.users.manager.id);
+    expect(row).toMatchObject({ kpiPct: '50.00', kpiBonus: '0.00', kpiBonusTarget: null });
+
+    const upd = await ceo.patch(`/api/v1/payroll/${row.id}`, {
+      baseSalary: '5000000',
+      saveBaseSalary: true,
+      kpiBonusTarget: '2 000 000',
+    });
+    expect(upd.status, JSON.stringify(upd.body)).toBe(200);
+    expect(upd.body).toMatchObject({ kpiBonus: '1000000.00', kpiBonusTarget: '2000000.00' });
+    // Пересчёт месяца считает KPI-бонус автоматически
+    const again = (await ceo.post('/api/v1/payroll/calculate', { period: month() })).body;
+    expect(again.find((e: { id: string }) => e.id === row.id).kpiBonus).toBe('1000000.00');
+    // Только CEO задаёт бонус
+    expect((await rop.patch(`/api/v1/payroll/${row.id}`, { kpiBonusTarget: '1' })).status).toBe(
+      403,
+    );
+
+    const my = (await manager.get('/api/v1/dashboard?period=month')).body.myKpi;
+    expect(my).toMatchObject({
+      period: month(),
+      pct: '50.00',
+      bonusTarget: '2000000.00',
+      bonusUzs: '1000000.00',
+      baseSalary: '5000000.00',
+    });
+    expect(my.targets[0]).toMatchObject({ metric: 'REVENUE', pct: '50.00' });
+    expect(Number(my.expectedUzs)).toBe(5_000_000 + 1_000_000 + Number(my.commissionUzs));
+    // У CEO блока нет
+    expect((await ceo.get('/api/v1/dashboard?period=month')).body.myKpi).toBeUndefined();
+  });
+
   it('оклад + KPI-бонус + комиссия + бонус − штраф; свою видит каждый, все — CEO', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
     const rop = await Client.login(app, 'rop@test.uz');

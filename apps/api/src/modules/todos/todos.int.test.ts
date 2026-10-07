@@ -64,15 +64,26 @@ describe('Личные дела («Список дел»)', () => {
       404,
     );
 
-    // «Список дел» менеджера: дело от РОП + его проектные задачи
+    // «Список дел» менеджера: только личные дела (задачи проектов там не показываются)
     const dock = (await manager.get('/api/v1/todos/dock')).body;
     expect(dock.todos.map((x: { title: string }) => x.title)).toEqual(['Позвонить клиенту']);
-    expect(dock.projectTasks).toEqual([]);
+    expect(dock).not.toHaveProperty('projectTasks');
     // Чужое дело не видно и не изменить
     expect((await executor.patch(`/api/v1/todos/${t.body.id}`, { title: 'hack' })).status).toBe(
       404,
     );
     expect((await manager.get('/api/v1/todos?view=all')).status).toBe(403);
+    // «Все» у РОП — только сотрудники его отдела
+    const ceoForOther = await Client.login(app, 'ceo@test.uz');
+    await ceoForOther.post('/api/v1/todos', {
+      title: 'Дело другого отдела',
+      ownerId: fx.users.otherManager.id,
+    });
+    const ropAll = (await rop.get('/api/v1/todos?view=all')).body;
+    expect(ropAll.items.map((x: { title: string }) => x.title)).toContain('Позвонить клиенту');
+    expect(ropAll.items.map((x: { title: string }) => x.title)).not.toContain(
+      'Дело другого отдела',
+    );
 
     // Выполнение — РОП получает уведомление; повторно — 422; удалить может только автор
     const done = await manager.post(`/api/v1/todos/${t.body.id}/complete`);
@@ -91,7 +102,7 @@ describe('Личные дела («Список дел»)', () => {
 
     // CEO видит все дела компании
     const ceo = await Client.login(app, 'ceo@test.uz');
-    expect((await ceo.get('/api/v1/todos?view=all')).body.total).toBe(1);
+    expect((await ceo.get('/api/v1/todos?view=all')).body.total).toBe(2);
   });
 
   it('напоминания: сегодня срок и просрочено — один раз', async () => {

@@ -81,6 +81,19 @@ export function finalSalary(x: {
     .toFixed(2);
 }
 
+/** Предел выполнения KPI для бонуса: перевыполнение оплачивается до 120%. */
+export const KPI_BONUS_CAP_PCT = 120;
+
+/**
+ * KPI-бонус за месяц: «бонус при 100%» × выполнение KPI (не больше 120%).
+ * Нет целей (pct = null) или не задан бонус — 0.
+ */
+export function kpiBonusFor(target: string | number | null, pct: string | number | null): string {
+  if (target === null || pct === null || Number(target) <= 0) return '0.00';
+  const p = Math.min(Math.max(Number(pct), 0), KPI_BONUS_CAP_PCT);
+  return new Decimal(target).mul(p).div(100).toDecimalPlaces(0).toFixed(2);
+}
+
 /** Границы месяца YYYY-MM по Ташкенту. */
 export function monthRange(period: string): { from: Date; to: Date } {
   const [y, m] = period.split('-').map(Number) as [number, number];

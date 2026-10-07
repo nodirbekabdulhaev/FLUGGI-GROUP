@@ -3,6 +3,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { Bell, CheckCheck } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useTelegramStatus } from '@/features/automation/api';
 import Link from 'next/link';
 import { useState } from 'react';
 import { PageHeader } from '@/components/shared/page-header';
@@ -90,7 +91,7 @@ export function NotificationsPage() {
           </>
         )}
       </Card>
-      <p className="mt-3 text-xs text-muted-foreground">{t('telegramSoon')}</p>
+      <TelegramLine />
     </>
   );
 }
@@ -115,5 +116,31 @@ export function NotificationBell() {
         ) : null}
       </Link>
     </Button>
+  );
+}
+
+/** Статус дублирования в Telegram: подключён / не подключён / бот не работает. */
+function TelegramLine() {
+  const t = useTranslations('notifications');
+  const tg = useTelegramStatus();
+  if (!tg.data) return null;
+  const d = tg.data;
+  const text = !d.botConfigured
+    ? t('tgNotConfigured')
+    : d.problem
+      ? t('tgProblem', { problem: d.problem })
+      : d.linked
+        ? t('tgOn', { username: d.username ? `@${d.username}` : '' })
+        : t('tgOff');
+  const ok = d.botConfigured && !d.problem && d.linked;
+  return (
+    <p className={`mt-3 text-xs ${ok ? 'text-success' : 'text-muted-foreground'}`}>
+      {text}{' '}
+      {!ok ? (
+        <Link href="/profile" className="font-medium text-accent hover:underline">
+          {t('tgSetup')}
+        </Link>
+      ) : null}
+    </p>
   );
 }

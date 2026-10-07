@@ -33,7 +33,7 @@ export const updateTodoSchema = createTodoSchema.partial().extend({
 export type UpdateTodoInput = z.input<typeof updateTodoSchema>;
 
 export const todoListQuerySchema = z.object({
-  /** mine — мои; assigned — поручил я другим; all — все (только CEO) */
+  /** mine — мои; assigned — поручил я другим; all — все (CEO — компания, РОП — свой отдел) */
   view: z.enum(['mine', 'assigned', 'all']).default('mine'),
   status: z.enum(TODO_STATUSES).optional(),
   clientId: z.uuid().optional(),
@@ -65,18 +65,9 @@ export interface TodoDto {
 }
 
 /** Панель «Список дел»: мои открытые дела и мои задачи по проектам. */
+/** Панель «Список дел» — только личные дела пользователя. */
 export interface TodoDockDto {
   todos: TodoDto[];
-  projectTasks: {
-    id: string;
-    number: string;
-    title: string;
-    priority: Priority;
-    status: string;
-    deadline: string | null;
-    overdue: boolean;
-    project: NumberedRef;
-  }[];
 }
 
 // ─────────────────────────── Регулярные дела ───────────────────────────

@@ -154,8 +154,8 @@ POST            /follow-ups/:id/complete  { status: DONE|SKIPPED, result?, creat
 
 ### Дела, регулярные дела, чат
 ```
-GET    /todos              ?view=mine|assigned|all&status&clientId&dealId&page
-GET    /todos/dock          → мои открытые дела + мои задачи по проектам («Список дел»)
+GET    /todos              ?view=mine|assigned|all&status&clientId&dealId&page   (all: CEO — компания, РОП — свой отдел)
+GET    /todos/dock          → только мои открытые личные дела («Список дел»)
 POST   /todos              PATCH /todos/:id   POST /todos/:id/complete|reopen   DELETE /todos/:id
 GET    /recurring-todos    POST /recurring-todos   PUT/DELETE /recurring-todos/:id
 POST   /recurring-todos/tax-calendar          → налоговый календарь IT-Park себе (без дублей)
@@ -179,6 +179,13 @@ GET    /settings/documents  PUT /settings/documents { city, contractTemplate, pr
 PUT    /clients/:id/requisites   (client.update)
 ```
 `GET /proposals/:id/pdf` удалён — используйте `/documents/proposals/:id?format=pdf`.
+
+### Прочее
+```
+POST /client-errors   { widget, message, stack?, path?, userAgent? } — ошибка виджета интерфейса → лог API (WARN ClientError)
+GET  /dashboard       → + myKpi { pct, targets[], bonusTarget, bonusUzs, commissionUzs, baseSalary, expectedUzs } (кроме CEO)
+PATCH /payroll/:id    + kpiBonusTarget — «KPI-бонус при 100%» в карточке сотрудника (CEO)
+```
 
 ### Внешние
 ```

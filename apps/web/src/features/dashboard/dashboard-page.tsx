@@ -1,6 +1,6 @@
 'use client';
 
-import type { KpiRowDto, TargetProgressDto } from '@fluggi/contracts';
+import type { KpiRowDto, MyKpiDto, TargetProgressDto } from '@fluggi/contracts';
 import { Clock, LogIn, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -121,6 +121,75 @@ function AttendanceCard() {
 
 function revenueTarget(row: KpiRowDto): TargetProgressDto | undefined {
   return row.targets.find((x) => x.metric === 'REVENUE');
+}
+
+/** «Мой KPI за месяц»: выполнение целей и сумма KPI-бонуса, ожидаемая выплата. */
+function MyKpiCard({ k }: { k: MyKpiDto }) {
+  const td = useTranslations('dash');
+  const tk = useTranslations('kpi');
+  const fmt = (t: TargetProgressDto, v: string) =>
+    t.metric === 'REVENUE' ? moneyShort(v, t.currency) : Number(v).toLocaleString('ru-RU');
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{td('myKpiTitle', { period: k.period })}</CardTitle>
+      </CardHeader>
+      <CardContent className="grid gap-6 lg:grid-cols-[1fr_20rem]">
+        <div className="grid content-start gap-4">
+          <div className="flex items-end gap-4">
+            <p className="text-4xl font-semibold tabular-nums" data-testid="my-kpi-pct">
+              {k.pct ? `${k.pct}%` : '—'}
+            </p>
+            <div className="flex-1 pb-2">
+              <PctBar pct={k.pct} />
+            </div>
+          </div>
+          {k.targets.length ? (
+            <ul className="grid gap-2 text-sm">
+              {k.targets.map((t) => (
+                <li key={t.metric} className="grid grid-cols-[8rem_1fr_7rem] items-center gap-3">
+                  <span className="text-muted-foreground">{tk(`metric.${t.metric}`)}</span>
+                  <span className="tabular-nums">
+                    {fmt(t, t.fact)} / {fmt(t, t.target)}
+                  </span>
+                  <PctBar pct={t.pct} />
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-muted-foreground">{td('noKpiTargets')}</p>
+          )}
+        </div>
+        <dl className="grid content-start gap-2 rounded-lg bg-muted/40 p-4 text-sm">
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">{td('kpiBonus')}</dt>
+            <dd className="font-semibold tabular-nums" data-testid="my-kpi-bonus">
+              {money(k.bonusUzs)}
+            </dd>
+          </div>
+          <p className="-mt-1 text-xs text-muted-foreground">
+            {k.bonusTarget
+              ? td('kpiBonusHint', { amount: money(k.bonusTarget) })
+              : td('kpiBonusNotSet')}
+          </p>
+          <div className="flex justify-between gap-3">
+            <dt className="text-muted-foreground">{td('commissionMonth')}</dt>
+            <dd className="tabular-nums">{money(k.commissionUzs)}</dd>
+          </div>
+          {k.baseSalary ? (
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">{td('baseSalary')}</dt>
+              <dd className="tabular-nums">{money(k.baseSalary)}</dd>
+            </div>
+          ) : null}
+          <div className="mt-1 flex justify-between gap-3 border-t pt-2">
+            <dt className="font-medium">{td('expectedPay')}</dt>
+            <dd className="font-semibold tabular-nums">{money(k.expectedUzs)}</dd>
+          </div>
+        </dl>
+      </CardContent>
+    </Card>
+  );
 }
 
 /** Главный экран по ролям (ТЗ §5, §58–60). */
@@ -320,6 +389,8 @@ export function DashboardPage() {
               </div>
             </section>
           ) : null}
+
+          {d?.myKpi ? <MyKpiCard k={d.myKpi} /> : null}
 
           {!d?.own && !d?.executor ? (
             <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

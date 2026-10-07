@@ -1,12 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import {
+  type MyKpiDto,
   ACTIVE_PROJECT_STATUSES,
   OPEN_TASK_STATUSES,
   resolvePeriodQuery,
   type DashboardDto,
   type periodQuerySchema,
 } from '@fluggi/contracts';
-import { companyDate, companyDayStart } from '@fluggi/domain';
+import { companyDate, companyDayStart, finalSalary, kpiBonusFor } from '@fluggi/domain';
 import type { z } from 'zod';
 import type { AuthContext } from '../../core/auth/auth-context';
 import { PrismaService } from '../../core/prisma/prisma.service';
@@ -155,6 +156,44 @@ export class DashboardService {
       ]);
       out.executor = { projects, today, overdue, inProgress, done };
     }
+    if (auth.roleCode !== 'CEO') out.myKpi = (await this.myKpi(auth, period, range)) ?? undefined;
     return out;
+  }
+
+  /** «Мой KPI»: выполнение целей месяца и сумма KPI-бонуса по текущему выполнению. */
+  private async myKpi(
+    auth: AuthContext,
+    period: string,
+    range: { from: Date; to: Date },
+  ): Promise<MyKpiDto | null> {
+    const [me] = await this.kpi.rows(auth, period, range, { userIds: [auth.userId] });
+    if (!me) return null;
+    const [employee, commission] = await Promise.all([
+      this.prisma.employee.findUnique({ where: { userId: auth.userId } }),
+      this.prisma.commission.aggregate({
+        where: { userId: auth.userId, period, status: { not: 'CANCELLED' } },
+        _sum: { amountUzs: true },
+      }),
+    ]);
+    const bonusTarget = employee?.kpiBonusTarget?.toFixed(2) ?? null;
+    const bonusUzs = kpiBonusFor(bonusTarget, me.kpiPct);
+    const commissionUzs = (commission._sum.amountUzs ?? 0).toString();
+    const baseSalary = employee?.baseSalary?.toFixed(2) ?? null;
+    return {
+      period,
+      pct: me.kpiPct,
+      targets: me.targets,
+      bonusTarget,
+      bonusUzs,
+      commissionUzs: Number(commissionUzs).toFixed(2),
+      baseSalary,
+      expectedUzs: finalSalary({
+        baseSalary: baseSalary ?? 0,
+        kpiBonus: bonusUzs,
+        commission: commissionUzs,
+        otherBonus: 0,
+        penalty: 0,
+      }),
+    };
   }
 }

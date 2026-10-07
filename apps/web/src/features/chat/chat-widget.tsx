@@ -27,6 +27,7 @@ const initials = (name: string) =>
 
 const time = (iso: string) => {
   const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '';
   const sameDay = d.toDateString() === new Date().toDateString();
   return sameDay
     ? d.toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' })
@@ -68,7 +69,9 @@ function Conversation({ id, peer, onBack }: { id: string; peer: string; onBack: 
         method: 'POST',
         body: { body },
       });
-      qc.setQueryData<ChatMessageDto[]>(['chat', 'messages', id], (list) => [...(list ?? []), m]);
+      qc.setQueryData<ChatMessageDto[]>(['chat', 'messages', id], (list) =>
+        Array.isArray(list) ? (list.some((x) => x.id === m.id) ? list : [...list, m]) : [m],
+      );
       setText('');
       void qc.invalidateQueries({ queryKey: ['chat', 'list'] });
     } catch (err) {
@@ -134,6 +137,10 @@ function Conversation({ id, peer, onBack }: { id: string; peer: string; onBack: 
           maxLength={4000}
           onChange={(e) => setText(e.target.value)}
           autoFocus
+          autoComplete="off"
+          data-gramm="false"
+          data-gramm_editor="false"
+          data-enable-grammarly="false"
         />
         <button
           type="submit"

@@ -15,6 +15,7 @@ import {
   atTashkent,
   companyDate,
   finalSalary,
+  kpiBonusFor,
   isoWeekday,
   lateMinutes,
   monthRange,
@@ -54,7 +55,14 @@ const toAttendance = (a: AttendanceRow): AttendanceDto => ({
 });
 
 const payrollInclude = {
-  user: { select: { id: true, fullName: true, role: { select: { code: true } } } },
+  user: {
+    select: {
+      id: true,
+      fullName: true,
+      role: { select: { code: true } },
+      employee: { select: { kpiBonusTarget: true } },
+    },
+  },
   approvedBy: { select: { id: true, fullName: true } },
 } satisfies Prisma.PayrollEntryInclude;
 
@@ -72,6 +80,7 @@ const toPayroll = (p: PayrollRow): PayrollEntryDto => ({
   penalty: p.penalty.toFixed(2),
   finalSalary: p.finalSalary.toFixed(2),
   kpiPct: p.kpiPct?.toFixed(2) ?? null,
+  kpiBonusTarget: p.user.employee?.kpiBonusTarget?.toFixed(2) ?? null,
   status: p.status,
   comment: p.comment,
   approvedBy: named(p.approvedBy),
@@ -470,9 +479,14 @@ export class PeopleService {
         if (existing && existing.status !== 'DRAFT') continue;
         const commission = await this.commissionOf(u.id, period);
         const base = existing?.baseSalary ?? u.employee?.baseSalary ?? new Prisma.Decimal(0);
+        // KPI-бонус: из «бонуса при 100%» × выполнение KPI; без него — сохраняется ручная сумма
+        const target = u.employee?.kpiBonusTarget ?? null;
+        const pct = kpiOf.get(u.id) ?? null;
         const parts = {
           baseSalary: base,
-          kpiBonus: existing?.kpiBonus ?? new Prisma.Decimal(0),
+          kpiBonus: target
+            ? new Prisma.Decimal(kpiBonusFor(target.toString(), pct))
+            : (existing?.kpiBonus ?? new Prisma.Decimal(0)),
           commission,
           otherBonus: existing?.otherBonus ?? new Prisma.Decimal(0),
           penalty: existing?.penalty ?? new Prisma.Decimal(0),
@@ -517,12 +531,23 @@ export class PeopleService {
     if (e.status !== 'DRAFT') throw businessRule('Утверждённую зарплату изменить нельзя');
     const parts = {
       baseSalary: input.baseSalary ?? e.baseSalary.toFixed(2),
-      kpiBonus: input.kpiBonus ?? e.kpiBonus.toFixed(2),
+      // Новый «бонус при 100%» сразу пересчитывает KPI-бонус месяца (если сумму не ввели вручную)
+      kpiBonus:
+        input.kpiBonus ??
+        (input.kpiBonusTarget !== undefined && input.kpiBonusTarget !== null
+          ? kpiBonusFor(input.kpiBonusTarget, e.kpiPct?.toString() ?? null)
+          : e.kpiBonus.toFixed(2)),
       commission: e.commission.toFixed(2),
       otherBonus: input.otherBonus ?? e.otherBonus.toFixed(2),
       penalty: input.penalty ?? e.penalty.toFixed(2),
     };
     return this.prisma.$transaction(async (tx) => {
+      if (input.kpiBonusTarget !== undefined)
+        await tx.employee.upsert({
+          where: { userId: e.userId },
+          update: { kpiBonusTarget: input.kpiBonusTarget },
+          create: { userId: e.userId, kpiBonusTarget: input.kpiBonusTarget },
+        });
       const row = await tx.payrollEntry.update({
         where: { id },
         data: {

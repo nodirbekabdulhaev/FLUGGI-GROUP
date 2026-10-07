@@ -17,7 +17,6 @@ import {
   Repeat,
   Users,
   Wallet,
-  FolderKanban,
 } from 'lucide-react';
 import Link from 'next/link';
 import { useTranslations } from 'next-intl';
@@ -69,15 +68,7 @@ export function dueLabel(iso: string | null, t: (k: string, v?: Record<string, s
   });
 }
 
-type Item =
-  | { type: 'todo'; key: string; due: string | null; priority: Priority; todo: TodoDto }
-  | {
-      type: 'task';
-      key: string;
-      due: string | null;
-      priority: Priority;
-      task: NonNullable<ReturnType<typeof useTodoDock>['data']>['projectTasks'][number];
-    };
+type Item = { key: string; due: string | null; priority: Priority; todo: TodoDto };
 
 function TodoRow({ todo, onEdit }: { todo: TodoDto; onEdit: (t: TodoDto) => void }) {
   const t = useTranslations('todos');
@@ -190,13 +181,12 @@ function TodoRow({ todo, onEdit }: { todo: TodoDto; onEdit: (t: TodoDto) => void
 }
 
 /**
- * «Список дел» внизу экрана (по дизайну): мои личные дела и задачи по проектам.
- * Свёрнут в полосу; раскрывается в панель с фильтром и сортировкой.
+ * «Список дел» внизу экрана (по дизайну): только мои личные дела.
+ * Задачи проектов — в разделе «Задачи». Свёрнут в полосу; раскрывается в панель с сортировкой.
  */
 export function TodoDock() {
   const t = useTranslations('todos');
   const [open, setOpen] = useState(false);
-  const [filter, setFilter] = useState<'all' | 'personal' | 'projects'>('all');
   const [sort, setSort] = useState<'due' | 'priority'>('due');
   const [dialog, setDialog] = useState<{ open: boolean; todo: TodoDto | null }>({
     open: false,
@@ -204,30 +194,16 @@ export function TodoDock() {
   });
   const dock = useTodoDock();
   const data = dock.data;
-  const count = (data?.todos.length ?? 0) + (data?.projectTasks.length ?? 0);
-  const overdue =
-    (data?.todos.filter((x) => x.overdue).length ?? 0) +
-    (data?.projectTasks.filter((x) => x.overdue).length ?? 0);
+  const count = data?.todos.length ?? 0;
+  const overdue = data?.todos.filter((x) => x.overdue).length ?? 0;
 
   const items: Item[] = [
-    ...(filter !== 'projects'
-      ? (data?.todos ?? []).map((todo) => ({
-          type: 'todo' as const,
-          key: todo.id,
-          due: todo.dueAt,
-          priority: todo.priority,
-          todo,
-        }))
-      : []),
-    ...(filter !== 'personal'
-      ? (data?.projectTasks ?? []).map((task) => ({
-          type: 'task' as const,
-          key: task.id,
-          due: task.deadline,
-          priority: task.priority,
-          task,
-        }))
-      : []),
+    ...(data?.todos ?? []).map((todo) => ({
+      key: todo.id,
+      due: todo.dueAt,
+      priority: todo.priority,
+      todo,
+    })),
   ].sort((a, b) =>
     sort === 'priority'
       ? PRIORITY_ORDER[a.priority] - PRIORITY_ORDER[b.priority] ||
@@ -262,16 +238,6 @@ export function TodoDock() {
             </div>
             <div className="flex flex-wrap gap-2">
               <NativeSelect
-                aria-label={t('filter')}
-                className="h-8 w-36 text-xs"
-                value={filter}
-                onChange={(e) => setFilter(e.target.value as typeof filter)}
-              >
-                <option value="all">{t('filters.all')}</option>
-                <option value="personal">{t('filters.personal')}</option>
-                <option value="projects">{t('filters.projects')}</option>
-              </NativeSelect>
-              <NativeSelect
                 aria-label={t('sort')}
                 className="h-8 w-36 text-xs"
                 value={sort}
@@ -296,51 +262,13 @@ export function TodoDock() {
               <p className="py-8 text-center text-sm text-muted-foreground">{t('empty')}</p>
             ) : (
               <ul className="divide-y">
-                {items.map((it) =>
-                  it.type === 'todo' ? (
-                    <TodoRow
-                      key={it.key}
-                      todo={it.todo}
-                      onEdit={(todo) => setDialog({ open: true, todo })}
-                    />
-                  ) : (
-                    <li key={it.key} className="grid gap-1 py-3">
-                      <div className="flex items-start gap-2">
-                        <span
-                          className={cn(
-                            'mt-1.5 size-2.5 shrink-0 rounded-full',
-                            PRIORITY_DOT[it.task.priority],
-                          )}
-                          aria-hidden
-                        />
-                        <Link
-                          href={`/projects/${it.task.project.id}?task=${it.task.id}`}
-                          className="min-w-0 flex-1 text-sm font-semibold leading-snug hover:underline"
-                        >
-                          {it.task.title}
-                        </Link>
-                      </div>
-                      <p className="flex flex-wrap items-center gap-x-3 gap-y-1 pl-4 text-xs text-muted-foreground">
-                        <span className="flex items-center gap-1">
-                          <FolderKanban className="size-3.5" /> {it.task.project.name}
-                        </span>
-                        <span
-                          className={cn(
-                            'flex items-center gap-1',
-                            it.task.overdue && 'font-medium text-danger',
-                          )}
-                        >
-                          <CalendarDays className="size-3.5" />
-                          {it.task.overdue ? `${t('overdue')} · ` : ''}
-                          {dueLabel(it.task.deadline, t)}
-                        </span>
-                        <span className="flex items-center gap-1">
-                          <CircleDot className="size-3.5" /> {t(`taskStatus.${it.task.status}`)}
-                        </span>
-                      </p>
-                    </li>
-                  ),
-                )}
+                {items.map((it) => (
+                  <TodoRow
+                    key={it.key}
+                    todo={it.todo}
+                    onEdit={(todo) => setDialog({ open: true, todo })}
+                  />
+                ))}
               </ul>
             )}
           </div>
