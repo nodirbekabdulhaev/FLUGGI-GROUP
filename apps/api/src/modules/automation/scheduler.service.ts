@@ -1,5 +1,5 @@
 import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
-import type { PermissionMap } from '@fluggi/contracts';
+import { ATTENDANCE_ROLES, type PermissionMap } from '@fluggi/contracts';
 import { addDays, companyDate, isoWeekday, tashkentTime } from '@fluggi/domain';
 import { Prisma } from '@fluggi/db';
 import { loadEnv } from '../../config/env';
@@ -274,7 +274,8 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
     const date = companyDate(now);
     const weekday = isoWeekday(date);
     const users = await this.prisma.user.findMany({
-      where: { status: 'ACTIVE', deletedAt: null, role: { code: { not: 'CEO' } } },
+      // Посещаемость отмечают только менеджеры и РОП
+      where: { status: 'ACTIVE', deletedAt: null, role: { code: { in: [...ATTENDANCE_ROLES] } } },
       include: { role: true, employee: { include: { schedule: true } } },
     });
     const schedules = await this.prisma.workSchedule.findMany({

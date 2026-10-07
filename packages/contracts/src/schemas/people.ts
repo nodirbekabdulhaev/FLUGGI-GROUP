@@ -174,7 +174,20 @@ export interface AttendanceDto {
   editedBy: NamedRef | null;
 }
 
+/**
+ * Посещаемость и фиксированный оклад — только у менеджеров и РОП. Исполнители получают
+ * сдельно (начисления по проектам), CEO и проект-менеджер приход не отмечают.
+ */
+export const ATTENDANCE_ROLES = ['MANAGER', 'ROP'] as const;
+export const FIXED_SALARY_ROLES = ['MANAGER', 'ROP'] as const;
+export const tracksAttendance = (role: string) =>
+  (ATTENDANCE_ROLES as readonly string[]).includes(role);
+export const hasFixedSalary = (role: string) =>
+  (FIXED_SALARY_ROLES as readonly string[]).includes(role);
+
 export interface AttendanceTodayDto {
+  /** Сотрудник отмечает приход (менеджер, РОП) */
+  tracked: boolean;
   date: string;
   schedule: Pick<ScheduleDto, 'id' | 'name' | 'startTime' | 'endTime' | 'workDays'> | null;
   workday: boolean;
@@ -206,6 +219,7 @@ export const updatePayrollSchema = z.object({
   /** KPI-бонус при 100% выполнения (постоянно, в карточке сотрудника); null — убрать */
   kpiBonusTarget: moneySchema.nullable().optional(),
 });
+
 export type UpdatePayrollInput = z.input<typeof updatePayrollSchema>;
 
 export const payrollIdsSchema = z.object({ ids: z.array(z.uuid()).min(1).max(500) });
@@ -216,6 +230,8 @@ export interface PayrollEntryDto {
   role: RoleCode;
   period: string;
   baseSalary: string;
+  /** Сдельная оплата: начисления исполнителю по проектам за месяц */
+  pieceRate: string;
   kpiBonus: string;
   commission: string;
   otherBonus: string;
@@ -283,7 +299,9 @@ export interface MyKpiDto {
   bonusUzs: string;
   commissionUzs: string;
   baseSalary: string | null;
-  /** Оклад + KPI-бонус + комиссия */
+  /** Сдельно: начисления по проектам за месяц (исполнители) */
+  pieceRateUzs: string;
+  /** Оклад + сдельно + KPI-бонус + комиссия */
   expectedUzs: string;
 }
 

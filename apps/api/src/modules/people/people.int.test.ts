@@ -269,10 +269,29 @@ describe('Посещаемость и графики (ТЗ §35–36)', () => {
       )
     ).body[0];
     expect(sum).toMatchObject({ late: 1, lateMinutes: 25, sick: 1, workHours: '8.5' });
-    // Исполнитель видит только себя
+    // Посещаемость — только менеджеры и РОП: исполнитель не видит и не отмечается, CEO не отмечается
     const ex = await Client.login(app, 'executor@test.uz');
-    expect((await ex.get('/api/v1/attendance?dateFrom=2026-10-01&dateTo=2026-12-31')).body).toEqual(
-      [],
+    expect((await ex.get('/api/v1/attendance?dateFrom=2026-10-01&dateTo=2026-12-31')).status).toBe(
+      403,
+    );
+    expect((await ex.get('/api/v1/attendance/today')).body.tracked).toBe(false);
+    expect((await ex.post('/api/v1/attendance/check-in', {})).status).toBe(422);
+    expect((await ceo.post('/api/v1/attendance/check-in', {})).status).toBe(422);
+    expect((await manager.get('/api/v1/attendance/today')).body.tracked).toBe(true);
+    expect(
+      (
+        await hr.put('/api/v1/attendance', {
+          userId: fx.users.executor.id,
+          date: '2026-10-06',
+          status: 'SICK',
+        })
+      ).status,
+    ).toBe(422);
+    const everyone = (
+      await hr.get('/api/v1/attendance/summary?dateFrom=2026-10-01&dateTo=2026-10-07')
+    ).body;
+    expect(everyone.map((r: { user: { id: string } }) => r.user.id)).not.toContain(
+      fx.users.executor.id,
     );
 
     // Графики: у роли один активный график; индивидуальный график «Обучение»
@@ -301,6 +320,40 @@ describe('Посещаемость и графики (ТЗ §35–36)', () => {
 });
 
 describe('Зарплата (ТЗ §32)', () => {
+  it('оклад — только у менеджеров и РОП; исполнителю — сдельно по начислениям проектов', async () => {
+    const ceo = await Client.login(app, 'ceo@test.uz');
+    const manager = await Client.login(app, 'manager@test.uz');
+    const rop = await Client.login(app, 'rop@test.uz');
+    const { projectId } = await sale(manager, rop);
+    // Начисление исполнителю по проекту (расход «Исполнитель»)
+    const exp = await ceo.post('/api/v1/expenses', {
+      scope: 'PROJECT',
+      projectId,
+      category: 'EXECUTOR',
+      amount: '800000',
+      expenseDate: new Date(Date.now() + 5 * 3_600_000).toISOString().slice(0, 10),
+      payeeUserId: fx.users.executor.id,
+    });
+    expect(exp.status, JSON.stringify(exp.body)).toBe(201);
+    await prisma.employee.update({
+      where: { userId: fx.users.executor.id },
+      data: { baseSalary: 3000000 },
+    });
+    const calc = (await ceo.post('/api/v1/payroll/calculate', { period: month() })).body;
+    const exRow = calc.find((e: { user: { id: string } }) => e.user.id === fx.users.executor.id);
+    expect(exRow).toMatchObject({
+      baseSalary: '0.00',
+      pieceRate: '800000.00',
+      finalSalary: '800000.00',
+    });
+    const bad = await ceo.patch(`/api/v1/payroll/${exRow.id}`, { baseSalary: '1000000' });
+    expect(bad.status).toBe(422);
+    const mRow = calc.find((e: { user: { id: string } }) => e.user.id === fx.users.manager.id);
+    expect((await ceo.patch(`/api/v1/payroll/${mRow.id}`, { baseSalary: '5000000' })).status).toBe(
+      200,
+    );
+  });
+
   it('KPI-бонус при 100% из карточки: начисляется по выполнению; «Мой KPI» на дашборде', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
     const rop = await Client.login(app, 'rop@test.uz');

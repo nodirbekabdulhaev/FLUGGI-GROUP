@@ -191,7 +191,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, PermissionMap> = {
     'task.read',
     'task.update',
     'kpi.read',
-    'attendance.read',
     'payroll.read',
   ]),
 
@@ -226,7 +225,7 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, PermissionMap> = {
       'task.update',
     ]),
     ...all(['employee.read']),
-    ...own(['dashboard.own', 'kpi.read', 'attendance.read', 'payroll.read']),
+    ...own(['dashboard.own', 'kpi.read', 'payroll.read']),
   },
 };
 

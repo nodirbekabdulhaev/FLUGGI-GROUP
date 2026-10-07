@@ -65,15 +65,18 @@ export function averagePct(values: (string | null)[]): string | null {
     .toFixed(2);
 }
 
-/** Итоговая зарплата (ТЗ §32): оклад + KPI-бонус + комиссия + прочие бонусы − штраф. */
+/** Итоговая зарплата (ТЗ §32): оклад + сдельно + KPI-бонус + комиссия + прочие бонусы − штраф. */
 export function finalSalary(x: {
   baseSalary: string | number;
+  /** Сдельная оплата (исполнители) */
+  pieceRate?: string | number;
   kpiBonus: string | number;
   commission: string | number;
   otherBonus: string | number;
   penalty: string | number;
 }): string {
   return new Decimal(x.baseSalary)
+    .add(x.pieceRate ?? 0)
     .add(x.kpiBonus)
     .add(x.commission)
     .add(x.otherBonus)

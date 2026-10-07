@@ -1412,6 +1412,8 @@ model PayrollEntry {
   /// YYYY-MM
   period       String
   baseSalary   Decimal       @default(0) @map("base_salary") @db.Decimal(18, 2)
+  /// Сдельно: начисления по проектам (расходы «Исполнитель» на сотрудника) за месяц
+  pieceRate    Decimal       @default(0) @map("piece_rate") @db.Decimal(18, 2)
   kpiBonus     Decimal       @default(0) @map("kpi_bonus") @db.Decimal(18, 2)
   commission   Decimal       @default(0) @db.Decimal(18, 2)
   otherBonus   Decimal       @default(0) @map("other_bonus") @db.Decimal(18, 2)

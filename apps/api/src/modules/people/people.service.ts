@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import {
+  ATTENDANCE_ROLES,
+  hasFixedSalary,
+  tracksAttendance,
   type AttendanceDto,
   type AttendanceSummaryDto,
   type AttendanceTodayDto,
@@ -74,6 +77,7 @@ const toPayroll = (p: PayrollRow): PayrollEntryDto => ({
   role: p.user.role.code,
   period: p.period,
   baseSalary: p.baseSalary.toFixed(2),
+  pieceRate: p.pieceRate.toFixed(2),
   kpiBonus: p.kpiBonus.toFixed(2),
   commission: p.commission.toFixed(2),
   otherBonus: p.otherBonus.toFixed(2),
@@ -254,6 +258,7 @@ export class PeopleService {
       }),
     ]);
     return {
+      tracked: tracksAttendance(auth.roleCode),
       date,
       schedule: schedule
         ? {
@@ -270,7 +275,12 @@ export class PeopleService {
   }
 
   /** Отметка прихода: опоздание считается по графику (ТЗ §35–36). */
+  private assertTracked(role: string) {
+    if (!tracksAttendance(role)) throw businessRule('Приход отмечают только менеджеры и РОП');
+  }
+
   async checkIn(auth: AuthContext, comment: string | undefined): Promise<AttendanceDto> {
+    this.assertTracked(auth.roleCode);
     const now = new Date();
     const date = companyDate(now);
     const key = { userId_date: { userId: auth.userId, date: parseDate(date)! } };
@@ -299,6 +309,7 @@ export class PeopleService {
   }
 
   async checkOut(auth: AuthContext, comment: string | undefined): Promise<AttendanceDto> {
+    this.assertTracked(auth.roleCode);
     const now = new Date();
     const date = companyDate(now);
     const key = { userId_date: { userId: auth.userId, date: parseDate(date)! } };
@@ -319,7 +330,12 @@ export class PeopleService {
 
   private attendanceWhere(auth: AuthContext, q: z.output<typeof attendanceQuerySchema>) {
     return {
-      user: this.kpi.usersWhere(auth, 'attendance.read'),
+      user: {
+        AND: [
+          this.kpi.usersWhere(auth, 'attendance.read'),
+          { role: { code: { in: [...ATTENDANCE_ROLES] } } },
+        ],
+      },
       date: { gte: parseDate(q.dateFrom)!, lte: parseDate(q.dateTo)! },
       ...(q.userId ? { userId: q.userId } : {}),
     } satisfies Prisma.AttendanceWhereInput;
@@ -345,7 +361,10 @@ export class PeopleService {
     const [users, rows] = await Promise.all([
       this.prisma.user.findMany({
         where: {
-          AND: [this.kpi.usersWhere(auth, 'attendance.read'), { status: 'ACTIVE' }],
+          AND: [
+            this.kpi.usersWhere(auth, 'attendance.read'),
+            { status: 'ACTIVE', role: { code: { in: [...ATTENDANCE_ROLES] } } },
+          ],
           ...(q.userId ? { id: q.userId } : {}),
         },
         select: { id: true, fullName: true },
@@ -378,8 +397,10 @@ export class PeopleService {
   ): Promise<AttendanceDto> {
     const user = await this.prisma.user.findFirst({
       where: { AND: [this.kpi.usersWhere(auth, 'attendance.manage'), { id: input.userId }] },
+      include: { role: true },
     });
     if (!user) throw notFound('Сотрудник');
+    this.assertTracked(user.role.code);
     const present = input.status === 'PRESENT' || input.status === 'LATE';
     const checkIn = present && input.checkIn ? atTashkent(input.date, input.checkIn) : null;
     const checkOut = present && input.checkOut ? atTashkent(input.date, input.checkOut) : null;
@@ -467,9 +488,24 @@ export class PeopleService {
     const users = await this.prisma.user.findMany({
       // Владелец (CEO) в ведомость не входит; остальные — даже без оклада, чтобы его можно было внести.
       where: { deletedAt: null, status: 'ACTIVE', role: { code: { not: 'CEO' } } },
-      include: { employee: true },
+      include: { employee: true, role: true },
     });
     const kpi = await this.kpi.rows(auth, period, monthRange(period), { code: 'payroll.manage' });
+    // Сдельно: начисления исполнителям по проектам (расходы «Исполнитель» с получателем) за месяц
+    const range = monthRange(period);
+    const piece = await this.prisma.expense.groupBy({
+      by: ['payeeUserId'],
+      where: {
+        deletedAt: null,
+        category: 'EXECUTOR',
+        payeeUserId: { not: null },
+        expenseDate: { gte: range.from, lt: range.to },
+      },
+      _sum: { amountUzs: true },
+    });
+    const pieceOf = new Map(
+      piece.map((p) => [p.payeeUserId!, p._sum.amountUzs ?? new Prisma.Decimal(0)]),
+    );
     const kpiOf = new Map(kpi.map((r) => [r.user.id, r.kpiPct]));
     await this.prisma.$transaction(async (tx) => {
       for (const u of users) {
@@ -478,12 +514,17 @@ export class PeopleService {
         });
         if (existing && existing.status !== 'DRAFT') continue;
         const commission = await this.commissionOf(u.id, period);
-        const base = existing?.baseSalary ?? u.employee?.baseSalary ?? new Prisma.Decimal(0);
+        // Фиксированный оклад — только у менеджеров и РОП
+        const base = hasFixedSalary(u.role.code)
+          ? (existing?.baseSalary ?? u.employee?.baseSalary ?? new Prisma.Decimal(0))
+          : new Prisma.Decimal(0);
+        const pieceRate = pieceOf.get(u.id) ?? new Prisma.Decimal(0);
         // KPI-бонус: из «бонуса при 100%» × выполнение KPI; без него — сохраняется ручная сумма
         const target = u.employee?.kpiBonusTarget ?? null;
         const pct = kpiOf.get(u.id) ?? null;
         const parts = {
           baseSalary: base,
+          pieceRate,
           kpiBonus: target
             ? new Prisma.Decimal(kpiBonusFor(target.toString(), pct))
             : (existing?.kpiBonus ?? new Prisma.Decimal(0)),
@@ -495,6 +536,7 @@ export class PeopleService {
           ...parts,
           finalSalary: finalSalary({
             baseSalary: parts.baseSalary.toString(),
+            pieceRate: parts.pieceRate.toString(),
             kpiBonus: parts.kpiBonus.toString(),
             commission: parts.commission.toString(),
             otherBonus: parts.otherBonus.toString(),
@@ -526,11 +568,23 @@ export class PeopleService {
     input: z.output<typeof updatePayrollSchema>,
     meta: RequestMeta,
   ): Promise<PayrollEntryDto> {
-    const e = await this.prisma.payrollEntry.findUnique({ where: { id } });
+    const e = await this.prisma.payrollEntry.findUnique({
+      where: { id },
+      include: { user: { include: { role: true } } },
+    });
     if (!e) throw notFound('Начисление');
     if (e.status !== 'DRAFT') throw businessRule('Утверждённую зарплату изменить нельзя');
+    if (
+      input.baseSalary !== undefined &&
+      Number(input.baseSalary) !== 0 &&
+      !hasFixedSalary(e.user.role.code)
+    )
+      throw businessRule('Фиксированный оклад — только у менеджеров и РОП', [
+        { path: 'baseSalary', message: 'У этой роли оклада нет: сдельно, бонусы, KPI' },
+      ]);
     const parts = {
       baseSalary: input.baseSalary ?? e.baseSalary.toFixed(2),
+      pieceRate: e.pieceRate.toFixed(2),
       // Новый «бонус при 100%» сразу пересчитывает KPI-бонус месяца (если сумму не ввели вручную)
       kpiBonus:
         input.kpiBonus ??

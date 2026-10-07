@@ -1,6 +1,6 @@
 'use client';
 
-import type { PayrollEntryDto } from '@fluggi/contracts';
+import { hasFixedSalary, type PayrollEntryDto } from '@fluggi/contracts';
 import { Calculator, Pencil, Wallet } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
@@ -34,6 +34,8 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
     kpiBonusTarget: '',
   });
   const [saveBase, setSaveBase] = useState(true);
+  // Оклад — только у менеджеров и РОП; исполнителям — сдельная оплата
+  const fixed = entry ? hasFixedSalary(entry.role) : true;
   // KPI-бонус по «бонусу при 100%»: выполнение KPI × сумма (до 120%)
   const autoBonus = (target: string) =>
     entry?.kpiPct && Number(target) > 0
@@ -54,18 +56,19 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
     api(`/payroll/${entry!.id}`, {
       method: 'PATCH',
       body: {
-        baseSalary: v.baseSalary || '0',
+        baseSalary: fixed ? v.baseSalary || '0' : '0',
         kpiBonus: v.kpiBonus || '0',
         otherBonus: v.otherBonus || '0',
         penalty: v.penalty || '0',
         comment: v.comment || null,
-        saveBaseSalary: saveBase,
+        saveBaseSalary: fixed && saveBase,
         kpiBonusTarget: v.kpiBonusTarget ? v.kpiBonusTarget : null,
       },
     }),
   );
   const final =
-    Number(v.baseSalary || 0) +
+    (fixed ? Number(v.baseSalary || 0) : 0) +
+    Number(entry?.pieceRate ?? 0) +
     Number(v.kpiBonus || 0) +
     Number(entry?.commission ?? 0) +
     Number(v.otherBonus || 0) -
@@ -98,7 +101,13 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
           }}
         >
           <div className="grid gap-4 sm:grid-cols-2">
-            {field('baseSalary', t('base'))}
+            {fixed ? (
+              field('baseSalary', t('base'))
+            ) : (
+              <Field label={t('pieceRate')} htmlFor="pr-piece" hint={t('pieceRateHint')}>
+                <Input id="pr-piece" disabled value={money(entry?.pieceRate ?? 0)} />
+              </Field>
+            )}
             <Field
               label={t('kpiBonusTarget')}
               htmlFor="pr-kpi-target"
@@ -130,14 +139,18 @@ function EditDialog({ entry, onClose }: { entry: PayrollEntryDto | null; onClose
               />
             </Field>
           </div>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={saveBase}
-              onChange={(e) => setSaveBase(e.target.checked)}
-            />
-            {t('saveBase')}
-          </label>
+          {fixed ? (
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={saveBase}
+                onChange={(e) => setSaveBase(e.target.checked)}
+              />
+              {t('saveBase')}
+            </label>
+          ) : (
+            <p className="text-xs text-muted-foreground">{t('noFixedHint')}</p>
+          )}
           <p className="text-right text-lg font-semibold tabular-nums">
             {t('final')}: {money(final)}
           </p>
@@ -276,6 +289,7 @@ export function PayrollPage() {
                   ) : null}
                   <TH>{t('employee')}</TH>
                   <TH className="text-right">{t('base')}</TH>
+                  <TH className="text-right">{t('pieceRate')}</TH>
                   <TH className="text-right">{t('kpiBonus')}</TH>
                   <TH className="text-right">{t('commission')}</TH>
                   <TH className="text-right">{t('otherBonus')}</TH>
@@ -313,7 +327,10 @@ export function PayrollPage() {
                       </span>
                     </TD>
                     <TD className="whitespace-nowrap text-right tabular-nums">
-                      {money(e.baseSalary)}
+                      {hasFixedSalary(e.role) ? money(e.baseSalary) : '—'}
+                    </TD>
+                    <TD className="whitespace-nowrap text-right tabular-nums">
+                      {Number(e.pieceRate) ? money(e.pieceRate) : '—'}
                     </TD>
                     <TD className="whitespace-nowrap text-right tabular-nums">
                       {money(e.kpiBonus)}

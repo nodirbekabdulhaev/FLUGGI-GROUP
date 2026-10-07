@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  hasFixedSalary,
   type MyKpiDto,
   ACTIVE_PROJECT_STATUSES,
   OPEN_TASK_STATUSES,
@@ -220,17 +221,31 @@ export class DashboardService {
   ): Promise<MyKpiDto | null> {
     const [me] = await this.kpi.rows(auth, period, range, { userIds: [auth.userId] });
     if (!me) return null;
-    const [employee, commission] = await Promise.all([
+    const [employee, commission, piece] = await Promise.all([
       this.prisma.employee.findUnique({ where: { userId: auth.userId } }),
       this.prisma.commission.aggregate({
         where: { userId: auth.userId, period, status: { not: 'CANCELLED' } },
+        _sum: { amountUzs: true },
+      }),
+      // Сдельно: начисления по проектам за месяц
+      this.prisma.expense.aggregate({
+        where: {
+          payeeUserId: auth.userId,
+          category: 'EXECUTOR',
+          deletedAt: null,
+          expenseDate: { gte: range.from, lt: range.to },
+        },
         _sum: { amountUzs: true },
       }),
     ]);
     const bonusTarget = employee?.kpiBonusTarget?.toFixed(2) ?? null;
     const bonusUzs = kpiBonusFor(bonusTarget, me.kpiPct);
     const commissionUzs = (commission._sum.amountUzs ?? 0).toString();
-    const baseSalary = employee?.baseSalary?.toFixed(2) ?? null;
+    // Оклад — только у менеджеров и РОП
+    const baseSalary = hasFixedSalary(auth.roleCode)
+      ? (employee?.baseSalary?.toFixed(2) ?? null)
+      : null;
+    const pieceRateUzs = (piece._sum.amountUzs ?? 0).toString();
     return {
       period,
       pct: me.kpiPct,
@@ -239,8 +254,10 @@ export class DashboardService {
       bonusUzs,
       commissionUzs: Number(commissionUzs).toFixed(2),
       baseSalary,
+      pieceRateUzs: Number(pieceRateUzs).toFixed(2),
       expectedUzs: finalSalary({
         baseSalary: baseSalary ?? 0,
+        pieceRate: pieceRateUzs,
         kpiBonus: bonusUzs,
         commission: commissionUzs,
         otherBonus: 0,

@@ -67,6 +67,8 @@ function AttendanceCard() {
   if (today.isPending) return <Skeleton className="h-28" />;
   if (today.isError) return null;
   const d = today.data;
+  // Приход/уход отмечают только менеджеры и РОП
+  if (!d.tracked) return null;
   const r = d.record;
   const run = async (kind: 'in' | 'out') => {
     try {
@@ -176,6 +178,12 @@ function MyKpiCard({ k }: { k: MyKpiDto }) {
             <dt className="text-muted-foreground">{td('commissionMonth')}</dt>
             <dd className="tabular-nums">{money(k.commissionUzs)}</dd>
           </div>
+          {Number(k.pieceRateUzs) ? (
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">{td('pieceRate')}</dt>
+              <dd className="tabular-nums">{money(k.pieceRateUzs)}</dd>
+            </div>
+          ) : null}
           {k.baseSalary ? (
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">{td('baseSalary')}</dt>
