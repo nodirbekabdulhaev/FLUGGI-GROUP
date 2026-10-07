@@ -170,6 +170,7 @@ export function LeadsPage() {
             </NativeSelect>
             {can('lead.read', 'TEAM') && can('employee.read') ? (
               <OwnerSelect
+                filter
                 aria-label={t('crm.fields.owner')}
                 value={ownerId}
                 onChange={(e) => setOwnerId(e.target.value)}

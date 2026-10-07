@@ -7,7 +7,10 @@ import { NativeSelect } from '@/components/ui/input';
 import { api } from '@/lib/api-client';
 import { useCan } from '@/lib/me-context';
 
-/** Список, кому можно назначить запись: менеджеры и РОП в зоне видимости пользователя. */
+/**
+ * Сотрудники для списков «Ответственный»: менеджеры и РОП в зоне видимости пользователя
+ * (CEO ответственным не бывает — получает уведомления). В фильтрах — и CEO (старые записи).
+ */
 export function useAssignableUsers() {
   const can = useCan();
   return useQuery({
@@ -25,9 +28,12 @@ export function useAssignableUsers() {
 
 export const OwnerSelect = forwardRef<
   HTMLSelectElement,
-  React.SelectHTMLAttributes<HTMLSelectElement> & { emptyLabel?: string }
->(({ emptyLabel, ...props }, ref) => {
-  const users = useAssignableUsers();
+  React.SelectHTMLAttributes<HTMLSelectElement> & { emptyLabel?: string; filter?: boolean }
+>(({ emptyLabel, filter, ...props }, ref) => {
+  const all = useAssignableUsers();
+  const users = {
+    data: all.data?.filter((u) => filter || u.role.code !== 'CEO'),
+  };
   return (
     <NativeSelect ref={ref} {...props}>
       {emptyLabel !== undefined ? <option value="">{emptyLabel}</option> : null}

@@ -129,6 +129,7 @@ export function DealsPage() {
             </NativeSelect>
             {can('deal.read', 'TEAM') && can('employee.read') ? (
               <OwnerSelect
+                filter
                 aria-label={t('crm.fields.owner')}
                 value={ownerId}
                 onChange={(e) => setOwnerId(e.target.value)}

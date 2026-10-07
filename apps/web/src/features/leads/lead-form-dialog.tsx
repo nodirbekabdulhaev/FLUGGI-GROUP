@@ -90,14 +90,16 @@ export function LeadFormDialog({
   const can = useCan();
   const router = useRouter();
   const refs = useReferences();
-  const [v, setV] = useState<Values>(() => initial(lead, me.id));
+  // CEO не ответственный: по умолчанию «автоматически» (менеджер с наименьшей нагрузкой)
+  const selfOwner = me.role.code === 'MANAGER' || me.role.code === 'ROP';
+  const [v, setV] = useState<Values>(() => initial(lead, selfOwner ? me.id : ''));
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [more, setMore] = useState(Boolean(lead));
   const key = useMemo(() => (open ? newIdempotencyKey() : ''), [open]);
 
   useEffect(() => {
     if (open) {
-      setV(initial(lead, me.id));
+      setV(initial(lead, selfOwner ? me.id : ''));
       setErrors({});
       setMore(Boolean(lead));
     }
@@ -164,7 +166,7 @@ export function LeadFormDialog({
         interest: v.interest ? Number(v.interest) : undefined,
         nextContactAt: v.nextContactAt ? fromLocalInput(v.nextContactAt) : undefined,
         comment: nz(v.comment),
-        ownerId: v.ownerId !== me.id ? v.ownerId : undefined,
+        ownerId: v.ownerId && v.ownerId !== me.id ? v.ownerId : undefined,
       },
     });
   });
@@ -247,7 +249,12 @@ export function LeadFormDialog({
             </Field>
             {!lead && can('employee.read') && can('lead.create', 'TEAM') ? (
               <Field label={t('fields.owner')} htmlFor="lead-ownerId">
-                <OwnerSelect id="lead-ownerId" value={v.ownerId} onChange={set('ownerId')} />
+                <OwnerSelect
+                  id="lead-ownerId"
+                  value={v.ownerId}
+                  onChange={set('ownerId')}
+                  emptyLabel={selfOwner ? undefined : t('fields.ownerAuto')}
+                />
               </Field>
             ) : null}
             <div className="grid grid-cols-[1fr_6rem] gap-2">

@@ -46,6 +46,21 @@ export class NotificationEvents implements OnModuleInit {
         { type: 'lead.created', title: 'Новый лид', body: lead.title, link },
         meta.actorId,
       );
+      // CEO не ответственный за лиды, но узнаёт о каждом новом лиде и о том, кому он назначен
+      const owner = await this.prisma.user.findUnique({
+        where: { id: e.ownerId },
+        select: { fullName: true },
+      });
+      await this.notifications.notify(
+        (await this.ceoIds()).filter((id) => id !== e.ownerId),
+        {
+          type: 'lead.created',
+          title: 'Новый лид',
+          body: `${lead.title} → ${owner?.fullName ?? ''}`,
+          link,
+        },
+        meta.actorId,
+      );
       if (e.budgetUzs && Number(e.budgetUzs) >= (await this.large())) {
         await this.notifications.notify(
           [await this.teamHead(e.teamId), ...(await this.ceoIds())],

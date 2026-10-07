@@ -70,7 +70,7 @@ function OwnerFields({
         >
           <option value="">{t('ownerAuto')}</option>
           {users.data?.items
-            .filter((u) => ['MANAGER', 'ROP', 'CEO'].includes(u.role.code))
+            .filter((u) => ['MANAGER', 'ROP'].includes(u.role.code))
             .map((u) => (
               <option key={u.id} value={u.id}>
                 {u.fullName}

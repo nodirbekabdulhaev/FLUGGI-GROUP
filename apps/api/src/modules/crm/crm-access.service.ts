@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import type { PermissionCode } from '@fluggi/contracts';
 import type { Prisma } from '@fluggi/db';
 import type { AuthContext } from '../../core/auth/auth-context';
-import { notFound } from '../../core/http/app.exception';
+import { businessRule, notFound } from '../../core/http/app.exception';
 import { PrismaService, type Tx } from '../../core/prisma/prisma.service';
 import { scopeWhere } from '../../core/rbac/scope';
 
@@ -82,14 +82,25 @@ export class CrmAccessService {
    * Новый ответственный должен быть в зоне видимости назначающего:
    * менеджер — только себя, РОП — свой отдел, CEO — любого активного менеджера/РОП.
    */
+  /**
+   * Ответственный за лид, сделку, клиента — только менеджер или РОП (CEO получает уведомления).
+   * Если ответственный не указан, а создаёт не менеджер/РОП (CEO, HR) — назначается менеджер
+   * с наименьшим числом открытых лидов.
+   */
   async assignableOwner(auth: AuthContext, ownerId: string | undefined, code: PermissionCode) {
-    const targetId = ownerId ?? auth.userId;
+    const targetId =
+      ownerId ??
+      (OWNER_ROLES.includes(auth.roleCode) ? auth.userId : await this.leastLoadedOwner());
     const scope = auth.permissions[code];
     const user = await this.prisma.user.findFirst({
       where: { id: targetId, deletedAt: null, status: 'ACTIVE' },
       include: { role: true },
     });
-    const allowedRole = user && ['MANAGER', 'ROP', 'CEO'].includes(user.role.code);
+    if (user && !OWNER_ROLES.includes(user.role.code))
+      throw businessRule('Ответственным может быть только менеджер или РОП', [
+        { path: 'ownerId', message: 'Выберите менеджера или РОП' },
+      ]);
+    const allowedRole = Boolean(user);
     const inScope =
       scope === 'ALL' ||
       targetId === auth.userId ||
@@ -101,4 +112,30 @@ export class CrmAccessService {
     }
     return user;
   }
+
+  /** Менеджер с наименьшим числом открытых лидов; если менеджеров нет — РОП. */
+  async leastLoadedOwner(teamId?: string | null): Promise<string> {
+    for (const role of ['MANAGER', 'ROP'] as const) {
+      const users = await this.prisma.user.findMany({
+        where: {
+          status: 'ACTIVE',
+          deletedAt: null,
+          role: { code: role },
+          ...(teamId ? { teamId } : {}),
+        },
+        select: {
+          id: true,
+          _count: { select: { ownedLeads: { where: { status: 'OPEN', deletedAt: null } } } },
+        },
+      });
+      if (users.length) {
+        users.sort((a, b) => a._count.ownedLeads - b._count.ownedLeads || a.id.localeCompare(b.id));
+        return users[0]!.id;
+      }
+    }
+    if (teamId) return this.leastLoadedOwner(null);
+    throw businessRule('Нет менеджеров и РОП — добавьте сотрудника, чтобы назначать лиды');
+  }
 }
+
+const OWNER_ROLES: string[] = ['MANAGER', 'ROP'];

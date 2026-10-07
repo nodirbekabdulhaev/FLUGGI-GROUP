@@ -282,3 +282,43 @@ describe('Бизнес-правила', () => {
     expect(await prisma.lead.count()).toBe(1);
   });
 });
+
+describe('Ответственный за лид — менеджер или РОП', () => {
+  it('CEO создаёт лид → назначается менеджер, CEO получает уведомление; CEO ответственным не назначить', async () => {
+    const ceo = await Client.login(app, 'ceo@test.uz');
+    const refs = (await ceo.get('/api/v1/references')).body;
+    const base = {
+      contactName: 'Лид от CEO',
+      phone: '+998901234500',
+      sourceId: refs.sources[0].id,
+      serviceId: refs.services[0].id,
+    };
+    const lead = await ceo.post('/api/v1/leads', base);
+    expect(lead.status, JSON.stringify(lead.body)).toBe(201);
+    expect([fx.users.manager.id, fx.users.otherManager.id]).toContain(lead.body.owner.id);
+
+    // CEO и HR ответственными быть не могут
+    for (const ownerId of [fx.users.ceo.id, fx.users.hr.id]) {
+      const r = await ceo.post('/api/v1/leads', { ...base, phone: '+998901234501', ownerId });
+      expect(r.status).toBe(422);
+      expect(r.body.error.details[0].path).toBe('ownerId');
+    }
+    expect(
+      (await ceo.post(`/api/v1/leads/${lead.body.id}/assign`, { ownerId: fx.users.ceo.id })).status,
+    ).toBe(422);
+    // РОП — можно
+    const toRop = await ceo.post(`/api/v1/leads/${lead.body.id}/assign`, {
+      ownerId: fx.users.rop.id,
+    });
+    expect(toRop.status, JSON.stringify(toRop.body)).toBe(200);
+
+    // Лид от менеджера: CEO получает уведомление «Новый лид → ответственный»
+    const manager = await Client.login(app, 'manager@test.uz');
+    await manager.post('/api/v1/leads', { ...base, phone: '+998901234502' });
+    while ((await app.get(OutboxDispatcher).processBatch()) > 0);
+    const n = await prisma.notification.findFirst({
+      where: { userId: fx.users.ceo.id, type: 'lead.created' },
+    });
+    expect(n?.body).toContain('→');
+  });
+});

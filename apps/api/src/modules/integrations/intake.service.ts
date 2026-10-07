@@ -3,6 +3,7 @@ import { integrationSettingsSchema, type IntegrationSettings } from '@fluggi/con
 import type { Prisma } from '@fluggi/db';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { ActivityService } from '../crm/activity.service';
+import { CrmAccessService } from '../crm/crm-access.service';
 import { LeadsService } from '../leads/leads.service';
 import { NotificationsService } from '../notifications/notifications.service';
 
@@ -51,6 +52,7 @@ export class IntakeService {
     private readonly leads: LeadsService,
     private readonly activity: ActivityService,
     private readonly notifications: NotificationsService,
+    private readonly access: CrmAccessService,
   ) {}
 
   async settings(): Promise<IntegrationSettings> {
@@ -70,43 +72,41 @@ export class IntakeService {
   }
 
   /**
-   * Ответственный: указанный сотрудник (если активен), иначе менеджер отдела
-   * с наименьшим числом открытых лидов, иначе РОП отдела, иначе CEO.
+   * Ответственный: указанный менеджер/РОП, иначе менеджер отдела с наименьшим числом открытых
+   * лидов (в отделе без менеджеров — его РОП), иначе любой менеджер/РОП компании.
    */
   async pickOwner(ownerId?: string | null, teamId?: string | null): Promise<string> {
+    // Ответственный за лид — только менеджер или РОП; CEO получает уведомление
     if (ownerId) {
       const u = await this.prisma.user.findFirst({
-        where: { id: ownerId, status: 'ACTIVE', deletedAt: null },
+        where: {
+          id: ownerId,
+          status: 'ACTIVE',
+          deletedAt: null,
+          role: { code: { in: ['MANAGER', 'ROP'] } },
+        },
       });
       if (u) return u.id;
     }
-    const managers = await this.prisma.user.findMany({
-      where: {
-        status: 'ACTIVE',
-        deletedAt: null,
-        role: { code: 'MANAGER' },
-        ...(teamId ? { teamId } : {}),
-      },
-      select: {
-        id: true,
-        _count: { select: { ownedLeads: { where: { status: 'OPEN', deletedAt: null } } } },
-      },
-    });
-    if (managers.length) {
-      managers.sort(
-        (a, b) => a._count.ownedLeads - b._count.ownedLeads || a.id.localeCompare(b.id),
-      );
-      return managers[0]!.id;
-    }
     if (teamId) {
-      const team = await this.prisma.team.findUnique({ where: { id: teamId } });
-      if (team?.headId) return team.headId;
+      const inTeam = await this.prisma.user.count({
+        where: { status: 'ACTIVE', deletedAt: null, teamId, role: { code: 'MANAGER' } },
+      });
+      if (!inTeam) {
+        const team = await this.prisma.team.findUnique({ where: { id: teamId } });
+        if (team?.headId) return team.headId;
+      }
     }
-    const ceo = await this.prisma.user.findFirstOrThrow({
-      where: { status: 'ACTIVE', deletedAt: null, role: { code: 'CEO' } },
-      orderBy: { createdAt: 'asc' },
-    });
-    return ceo.id;
+    try {
+      return await this.access.leastLoadedOwner(teamId);
+    } catch {
+      // Нет ни одного менеджера и РОП — заявка не теряется: CEO
+      const ceo = await this.prisma.user.findFirstOrThrow({
+        where: { status: 'ACTIVE', deletedAt: null, role: { code: 'CEO' } },
+        orderBy: { createdAt: 'asc' },
+      });
+      return ceo.id;
+    }
   }
 
   /** Открытый лид с тем же телефоном или Instagram. */
