@@ -250,6 +250,45 @@ export async function seedReferences(prisma: PrismaClient) {
       });
     }
   }
+  // Рабочие графики по умолчанию (ТЗ §36). Меняются в настройках.
+  if ((await prisma.workSchedule.count()) === 0) {
+    await prisma.workSchedule.createMany({
+      data: [
+        {
+          name: 'Менеджеры',
+          roleCode: 'MANAGER',
+          startTime: '09:00',
+          endTime: '18:00',
+          workDays: [1, 2, 3, 4, 5],
+          graceMinutes: 10,
+        },
+        {
+          name: 'РОП',
+          roleCode: 'ROP',
+          startTime: '09:30',
+          endTime: '18:00',
+          workDays: [1, 2, 3, 4, 5],
+          graceMinutes: 10,
+        },
+        {
+          name: 'Исполнители',
+          roleCode: 'EXECUTOR',
+          startTime: '09:00',
+          endTime: '18:00',
+          workDays: [1, 2, 3, 4, 5],
+          graceMinutes: 10,
+        },
+        {
+          name: 'Обучение',
+          roleCode: null,
+          startTime: '08:00',
+          endTime: '12:00',
+          workDays: [1, 2, 3, 4, 5],
+          graceMinutes: 5,
+        },
+      ],
+    });
+  }
   return {
     services: SERVICES.length,
     sources: SOURCES.length,

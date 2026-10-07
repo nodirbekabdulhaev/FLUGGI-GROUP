@@ -16,6 +16,7 @@ export const SETTINGS_TABS: { href: string; key: string; permission: PermissionC
     key: 'tabCommissionRules',
     permission: 'commission_rule.manage',
   },
+  { href: '/settings/schedules', key: 'tabSchedules', permission: 'schedule.manage' },
   { href: '/settings/roles', key: 'tabRoles', permission: 'role.manage' },
   { href: '/settings/audit', key: 'tabAudit', permission: 'audit.read' },
 ];

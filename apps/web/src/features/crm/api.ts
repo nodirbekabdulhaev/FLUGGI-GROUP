@@ -161,6 +161,7 @@ export function useInvalidateCrm() {
         'tasks',
         'task',
         'project-templates',
+        'attendance',
       ].map((k) => qc.invalidateQueries({ queryKey: [k] })),
     );
 }

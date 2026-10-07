@@ -10,7 +10,9 @@
 >
 > ✅ **Реализовано в Phase 4:** `GET /projects?view=all|active|overdue|completed&status&ropId&clientId&q`, `GET/PATCH /projects/:id`, `POST /projects/:id/status { status, comment }`, `POST /projects/:id/apply-template { templateId }`, `GET /projects/:id/timeline`, `GET /projects/:id/candidates`, `POST /projects/:id/members`, `PATCH /projects/:id/members/:memberId`, `GET /tasks?view=all|today|overdue|in_progress|review|done&projectId&assigneeId&mine&status&q`, `GET/POST /tasks`, `GET/PATCH/DELETE /tasks/:id`, `POST /tasks/:id/move { status, beforeId }`, `POST /tasks/:id/comments`, `GET/POST /project-templates`, `PUT /project-templates/:id`. Файлы проекта и задачи — `POST /files` с `projectId` или `taskId`.
 >
-> ✅ **Реализовано в Phase 5:** `GET/POST /expenses`, `PATCH/DELETE /expenses/:id` (мягкое удаление), `GET /projects/:id/finance`, `GET /finance/summary?period=today|week|month|quarter|year|custom&from&to`, `GET /finance/projects`, `POST /commissions/approve|pay { ids }` (право `commission.approve`, только CEO), `GET /commissions?status`, `PATCH /payments/:id` (только неподтверждённая оплата). Остальные endpoint'ы ниже — план следующих фаз.
+> ✅ **Реализовано в Phase 5:** `GET/POST /expenses`, `PATCH/DELETE /expenses/:id` (мягкое удаление), `GET /projects/:id/finance`, `GET /finance/summary?period=today|week|month|quarter|year|custom&from&to`, `GET /finance/projects`, `POST /commissions/approve|pay { ids }` (право `commission.approve`, только CEO), `GET /commissions?status`, `PATCH /payments/:id` (только неподтверждённая оплата). 
+>
+> ✅ **Реализовано в Phase 6:** `GET /dashboard?period` (разделы по ролям), `GET /kpi?period=YYYY-MM&group=MANAGER|ROP|EXECUTOR`, `GET/PUT /kpi/targets`, `GET/POST /work-schedules`, `PUT /work-schedules/:id`, `GET /attendance/today`, `POST /attendance/check-in|check-out`, `GET /attendance?dateFrom&dateTo&userId`, `GET /attendance/summary`, `PUT /attendance` (HR/CEO), `GET /payroll?period`, `POST /payroll/calculate`, `PATCH /payroll/:id`, `POST /payroll/approve|pay`. Остальные endpoint'ы ниже — план следующих фаз.
 
 ## 1. Соглашения
 

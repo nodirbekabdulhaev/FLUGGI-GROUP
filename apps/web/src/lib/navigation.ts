@@ -83,15 +83,15 @@ export const NAVIGATION: NavSection[] = [
       { key: 'expenses', href: '/finance/expenses', anyOf: ['finance.read'] },
       { key: 'profit', href: '/finance/profit', anyOf: ['finance.read'] },
       { key: 'commissions', href: '/finance/commissions', anyOf: ['commission.read'] },
+      { key: 'payroll', href: '/finance/payroll', anyOf: ['payroll.read'] },
     ],
   },
-  { key: 'kpi', href: '/kpi', icon: Target, anyOf: ['kpi.read'], plannedPhase: 6 },
+  { key: 'kpi', href: '/kpi', icon: Target, anyOf: ['kpi.read'] },
   {
     key: 'attendance',
     href: '/attendance',
     icon: CalendarCheck,
     anyOf: ['attendance.read'],
-    plannedPhase: 6,
   },
   {
     key: 'analytics',
@@ -112,6 +112,7 @@ export const NAVIGATION: NavSection[] = [
       'audit.read',
       'reference.manage',
       'commission_rule.manage',
+      'schedule.manage',
     ],
   },
 ];

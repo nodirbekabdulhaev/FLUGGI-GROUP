@@ -113,6 +113,13 @@ model User {
   commissionsApproved Commission[] @relation("CommissionApprover")
   commissionsPaidOut  Commission[] @relation("CommissionPayer")
 
+  kpiTargets       KpiTarget[]    @relation("KpiTargetUser")
+  kpiTargetsSet    KpiTarget[]    @relation("KpiTargetSetter")
+  attendance       Attendance[]   @relation("AttendanceUser")
+  attendanceEdited Attendance[]   @relation("AttendanceEditor")
+  payroll          PayrollEntry[] @relation("PayrollUser")
+  payrollApproved  PayrollEntry[] @relation("PayrollApprover")
+
   @@index([roleId])
   @@index([teamId])
   @@index([status])
@@ -179,16 +186,21 @@ model Team {
 
 /// HR-данные сотрудника. Отделены от users, чтобы не попадать в CRM-выборки.
 model Employee {
-  id        String             @id @default(uuid()) @db.Uuid
-  userId    String             @unique @map("user_id") @db.Uuid
-  position  String?
-  specialty ExecutorSpecialty?
-  hiredAt   DateTime?          @map("hired_at") @db.Date
-  firedAt   DateTime?          @map("fired_at") @db.Date
-  createdAt DateTime           @default(now()) @map("created_at")
-  updatedAt DateTime           @updatedAt @map("updated_at")
+  id         String             @id @default(uuid()) @db.Uuid
+  userId     String             @unique @map("user_id") @db.Uuid
+  position   String?
+  specialty  ExecutorSpecialty?
+  /// Оклад (ТЗ §32). Виден только CEO и самому сотруднику — через модуль зарплаты.
+  baseSalary Decimal?           @map("base_salary") @db.Decimal(18, 2)
+  /// Индивидуальный график; иначе — график роли.
+  scheduleId String?            @map("schedule_id") @db.Uuid
+  hiredAt    DateTime?          @map("hired_at") @db.Date
+  firedAt    DateTime?          @map("fired_at") @db.Date
+  createdAt  DateTime           @default(now()) @map("created_at")
+  updatedAt  DateTime           @updatedAt @map("updated_at")
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule WorkSchedule? @relation(fields: [scheduleId], references: [id])
 
   @@map("employees")
 }
@@ -840,6 +852,29 @@ enum ProjectMemberStatus {
   REMOVED
 }
 
+enum KpiMetric {
+  REVENUE
+  ORDERS
+  LEADS
+  MEETINGS
+  TASKS
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  DAY_OFF
+  VACATION
+  SICK
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
 enum ExpenseScope {
   PROJECT
   COMPANY
@@ -1237,6 +1272,104 @@ model Expense {
   @@index([projectId])
   @@index([scope, expenseDate])
   @@map("expenses")
+}
+
+/// Цель сотрудника на месяц (ТЗ §31).
+model KpiTarget {
+  id          String    @id @default(uuid()) @db.Uuid
+  userId      String    @map("user_id") @db.Uuid
+  /// YYYY-MM
+  period      String
+  metric      KpiMetric
+  targetValue Decimal   @map("target_value") @db.Decimal(18, 2)
+  /// Валюта цели по выручке; для штучных метрик — UZS (не используется).
+  currency    Currency  @default(UZS)
+  setById     String    @map("set_by_id") @db.Uuid
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user  User @relation("KpiTargetUser", fields: [userId], references: [id])
+  setBy User @relation("KpiTargetSetter", fields: [setById], references: [id])
+
+  @@unique([userId, period, metric])
+  @@index([period])
+  @@map("kpi_targets")
+}
+
+/// Рабочий график (ТЗ §36): для роли или для отдельных сотрудников.
+model WorkSchedule {
+  id           String    @id @default(uuid()) @db.Uuid
+  name         String
+  /// График роли по умолчанию; null — назначается сотрудникам вручную.
+  roleCode     RoleCode? @map("role_code")
+  /// HH:MM по Ташкенту
+  startTime    String    @map("start_time")
+  endTime      String    @map("end_time")
+  /// Рабочие дни ISO: 1 — понедельник … 7 — воскресенье
+  workDays     Int[]     @map("work_days")
+  /// Сколько минут опоздания не считается опозданием
+  graceMinutes Int       @default(0) @map("grace_minutes")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  employees Employee[]
+
+  @@map("work_schedules")
+}
+
+/// Посещаемость (ТЗ §35): одна запись на сотрудника в день.
+model Attendance {
+  id          String           @id @default(uuid()) @db.Uuid
+  userId      String           @map("user_id") @db.Uuid
+  date        DateTime         @db.Date
+  checkIn     DateTime?        @map("check_in")
+  checkOut    DateTime?        @map("check_out")
+  status      AttendanceStatus
+  lateMinutes Int              @default(0) @map("late_minutes")
+  workMinutes Int              @default(0) @map("work_minutes")
+  comment     String?
+  /// Кто внёс/исправил вручную (null — отметка самого сотрудника)
+  editedById  String?          @map("edited_by_id") @db.Uuid
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  user     User  @relation("AttendanceUser", fields: [userId], references: [id])
+  editedBy User? @relation("AttendanceEditor", fields: [editedById], references: [id])
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("attendance")
+}
+
+/// Зарплата за месяц (ТЗ §32). Комиссия хранится отдельно и только суммируется сюда.
+model PayrollEntry {
+  id           String        @id @default(uuid()) @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  /// YYYY-MM
+  period       String
+  baseSalary   Decimal       @default(0) @map("base_salary") @db.Decimal(18, 2)
+  kpiBonus     Decimal       @default(0) @map("kpi_bonus") @db.Decimal(18, 2)
+  commission   Decimal       @default(0) @db.Decimal(18, 2)
+  otherBonus   Decimal       @default(0) @map("other_bonus") @db.Decimal(18, 2)
+  penalty      Decimal       @default(0) @db.Decimal(18, 2)
+  finalSalary  Decimal       @default(0) @map("final_salary") @db.Decimal(18, 2)
+  /// Выполнение KPI на момент расчёта, % (справочно для KPI-бонуса)
+  kpiPct       Decimal?      @map("kpi_pct") @db.Decimal(8, 2)
+  status       PayrollStatus @default(DRAFT)
+  comment      String?
+  approvedById String?       @map("approved_by_id") @db.Uuid
+  approvedAt   DateTime?     @map("approved_at")
+  paidAt       DateTime?     @map("paid_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  user       User  @relation("PayrollUser", fields: [userId], references: [id])
+  approvedBy User? @relation("PayrollApprover", fields: [approvedById], references: [id])
+
+  @@unique([userId, period])
+  @@index([period])
+  @@map("payroll_entries")
 }
 
 /// Правила комиссий (ТЗ §33–34) — данные, а не код.

@@ -1,69 +1,137 @@
 'use client';
 
-import { CheckCircle2, Clock } from 'lucide-react';
+import type { KpiRowDto, TargetProgressDto } from '@fluggi/contracts';
+import { Clock, LogIn, LogOut } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
-import { Suspense } from 'react';
-import { usePeriod } from '@/components/layout/period-select';
+import { toast } from 'sonner';
+import { PeriodSelect, usePeriod } from '@/components/layout/period-select';
 import { PageHeader } from '@/components/shared/page-header';
-import { ErrorState, TableSkeleton } from '@/components/shared/states';
+import { ErrorState } from '@/components/shared/states';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useTeams } from '@/features/team/api';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { TBody, TD, TH, THead, TR, Table } from '@/components/ui/table';
+import { useCrmMutation } from '@/features/crm/api';
+import { useAttendanceToday, useDashboard } from '@/features/people/api';
+import { PctBar } from '@/features/people/kpi-page';
+import { api, errorMessage } from '@/lib/api-client';
+import { money, moneyShort } from '@/lib/format';
 import { useCan, useMe } from '@/lib/me-context';
-import { visibleNavigation } from '@/lib/navigation';
+import { cn } from '@/lib/utils';
 
-function SelectedPeriod() {
-  const t = useTranslations();
-  const { preset, from, to } = usePeriod();
-  const label = preset === 'custom' && from && to ? `${from} — ${to}` : t(`period.${preset}`);
-  return (
-    <p className="text-xs text-muted-foreground">
-      {t('dashboard.periodSelected', { period: label })}
-    </p>
+function Stat({
+  label,
+  value,
+  hint,
+  href,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  hint?: React.ReactNode;
+  href?: string;
+  tone?: 'danger';
+}) {
+  const body = (
+    <Card className={cn('grid h-full content-start gap-1 p-4', href && 'hover:bg-muted/40')}>
+      <p className="text-sm text-muted-foreground">{label}</p>
+      <p
+        className={cn(
+          'text-2xl font-semibold tracking-tight tabular-nums',
+          tone === 'danger' && 'text-danger',
+        )}
+      >
+        {value}
+      </p>
+      {hint ? <div className="text-xs text-muted-foreground">{hint}</div> : null}
+    </Card>
+  );
+  return href ? (
+    <Link href={href} className="block">
+      {body}
+    </Link>
+  ) : (
+    body
   );
 }
 
-function TeamsCard() {
-  const t = useTranslations('dashboard');
-  const teams = useTeams();
+/** Отметка прихода/ухода (ТЗ §35) прямо на главной. */
+function AttendanceCard() {
+  const t = useTranslations('attendance');
+  const today = useAttendanceToday();
+  const check = useCrmMutation((kind: 'in' | 'out') =>
+    api(`/attendance/check-${kind}`, { method: 'POST', body: {} }),
+  );
+  if (today.isPending) return <Skeleton className="h-28" />;
+  if (today.isError) return null;
+  const d = today.data;
+  const r = d.record;
+  const run = async (kind: 'in' | 'out') => {
+    try {
+      await check.mutateAsync(kind);
+      toast.success(kind === 'in' ? t('checkedIn') : t('checkedOut'));
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{t('teamTitle')}</CardTitle>
-      </CardHeader>
-      {teams.isPending ? (
-        <TableSkeleton rows={2} cols={1} />
-      ) : teams.isError ? (
-        <ErrorState error={teams.error} onRetry={() => teams.refetch()} />
-      ) : teams.data.length === 0 ? (
-        <CardContent className="text-sm text-muted-foreground">{t('teamEmpty')}</CardContent>
-      ) : (
-        <ul className="divide-y border-t">
-          {teams.data.map((team) => (
-            <li key={team.id} className="flex items-center justify-between gap-3 px-5 py-3 text-sm">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{team.name}</p>
-                <p className="truncate text-xs text-muted-foreground">
-                  {team.head?.fullName ?? t('noHead')}
-                </p>
-              </div>
-              <span className="shrink-0 text-muted-foreground">
-                {t('members', { count: team.membersCount })}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+    <Card className="grid content-start gap-3 p-4">
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Clock className="size-4" /> {t('today')}
+        </p>
+        {r ? (
+          <Badge tone={r.status === 'LATE' ? 'warning' : 'success'}>
+            {t(`status.${r.status}`)}
+          </Badge>
+        ) : null}
+      </div>
+      <p className="text-sm">
+        {d.schedule
+          ? `${t('schedule')}: ${d.schedule.name} ${d.schedule.startTime}–${d.schedule.endTime}`
+          : t('noSchedule')}
+        {!d.workday ? ` · ${t('dayOff')}` : ''}
+      </p>
+      {r?.checkIn ? (
+        <p className="text-sm tabular-nums">
+          {t('in')} {r.checkIn}
+          {r.lateMinutes ? ` (${t('late', { minutes: r.lateMinutes })})` : ''}
+          {r.checkOut ? ` · ${t('out')} ${r.checkOut}` : ''}
+        </p>
+      ) : null}
+      {!r?.checkIn ? (
+        <Button onClick={() => run('in')} loading={check.isPending} className="justify-self-start">
+          <LogIn /> {t('checkIn')}
+        </Button>
+      ) : !r.checkOut ? (
+        <Button
+          variant="outline"
+          onClick={() => run('out')}
+          loading={check.isPending}
+          className="justify-self-start"
+        >
+          <LogOut /> {t('checkOut')}
+        </Button>
+      ) : null}
     </Card>
   );
 }
 
+function revenueTarget(row: KpiRowDto): TargetProgressDto | undefined {
+  return row.targets.find((x) => x.metric === 'REVENUE');
+}
+
+/** Главный экран по ролям (ТЗ §5, §58–60). */
 export function DashboardPage() {
   const t = useTranslations();
+  const td = useTranslations('dash');
   const me = useMe();
   const can = useCan();
-  const sections = visibleNavigation(me.permissions).filter((s) => s.key !== 'dashboard');
+  const { preset, from, to } = usePeriod();
+  const dash = useDashboard({ period: preset, from, to });
+  const d = dash.data;
 
   return (
     <>
@@ -73,62 +141,201 @@ export function DashboardPage() {
           role: t(`roles.${me.role.code}`),
           team: me.team?.name ?? 'none',
         })}
+        actions={can('dashboard.ceo') ? undefined : <PeriodSelect />}
       />
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        {can('dashboard.ceo') || can('dashboard.team') || can('dashboard.own') ? (
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>{t('dashboard.metricsTitle')}</CardTitle>
-              {can('dashboard.ceo') ? (
-                <Suspense>
-                  <SelectedPeriod />
-                </Suspense>
-              ) : null}
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-start gap-3 rounded-md border border-dashed p-4 text-sm text-muted-foreground">
-                <Clock className="mt-0.5 size-4 shrink-0" />
-                <p>{t('dashboard.metricsPending')}</p>
-              </div>
-            </CardContent>
-          </Card>
-        ) : null}
-
-        {can('employee.read') ? <TeamsCard /> : null}
-
-        <Card className="lg:col-span-3">
-          <CardHeader>
-            <CardTitle>{t('dashboard.accessTitle')}</CardTitle>
-            <CardDescription>{t('dashboard.accessText')}</CardDescription>
-          </CardHeader>
-          <ul className="grid border-t sm:grid-cols-2 lg:grid-cols-3">
-            {sections.flatMap((section) =>
-              (section.children ?? [section]).map((item) => (
-                <li key={item.key} className="border-b sm:odd:border-r lg:border-r">
-                  <Link
-                    href={item.href}
-                    className="flex items-center gap-3 px-5 py-3 text-sm hover:bg-muted/40"
-                  >
-                    <section.icon className="size-4 shrink-0 text-muted-foreground" />
-                    <span className="flex-1 truncate">
-                      {section.children ? `${t(`nav.${section.key}`)} · ` : ''}
-                      {t(`nav.${item.key}`)}
-                    </span>
-                    {item.plannedPhase ? (
-                      <Badge>{t('dashboard.plannedPhase', { phase: item.plannedPhase })}</Badge>
-                    ) : (
-                      <Badge tone="success">
-                        <CheckCircle2 className="size-3" /> {t('dashboard.available')}
-                      </Badge>
-                    )}
-                  </Link>
-                </li>
-              )),
-            )}
-          </ul>
+      {dash.isPending ? (
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {Array.from({ length: 8 }, (_, i) => (
+            <Skeleton key={i} className="h-28" />
+          ))}
+        </div>
+      ) : dash.isError ? (
+        <Card>
+          <ErrorState error={dash.error} onRetry={() => dash.refetch()} />
         </Card>
-      </div>
+      ) : (
+        <div className="grid gap-8">
+          {d?.ceo ? (
+            <section className="grid gap-3">
+              <h2 className="font-semibold">{td('ceoTitle')}</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Stat
+                  label={td('revenue')}
+                  value={money(d.ceo.revenueUzs)}
+                  href="/finance/revenue"
+                />
+                <Stat label={td('profit')} value={money(d.ceo.profitUzs)} href="/finance/profit" />
+                <Stat label={td('paid')} value={money(d.ceo.paidUzs)} href="/finance/payments" />
+                <Stat label={td('expected')} value={money(d.ceo.expectedUzs)} />
+                <Stat label={td('newLeads')} value={d.ceo.newLeads} href="/sales/leads" />
+                <Stat label={td('newDeals')} value={d.ceo.newDeals} href="/sales/deals" />
+                <Stat label={td('contracts')} value={d.ceo.contracts} href="/sales/contracts" />
+                <Stat
+                  label={td('projectsInProgress')}
+                  value={d.ceo.projectsInProgress}
+                  href="/projects/active"
+                />
+              </div>
+            </section>
+          ) : null}
+
+          {d?.team ? (
+            <section className="grid gap-3">
+              <h2 className="font-semibold">
+                {td('teamTitle', { team: d.team.team?.name ?? '' })}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Stat
+                  label={td('teamSales')}
+                  value={money(d.team.kpi.teamRevenueUzs)}
+                  hint={
+                    Number(d.team.kpi.planUzs) > 0 ? (
+                      <>
+                        {td('target')}: {money(d.team.kpi.planUzs)}
+                        <PctBar pct={d.team.kpi.planPct} className="mt-1" />
+                      </>
+                    ) : (
+                      td('noTarget')
+                    )
+                  }
+                />
+                <Stat label={td('leads')} value={d.team.leads} />
+                <Stat label={td('meetings')} value={d.team.meetings} />
+                <Stat label={td('proposals')} value={d.team.proposals} />
+                <Stat label={td('contracts')} value={d.team.contracts} />
+                <Stat label={td('payments')} value={d.team.payments} />
+                <Stat label={td('avgCheck')} value={money(d.team.kpi.avgCheckUzs)} />
+                <Stat
+                  label={td('conversion')}
+                  value={d.team.kpi.conversionPct ? `${d.team.kpi.conversionPct}%` : '—'}
+                />
+              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>{td('managersTable')}</CardTitle>
+                </CardHeader>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <THead>
+                      <tr>
+                        <TH>{td('manager')}</TH>
+                        <TH className="text-right">{td('leads')}</TH>
+                        <TH className="text-right">{td('deals')}</TH>
+                        <TH className="text-right">{td('sales')}</TH>
+                        <TH>KPI</TH>
+                      </tr>
+                    </THead>
+                    <TBody>
+                      {d.team.managers.map((m) => (
+                        <TR key={m.user.id}>
+                          <TD className="font-medium">{m.user.name}</TD>
+                          <TD className="text-right tabular-nums">{m.manager?.leads ?? 0}</TD>
+                          <TD className="text-right tabular-nums">{m.manager?.orders ?? 0}</TD>
+                          <TD className="whitespace-nowrap text-right tabular-nums">
+                            {money(m.manager?.revenueUzs ?? 0)}
+                          </TD>
+                          <TD>
+                            <PctBar pct={m.kpiPct} />
+                          </TD>
+                        </TR>
+                      ))}
+                    </TBody>
+                  </Table>
+                </div>
+              </Card>
+            </section>
+          ) : null}
+
+          {d?.own?.kpi.manager ? (
+            <section className="grid gap-3">
+              <h2 className="font-semibold">{td('ownTitle')}</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Stat label={td('myLeads')} value={d.own.kpi.manager.leads} href="/sales/leads" />
+                <Stat label={td('myDeals')} value={d.own.deals} href="/sales/deals" />
+                <Stat
+                  label={td('myMeetings')}
+                  value={d.own.kpi.manager.meetings}
+                  href="/sales/meetings"
+                />
+                <Stat
+                  label={td('myProposals')}
+                  value={d.own.kpi.manager.proposals}
+                  href="/sales/proposals"
+                />
+                <Stat
+                  label={td('mySales')}
+                  value={money(d.own.kpi.manager.revenueUzs)}
+                  hint={`${d.own.kpi.manager.orders} · ${td('avgCheck')} ${moneyShort(d.own.kpi.manager.avgCheckUzs)}`}
+                />
+                <Stat
+                  label={td('myTarget')}
+                  value={(() => {
+                    const r = revenueTarget(d.own.kpi);
+                    return r ? moneyShort(r.target, r.currency) : '—';
+                  })()}
+                  hint={<PctBar pct={revenueTarget(d.own.kpi)?.pct ?? null} />}
+                />
+                <Stat
+                  label={td('myKpi')}
+                  value={d.own.kpi.kpiPct ? `${d.own.kpi.kpiPct}%` : '—'}
+                  href="/kpi"
+                  hint={td('openKpi')}
+                />
+                <Stat
+                  label={td('myCommission')}
+                  value={money(d.own.commissionUzs)}
+                  href="/finance/commissions"
+                />
+                <Stat
+                  label={td('myTasks')}
+                  value={d.own.tasksOpen}
+                  href="/tasks"
+                  hint={
+                    d.own.tasksOverdue
+                      ? td('tasksOverdue', { count: d.own.tasksOverdue })
+                      : undefined
+                  }
+                  tone={d.own.tasksOverdue ? 'danger' : undefined}
+                />
+                <AttendanceCard />
+              </div>
+            </section>
+          ) : null}
+
+          {d?.executor ? (
+            <section className="grid gap-3">
+              <h2 className="font-semibold">{td('executorTitle')}</h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                <Stat label={td('projects')} value={d.executor.projects} href="/projects/active" />
+                <Stat label={td('today')} value={d.executor.today} href="/tasks" />
+                <Stat
+                  label={td('overdue')}
+                  value={d.executor.overdue}
+                  href="/tasks"
+                  tone={d.executor.overdue ? 'danger' : undefined}
+                />
+                <Stat label={td('inProgress')} value={d.executor.inProgress} href="/tasks" />
+                <Stat label={td('done')} value={d.executor.done} />
+                <AttendanceCard />
+              </div>
+            </section>
+          ) : null}
+
+          {!d?.own && !d?.executor ? (
+            <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+              <AttendanceCard />
+            </section>
+          ) : null}
+
+          {!d?.ceo && !d?.team && !d?.own && !d?.executor ? (
+            <Card>
+              <CardContent className="pt-5 text-sm text-muted-foreground">
+                {t('dashboard.accessText')}
+              </CardContent>
+            </Card>
+          ) : null}
+        </div>
+      )}
     </>
   );
 }

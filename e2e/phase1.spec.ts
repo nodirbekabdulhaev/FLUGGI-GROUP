@@ -73,7 +73,8 @@ test('CEO создаёт менеджера, менеджер входит и в
   await expect(nav.getByRole('button', { name: 'Продажи' })).toBeVisible();
   await expect(nav.getByRole('button', { name: 'Команда' })).toHaveCount(0);
   await expect(nav.getByRole('link', { name: 'Настройки' })).toHaveCount(0);
-  await expect(page.getByLabel('Период')).toHaveCount(0);
+  // Глобальный фильтр периода в шапке — только у CEO (свой период — на страницах)
+  await expect(page.locator('header').getByLabel('Период')).toHaveCount(0);
 
   // Прямой переход в чужой раздел: интерфейс показывает «Нет доступа», API отвечает 403.
   await page.goto('/team/employees');
@@ -82,7 +83,7 @@ test('CEO создаёт менеджера, менеджер входит и в
   expect(status).toBe(403);
 
   // Нереализованный раздел явно помечен, а не выдаётся за рабочий.
-  await page.goto('/kpi');
+  await page.goto('/analytics');
   await expect(page.getByText('Раздел в разработке')).toBeVisible();
 });
 

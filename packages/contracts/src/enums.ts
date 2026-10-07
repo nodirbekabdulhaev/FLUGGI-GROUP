@@ -181,6 +181,22 @@ export const OPEN_TASK_STATUSES: readonly TaskStatus[] = [
 export const PROJECT_MEMBER_STATUSES = ['ACTIVE', 'DONE', 'REMOVED'] as const;
 export type ProjectMemberStatus = (typeof PROJECT_MEMBER_STATUSES)[number];
 
+export const KPI_METRICS = ['REVENUE', 'ORDERS', 'LEADS', 'MEETINGS', 'TASKS'] as const;
+export type KpiMetric = (typeof KPI_METRICS)[number];
+
+export const ATTENDANCE_STATUSES = [
+  'PRESENT',
+  'LATE',
+  'ABSENT',
+  'DAY_OFF',
+  'VACATION',
+  'SICK',
+] as const;
+export type AttendanceStatus = (typeof ATTENDANCE_STATUSES)[number];
+
+export const PAYROLL_STATUSES = ['DRAFT', 'APPROVED', 'PAID'] as const;
+export type PayrollStatus = (typeof PAYROLL_STATUSES)[number];
+
 export const EXPENSE_SCOPES = ['PROJECT', 'COMPANY'] as const;
 export type ExpenseScope = (typeof EXPENSE_SCOPES)[number];
 
