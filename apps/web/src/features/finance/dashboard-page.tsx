@@ -10,6 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { money } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
 import { cn } from '@/lib/utils';
+import { AccountantPackageButton } from './accountant-package';
 import { useFinanceSummary } from './api';
 
 function Tile({
@@ -86,7 +87,12 @@ export function FinanceDashboardPage() {
       <PageHeader
         title={t('dashboard.title')}
         description={t('dashboard.subtitle')}
-        actions={showPeriod ? <PeriodSelect /> : undefined}
+        actions={
+          <div className="flex flex-wrap items-center gap-2">
+            <AccountantPackageButton />
+            {showPeriod ? <PeriodSelect /> : null}
+          </div>
+        }
       />
       {s.isPending ? (
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">

@@ -111,7 +111,7 @@ test('автоматизация: параметры, планировщик, о
   ).toBeVisible();
 
   // Сохранение параметров
-  await ceo.getByRole('button', { name: 'Сохранить' }).click();
+  await ceo.getByRole('button', { name: 'Сохранить' }).first().click();
   await expect(ceo.getByText('Настройки сохранены')).toBeVisible();
   await shot(ceo, 'p7-automation');
 

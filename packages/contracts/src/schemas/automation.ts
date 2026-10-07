@@ -178,3 +178,35 @@ export interface JobRunDto {
 export interface ReportPreviewDto {
   text: string;
 }
+
+// ─────────────────────────── Реквизиты компании (для бухгалтера) ───────────────────────────
+
+export const TAX_REGIMES = ['IT_PARK', 'TURNOVER', 'GENERAL', 'OTHER'] as const;
+export type TaxRegime = (typeof TAX_REGIMES)[number];
+export const TAX_REGIME_LABELS: Record<TaxRegime, string> = {
+  IT_PARK: 'Резидент IT-Park',
+  TURNOVER: 'Налог с оборота',
+  GENERAL: 'Общий режим (НДС и налог на прибыль)',
+  OTHER: 'Другой',
+};
+
+export const companySettingsSchema = z.object({
+  name: z.string().trim().max(200),
+  /** ИНН (СТИР) — 9 цифр */
+  inn: z
+    .string()
+    .trim()
+    .regex(/^(\d{9})?$/, 'ИНН — 9 цифр'),
+  director: z.string().trim().max(120),
+  accountant: z.string().trim().max(120),
+  taxRegime: z.enum(TAX_REGIMES),
+});
+export type CompanySettings = z.output<typeof companySettingsSchema>;
+
+export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
+  name: '',
+  inn: '',
+  director: '',
+  accountant: '',
+  taxRegime: 'OTHER',
+};

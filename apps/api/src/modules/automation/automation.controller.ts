@@ -1,6 +1,8 @@
 import { Body, Controller, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import {
   automationSettingsSchema,
+  companySettingsSchema,
+  type CompanySettings,
   completeFollowUpSchema,
   followUpListQuerySchema,
   type AutomationSettings,
@@ -63,6 +65,34 @@ export class AutomationController {
         entityType: 'setting',
         entityId: null,
         changes: { automation: { old: before, new: after } },
+        meta,
+      }),
+    );
+    return after;
+  }
+
+  @Get('settings/company')
+  @RequirePermission('settings.manage', 'ALL')
+  getCompany(): Promise<CompanySettings> {
+    return this.settings.company();
+  }
+
+  @Put('settings/company')
+  @RequirePermission('settings.manage', 'ALL')
+  async saveCompany(
+    @CurrentUser() auth: AuthContext,
+    @Body(zod(companySettingsSchema)) body: CompanySettings,
+    @ReqMeta() meta: RequestMeta,
+  ): Promise<CompanySettings> {
+    const before = await this.settings.company();
+    const after = await this.settings.saveCompany(body, auth.userId);
+    await this.prisma.$transaction((tx) =>
+      this.audit.log(tx, {
+        actorId: auth.userId,
+        action: 'settings.company',
+        entityType: 'setting',
+        entityId: null,
+        changes: { company: { old: before, new: after } },
         meta,
       }),
     );

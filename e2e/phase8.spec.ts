@@ -96,3 +96,27 @@ test('глобальный поиск и экспорт', async ({ browser, isMo
   await expect(manager.getByRole('heading', { name: 'Лиды' })).toBeVisible();
   await expect(manager.getByRole('button', { name: 'Экспорт' })).toHaveCount(0);
 });
+
+test('пакет для бухгалтера: реквизиты и скачивание Excel за год', async ({ browser, isMobile }) => {
+  test.skip(isMobile, 'desktop');
+  const ceo = await login(browser, 'ceo@fluggi.demo');
+  await ceo.goto('/settings/automation');
+  await ceo.getByLabel('Налоговый режим').selectOption('IT_PARK');
+  await ceo.getByLabel('Название').fill('ООО «Fluggi»');
+  await ceo.getByRole('button', { name: 'Сохранить' }).last().click();
+  await expect(ceo.getByText('Реквизиты сохранены')).toBeVisible();
+
+  await ceo.goto('/finance/revenue');
+  await ceo.getByRole('button', { name: 'Пакет для бухгалтера' }).click();
+  await expect(ceo.getByText('Расчёты с клиентами на 31.12')).toBeVisible();
+  await shot(ceo, 'p8-accountant');
+  const download = ceo.waitForEvent('download');
+  await ceo.getByRole('link', { name: 'Скачать Excel' }).click();
+  expect((await download).suggestedFilename()).toMatch(/^fluggi-buhgalter-\d{4}\.xlsx$/);
+
+  // РОП кнопки не видит
+  const rop = await login(browser, 'rop@fluggi.demo');
+  await rop.goto('/finance/revenue');
+  await expect(rop.getByRole('heading').first()).toBeVisible();
+  await expect(rop.getByRole('button', { name: 'Пакет для бухгалтера' })).toHaveCount(0);
+});

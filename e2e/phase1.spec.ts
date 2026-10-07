@@ -98,7 +98,11 @@ test('мобильное меню открывается как drawer', async (
   await drawer.getByRole('link', { name: 'Менеджеры' }).click();
   await expect(page).toHaveURL(/\/team\/managers/);
   await expect(drawer).toBeHidden();
+  // В демо-базе могут быть менеджеры из прошлых прогонов — ищем нужного
+  await page.getByLabel('Поиск', { exact: true }).fill('Асрор');
   await expect(page.getByText('Асрор Рахимов').filter({ visible: true })).toBeVisible();
-  // РОП первого отдела не видит менеджера второго отдела
+  // РОП первого отдела не видит менеджера второго отдела — даже через поиск
+  await page.getByLabel('Поиск', { exact: true }).fill('Жасур');
+  await expect(page.getByText('Асрор Рахимов').filter({ visible: true })).toHaveCount(0);
   await expect(page.getByText('Жасур Алимов')).toHaveCount(0);
 });

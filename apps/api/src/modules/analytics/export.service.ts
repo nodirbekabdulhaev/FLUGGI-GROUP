@@ -17,8 +17,8 @@ import { ProjectAccessService } from '../projects/project-access.service';
 import { ClientInsightsService } from './client-insights.service';
 
 type Query = z.output<typeof exportQuerySchema>;
-type Cell = string | number | Date | null;
-interface Sheet {
+export type Cell = string | number | Date | null;
+export interface Sheet {
   title: string;
   columns: { header: string; width?: number; money?: boolean; date?: boolean }[];
   rows: Cell[][];
@@ -27,7 +27,7 @@ interface Sheet {
 /** Максимум строк в одном файле — защита от случайной выгрузки всей базы в браузер. */
 export const EXPORT_LIMIT = 50_000;
 
-const L = {
+export const L = {
   leadStatus: {
     OPEN: 'В работе',
     CONVERTED: 'Сделка',
@@ -95,13 +95,13 @@ const L = {
   },
   expenseScope: { PROJECT: 'Проект', COMPANY: 'Компания' },
 } as const;
-const lbl = <T extends Record<string, string>>(map: T, v: string | null | undefined) =>
+export const lbl = <T extends Record<string, string>>(map: T, v: string | null | undefined) =>
   v ? ((map as Record<string, string>)[v] ?? v) : null;
-const num = (d: { toString(): string } | null | undefined) => (d == null ? null : Number(d));
+export const num = (d: { toString(): string } | null | undefined) => (d == null ? null : Number(d));
 /** Календарная дата (без времени) хранится как полночь UTC. */
-const day = (d: Date | null) => (d ? new Date(d.toISOString().slice(0, 10)) : null);
+export const day = (d: Date | null) => (d ? new Date(d.toISOString().slice(0, 10)) : null);
 /** Момент → дата и время по Ташкенту (Excel показывает «как есть»). */
-const local = (d: Date | null) => (d ? new Date(d.getTime() + 5 * 3_600_000) : null);
+export const local = (d: Date | null) => (d ? new Date(d.getTime() + 5 * 3_600_000) : null);
 
 const TITLES: Record<ExportEntity, string> = {
   leads: 'Лиды',
@@ -504,17 +504,17 @@ export function toCsv(sheet: Sheet): Buffer {
   return Buffer.from(`﻿${lines.join('\r\n')}\r\n`, 'utf8');
 }
 
-export async function toXlsx(sheet: Sheet): Promise<Buffer> {
-  const wb = new ExcelJS.Workbook();
-  wb.creator = 'Fluggi CRM';
-  const ws = wb.addWorksheet(sheet.title, { views: [{ state: 'frozen', ySplit: 1 }] });
+/** Лист Excel: шапка жирная и закреплена, автофильтр, форматы денег и дат. */
+export function addSheet(wb: ExcelJS.Workbook, sheet: Sheet): ExcelJS.Worksheet {
+  const ws = wb.addWorksheet(sheet.title.slice(0, 31), { views: [{ state: 'frozen', ySplit: 1 }] });
   ws.columns = sheet.columns.map((c) => ({
     header: c.header,
     width: c.width ?? Math.max(12, c.header.length + 2),
     style: c.money ? { numFmt: '#,##0.00' } : c.date ? { numFmt: 'dd.mm.yyyy hh:mm' } : {},
   }));
   ws.getRow(1).font = { bold: true };
-  ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columns.length } };
+  if (sheet.columns.length > 1)
+    ws.autoFilter = { from: { row: 1, column: 1 }, to: { row: 1, column: sheet.columns.length } };
   for (const r of sheet.rows) {
     ws.addRow(
       r.map((v) => (typeof v === 'string' && /^[=+\-@]/.test(v) && !/^-?\d/.test(v) ? `'${v}` : v)),
@@ -530,5 +530,12 @@ export async function toXlsx(sheet: Sheet): Promise<Buffer> {
     });
     if (dateOnly) col.numFmt = 'dd.mm.yyyy';
   });
+  return ws;
+}
+
+export async function toXlsx(sheet: Sheet): Promise<Buffer> {
+  const wb = new ExcelJS.Workbook();
+  wb.creator = 'Fluggi CRM';
+  addSheet(wb, sheet);
   return Buffer.from(await wb.xlsx.writeBuffer());
 }

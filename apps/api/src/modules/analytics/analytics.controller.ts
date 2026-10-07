@@ -24,8 +24,10 @@ import {
   ReqMeta,
   RequirePermission,
 } from '../../core/auth/decorators';
+import { forbidden } from '../../core/http/app.exception';
 import { UuidPipe } from '../../core/http/uuid.pipe';
 import { zod } from '../../core/http/zod.pipe';
+import { AccountantPackageService } from './accountant-package.service';
 import { AnalyticsService } from './analytics.service';
 import { ClientInsightsService } from './client-insights.service';
 import { ExportService } from './export.service';
@@ -33,6 +35,7 @@ import { SearchService } from './search.service';
 
 type AQ = z.output<typeof analyticsQuerySchema>;
 const entityPipe = zod(z.enum(EXPORT_ENTITIES));
+const packageQuery = z.object({ year: z.coerce.number().int().min(2020).max(2100) });
 
 /** Аналитика, поиск и экспорт (ТЗ §39–44). */
 @Controller()
@@ -42,6 +45,7 @@ export class AnalyticsController {
     private readonly clients: ClientInsightsService,
     private readonly searchService: SearchService,
     private readonly exports: ExportService,
+    private readonly accountant: AccountantPackageService,
   ) {}
 
   @Get('analytics/sales')
@@ -124,6 +128,26 @@ export class AnalyticsController {
     @Query(zod(searchQuerySchema)) q: z.output<typeof searchQuerySchema>,
   ): Promise<SearchHitDto[]> {
     return this.searchService.search(auth, q.q);
+  }
+
+  /** Годовой пакет для бухгалтера (CEO): договоры, оплаты, расчёты с клиентами, расходы, зарплата. */
+  @Get('exports/accountant-package')
+  @RequirePermission('finance.company.read', 'ALL')
+  async accountantPackage(
+    @CurrentUser() auth: AuthContext,
+    @Query(zod(packageQuery)) q: z.output<typeof packageQuery>,
+    @ReqMeta() meta: RequestMeta,
+    @Res({ passthrough: true }) res: Response,
+  ): Promise<StreamableFile> {
+    if (!auth.permissions['export.run']) throw forbidden();
+    const f = await this.accountant.file(auth, q.year, meta);
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader('Content-Disposition', `attachment; filename="${f.filename}"`);
+    res.setHeader('Cache-Control', 'no-store');
+    return new StreamableFile(f.buffer);
   }
 
   @Get('exports/:entity')

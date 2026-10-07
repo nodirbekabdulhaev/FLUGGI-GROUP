@@ -15,6 +15,7 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { cn } from '@/lib/utils';
+import { CompanySettingsCard } from './company-settings';
 import { useAutomationSettings, useInvalidating, useJobs, useReportPreview } from './api';
 
 function SettingsForm({ initial }: { initial: AutomationSettings }) {
@@ -309,6 +310,9 @@ export function AutomationSettingsPage() {
         <SettingsForm initial={settings.data} />
       )}
       <ReportPreview />
+      <div className="lg:col-span-2">
+        <CompanySettingsCard />
+      </div>
       <div className="lg:col-span-2">
         <Jobs />
       </div>

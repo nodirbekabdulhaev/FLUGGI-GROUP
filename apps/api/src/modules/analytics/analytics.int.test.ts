@@ -385,3 +385,140 @@ describe('Поиск и экспорт (ТЗ §44)', () => {
     expect(await prisma.auditLog.count({ where: { action: 'export.run' } })).toBe(7);
   });
 });
+
+describe('Годовой пакет для бухгалтера', () => {
+  it('один Excel со всеми данными года; только CEO; реквизиты компании', async () => {
+    const manager = await Client.login(app, 'manager@test.uz');
+    const rop = await Client.login(app, 'rop@test.uz');
+    const ceo = await Client.login(app, 'ceo@test.uz');
+    const year = Number(today().slice(0, 4));
+    const { dealId, clientId } = await sale(manager, rop, 'Alfa', '5000000');
+    const project = await prisma.project.findFirstOrThrow({ where: { dealId } });
+    // Второй договор того же клиента подписан, но не оплачен → долг клиента 2 млн
+    await prisma.contract.create({
+      data: {
+        dealId,
+        clientId,
+        contractDate: new Date(`${today()}T00:00:00Z`),
+        amount: 2000000,
+        amountUzs: 2000000,
+        status: 'SIGNED',
+        signedAt: new Date(),
+        createdById: fx.users.manager.id,
+      },
+    });
+    for (const [scope, category, amount, projectId] of [
+      ['PROJECT', 'DESIGN', '700000', project.id],
+      ['COMPANY', 'ADS', '300000', null],
+      ['COMPANY', 'SERVICES', '200000', null],
+    ] as const) {
+      const r = await ceo.post('/api/v1/expenses', {
+        scope,
+        category,
+        amount,
+        projectId,
+        expenseDate: today(),
+      });
+      expect(r.status, JSON.stringify(r.body)).toBe(201);
+    }
+    await prisma.employee.update({
+      where: { userId: fx.users.manager.id },
+      data: { baseSalary: 4000000 },
+    });
+    await ceo.post('/api/v1/payroll/calculate', { period: today().slice(0, 7) });
+
+    // Реквизиты компании
+    expect((await ceo.get('/api/v1/settings/company')).body.taxRegime).toBe('OTHER');
+    expect(
+      (
+        await ceo.put('/api/v1/settings/company', {
+          name: 'Fluggi',
+          inn: '12345',
+          director: '',
+          accountant: '',
+          taxRegime: 'IT_PARK',
+        })
+      ).status,
+    ).toBe(422);
+    const saved = await ceo.put('/api/v1/settings/company', {
+      name: 'ООО «Fluggi»',
+      inn: '123456789',
+      director: 'CEO',
+      accountant: 'Бухгалтер',
+      taxRegime: 'IT_PARK',
+    });
+    expect(saved.status, JSON.stringify(saved.body)).toBe(200);
+    expect((await rop.get('/api/v1/settings/company')).status).toBe(403);
+
+    // Только CEO (финансы компании + экспорт)
+    expect((await rop.get(`/api/v1/exports/accountant-package?year=${year}`)).status).toBe(403);
+    expect((await ceo.get('/api/v1/exports/accountant-package?year=1999')).status).toBe(422);
+
+    const res = await (
+      await import('supertest')
+    )
+      .default(app.getHttpServer())
+      .get(`/api/v1/exports/accountant-package?year=${year}`)
+      .set('Cookie', (ceo as unknown as { cookieHeader(): string }).cookieHeader())
+      .buffer(true)
+      .parse((r, cb) => {
+        const chunks: Buffer[] = [];
+        r.on('data', (c: Buffer) => chunks.push(c));
+        r.on('end', () => cb(null, Buffer.concat(chunks)));
+      });
+    expect(res.status).toBe(200);
+    expect(res.headers['content-disposition']).toBe(
+      `attachment; filename="fluggi-buhgalter-${year}.xlsx"`,
+    );
+    const wb = new ExcelJS.Workbook();
+    await wb.xlsx.load(res.body as unknown as ArrayBuffer);
+    expect(wb.worksheets.map((w) => w.name)).toEqual([
+      'Пояснения',
+      'Сводка (форма 2)',
+      'Договоры',
+      'Оплаты',
+      'Расчёты с клиентами 31.12',
+      'Расходы',
+      'Зарплата',
+      'Комиссии',
+      'Проекты',
+    ]);
+    const notes = wb.getWorksheet('Пояснения')!;
+    const value = (label: string) => {
+      let v: unknown;
+      notes.eachRow((r) => {
+        if (r.getCell(1).value === label) v = r.getCell(2).value;
+      });
+      return v;
+    };
+    expect(value('Компания')).toBe('ООО «Fluggi»');
+    expect(value('Налоговый режим')).toBe('Резидент IT-Park');
+    expect(value('Подписано договоров, UZS')).toBe(7000000);
+    expect(value('Получено оплат (за вычетом возвратов), UZS')).toBe(5000000);
+    expect(value('Расходы на проекты (себестоимость), UZS')).toBe(700000);
+    expect(value('Расходы компании, UZS')).toBe(500000);
+    expect(value('Дебиторская задолженность клиентов на 31.12, UZS')).toBe(2000000);
+
+    // Сводка по форме №2: выручка 5 млн − себестоимость 0,7 млн; расходы периода = 0,5 млн + зарплата
+    const f2 = wb.getWorksheet('Сводка (форма 2)')!;
+    const line = (label: string) => {
+      let v: unknown;
+      f2.eachRow((r) => {
+        if (String(r.getCell(2).value).trim() === label) v = r.getCell(3).value;
+      });
+      return v as number;
+    };
+    expect(line('Чистая выручка (по оплатам)')).toBe(5000000);
+    expect(line('Валовая прибыль')).toBe(4300000);
+    expect(line('расходы по реализации (реклама компании)')).toBe(300000);
+    const salary = line('зарплата (без НДФЛ и соцналога)');
+    expect(salary).toBeGreaterThanOrEqual(4000000);
+    expect(line('Прибыль от основной деятельности')).toBe(4300000 - 500000 - salary);
+
+    const exp = wb.getWorksheet('Расходы')!;
+    expect(exp.getRow(2).getCell(5).value).toBe('Себестоимость услуг (9130)');
+    const settle = wb.getWorksheet('Расчёты с клиентами 31.12')!;
+    expect(settle.getRow(2).getCell(5).value).toBe(2000000);
+    expect(await prisma.auditLog.count({ where: { entityType: 'accountant_package' } })).toBe(1);
+  });
+});

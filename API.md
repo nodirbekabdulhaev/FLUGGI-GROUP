@@ -124,6 +124,8 @@ GET  /clients/:id/insight                                   → LTV и здор�
 GET  /search?q=            → клиенты, лиды, сделки, проекты, договоры, задачи, сотрудники (с учётом прав)
 GET  /exports/:entity      ?format=xlsx|csv&period=all|today|week|month|quarter|year|custom&from&to
                            entity: leads|deals|clients|payments|expenses|projects|tasks (право export.run, аудит)
+GET  /exports/accountant-package?year=2026   → годовой пакет для бухгалтера (finance.company.read ALL + export.run)
+GET/PUT /settings/company                   → реквизиты компании (settings.manage ALL)
 GET  /notifications      POST /notifications/:id/read   POST /notifications/read-all
 GET  /audit-logs         ?actorId&entityType&entityId&dateFrom&dateTo
 ```
