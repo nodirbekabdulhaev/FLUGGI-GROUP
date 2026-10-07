@@ -31,7 +31,12 @@ export interface SalesAnalyticsDto {
   points: SalesPointDto[];
   totals: { revenue: string; collected: string; won: number; leads: number; avgCheck: string };
   /** Тот же период до текущего — для сравнения, % изменения; null — не с чем сравнить */
-  change: { revenue: number | null; collected: number | null; won: number | null; leads: number | null };
+  change: {
+    revenue: number | null;
+    collected: number | null;
+    won: number | null;
+    leads: number | null;
+  };
 }
 
 export interface FunnelStepDto {
