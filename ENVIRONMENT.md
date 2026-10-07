@@ -22,4 +22,7 @@ API проверяет переменные при старте и не запу
 | `SEED_CEO_EMAIL`, `SEED_CEO_PASSWORD`, `SEED_CEO_NAME` | seed | для первого запуска prod | создаёт первого CEO |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | docker-compose.prod | prod | параметры контейнера PostgreSQL |
 | `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | api | Phase 7 | зарезервированы, пока не используются |
-| `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET` | api | Phase 2+ | S3-хранилище файлов (Beget S3 / MinIO), пока не используются |
+| `STORAGE_DRIVER` | api | — | `local` (по умолчанию) — файлы в папке на диске; `s3` — S3-совместимое хранилище |
+| `STORAGE_LOCAL_DIR` | api | — | папка для `local`; по умолчанию `apps/api/storage`. В Docker — `/data/storage` (volume) |
+| `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET` | api | для `s3` | Beget S3: endpoint `https://s3.ru1.storage.beget.cloud`, ключи и бакет — из панели Beget |
+| `OUTBOX_IN_API` | api | — | `false` — события (уведомления) обрабатывает только worker. По умолчанию их обрабатывает и API, чтобы при разработке не запускать worker |

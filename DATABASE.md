@@ -2,6 +2,8 @@
 
 > Статус: **согласовано**. Реализованные таблицы — в `packages/db/prisma/schema.prisma`;
 > каждая следующая фаза добавляет свои таблицы новой миграцией. Поля могут уточняться.
+>
+> ✅ Реализовано: Phase 1 (пользователи, роли, отделы, сессии, аудит, outbox), Phase 2 (CRM), Phase 3 (proposals, proposal_items, proposal_versions, contracts, payments, projects, commission_rules, commissions, stored_files).
 
 ## 1. Соглашения
 

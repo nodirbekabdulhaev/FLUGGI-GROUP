@@ -36,6 +36,11 @@ services:
     build: .
     command: ['node', 'apps/api/dist/main.js']
     env_file: .env
+    environment:
+      OUTBOX_IN_API: 'false'
+      STORAGE_LOCAL_DIR: /data/storage
+    volumes:
+      - storage:/data/storage
     restart: unless-stopped
     depends_on:
       migrate:
@@ -76,3 +81,4 @@ services:
 
 volumes:
   pgdata:
+  storage:

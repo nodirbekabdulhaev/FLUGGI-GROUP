@@ -151,6 +151,11 @@ export function useInvalidateCrm() {
         'stage-history',
         'comments',
         'notifications',
+        'proposals',
+        'contracts',
+        'payments',
+        'commissions',
+        'files',
       ].map((k) => qc.invalidateQueries({ queryKey: [k] })),
     );
 }

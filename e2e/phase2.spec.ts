@@ -47,8 +47,11 @@ test('лид → встреча → уведомление РОП → квали
   const ropContext = await browser.newContext();
   const rop = await ropContext.newPage();
   await login(rop, 'rop@fluggi.demo');
-  await rop.goto('/notifications');
-  await expect(rop.getByText(new RegExp(`${company}`)).first()).toBeVisible({ timeout: 15_000 });
+  // уведомление создаёт outbox-обработчик асинхронно — перезагружаем страницу до появления
+  await expect(async () => {
+    await rop.goto('/notifications');
+    await expect(rop.getByText(new RegExp(`${company}`)).first()).toBeVisible({ timeout: 2_000 });
+  }).toPass({ timeout: 20_000 });
   await ropContext.close();
 
   // Встреча проведена → квалификация

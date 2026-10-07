@@ -244,12 +244,12 @@ export function LeadCard({ id }: { id: string }) {
           { key: 'meetings', label: t('leads.tabs.meetings') },
           { key: 'comments', label: t('leads.tabs.comments') },
           { key: 'history', label: t('leads.tabs.history') },
+          {
+            key: 'docs',
+            label: `${t('leads.tabs.proposals')} · ${t('leads.tabs.contracts')} · ${t('leads.tabs.payments')}`,
+          },
           { key: 'tasks', label: t('leads.tabs.tasks'), plannedPhase: 4 },
-          { key: 'proposals', label: t('leads.tabs.proposals'), plannedPhase: 3 },
-          { key: 'contracts', label: t('leads.tabs.contracts'), plannedPhase: 3 },
-          { key: 'payments', label: t('leads.tabs.payments'), plannedPhase: 3 },
           { key: 'projects', label: t('leads.tabs.projects'), plannedPhase: 4 },
-          { key: 'files', label: t('leads.tabs.files'), plannedPhase: 3 },
         ]}
       />
 
@@ -302,6 +302,17 @@ export function LeadCard({ id }: { id: string }) {
             <TimelinePanel target={{ leadId: id }} />
           ) : tab === 'meetings' ? (
             <MeetingsPanel target={{ leadId: id }} canCreate={open} />
+          ) : tab === 'docs' ? (
+            <div className="flex flex-wrap items-center gap-3 text-sm">
+              <span className="text-muted-foreground">
+                {l.dealId ? t('sales.leadDocs') : t('sales.leadDocsBefore')}
+              </span>
+              {l.dealId ? (
+                <Button asChild size="sm">
+                  <Link href={`/sales/deals/${l.dealId}`}>{t('leads.openDeal')}</Link>
+                </Button>
+              ) : null}
+            </div>
           ) : tab === 'comments' ? (
             <CommentsPanel target={{ leadId: id }} />
           ) : (

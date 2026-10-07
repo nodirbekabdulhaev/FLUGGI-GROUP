@@ -4,7 +4,9 @@
 >
 > ✅ **Реализовано в Phase 1:** `auth/*` (login, logout, me, change-password, sessions), `users` (список, карточка, создание, изменение, block/unblock, reset-password), `teams` (CRUD, soft delete), `roles` (список, каталог прав, изменение прав), `audit-logs`, `health`, `ready`.
 >
-> ✅ **Реализовано в Phase 2:** `references` (справочники, услуги, источники, причины потерь, этапы, курс USD), `leads` (+ stage, assign, close, reopen, convert), `clients` (+ contacts), `deals` (+ stage, assign, close, reopen), `pipeline`, `meetings` (+ complete), `timeline`, `stage-history`, `comments`, `notifications`. Заголовок `Idempotency-Key` работает для всех POST. Остальные endpoint'ы ниже — план следующих фаз.
+> ✅ **Реализовано в Phase 2:** `references` (справочники, услуги, источники, причины потерь, этапы, курс USD), `leads` (+ stage, assign, close, reopen, convert), `clients` (+ contacts), `deals` (+ stage, assign, close, reopen), `pipeline`, `meetings` (+ complete), `timeline`, `stage-history`, `comments`, `notifications`. Заголовок `Idempotency-Key` работает для всех POST. 
+>
+> ✅ **Реализовано в Phase 3:** `proposals` (+ versions, pdf, submit-approval, approve, send, mark-viewed, accept, reject; `PUT` после отправки создаёт новую версию), `contracts` (+ `POST /contracts/:id/send|sign|cancel`, создание из КП — `POST /contracts` с `proposalId`), `payments` (+ confirm, cancel, refund), `GET /deals/:id/money`, `commissions`, `commission-rules` (GET/POST/PUT), `projects` (только чтение: список и карточка), `files` (`POST /files` multipart, `GET /files?entityType&entityId`, `GET /files/:id/download`, `DELETE /files/:id`). Остальные endpoint'ы ниже — план следующих фаз.
 
 ## 1. Соглашения
 

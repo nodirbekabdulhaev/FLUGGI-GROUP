@@ -54,7 +54,8 @@ export async function api<T>(
   { method = 'GET', body, query, signal, idempotencyKey }: RequestOptions = {},
 ): Promise<T> {
   const headers: Record<string, string> = { Accept: 'application/json' };
-  if (body !== undefined) headers['Content-Type'] = 'application/json';
+  const isForm = typeof FormData !== 'undefined' && body instanceof FormData;
+  if (body !== undefined && !isForm) headers['Content-Type'] = 'application/json';
   if (idempotencyKey) headers['Idempotency-Key'] = idempotencyKey;
   if (method !== 'GET') {
     const csrf = readCookie(CSRF_COOKIE);
@@ -66,7 +67,7 @@ export async function api<T>(
     res = await fetch(buildUrl(path, query), {
       method,
       headers,
-      body: body === undefined ? undefined : JSON.stringify(body),
+      body: body === undefined ? undefined : isForm ? (body as FormData) : JSON.stringify(body),
       credentials: 'same-origin',
       signal,
     });

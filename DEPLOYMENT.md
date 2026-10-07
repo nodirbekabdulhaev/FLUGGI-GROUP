@@ -101,7 +101,22 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Миграции применяются автоматически сервисом `migrate`. Ручные изменения production-БД запрещены (ТЗ §67).
 
-## 6. Резервные копии
+## 6. Файлы
+
+По умолчанию файлы (договоры, вложения) хранятся в Docker-volume `storage` на VPS.
+Для надёжности лучше Beget S3: создайте бакет в панели Beget и задайте в `.env`:
+
+```env
+STORAGE_DRIVER=s3
+STORAGE_ENDPOINT=https://s3.ru1.storage.beget.cloud
+STORAGE_BUCKET=<имя бакета>
+STORAGE_ACCESS_KEY=<ключ>
+STORAGE_SECRET_KEY=<секрет>
+```
+
+Бакет должен быть **приватным**: файлы отдаются только через API после проверки прав.
+
+## 7. Резервные копии
 
 Ежедневный дамп (cron на хосте):
 
@@ -112,7 +127,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 
 Копируйте дампы за пределы VPS (например в Beget S3).
 
-## 7. Проверка
+## 8. Проверка
 
 ```bash
 curl https://crm.fluggi.uz/api/v1/ready   # {"status":"ok","database":"ok"}

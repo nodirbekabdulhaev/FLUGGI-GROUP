@@ -37,6 +37,14 @@ import { api, errorMessage } from '@/lib/api-client';
 import { date, dateTime, money } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
 import { DealFormDialog } from './deal-form-dialog';
+import { useDealMoney } from '@/features/crm/sales-api';
+import {
+  ContractsPanel,
+  FilesPanel,
+  PaymentsPanel,
+  ProposalsPanel,
+} from '@/features/sales/deal-sales-panels';
+import { SalesBadge } from '@/features/sales/status';
 
 export function DealCard({ id }: { id: string }) {
   const t = useTranslations();
@@ -44,6 +52,7 @@ export function DealCard({ id }: { id: string }) {
   const router = useRouter();
   const deal = useDeal(id);
   const refs = useReferences();
+  const money_ = useDealMoney(id, can('payment.read'));
   const [tab, setTab] = useState('overview');
   const [dialog, setDialog] = useState<'edit' | 'close' | 'assign' | null>(null);
   const stage = useCrmMutation((code: DealStageCode) =>
@@ -168,6 +177,32 @@ export function DealCard({ id }: { id: string }) {
         </div>
       </div>
 
+      {money_.data ? (
+        <div className="mb-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
+          {[
+            [t('sales.money.contract'), money(money_.data.contractUzs, 'UZS')],
+            [t('sales.money.paid'), money(money_.data.paidUzs, 'UZS')],
+            [t('sales.money.receivable'), money(money_.data.receivableUzs, 'UZS')],
+          ].map(([label, value]) => (
+            <Card key={label} className="p-3">
+              <p className="text-xs text-muted-foreground">{label}</p>
+              <p className="font-semibold">{value}</p>
+            </Card>
+          ))}
+          <Card className="p-3">
+            <p className="text-xs text-muted-foreground">{t('sales.money.project')}</p>
+            {money_.data.project ? (
+              <p className="flex items-center gap-2 font-semibold">
+                {money_.data.project.number}{' '}
+                <SalesBadge kind="projectStatus" status={money_.data.project.status} />
+              </p>
+            ) : (
+              <p className="text-sm text-muted-foreground">—</p>
+            )}
+          </Card>
+        </div>
+      ) : null}
+
       {canStage ? (
         <div className="mb-6">
           <div className="hidden gap-1 sm:flex">
@@ -220,12 +255,12 @@ export function DealCard({ id }: { id: string }) {
           { key: 'meetings', label: t('leads.tabs.meetings') },
           { key: 'comments', label: t('leads.tabs.comments') },
           { key: 'history', label: t('leads.tabs.history') },
-          { key: 'proposals', label: t('leads.tabs.proposals'), plannedPhase: 3 },
-          { key: 'contracts', label: t('leads.tabs.contracts'), plannedPhase: 3 },
-          { key: 'payments', label: t('leads.tabs.payments'), plannedPhase: 3 },
+          ...(can('proposal.read') ? [{ key: 'proposals', label: t('leads.tabs.proposals') }] : []),
+          ...(can('contract.read') ? [{ key: 'contracts', label: t('leads.tabs.contracts') }] : []),
+          ...(can('payment.read') ? [{ key: 'payments', label: t('leads.tabs.payments') }] : []),
+          { key: 'files', label: t('leads.tabs.files') },
           { key: 'projects', label: t('leads.tabs.projects'), plannedPhase: 4 },
           { key: 'tasks', label: t('leads.tabs.tasks'), plannedPhase: 4 },
-          { key: 'files', label: t('leads.tabs.files'), plannedPhase: 3 },
         ]}
       />
       <Card>
@@ -277,6 +312,14 @@ export function DealCard({ id }: { id: string }) {
             <MeetingsPanel target={{ dealId: id }} canCreate={open} />
           ) : tab === 'comments' ? (
             <CommentsPanel target={{ dealId: id }} />
+          ) : tab === 'proposals' ? (
+            <ProposalsPanel deal={d} />
+          ) : tab === 'contracts' ? (
+            <ContractsPanel deal={d} />
+          ) : tab === 'payments' ? (
+            <PaymentsPanel deal={d} />
+          ) : tab === 'files' ? (
+            <FilesPanel deal={d} />
           ) : (
             <HistoryPanel target={{ dealId: id }} />
           )}

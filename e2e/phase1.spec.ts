@@ -82,7 +82,7 @@ test('CEO создаёт менеджера, менеджер входит и в
   expect(status).toBe(403);
 
   // Нереализованный раздел явно помечен, а не выдаётся за рабочий.
-  await page.goto('/sales/proposals');
+  await page.goto('/projects/all');
   await expect(page.getByText('Раздел в разработке')).toBeVisible();
 });
 

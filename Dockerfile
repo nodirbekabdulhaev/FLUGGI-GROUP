@@ -19,7 +19,7 @@ FROM base AS runtime
 ENV NODE_ENV=production TZ=Asia/Tashkent
 COPY --from=build /app /app
 # Next.js пишет кэш в .next/cache во время работы.
-RUN chown -R node:node /app/apps/web/.next
+RUN chown -R node:node /app/apps/web/.next && mkdir -p /data/storage && chown node:node /data/storage
 USER node
 EXPOSE 3000 4000
 CMD ["node", "apps/api/dist/main.js"]
