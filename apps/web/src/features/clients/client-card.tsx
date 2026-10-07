@@ -20,6 +20,7 @@ import { dateTime, money } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
 import { ClientFormDialog } from './client-form-dialog';
 import { ContactDialog } from './contact-dialog';
+import { ProjectsMiniList } from '@/features/projects/projects-mini-list';
 
 export function ClientCard({ id }: { id: string }) {
   const t = useTranslations();
@@ -109,7 +110,7 @@ export function ClientCard({ id }: { id: string }) {
           { key: 'contacts', label: t('clients.contacts'), count: c.contacts.length },
           { key: 'activity', label: t('leads.tabs.activity') },
           { key: 'comments', label: t('leads.tabs.comments') },
-          { key: 'projects', label: t('leads.tabs.projects'), plannedPhase: 4 },
+          ...(can('project.read') ? [{ key: 'projects', label: t('leads.tabs.projects') }] : []),
         ]}
       />
       <Card>
@@ -211,6 +212,8 @@ export function ClientCard({ id }: { id: string }) {
               </ul>
             )}
           </div>
+        ) : tab === 'projects' ? (
+          <ProjectsMiniList query={{ clientId: id }} />
         ) : (
           <CardContent className="pt-5">
             {tab === 'activity' ? (

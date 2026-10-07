@@ -19,6 +19,7 @@ import { EmptyState, ErrorState, TableSkeleton } from '@/components/shared/state
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation } from '@/features/crm/api';
@@ -361,9 +362,8 @@ function ContractDialog({
           </Field>
           <div className="grid gap-4 sm:grid-cols-[1fr_6rem_10rem]">
             <Field label={t('amount')} htmlFor="ct-amount">
-              <Input
+              <MoneyInput
                 id="ct-amount"
-                inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 disabled={Boolean(proposalId)}
@@ -540,10 +540,13 @@ export function ContractsPanel({ deal }: { deal: DealDto }) {
 
 function PaymentDialog({
   deal,
+  payment,
   open,
   onOpenChange,
 }: {
   deal: DealDto;
+  /** Есть — исправление неподтверждённой оплаты. */
+  payment?: PaymentDto | null;
   open: boolean;
   onOpenChange: (o: boolean) => void;
 }) {
@@ -563,55 +566,78 @@ function PaymentDialog({
   useEffect(() => {
     if (open) {
       setErrors({});
-      setV({
-        amount: '',
-        currency: deal.currency,
-        type: 'PREPAYMENT',
-        method: 'BANK',
-        contractId: '',
-        dueDate: '',
-        comment: '',
-      });
+      setV(
+        payment
+          ? {
+              amount: String(Number(payment.amount)),
+              currency: payment.currency,
+              type: payment.type,
+              method: payment.method,
+              contractId: payment.contract?.id ?? '',
+              dueDate: payment.dueDate ?? '',
+              comment: payment.comment ?? '',
+            }
+          : {
+              amount: '',
+              currency: deal.currency,
+              type: 'PREPAYMENT',
+              method: 'BANK',
+              contractId: '',
+              dueDate: '',
+              comment: '',
+            },
+      );
     }
-  }, [open, deal]);
+  }, [open, deal, payment]);
   useEffect(() => {
+    if (payment) return;
     const signed = contracts.data?.items.find((c) => c.status === 'SIGNED');
     if (signed && !v.contractId)
       setV((s) => ({ ...s, contractId: signed.id, currency: signed.currency }));
-  }, [contracts.data, v.contractId]);
+  }, [contracts.data, v.contractId, payment]);
   const set =
     (k: keyof typeof v) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) =>
       setV((s) => ({ ...s, [k]: e.target.value }));
   const create = useCrmMutation(() =>
-    api<PaymentDto>('/payments', {
-      method: 'POST',
-      idempotencyKey: key,
-      body: {
-        dealId: deal.id,
-        amount: v.amount,
-        currency: v.currency,
-        type: v.type,
-        method: v.method,
-        contractId: v.contractId || undefined,
-        dueDate: v.dueDate || undefined,
-        comment: v.comment || undefined,
-      },
-    }),
+    payment
+      ? api<PaymentDto>(`/payments/${payment.id}`, {
+          method: 'PATCH',
+          body: {
+            amount: v.amount,
+            currency: v.currency,
+            type: v.type,
+            method: v.method,
+            contractId: v.contractId || null,
+            dueDate: v.dueDate || null,
+            comment: v.comment || null,
+          },
+        })
+      : api<PaymentDto>('/payments', {
+          method: 'POST',
+          idempotencyKey: key,
+          body: {
+            dealId: deal.id,
+            amount: v.amount,
+            currency: v.currency,
+            type: v.type,
+            method: v.method,
+            contractId: v.contractId || undefined,
+            dueDate: v.dueDate || undefined,
+            comment: v.comment || undefined,
+          },
+        }),
   );
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title={t('payments.new')}>
+      <DialogContent
+        title={payment ? `${t('payments.edit')} ${payment.number}` : t('payments.new')}
+        description={payment ? t('payments.editHint') : undefined}
+      >
         <div className="grid gap-4">
           <div className="grid gap-4 sm:grid-cols-[1fr_6rem]">
             <Field label={t('payments.amount')} htmlFor="pay-amount" error={errors.amount}>
-              <Input
-                id="pay-amount"
-                inputMode="decimal"
-                value={v.amount}
-                onChange={set('amount')}
-                autoFocus
-              />
+              <MoneyInput id="pay-amount" value={v.amount} onChange={set('amount')} autoFocus />
             </Field>
             <Field label="Валюта" htmlFor="pay-cur">
               <NativeSelect id="pay-cur" value={v.currency} onChange={set('currency')}>
@@ -666,11 +692,11 @@ function PaymentDialog({
           <Button
             disabled={!v.amount}
             loading={create.isPending}
-            loadingText="Создание..."
+            loadingText={payment ? 'Сохранение...' : 'Создание...'}
             onClick={async () => {
               try {
                 await create.mutateAsync(undefined);
-                toast.success(t('payments.created'));
+                toast.success(payment ? t('payments.updated') : t('payments.created'));
                 onOpenChange(false);
               } catch (err) {
                 if (err instanceof ApiError) setErrors(err.fieldErrors());
@@ -678,7 +704,7 @@ function PaymentDialog({
               }
             }}
           >
-            {t('payments.new')}
+            {payment ? 'Сохранить' : t('payments.new')}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -711,9 +737,8 @@ function RefundDialog({ payment, onClose }: { payment: PaymentDto | null; onClos
           <div className="grid gap-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <Field label={`${t('payments.amount')}, ${payment.currency}`} htmlFor="rf-amount">
-                <Input
+                <MoneyInput
                   id="rf-amount"
-                  inputMode="decimal"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
                   autoFocus
@@ -774,6 +799,7 @@ export function PaymentsPanel({ deal }: { deal: DealDto }) {
   const list = usePayments({ dealId: deal.id, pageSize: 50 });
   const [open, setOpen] = useState(false);
   const [refunding, setRefunding] = useState<PaymentDto | null>(null);
+  const [editing, setEditing] = useState<PaymentDto | null>(null);
   const confirm = useCrmMutation((id: string) =>
     api<ConfirmPaymentResult>(`/payments/${id}/confirm`, { method: 'POST', body: {} }),
   );
@@ -861,13 +887,18 @@ export function PaymentsPanel({ deal }: { deal: DealDto }) {
                   </Button>
                 ) : null}
                 {p.status === 'PENDING' && can('payment.create') ? (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => run(cancel.mutateAsync(p.id), t('payments.cancelled'))}
-                  >
-                    {t('payments.cancel')}
-                  </Button>
+                  <>
+                    <Button size="sm" variant="outline" onClick={() => setEditing(p)}>
+                      <Pencil /> {t('payments.edit')}
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => run(cancel.mutateAsync(p.id), t('payments.cancelled'))}
+                    >
+                      {t('payments.cancel')}
+                    </Button>
+                  </>
                 ) : null}
                 {p.status === 'PAID' &&
                 p.type !== 'REFUND' &&
@@ -883,6 +914,12 @@ export function PaymentsPanel({ deal }: { deal: DealDto }) {
         </ul>
       )}
       <PaymentDialog deal={deal} open={open} onOpenChange={setOpen} />
+      <PaymentDialog
+        deal={deal}
+        payment={editing}
+        open={Boolean(editing)}
+        onOpenChange={(o) => (!o ? setEditing(null) : undefined)}
+      />
       <RefundDialog payment={refunding} onClose={() => setRefunding(null)} />
     </div>
   );

@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { useClients, useCrmMutation } from '@/features/crm/api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
@@ -134,9 +135,8 @@ export function ConvertDialog({
           )}
           <div className="grid grid-cols-[1fr_6rem] gap-2">
             <Field label={t('crm.fields.amount')} htmlFor="cv-amount" error={errors.amount}>
-              <Input
+              <MoneyInput
                 id="cv-amount"
-                inputMode="decimal"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
               />

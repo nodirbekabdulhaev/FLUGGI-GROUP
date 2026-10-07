@@ -8,12 +8,13 @@ import {
   type PaymentListQuery,
   type createPaymentSchema,
   type refundPaymentSchema,
+  type updatePaymentSchema,
 } from '@fluggi/contracts';
 import { companyDate, sum } from '@fluggi/domain';
 import { Prisma, type Deal } from '@fluggi/db';
 import type { z } from 'zod';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
-import { AuditService } from '../../core/audit/audit.service';
+import { AuditService, diffFields } from '../../core/audit/audit.service';
 import { businessRule, notFound } from '../../core/http/app.exception';
 import { dateOnly, decReq, iso, parseDate } from '../../core/http/serialize';
 import { OutboxService } from '../../core/outbox/outbox.service';
@@ -454,6 +455,81 @@ export class PaymentsService {
         auth.userId,
       );
       return toDto(await tx.payment.findUniqueOrThrow({ where: { id: r.id }, include }));
+    });
+  }
+
+  /**
+   * Исправление оплаты до подтверждения. Подтверждённую оплату менять нельзя —
+   * только возврат (ТЗ §66): по ней уже начислены комиссии и создан проект.
+   */
+  async update(
+    auth: AuthContext,
+    id: string,
+    input: z.output<typeof updatePaymentSchema>,
+    meta: RequestMeta,
+  ): Promise<PaymentDto> {
+    const before = await this.find(auth, id, 'payment.create');
+    if (before.status !== 'PENDING')
+      throw businessRule(
+        'Изменить можно только неподтверждённую оплату. Для подтверждённой — возврат',
+      );
+    if (input.contractId) {
+      const c = await this.prisma.contract.findFirst({
+        where: { id: input.contractId, dealId: before.dealId },
+      });
+      if (!c) throw businessRule('Договор не относится к этой сделке');
+      if (c.status === 'CANCELLED') throw businessRule('Договор отменён');
+    }
+    const amount = input.amount ?? before.amount.toFixed(2);
+    const currency = input.currency ?? before.currency;
+    const money =
+      input.amount !== undefined || input.currency !== undefined
+        ? await this.rates.convert(amount, currency)
+        : null;
+    return this.prisma.$transaction(async (tx) => {
+      // Та же блокировка, что при подтверждении: правка и подтверждение не пересекутся.
+      await tx.$queryRaw`SELECT id FROM deals WHERE id = ${before.dealId}::uuid FOR UPDATE`;
+      const current = await tx.payment.findUniqueOrThrow({ where: { id } });
+      if (current.status !== 'PENDING') throw businessRule('Оплата уже подтверждена или отменена');
+      const data = {
+        contractId: input.contractId,
+        amount: money ? amount : undefined,
+        currency: money ? currency : undefined,
+        exchangeRate: money?.rate,
+        amountUzs: money?.amountUzs,
+        type: input.type,
+        method: input.method,
+        dueDate: input.dueDate !== undefined ? parseDate(input.dueDate) : undefined,
+        comment: input.comment,
+      };
+      const after = await tx.payment.update({ where: { id }, data, include });
+      const changes = diffFields(current, data as Partial<typeof current>, [
+        'contractId',
+        'amount',
+        'currency',
+        'amountUzs',
+        'type',
+        'method',
+        'dueDate',
+        'comment',
+      ]);
+      if (changes) {
+        await this.audit.log(tx, {
+          actorId: auth.userId,
+          action: 'payment.update',
+          entityType: 'payment',
+          entityId: id,
+          changes,
+          meta,
+        });
+        await this.activity.log(tx, {
+          type: 'payment.updated',
+          actorId: auth.userId,
+          dealId: before.dealId,
+          payload: { number: pay(after.number), fields: Object.keys(changes) },
+        });
+      }
+      return toDto(after);
     });
   }
 

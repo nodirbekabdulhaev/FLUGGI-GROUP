@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation, useReferences } from '@/features/crm/api';
@@ -250,7 +251,15 @@ export function LeadFormDialog({
               </Field>
             ) : null}
             <div className="grid grid-cols-[1fr_6rem] gap-2">
-              {input('budget', { inputMode: 'decimal', placeholder: '0' })}
+              <Field label={t('fields.budget')} htmlFor="lead-budget" error={err('budget')}>
+                <MoneyInput
+                  id="lead-budget"
+                  placeholder="0"
+                  value={v.budget}
+                  onChange={set('budget')}
+                  aria-invalid={Boolean(err('budget'))}
+                />
+              </Field>
               <Field label={t('fields.currency')} htmlFor="lead-currency">
                 <NativeSelect id="lead-currency" value={v.currency} onChange={set('currency')}>
                   {CURRENCIES.map((c) => (

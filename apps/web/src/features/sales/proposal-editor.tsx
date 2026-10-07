@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation, useReferences } from '@/features/crm/api';
@@ -220,11 +221,10 @@ export function ProposalEditor({
                       value={l.quantity}
                       onChange={(e) => setLine(i, 'quantity', e.target.value)}
                     />
-                    <Input
+                    <MoneyInput
                       aria-label={t('price')}
                       placeholder={t('price')}
                       className="h-9"
-                      inputMode="decimal"
                       value={l.unitPrice}
                       onChange={(e) => setLine(i, 'unitPrice', e.target.value)}
                       aria-invalid={Boolean(errors[`items.${i}.unitPrice`])}

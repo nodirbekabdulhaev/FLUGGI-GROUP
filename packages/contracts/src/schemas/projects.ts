@@ -27,6 +27,7 @@ export const projectListQuerySchema = paginationQuerySchema.extend({
   status: z.enum(PROJECT_STATUSES).optional(),
   ropId: z.uuid().optional(),
   clientId: z.uuid().optional(),
+  dealId: z.uuid().optional(),
   q: z.string().trim().max(100).optional(),
 });
 export type ProjectListQuery = z.input<typeof projectListQuerySchema>;

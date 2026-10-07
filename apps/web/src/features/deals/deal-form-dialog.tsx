@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { useClient, useClients, useCrmMutation, useReferences } from '@/features/crm/api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
@@ -156,12 +157,7 @@ export function DealFormDialog({
             </Field>
             <div className="grid grid-cols-[1fr_6rem] gap-2">
               <Field label={t('crm.fields.amount')} htmlFor="d-amount" error={errors.amount}>
-                <Input
-                  id="d-amount"
-                  inputMode="decimal"
-                  value={v.amount ?? ''}
-                  onChange={set('amount')}
-                />
+                <MoneyInput id="d-amount" value={v.amount ?? ''} onChange={set('amount')} />
               </Field>
               <Field label={t('crm.fields.currency')} htmlFor="d-cur">
                 <NativeSelect id="d-cur" value={v.currency ?? 'UZS'} onChange={set('currency')}>

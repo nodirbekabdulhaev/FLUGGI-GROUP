@@ -1,9 +1,10 @@
-import { Body, Controller, Get, HttpCode, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Patch, Post, Query } from '@nestjs/common';
 import {
   confirmPaymentSchema,
   createPaymentSchema,
   paymentListQuerySchema,
   refundPaymentSchema,
+  updatePaymentSchema,
   type ConfirmPaymentResult,
   type DealMoneyDto,
   type Paginated,
@@ -75,6 +76,17 @@ export class PaymentsController {
     @ReqMeta() meta: RequestMeta,
   ): Promise<PaymentDto> {
     return this.payments.refund(auth, id, body, meta);
+  }
+
+  @Patch('payments/:id')
+  @RequirePermission('payment.create')
+  update(
+    @CurrentUser() auth: AuthContext,
+    @Param('id', UuidPipe) id: string,
+    @Body(zod(updatePaymentSchema)) body: z.output<typeof updatePaymentSchema>,
+    @ReqMeta() meta: RequestMeta,
+  ): Promise<PaymentDto> {
+    return this.payments.update(auth, id, body, meta);
   }
 
   @Post('payments/:id/cancel')

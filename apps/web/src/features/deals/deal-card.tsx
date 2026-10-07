@@ -45,6 +45,7 @@ import {
   ProposalsPanel,
 } from '@/features/sales/deal-sales-panels';
 import { SalesBadge } from '@/features/sales/status';
+import { ProjectsMiniList } from '@/features/projects/projects-mini-list';
 
 export function DealCard({ id }: { id: string }) {
   const t = useTranslations();
@@ -261,8 +262,7 @@ export function DealCard({ id }: { id: string }) {
           ...(can('contract.read') ? [{ key: 'contracts', label: t('leads.tabs.contracts') }] : []),
           ...(can('payment.read') ? [{ key: 'payments', label: t('leads.tabs.payments') }] : []),
           { key: 'files', label: t('leads.tabs.files') },
-          { key: 'projects', label: t('leads.tabs.projects'), plannedPhase: 4 },
-          { key: 'tasks', label: t('leads.tabs.tasks'), plannedPhase: 4 },
+          ...(can('project.read') ? [{ key: 'projects', label: t('leads.tabs.projects') }] : []),
         ]}
       />
       <Card>
@@ -322,6 +322,10 @@ export function DealCard({ id }: { id: string }) {
             <PaymentsPanel deal={d} />
           ) : tab === 'files' ? (
             <FilesPanel deal={d} />
+          ) : tab === 'projects' ? (
+            <div className="-mx-5 -mb-5">
+              <ProjectsMiniList query={{ dealId: id }} />
+            </div>
           ) : (
             <HistoryPanel target={{ dealId: id }} />
           )}

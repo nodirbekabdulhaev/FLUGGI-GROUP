@@ -248,8 +248,6 @@ export function LeadCard({ id }: { id: string }) {
             key: 'docs',
             label: `${t('leads.tabs.proposals')} · ${t('leads.tabs.contracts')} · ${t('leads.tabs.payments')}`,
           },
-          { key: 'tasks', label: t('leads.tabs.tasks'), plannedPhase: 4 },
-          { key: 'projects', label: t('leads.tabs.projects'), plannedPhase: 4 },
         ]}
       />
 

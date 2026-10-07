@@ -139,6 +139,7 @@ export class ProjectsService {
     if (q.status) and.push({ status: q.status });
     if (q.ropId) and.push({ ropId: q.ropId });
     if (q.clientId) and.push({ clientId: q.clientId });
+    if (q.dealId) and.push({ dealId: q.dealId });
     if (q.q)
       and.push({
         OR: [

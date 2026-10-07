@@ -18,6 +18,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
+import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { crmKeys, useReferences } from '@/features/crm/api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
@@ -128,17 +129,15 @@ function ItemDialog({ editing, onClose }: { editing: Editing; onClose: () => voi
             {isService ? (
               <>
                 <Field label={t('basePrice')} htmlFor="r-bp" error={errors.basePrice}>
-                  <Input
+                  <MoneyInput
                     id="r-bp"
-                    inputMode="decimal"
                     value={String(v.basePrice ?? '')}
                     onChange={set('basePrice')}
                   />
                 </Field>
                 <Field label={t('minPrice')} htmlFor="r-mp" error={errors.minPrice}>
-                  <Input
+                  <MoneyInput
                     id="r-mp"
-                    inputMode="decimal"
                     value={String(v.minPrice ?? '')}
                     onChange={set('minPrice')}
                   />

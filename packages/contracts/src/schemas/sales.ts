@@ -182,6 +182,20 @@ export const createPaymentSchema = z.object({
 });
 export type CreatePaymentInput = z.input<typeof createPaymentSchema>;
 
+/** Исправление неподтверждённой оплаты (ошиблись в сумме, типе, способе). */
+export const updatePaymentSchema = z.object({
+  contractId: z.uuid().nullable().optional(),
+  amount: moneySchema.refine((v) => Number(v) > 0, 'Сумма должна быть больше нуля').optional(),
+  currency: z.enum(CURRENCIES).optional(),
+  type: z
+    .enum(PAYMENT_TYPES.filter((t) => t !== 'REFUND') as [PaymentType, ...PaymentType[]])
+    .optional(),
+  method: z.enum(PAYMENT_METHODS).optional(),
+  dueDate: dateOnly.nullable().optional(),
+  comment: z.string().trim().max(2000).nullable().optional(),
+});
+export type UpdatePaymentInput = z.input<typeof updatePaymentSchema>;
+
 export const confirmPaymentSchema = z.object({
   /** Фактическая дата оплаты; по умолчанию — сейчас. */
   paidAt: z.iso.datetime({ offset: true }).optional(),

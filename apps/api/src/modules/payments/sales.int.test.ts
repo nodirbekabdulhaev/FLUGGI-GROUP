@@ -311,6 +311,41 @@ describe('Оплаты — правила и защита', () => {
   });
 });
 
+describe('Исправление оплаты', () => {
+  it('неподтверждённую оплату можно изменить, подтверждённую — нет', async () => {
+    const manager = await Client.login(app, 'manager@test.uz');
+    const rop = await Client.login(app, 'rop@test.uz');
+    const { dealId } = await dealFixture(manager, rop);
+    const p = await manager.post('/api/v1/payments', {
+      dealId,
+      amount: '500000',
+      type: 'PREPAYMENT',
+      method: 'CASH',
+    });
+    // Ошиблись в сумме: 500 000 → 5 000 000 (пробелы из поля ввода допустимы)
+    const fixed = await manager.patch(`/api/v1/payments/${p.body.id}`, {
+      amount: '5 000 000',
+      method: 'BANK',
+    });
+    expect(fixed.status, JSON.stringify(fixed.body)).toBe(200);
+    expect(fixed.body).toMatchObject({
+      amount: '5000000.00',
+      amountUzs: '5000000.00',
+      method: 'BANK',
+    });
+    const audit = await prisma.auditLog.findFirst({ where: { action: 'payment.update' } });
+    expect(audit?.changes).toMatchObject({ method: { old: 'CASH', new: 'BANK' } });
+
+    const other = await Client.login(app, 'manager2@test.uz');
+    expect((await other.patch(`/api/v1/payments/${p.body.id}`, { amount: '1' })).status).toBe(404);
+
+    await rop.post(`/api/v1/payments/${p.body.id}/confirm`, {});
+    const late = await manager.patch(`/api/v1/payments/${p.body.id}`, { amount: '1' });
+    expect(late.status).toBe(422);
+    expect(late.body.error.message).toMatch(/возврат/);
+  });
+});
+
 describe('Файлы', () => {
   it('загрузка PDF к договору, скачивание с проверкой прав, отказ для поддельного типа', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
