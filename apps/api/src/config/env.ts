@@ -27,6 +27,17 @@ const envSchema = z.object({
   /** polling — бот сам забирает сообщения (локально, без домена); webhook — Telegram присылает их на /api/v1/telegram/webhook */
   TELEGRAM_MODE: z.enum(['polling', 'webhook']).default('polling'),
   TELEGRAM_API_BASE: z.url().default('https://api.telegram.org'),
+  /** Прокси для запросов к Telegram, если сервер не видит api.telegram.org напрямую: http://, https:// или socks5:// */
+  TELEGRAM_PROXY_URL: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined)
+    .pipe(
+      z
+        .string()
+        .regex(/^(https?|socks5):\/\/.+/, 'Ожидается http://, https:// или socks5://')
+        .optional(),
+    ),
   /** Планировщик (напоминания, отчёты). false — выключить (тесты, отдельный API без worker). */
   SCHEDULER_ENABLED: z
     .enum(['true', 'false'])

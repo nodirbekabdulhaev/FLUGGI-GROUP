@@ -167,7 +167,10 @@ curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
 
 **Бот не отвечает?** Откройте Профиль: если бот настроен, но не работает, там написана причина
 (чаще всего — токен заменили в @BotFather, а в `.env` старый). После изменения `.env` перезапустите API.
-Проверить токен вручную: `curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe"` — должно
+Если написано «Сервер не может подключиться к Telegram» — программа не видит `api.telegram.org`
+(приложение Telegram при этом может работать: у него свои способы подключения). Проверка:
+`curl -sS https://api.telegram.org` — без ответа значит, нужен VPN для всей системы или прокси
+в `TELEGRAM_PROXY_URL`. Проверить токен вручную: `curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getMe"` — должно
 быть `"ok":true`. В логе API при запуске видно «Telegram-бот подключён» или ошибку.
 
 Сообщения уходят через очередь (`notification_deliveries`): при ошибке Telegram — до 5 попыток с паузой,

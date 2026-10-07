@@ -34,7 +34,17 @@ export class TelegramService {
         return 'Бот получает сообщения в другом месте: у него включён webhook или с этим токеном запущен второй сервер';
       return `Telegram ответил ошибкой: ${err.description}`;
     }
-    return `Нет связи с Telegram: ${(err as Error).message}`;
+    // Сетевая ошибка: fetch пишет только «fetch failed», настоящая причина — в cause
+    type Cause = { code?: string; message?: string; errors?: Cause[] };
+    const e = err as Error & { cause?: Cause };
+    const codes = [e.cause?.code, ...(e.cause?.errors ?? []).map((x) => x.code)].filter(Boolean);
+    const reason =
+      e.name === 'TimeoutError'
+        ? 'превышено время ожидания'
+        : codes.length
+          ? [...new Set(codes)].join(', ')
+          : (e.cause?.message ?? e.message);
+    return `Сервер не может подключиться к Telegram (${reason}). Если Telegram у вас работает только через VPN или прокси — укажите прокси в TELEGRAM_PROXY_URL в .env (http://, https:// или socks5://) или включите VPN в режиме для всей системы, затем перезапустите API`;
   }
 
   /**

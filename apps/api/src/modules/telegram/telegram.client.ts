@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { fetch, ProxyAgent, Socks5ProxyAgent, type Dispatcher } from 'undici';
 import { loadEnv } from '../../config/env';
 
 /** Где работают фоновые циклы: в worker, а в разработке — и в API (как outbox). */
@@ -42,6 +43,20 @@ export class TelegramClient {
     return loadEnv().TELEGRAM_BOT_USERNAME ?? null;
   }
 
+  private proxy: { url: string; dispatcher: Dispatcher } | null = null;
+
+  /** Прокси из TELEGRAM_PROXY_URL (создаётся один раз). */
+  private dispatcher(): Dispatcher | undefined {
+    const url = loadEnv().TELEGRAM_PROXY_URL;
+    if (!url) return undefined;
+    if (this.proxy?.url !== url)
+      this.proxy = {
+        url,
+        dispatcher: url.startsWith('socks5://') ? new Socks5ProxyAgent(url) : new ProxyAgent(url),
+      };
+    return this.proxy.dispatcher;
+  }
+
   async call<T>(method: string, body: object, timeoutMs = 15_000): Promise<T> {
     const env = loadEnv();
     if (!env.TELEGRAM_BOT_TOKEN) throw new TelegramApiError(0, 'Бот не настроен');
@@ -50,6 +65,7 @@ export class TelegramClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
       signal: AbortSignal.timeout(timeoutMs),
+      dispatcher: this.dispatcher(),
     });
     const data = (await res.json().catch(() => ({}))) as {
       ok?: boolean;

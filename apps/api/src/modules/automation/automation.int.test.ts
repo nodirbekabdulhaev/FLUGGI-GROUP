@@ -171,6 +171,20 @@ describe('Telegram-бот (ТЗ §53)', () => {
     expect(l.status).toBe(422);
     expect(l.body.error.message).toContain('TELEGRAM_BOT_TOKEN');
 
+    // Нет сети до Telegram — понятная причина с кодом ошибки и подсказкой про прокси
+    const base = process.env.TELEGRAM_API_BASE;
+    process.env.TELEGRAM_API_BASE = 'http://127.0.0.1:59999';
+    resetEnvCache();
+    try {
+      expect(await runner.check()).toBe(false);
+      const p = await problem();
+      expect(p).toContain('ECONNREFUSED');
+      expect(p).toContain('TELEGRAM_PROXY_URL');
+    } finally {
+      process.env.TELEGRAM_API_BASE = base;
+      resetEnvCache();
+    }
+
     // Токен исправлен — проблема уходит
     expect(await runner.check()).toBe(true);
     expect(await problem()).toBeNull();
