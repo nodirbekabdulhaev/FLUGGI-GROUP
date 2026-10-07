@@ -3,3 +3,4 @@ export * from './lead-score';
 export * from './forecast';
 export * from './proposal';
 export * from './commission';
+export * from './tasks';

@@ -150,6 +150,37 @@ export const PROJECT_STATUSES = [
 ] as const;
 export type ProjectStatus = (typeof PROJECT_STATUSES)[number];
 
+export const ACTIVE_PROJECT_STATUSES: readonly ProjectStatus[] = [
+  'NEW',
+  'PLANNING',
+  'IN_PROGRESS',
+  'REVIEW',
+  'WAITING_CLIENT',
+  'PAUSED',
+];
+
+export const TASK_STATUSES = [
+  'TODO',
+  'IN_PROGRESS',
+  'REVIEW',
+  'DONE',
+  'BLOCKED',
+  'CANCELLED',
+] as const;
+export type TaskStatus = (typeof TASK_STATUSES)[number];
+/** Колонки Kanban (ТЗ §23). */
+export const KANBAN_STATUSES = ['TODO', 'IN_PROGRESS', 'REVIEW', 'DONE'] as const;
+/** Задача «открыта» — может стать просроченной (ТЗ §24). */
+export const OPEN_TASK_STATUSES: readonly TaskStatus[] = [
+  'TODO',
+  'IN_PROGRESS',
+  'REVIEW',
+  'BLOCKED',
+];
+
+export const PROJECT_MEMBER_STATUSES = ['ACTIVE', 'DONE', 'REMOVED'] as const;
+export type ProjectMemberStatus = (typeof PROJECT_MEMBER_STATUSES)[number];
+
 export const COMMISSION_STATUSES = ['ACCRUED', 'APPROVED', 'PAID', 'CANCELLED'] as const;
 export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
 

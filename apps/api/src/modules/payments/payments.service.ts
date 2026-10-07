@@ -9,7 +9,7 @@ import {
   type createPaymentSchema,
   type refundPaymentSchema,
 } from '@fluggi/contracts';
-import { sum } from '@fluggi/domain';
+import { companyDate, sum } from '@fluggi/domain';
 import { Prisma, type Deal } from '@fluggi/db';
 import type { z } from 'zod';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
@@ -23,6 +23,7 @@ import { commissionInclude, toCommissionDto } from '../commissions/commissions.s
 import { ActivityService } from '../crm/activity.service';
 import { CrmAccessService } from '../crm/crm-access.service';
 import { DealsService } from '../deals/deals.service';
+import { TemplatesService } from '../projects/templates.service';
 import { ExchangeRateService } from '../references/exchange-rate.service';
 
 const include = {
@@ -87,6 +88,7 @@ export class PaymentsService {
     private readonly rates: ExchangeRateService,
     private readonly deals: DealsService,
     private readonly commissions: CommissionEngine,
+    private readonly templates: TemplatesService,
   ) {}
 
   async list(
@@ -355,7 +357,7 @@ export class PaymentsService {
         ropId,
         managerId: deal.ownerId,
         teamId: deal.teamId,
-        startDate: new Date(new Date().toISOString().slice(0, 10)),
+        startDate: parseDate(companyDate(new Date())),
       },
     });
     await this.activity.log(tx, {
@@ -363,8 +365,12 @@ export class PaymentsService {
       actorId: auth.userId,
       dealId: deal.id,
       clientId: deal.clientId,
+      projectId: project.id,
       payload: { number: formatNumber('P', project.number), name: project.name },
     });
+    // Базовый чек-лист (ТЗ §19 п.6): задачи из шаблона услуги сделки, если он настроен.
+    const template = await this.templates.forService(tx, deal.serviceId);
+    if (template) await this.templates.apply(tx, project, template.id, auth.userId);
     await this.outbox.publish(
       tx,
       'project.created',

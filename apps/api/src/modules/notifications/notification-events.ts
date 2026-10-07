@@ -168,9 +168,113 @@ export class NotificationEvents implements OnModuleInit {
           type: 'project.created',
           title: 'Новый проект',
           body: `${formatNumber('P', project.number)} ${project.name} — назначьте исполнителей`,
-          link: `/sales/deals/${project.dealId}`,
+          link: `/projects/${project.id}`,
         },
         meta.actorId,
+      );
+    });
+
+    // Проекты и задачи (ТЗ §14, §21–24). Telegram подключится к этим же событиям в Phase 7.
+    this.dispatcher.on('project.member_added', async (e, meta) => {
+      const project = await this.prisma.project.findUnique({ where: { id: e.projectId } });
+      if (!project) return;
+      await this.notifications.notify(
+        [e.userId],
+        {
+          type: 'project.member_added',
+          title: 'Вас добавили в проект',
+          body: `${formatNumber('P', project.number)} ${project.name}`,
+          link: `/projects/${project.id}`,
+        },
+        meta.actorId,
+      );
+    });
+
+    this.dispatcher.on('project.status_changed', async (e, meta) => {
+      if (e.to !== 'COMPLETED' && e.to !== 'CANCELLED') return;
+      const project = await this.prisma.project.findUnique({ where: { id: e.projectId } });
+      if (!project) return;
+      await this.notifications.notify(
+        [project.managerId, project.ropId, ...(await this.ceoIds())],
+        {
+          type: `project.${e.to === 'COMPLETED' ? 'completed' : 'cancelled'}`,
+          title: e.to === 'COMPLETED' ? 'Проект завершён' : 'Проект отменён',
+          body: `${formatNumber('P', project.number)} ${project.name}`,
+          link: `/projects/${project.id}`,
+        },
+        meta.actorId,
+      );
+    });
+
+    this.dispatcher.on('task.assigned', async (e, meta) => {
+      const task = await this.prisma.task.findUnique({
+        where: { id: e.taskId },
+        include: { project: true },
+      });
+      if (!task || task.assigneeId !== e.assigneeId) return;
+      await this.notifications.notify(
+        [e.assigneeId],
+        {
+          type: 'task.assigned',
+          title: 'Новая задача',
+          body: `${task.title} · ${task.project.name}`,
+          link: `/projects/${task.projectId}?task=${task.id}`,
+        },
+        meta.actorId,
+      );
+    });
+
+    // На проверку — автору задачи и РОП проекта; принято/возвращено — исполнителю.
+    this.dispatcher.on('task.status_changed', async (e, meta) => {
+      const task = await this.prisma.task.findUnique({
+        where: { id: e.taskId },
+        include: { project: true },
+      });
+      if (!task) return;
+      const link = `/projects/${task.projectId}?task=${task.id}`;
+      if (e.to === 'REVIEW') {
+        await this.notifications.notify(
+          [task.creatorId, task.project.ropId],
+          { type: 'task.review', title: 'Задача на проверке', body: task.title, link },
+          meta.actorId,
+        );
+      } else if (e.from === 'REVIEW') {
+        const accepted = e.to === 'DONE';
+        await this.notifications.notify(
+          [task.assigneeId],
+          {
+            type: accepted ? 'task.accepted' : 'task.returned',
+            title: accepted ? 'Задача принята' : 'Задача возвращена на доработку',
+            body: task.title,
+            link,
+          },
+          meta.actorId,
+        );
+      }
+    });
+
+    this.dispatcher.on('task.overdue', async (e) => {
+      const task = await this.prisma.task.findUnique({
+        where: { id: e.taskId },
+        include: { project: true },
+      });
+      if (!task) return;
+      const d = e.overdueDays;
+      const word =
+        d % 10 === 1 && d % 100 !== 11
+          ? 'день'
+          : [2, 3, 4].includes(d % 10) && ![12, 13, 14].includes(d % 100)
+            ? 'дня'
+            : 'дней';
+      await this.notifications.notify(
+        [task.assigneeId, task.project.ropId],
+        {
+          type: 'task.overdue',
+          title: `Просрочено ${d} ${word}`,
+          body: `${task.title} · ${task.project.name}`,
+          link: `/projects/${task.projectId}?task=${task.id}`,
+        },
+        null,
       );
     });
 

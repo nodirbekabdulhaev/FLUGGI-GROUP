@@ -5,7 +5,7 @@ import {
   type FileCategory,
   type FileDto,
 } from '@fluggi/contracts';
-import type { StoredFile } from '@fluggi/db';
+import type { Prisma, StoredFile } from '@fluggi/db';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
 import { AuditService } from '../../core/audit/audit.service';
 import { AppException, businessRule, notFound } from '../../core/http/app.exception';
@@ -13,12 +13,15 @@ import { PrismaService } from '../../core/prisma/prisma.service';
 import { detectMime, signatureMatches } from '../../core/storage/file-signature';
 import { StorageService } from '../../core/storage/storage.service';
 import { CrmAccessService } from '../crm/crm-access.service';
+import { ProjectAccessService } from '../projects/project-access.service';
 
 export interface UploadTarget {
   dealId?: string;
   contractId?: string;
   proposalId?: string;
   paymentId?: string;
+  projectId?: string;
+  taskId?: string;
 }
 
 export const toFileDto = (
@@ -43,7 +46,27 @@ export class FilesService {
     private readonly storage: StorageService,
     private readonly access: CrmAccessService,
     private readonly audit: AuditService,
+    private readonly projects: ProjectAccessService,
   ) {}
+
+  /**
+   * Файлы проекта и задач (ТЗ §22, §3.4): загружать и смотреть может каждый, кто видит
+   * задачу (исполнитель — свои задачи) или проект. Возвращает projectId.
+   */
+  private async projectTarget(
+    auth: AuthContext,
+    t: { projectId?: string | null; taskId?: string | null },
+  ) {
+    if (t.taskId) return (await this.projects.task(auth, t.taskId)).projectId;
+    return (await this.projects.project(auth, t.projectId!)).id;
+  }
+
+  /** Удалить файл проекта/задачи может автор файла или руководитель проекта. */
+  private async assertCanRemoveProjectFile(auth: AuthContext, f: StoredFile) {
+    await this.projectTarget(auth, f);
+    if (f.uploadedById === auth.userId) return;
+    if (!(await this.projects.can(auth, f.projectId!, 'project.update'))) throw notFound('Файл');
+  }
 
   /** Сделка, к которой относится файл: права на файл = права на сделку. */
   private async dealOf(t: UploadTarget): Promise<string> {
@@ -77,15 +100,21 @@ export class FilesService {
     if (!signatureMatches(file.mimetype, detectMime(file.buffer))) {
       throw new AppException('VALIDATION_ERROR', 'Содержимое файла не соответствует его типу');
     }
-    const dealId = await this.dealOf(target).catch(() => {
-      throw notFound('Запись');
-    });
-    await this.access.deal(auth, dealId, 'deal.read');
-    // Загружать может тот, кто может менять сделку или договор.
-    if (!auth.permissions['deal.update'] && !auth.permissions['contract.update'])
-      throw notFound('Сделка');
+    let dealId: string | null = null;
+    let projectId: string | null = null;
+    if (target.projectId || target.taskId) {
+      projectId = await this.projectTarget(auth, target);
+    } else {
+      dealId = await this.dealOf(target).catch(() => {
+        throw notFound('Запись');
+      });
+      await this.access.deal(auth, dealId, 'deal.read');
+      // Загружать может тот, кто может менять сделку или договор.
+      if (!auth.permissions['deal.update'] && !auth.permissions['contract.update'])
+        throw notFound('Сделка');
+    }
 
-    const key = this.storage.newKey('deals', ext);
+    const key = this.storage.newKey(projectId ? 'projects' : 'deals', ext);
     await this.storage.put(key, file.buffer, file.mimetype);
     return this.prisma.$transaction(async (tx) => {
       const saved = await tx.storedFile.create({
@@ -98,6 +127,8 @@ export class FilesService {
           category,
           uploadedById: auth.userId,
           dealId,
+          projectId,
+          taskId: target.taskId,
           contractId: target.contractId,
           proposalId: target.proposalId,
           paymentId: target.paymentId,
@@ -121,8 +152,10 @@ export class FilesService {
 
   async open(auth: AuthContext, id: string) {
     const f = await this.prisma.storedFile.findFirst({ where: { id, deletedAt: null } });
-    if (!f || !f.dealId) throw notFound('Файл');
-    await this.access.deal(auth, f.dealId, 'deal.read');
+    if (!f) throw notFound('Файл');
+    if (f.dealId) await this.access.deal(auth, f.dealId, 'deal.read');
+    else if (f.projectId) await this.projectTarget(auth, f);
+    else throw notFound('Файл');
     return {
       file: f,
       stream: await this.storage.get(f.storageKey),
@@ -130,10 +163,23 @@ export class FilesService {
     };
   }
 
-  async list(auth: AuthContext, dealId: string): Promise<FileDto[]> {
-    await this.access.deal(auth, dealId, 'deal.read');
+  async list(
+    auth: AuthContext,
+    q: { dealId?: string; projectId?: string; taskId?: string },
+  ): Promise<FileDto[]> {
+    let where: Prisma.StoredFileWhereInput;
+    if (q.taskId) {
+      await this.projectTarget(auth, { taskId: q.taskId });
+      where = { taskId: q.taskId };
+    } else if (q.projectId) {
+      await this.projectTarget(auth, { projectId: q.projectId });
+      where = { projectId: q.projectId };
+    } else if (q.dealId) {
+      await this.access.deal(auth, q.dealId, 'deal.read');
+      where = { dealId: q.dealId };
+    } else throw businessRule('Укажите, чьи файлы показать');
     const files = await this.prisma.storedFile.findMany({
-      where: { dealId, deletedAt: null },
+      where: { ...where, deletedAt: null },
       include: { uploadedBy: { select: { id: true, fullName: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -142,8 +188,10 @@ export class FilesService {
 
   async remove(auth: AuthContext, id: string, meta: RequestMeta): Promise<void> {
     const f = await this.prisma.storedFile.findFirst({ where: { id, deletedAt: null } });
-    if (!f || !f.dealId) throw notFound('Файл');
-    await this.access.deal(auth, f.dealId, 'deal.update');
+    if (!f) throw notFound('Файл');
+    if (f.dealId) await this.access.deal(auth, f.dealId, 'deal.update');
+    else if (f.projectId) await this.assertCanRemoveProjectFile(auth, f);
+    else throw notFound('Файл');
     await this.prisma.$transaction(async (tx) => {
       await tx.storedFile.update({ where: { id }, data: { deletedAt: new Date() } });
       await this.audit.log(tx, {

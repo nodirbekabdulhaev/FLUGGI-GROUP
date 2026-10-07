@@ -97,6 +97,72 @@ export const STAGES: {
   { code: 'PAID', entity: 'DEAL', name: 'Оплачено', probability: 100, color: '#16a34a' },
 ];
 
+type Specialty =
+  | 'SMM'
+  | 'DESIGNER'
+  | 'VIDEOGRAPHER'
+  | 'EDITOR'
+  | 'TARGETOLOGIST'
+  | 'DEVELOPER'
+  | 'PHOTOGRAPHER'
+  | 'COPYWRITER';
+
+/** [название задачи, роль исполнителя, начало (дней от старта проекта), длительность (дней)] */
+export const PROJECT_TEMPLATES: {
+  service: string;
+  name: string;
+  tasks: [string, Specialty | null, number, number][];
+}[] = [
+  {
+    service: 'SMM',
+    name: 'SMM-проект',
+    tasks: [
+      ['Контент-план', 'SMM', 0, 3],
+      ['Съёмка', 'VIDEOGRAPHER', 3, 3],
+      ['Монтаж', 'EDITOR', 6, 3],
+      ['Дизайн', 'DESIGNER', 3, 4],
+      ['Копирайтинг', 'COPYWRITER', 3, 4],
+      ['Публикация', 'SMM', 8, 2],
+      ['Таргет', 'TARGETOLOGIST', 8, 5],
+      ['Отчёт', 'SMM', 28, 2],
+    ],
+  },
+  {
+    service: 'BRANDING',
+    name: 'Брендинг',
+    tasks: [
+      ['Бриф и исследование', null, 0, 3],
+      ['Концепции логотипа', 'DESIGNER', 3, 5],
+      ['Фирменный стиль', 'DESIGNER', 8, 7],
+      ['Брендбук', 'DESIGNER', 15, 5],
+      ['Передача материалов клиенту', null, 20, 1],
+    ],
+  },
+  {
+    service: 'WEBSITE',
+    name: 'Сайт',
+    tasks: [
+      ['Техническое задание', null, 0, 3],
+      ['Прототип', 'DESIGNER', 3, 4],
+      ['Дизайн страниц', 'DESIGNER', 7, 7],
+      ['Вёрстка и разработка', 'DEVELOPER', 14, 10],
+      ['Тексты', 'COPYWRITER', 7, 5],
+      ['Тестирование и запуск', 'DEVELOPER', 24, 3],
+    ],
+  },
+  {
+    service: 'TARGET',
+    name: 'Таргетированная реклама',
+    tasks: [
+      ['Анализ аудитории', 'TARGETOLOGIST', 0, 2],
+      ['Креативы', 'DESIGNER', 2, 3],
+      ['Запуск кампаний', 'TARGETOLOGIST', 5, 1],
+      ['Оптимизация', 'TARGETOLOGIST', 6, 20],
+      ['Отчёт', 'TARGETOLOGIST', 28, 2],
+    ],
+  },
+];
+
 export async function seedReferences(prisma: PrismaClient) {
   for (const [i, [code, nameRu]] of SERVICES.entries()) {
     await prisma.service.upsert({ where: { code }, update: {}, create: { code, nameRu, sort: i } });
@@ -162,6 +228,27 @@ export async function seedReferences(prisma: PrismaClient) {
         },
       ],
     });
+  }
+  // Шаблоны проектов (ТЗ §62). Создаются один раз, дальше меняются в настройках.
+  if ((await prisma.projectTemplate.count()) === 0) {
+    for (const t of PROJECT_TEMPLATES) {
+      const service = await prisma.service.findUnique({ where: { code: t.service } });
+      await prisma.projectTemplate.create({
+        data: {
+          name: t.name,
+          serviceId: service?.id,
+          tasks: {
+            create: t.tasks.map(([title, role, startOffsetDays, durationDays], sort) => ({
+              title,
+              role,
+              startOffsetDays,
+              durationDays,
+              sort,
+            })),
+          },
+        },
+      });
+    }
   }
   return {
     services: SERVICES.length,

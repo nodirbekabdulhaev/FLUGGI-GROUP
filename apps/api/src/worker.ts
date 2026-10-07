@@ -1,6 +1,6 @@
 /**
  * Worker-процесс: доставка доменных событий из outbox подписчикам
- * (уведомления; Telegram, напоминания и cron — в следующих фазах).
+ * (уведомления) и поиск просроченных задач; Telegram и планировщик — Phase 7.
  * В production API запускается с OUTBOX_IN_API=false, и событиями занимается только worker.
  */
 import 'reflect-metadata';
@@ -9,11 +9,12 @@ import { NestFactory } from '@nestjs/core';
 import { OutboxModule } from './core/outbox/outbox.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { NotificationEventsModule } from './modules/notifications/notifications.module';
+import { OverdueModule } from './modules/projects/overdue.module';
 
 // Worker обрабатывает outbox всегда, независимо от настройки API.
 process.env.OUTBOX_IN_API = 'true';
 
-@Module({ imports: [PrismaModule, OutboxModule, NotificationEventsModule] })
+@Module({ imports: [PrismaModule, OutboxModule, NotificationEventsModule, OverdueModule] })
 class WorkerModule {}
 
 async function bootstrap() {

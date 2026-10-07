@@ -27,10 +27,18 @@ const uploadBody = z.object({
   contractId: z.uuid().optional(),
   proposalId: z.uuid().optional(),
   paymentId: z.uuid().optional(),
+  projectId: z.uuid().optional(),
+  taskId: z.uuid().optional(),
   category: z.enum(FILE_CATEGORIES).default('DOCUMENT'),
 });
 
-/** Файлы сделки. Права проверяются по сделке, к которой относится файл. */
+const listQuery = z.object({
+  dealId: z.uuid().optional(),
+  projectId: z.uuid().optional(),
+  taskId: z.uuid().optional(),
+});
+
+/** Файлы сделки, проекта и задач. Права проверяются по записи, к которой относится файл. */
 @Controller('files')
 export class FilesController {
   constructor(private readonly files: FilesService) {}
@@ -52,9 +60,9 @@ export class FilesController {
   @AuthenticatedOnly()
   list(
     @CurrentUser() auth: AuthContext,
-    @Query('dealId', UuidPipe) dealId: string,
+    @Query(zod(listQuery)) q: z.output<typeof listQuery>,
   ): Promise<FileDto[]> {
-    return this.files.list(auth, dealId);
+    return this.files.list(auth, q);
   }
 
   @Get(':id/download')

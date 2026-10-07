@@ -311,19 +311,3 @@ export interface CommissionRuleDto {
   priority: number;
   isActive: boolean;
 }
-
-// ─────────────────────────── Проекты (минимум для Phase 3) ───────────────────────────
-
-export interface ProjectBriefDto {
-  id: string;
-  number: string;
-  name: string;
-  client: NamedRef;
-  deal: NumberedRef;
-  rop: NamedRef;
-  manager: NamedRef;
-  status: ProjectStatus;
-  price: string;
-  currency: Currency;
-  createdAt: string;
-}

@@ -9,6 +9,8 @@ export interface ActivityEntry {
   dealId?: string | null;
   clientId?: string | null;
   meetingId?: string | null;
+  projectId?: string | null;
+  taskId?: string | null;
   payload?: Record<string, unknown>;
 }
 
@@ -24,6 +26,8 @@ export class ActivityService {
         dealId: e.dealId ?? null,
         clientId: e.clientId ?? null,
         meetingId: e.meetingId ?? null,
+        projectId: e.projectId ?? null,
+        taskId: e.taskId ?? null,
         payload: (e.payload ?? undefined) as Prisma.InputJsonValue | undefined,
       },
     });

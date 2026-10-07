@@ -56,6 +56,11 @@ export interface DomainEvents {
   'payment.refunded': { paymentId: string; dealId: string; amountUzs: string };
   'deal.won': { dealId: string; ownerId: string; teamId: string | null; amountUzs: string };
   'project.created': { projectId: string; dealId: string; ropId: string; managerId: string };
+  'project.member_added': { projectId: string; userId: string };
+  'project.status_changed': { projectId: string; from: string; to: string };
+  'task.assigned': { taskId: string; assigneeId: string };
+  'task.status_changed': { taskId: string; projectId: string; from: string; to: string };
+  'task.overdue': { taskId: string; overdueDays: number };
 }
 
 export type DomainEventType = keyof DomainEvents;

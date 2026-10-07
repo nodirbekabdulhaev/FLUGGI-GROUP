@@ -193,7 +193,9 @@ export function DealCard({ id }: { id: string }) {
             <p className="text-xs text-muted-foreground">{t('sales.money.project')}</p>
             {money_.data.project ? (
               <p className="flex items-center gap-2 font-semibold">
-                {money_.data.project.number}{' '}
+                <Link href={`/projects/${money_.data.project.id}`} className="hover:underline">
+                  {money_.data.project.number}
+                </Link>{' '}
                 <SalesBadge kind="projectStatus" status={money_.data.project.status} />
               </p>
             ) : (

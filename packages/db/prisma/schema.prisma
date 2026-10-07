@@ -101,6 +101,13 @@ model User {
   commissions       Commission[]
   filesUploaded     StoredFile[]
 
+  projectMemberships ProjectMember[]     @relation("ProjectMemberUser")
+  projectAssignments ProjectMember[]     @relation("ProjectMemberAssigner")
+  tasksAssigned      Task[]              @relation("TaskAssignee")
+  tasksCreated       Task[]              @relation("TaskCreator")
+  taskStatusChanges  TaskStatusHistory[]
+  taskComments       TaskComment[]
+
   @@index([roleId])
   @@index([teamId])
   @@index([status])
@@ -349,9 +356,10 @@ model Service {
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
-  leads         Lead[]
-  deals         Deal[]
-  proposalItems ProposalItem[]
+  leads            Lead[]
+  deals            Deal[]
+  proposalItems    ProposalItem[]
+  projectTemplates ProjectTemplate[]
 
   @@map("services")
 }
@@ -651,6 +659,8 @@ model Activity {
   dealId    String?  @map("deal_id") @db.Uuid
   clientId  String?  @map("client_id") @db.Uuid
   meetingId String?  @map("meeting_id") @db.Uuid
+  projectId String?  @map("project_id") @db.Uuid
+  taskId    String?  @map("task_id") @db.Uuid
   payload   Json?
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -659,7 +669,11 @@ model Activity {
   deal    Deal?    @relation(fields: [dealId], references: [id])
   client  Client?  @relation(fields: [clientId], references: [id])
   meeting Meeting? @relation(fields: [meetingId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
+  task    Task?    @relation(fields: [taskId], references: [id])
 
+  @@index([projectId, createdAt])
+  @@index([taskId, createdAt])
   @@index([leadId, createdAt])
   @@index([dealId, createdAt])
   @@index([clientId, createdAt])
@@ -804,6 +818,21 @@ enum ProjectStatus {
   PAUSED
   COMPLETED
   CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
+  CANCELLED
+}
+
+enum ProjectMemberStatus {
+  ACTIVE
+  DONE
+  REMOVED
 }
 
 enum CommissionRoleTarget {
@@ -1006,21 +1035,155 @@ model Project {
   startDate   DateTime?     @map("start_date") @db.Date
   deadline    DateTime?     @db.Date
   description String?
+  templateId  String?       @map("template_id") @db.Uuid
   completedAt DateTime?     @map("completed_at")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
   deletedAt   DateTime?     @map("deleted_at")
 
-  client   Client    @relation(fields: [clientId], references: [id])
-  deal     Deal      @relation(fields: [dealId], references: [id])
-  rop      User      @relation("ProjectRop", fields: [ropId], references: [id])
-  manager  User      @relation("ProjectManager", fields: [managerId], references: [id])
-  payments Payment[]
+  client     Client           @relation(fields: [clientId], references: [id])
+  deal       Deal             @relation(fields: [dealId], references: [id])
+  rop        User             @relation("ProjectRop", fields: [ropId], references: [id])
+  manager    User             @relation("ProjectManager", fields: [managerId], references: [id])
+  template   ProjectTemplate? @relation(fields: [templateId], references: [id])
+  payments   Payment[]
+  members    ProjectMember[]
+  tasks      Task[]
+  activities Activity[]
+  files      StoredFile[]
 
   @@index([ropId])
   @@index([managerId])
   @@index([status])
   @@map("projects")
+}
+
+/// Команда проекта (ТЗ §21). РОП и менеджер проекта хранятся в самом проекте.
+model ProjectMember {
+  id           String              @id @default(uuid()) @db.Uuid
+  projectId    String              @map("project_id") @db.Uuid
+  userId       String              @map("user_id") @db.Uuid
+  role         ExecutorSpecialty?
+  workloadPct  Int?                @map("workload_pct")
+  deadline     DateTime?           @db.Date
+  status       ProjectMemberStatus @default(ACTIVE)
+  assignedById String              @map("assigned_by_id") @db.Uuid
+  assignedAt   DateTime            @default(now()) @map("assigned_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  project    Project @relation(fields: [projectId], references: [id])
+  user       User    @relation("ProjectMemberUser", fields: [userId], references: [id])
+  assignedBy User    @relation("ProjectMemberAssigner", fields: [assignedById], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([userId, status])
+  @@map("project_members")
+}
+
+/// Задача проекта (ТЗ §22). Исполнитель назначается всегда (ТЗ §77, Rule 5): задача из шаблона,
+/// для роли которой в команде ещё нет исполнителя, назначается на РОП проекта до появления исполнителя.
+model Task {
+  id                String             @id @default(uuid()) @db.Uuid
+  number            Int                @unique @default(autoincrement())
+  projectId         String             @map("project_id") @db.Uuid
+  title             String
+  description       String?
+  assigneeId        String             @map("assignee_id") @db.Uuid
+  creatorId         String             @map("creator_id") @db.Uuid
+  templateRole      ExecutorSpecialty? @map("template_role")
+  priority          Priority           @default(MEDIUM)
+  status            TaskStatus         @default(TODO)
+  startDate         DateTime?          @map("start_date") @db.Date
+  deadline          DateTime?
+  progressPct       Int                @default(0) @map("progress_pct")
+  sortOrder         Float              @default(0) @map("sort_order")
+  startedAt         DateTime?          @map("started_at")
+  completedAt       DateTime?          @map("completed_at")
+  reworkCount       Int                @default(0) @map("rework_count")
+  overdueNotifiedAt DateTime?          @map("overdue_notified_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+
+  project    Project             @relation(fields: [projectId], references: [id])
+  assignee   User                @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator    User                @relation("TaskCreator", fields: [creatorId], references: [id])
+  history    TaskStatusHistory[]
+  comments   TaskComment[]
+  activities Activity[]
+  files      StoredFile[]
+
+  @@index([projectId, status, sortOrder])
+  @@index([assigneeId, status])
+  @@index([deadline])
+  @@map("tasks")
+}
+
+/// История статусов задачи — только добавление (триггер в БД).
+model TaskStatusHistory {
+  id          String      @id @default(uuid()) @db.Uuid
+  taskId      String      @map("task_id") @db.Uuid
+  fromStatus  TaskStatus? @map("from_status")
+  toStatus    TaskStatus  @map("to_status")
+  changedById String      @map("changed_by_id") @db.Uuid
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  task      Task @relation(fields: [taskId], references: [id])
+  changedBy User @relation(fields: [changedById], references: [id])
+
+  @@index([taskId, createdAt])
+  @@map("task_status_history")
+}
+
+model TaskComment {
+  id        String    @id @default(uuid()) @db.Uuid
+  taskId    String    @map("task_id") @db.Uuid
+  authorId  String    @map("author_id") @db.Uuid
+  body      String
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  task   Task @relation(fields: [taskId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([taskId, createdAt])
+  @@map("task_comments")
+}
+
+/// Шаблон проекта (ТЗ §62): набор задач, создаваемых по услуге сделки.
+model ProjectTemplate {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  serviceId   String?  @map("service_id") @db.Uuid
+  description String?
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  service  Service?       @relation(fields: [serviceId], references: [id])
+  tasks    TaskTemplate[]
+  projects Project[]
+
+  @@index([serviceId])
+  @@map("project_templates")
+}
+
+model TaskTemplate {
+  id                String             @id @default(uuid()) @db.Uuid
+  projectTemplateId String             @map("project_template_id") @db.Uuid
+  title             String
+  description       String?
+  role              ExecutorSpecialty?
+  startOffsetDays   Int                @default(0) @map("start_offset_days")
+  durationDays      Int                @default(1) @map("duration_days")
+  priority          Priority           @default(MEDIUM)
+  sort              Int                @default(0)
+
+  template ProjectTemplate @relation(fields: [projectTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([projectTemplateId])
+  @@map("task_templates")
 }
 
 /// Правила комиссий (ТЗ §33–34) — данные, а не код.
@@ -1085,6 +1248,8 @@ model StoredFile {
   proposalId   String?      @map("proposal_id") @db.Uuid
   contractId   String?      @map("contract_id") @db.Uuid
   paymentId    String?      @map("payment_id") @db.Uuid
+  projectId    String?      @map("project_id") @db.Uuid
+  taskId       String?      @map("task_id") @db.Uuid
   createdAt    DateTime     @default(now()) @map("created_at")
   deletedAt    DateTime?    @map("deleted_at")
 
@@ -1093,8 +1258,12 @@ model StoredFile {
   proposal   Proposal? @relation(fields: [proposalId], references: [id])
   contract   Contract? @relation(fields: [contractId], references: [id])
   payment    Payment?  @relation(fields: [paymentId], references: [id])
+  project    Project?  @relation(fields: [projectId], references: [id])
+  task       Task?     @relation(fields: [taskId], references: [id])
 
   @@index([dealId])
   @@index([contractId])
+  @@index([projectId])
+  @@index([taskId])
   @@map("files")
 }

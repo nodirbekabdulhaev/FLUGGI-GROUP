@@ -156,6 +156,11 @@ export function useInvalidateCrm() {
         'payments',
         'commissions',
         'files',
+        'projects',
+        'project',
+        'tasks',
+        'task',
+        'project-templates',
       ].map((k) => qc.invalidateQueries({ queryKey: [k] })),
     );
 }

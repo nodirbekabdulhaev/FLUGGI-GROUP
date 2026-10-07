@@ -55,23 +55,13 @@ export const NAVIGATION: NavSection[] = [
     href: '/projects',
     icon: Gauge,
     children: [
-      { key: 'projectsAll', href: '/projects/all', anyOf: ['project.read'], plannedPhase: 4 },
-      { key: 'projectsActive', href: '/projects/active', anyOf: ['project.read'], plannedPhase: 4 },
-      {
-        key: 'projectsOverdue',
-        href: '/projects/overdue',
-        anyOf: ['project.read'],
-        plannedPhase: 4,
-      },
-      {
-        key: 'projectsCompleted',
-        href: '/projects/completed',
-        anyOf: ['project.read'],
-        plannedPhase: 4,
-      },
+      { key: 'projectsAll', href: '/projects/all', anyOf: ['project.read'] },
+      { key: 'projectsActive', href: '/projects/active', anyOf: ['project.read'] },
+      { key: 'projectsOverdue', href: '/projects/overdue', anyOf: ['project.read'] },
+      { key: 'projectsCompleted', href: '/projects/completed', anyOf: ['project.read'] },
     ],
   },
-  { key: 'tasks', href: '/tasks', icon: CheckSquare, anyOf: ['task.read'], plannedPhase: 4 },
+  { key: 'tasks', href: '/tasks', icon: CheckSquare, anyOf: ['task.read'] },
   {
     key: 'team',
     href: '/team',
