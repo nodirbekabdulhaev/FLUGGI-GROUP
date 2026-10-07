@@ -44,6 +44,7 @@ export const NOTIFICATION_EVENTS: { type: string; label: string; roles: RoleCode
   { type: 'task.review', label: 'Задача на проверке', roles: ['ROP', 'MANAGER', 'CEO'] },
   { type: 'task.returned', label: 'Задача возвращена / принята', roles: ['EXECUTOR'] },
   { type: 'task.overdue', label: 'Просроченная задача', roles: ['EXECUTOR', 'MANAGER', 'ROP'] },
+  { type: 'client.risk', label: 'Клиент в зоне риска', roles: ['MANAGER', 'ROP', 'CEO'] },
   { type: 'followup.due', label: 'Повторный контакт с клиентом', roles: ['MANAGER', 'ROP'] },
   { type: 'report.daily', label: 'Ежедневный отчёт', roles: ['CEO', 'ROP'] },
   { type: 'report.weekly', label: 'Еженедельный отчёт', roles: ['CEO'] },

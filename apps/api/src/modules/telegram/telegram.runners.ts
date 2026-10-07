@@ -171,8 +171,10 @@ export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShut
       try {
         const updates = await this.client.getUpdates(this.offset, 25);
         if (failing) this.logger.log('Telegram polling восстановлен');
-        // После сбоя — сразу снять ошибку, иначе профиль ещё долго показывал бы её
-        await this.beat(null, failing);
+        // После сбоя (или если бот не был доступен при запуске) — полная проверка: имя бота,
+        // соответствие .env; иначе профиль ещё долго показывал бы старую ошибку
+        if (failing || !this.bot) await this.check();
+        else await this.beat(null);
         failing = false;
         for (const u of updates) {
           this.offset = u.update_id + 1;

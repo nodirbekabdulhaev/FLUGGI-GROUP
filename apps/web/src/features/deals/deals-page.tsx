@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import { DEAL_STATUSES, type DealStatus } from '@fluggi/contracts';
 import { Plus, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -56,7 +57,16 @@ export function DealsPage() {
 
   return (
     <>
-      <PageHeader title={t('deals.title')} description={t('deals.subtitle')} actions={add} />
+      <PageHeader
+        title={t('deals.title')}
+        description={t('deals.subtitle')}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ExportMenu entity="deals" />
+            {add}
+          </div>
+        }
+      />
       <Card>
         <div className="grid gap-3 border-b p-4 md:grid-cols-[1fr_auto]">
           <div className="relative">

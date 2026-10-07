@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import { Plus, Search } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -37,7 +38,16 @@ export function ClientsPage() {
 
   return (
     <>
-      <PageHeader title={t('clients.title')} description={t('clients.subtitle')} actions={add} />
+      <PageHeader
+        title={t('clients.title')}
+        description={t('clients.subtitle')}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ExportMenu entity="clients" />
+            {add}
+          </div>
+        }
+      />
       <Card>
         <div className="border-b p-4">
           <div className="relative">

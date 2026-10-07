@@ -49,7 +49,13 @@ function useDebounced<T>(value: T, ms = 300) {
   return v;
 }
 
-export function EmployeesPage({ fixedRole }: { fixedRole?: RoleCode }) {
+export function EmployeesPage({
+  fixedRole,
+  initialQuery,
+}: {
+  fixedRole?: RoleCode;
+  initialQuery?: string;
+}) {
   const t = useTranslations();
   const format = useFormatter();
   // Явное «сейчас» с обновлением раз в минуту — «5 минут назад» не устаревает.
@@ -58,7 +64,7 @@ export function EmployeesPage({ fixedRole }: { fixedRole?: RoleCode }) {
   const me = useMe();
   const canManage = can('employee.manage', 'ALL');
 
-  const [q, setQ] = useState('');
+  const [q, setQ] = useState(initialQuery ?? '');
   const [role, setRole] = useState<RoleCode | ''>(fixedRole ?? '');
   const [teamId, setTeamId] = useState('');
   const [status, setStatus] = useState<UserStatus | ''>('');

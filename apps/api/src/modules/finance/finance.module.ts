@@ -8,6 +8,6 @@ import { FinanceService } from './finance.service';
   imports: [ProjectsModule],
   controllers: [FinanceController],
   providers: [ExpensesService, FinanceService],
-  exports: [FinanceService],
+  exports: [FinanceService, ExpensesService],
 })
 export class FinanceModule {}

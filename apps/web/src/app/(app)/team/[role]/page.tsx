@@ -11,10 +11,19 @@ const ROLE_BY_SLUG: Record<string, RoleCode | undefined> = {
   executors: 'EXECUTOR',
 };
 
-export default async function TeamPage({ params }: { params: Promise<{ role: string }> }) {
+export default async function TeamPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ role: string }>;
+  searchParams: Promise<{ q?: string }>;
+}) {
   const { role } = await params;
+  const { q } = await searchParams;
   if (!(role in ROLE_BY_SLUG)) notFound();
   const me = (await getMe())!;
   if (!hasPermission(me.permissions, 'employee.read')) return <Forbidden />;
-  return <EmployeesPage key={role} fixedRole={ROLE_BY_SLUG[role]} />;
+  return (
+    <EmployeesPage key={`${role}:${q ?? ''}`} fixedRole={ROLE_BY_SLUG[role]} initialQuery={q} />
+  );
 }

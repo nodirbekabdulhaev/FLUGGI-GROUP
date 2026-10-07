@@ -114,14 +114,16 @@ GET             /payroll            POST /payroll/:period/calculate|approve (п�
 GET/PUT         /exchange-rates
 ```
 
-### Аналитика, поиск, экспорт
+### Аналитика, поиск, экспорт (Phase 8)
 ```
-GET  /dashboard/ceo|rop|manager|executor   ?period=today|month|quarter|year|custom
-GET  /analytics/sales                      ?groupBy=day|week|month|manager|source|service
-GET  /analytics/funnel   /analytics/sources   /analytics/loss-reasons
-GET  /analytics/forecast /analytics/employees/:id
-GET  /search?q=          → клиенты, лиды, сделки, проекты, договоры, сотрудники (с учётом прав)
-POST /exports            { entity, format: csv|xlsx|pdf, filters } → { fileId } (через очередь)
+GET  /analytics/sales      ?period&from&to&teamId&userId   → точки, итоги, % к прошлому периоду
+GET  /analytics/funnel     /analytics/sources   /analytics/services   /analytics/losses
+GET  /analytics/forecast   ?teamId&userId                   → 3 месяца: получено, ожидаемые, воронка×вероятность, план
+GET  /analytics/clients    ?sort=ltv|health|lastPayment&health&page   → LTV и здоровье клиентов
+GET  /clients/:id/insight                                   → LTV и здоровье одного клиента
+GET  /search?q=            → клиенты, лиды, сделки, проекты, договоры, задачи, сотрудники (с учётом прав)
+GET  /exports/:entity      ?format=xlsx|csv&period=all|today|week|month|quarter|year|custom&from&to
+                           entity: leads|deals|clients|payments|expenses|projects|tasks (право export.run, аудит)
 GET  /notifications      POST /notifications/:id/read   POST /notifications/read-all
 GET  /audit-logs         ?actorId&entityType&entityId&dateFrom&dateTo
 ```

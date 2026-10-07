@@ -16,3 +16,4 @@ export * from './schemas/projects';
 export * from './schemas/finance';
 export * from './schemas/people';
 export * from './schemas/automation';
+export * from './schemas/analytics';

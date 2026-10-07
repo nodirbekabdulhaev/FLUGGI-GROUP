@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import {
   EXPENSE_CATEGORIES,
   type ExpenseCategory,
@@ -144,11 +145,14 @@ export function ExpensesPage() {
         title={t('expenses.title')}
         description={t('expenses.subtitle')}
         actions={
-          can('expense.create') ? (
-            <Button onClick={() => setEditing('new')}>
-              <Plus /> {t('expenses.new')}
-            </Button>
-          ) : undefined
+          <div className="flex flex-wrap gap-2">
+            <ExportMenu entity="expenses" />
+            {can('expense.create') ? (
+              <Button onClick={() => setEditing('new')}>
+                <Plus /> {t('expenses.new')}
+              </Button>
+            ) : null}
+          </div>
         }
       />
       <Card>

@@ -6,6 +6,7 @@ import { Suspense, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCan } from '@/lib/me-context';
+import { GlobalSearch } from '@/features/analytics/global-search';
 import { PeriodSelect } from './period-select';
 import { Brand, SidebarNav } from './sidebar-nav';
 import { UserMenu } from './user-menu';
@@ -54,6 +55,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         ) : (
           <div className="flex-1" />
         )}
+        <GlobalSearch />
         <NotificationBell />
         <UserMenu />
       </header>

@@ -31,6 +31,7 @@ import { PaymentsModule } from './modules/payments/payments.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { PeopleModule } from './modules/people/people.module';
 import { AutomationModule } from './modules/automation/automation.module';
+import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
 import { SettingsModule } from './core/settings/settings.service';
 import { OverdueModule } from './modules/projects/overdue.module';
@@ -96,6 +97,7 @@ const env = loadEnv();
     SettingsModule,
     TelegramModule,
     AutomationModule,
+    AnalyticsModule,
   ],
   controllers: [HealthController],
   providers: [

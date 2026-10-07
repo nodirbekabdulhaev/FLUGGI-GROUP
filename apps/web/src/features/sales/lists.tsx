@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import {
   COMMISSION_STATUSES,
   CONTRACT_STATUSES,
@@ -253,7 +254,11 @@ export function PaymentsPage() {
   const list = usePayments({ status: f.status || undefined, page: f.page, pageSize: 25 });
   return (
     <>
-      <PageHeader title={t('payments.title')} description={t('payments.subtitle')} />
+      <PageHeader
+        title={t('payments.title')}
+        description={t('payments.subtitle')}
+        actions={<ExportMenu entity="payments" />}
+      />
       <Card>
         <div className="border-b p-4">
           <NativeSelect

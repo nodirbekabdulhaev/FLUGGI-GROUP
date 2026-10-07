@@ -352,6 +352,7 @@ describe('Умные напоминания и планировщик (ТЗ §41
       'daily-report',
       'absences',
       'weekly-report',
+      'client-health',
       'payroll',
     ]);
     expect((await rop.get('/api/v1/automation/jobs')).status).toBe(403);

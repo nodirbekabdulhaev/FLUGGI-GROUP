@@ -7,6 +7,7 @@ import type { AuthContext } from '../../core/auth/auth-context';
 import { parseDate } from '../../core/http/serialize';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { SettingsService } from '../../core/settings/settings.service';
+import { ClientInsightsService } from '../analytics/client-insights.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { PeopleService } from '../people/people.service';
 import { OverdueScanner } from '../projects/overdue.runner';
@@ -71,6 +72,7 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
     private readonly followUps: FollowUpsService,
     private readonly overdue: OverdueScanner,
     private readonly people: PeopleService,
+    private readonly clients: ClientInsightsService,
   ) {
     this.jobs = [
       {
@@ -114,6 +116,13 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
         schedule: 'понедельник 09:00',
         due: weeklyAt(1, '09:00'),
         run: (now) => this.weeklyReport(now),
+      },
+      {
+        name: 'client-health',
+        label: 'Здоровье клиентов',
+        schedule: 'ежедневно 06:00',
+        due: dailyAt('06:00'),
+        run: (now) => this.clientHealth(now),
       },
       {
         name: 'payroll',
@@ -287,6 +296,19 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
       created += 1;
     }
     return { absent: created };
+  }
+
+  /** Пересчёт «здоровья» клиентов (ТЗ §43); перешедшие в «Риск» — уведомление менеджеру. */
+  private async clientHealth(now: Date) {
+    const r = await this.clients.refreshAll(now);
+    for (const c of r.toRisk)
+      await this.notifications.notify([c.ownerId], {
+        type: 'client.risk',
+        title: 'Клиент в зоне риска',
+        body: `${c.name}: ${c.reasons.join(', ')}`,
+        link: `/clients/${c.id}`,
+      });
+    return { changed: r.changed, risk: r.toRisk.length };
   }
 
   /** 1-го числа: черновик зарплаты за прошлый месяц и уведомление CEO (ТЗ §55). */

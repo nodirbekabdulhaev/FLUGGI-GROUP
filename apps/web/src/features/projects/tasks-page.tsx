@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import { TASK_VIEWS, type TaskView } from '@fluggi/contracts';
 import { CheckSquare } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -40,7 +41,11 @@ export function TasksPage() {
 
   return (
     <>
-      <PageHeader title={t('title')} description={t('subtitle')} />
+      <PageHeader
+        title={t('title')}
+        description={t('subtitle')}
+        actions={<ExportMenu entity="tasks" />}
+      />
       <Tabs
         items={TASK_VIEWS.map((v) => ({ key: v, label: t(`views.${v}`) }))}
         value={view}

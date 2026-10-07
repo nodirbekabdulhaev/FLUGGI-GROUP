@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import {
   LEAD_STATUSES,
   SCORE_LEVELS,
@@ -74,7 +75,16 @@ export function LeadsPage() {
 
   return (
     <>
-      <PageHeader title={t('leads.title')} description={t('leads.subtitle')} actions={add} />
+      <PageHeader
+        title={t('leads.title')}
+        description={t('leads.subtitle')}
+        actions={
+          <div className="flex flex-wrap gap-2">
+            <ExportMenu entity="leads" />
+            {add}
+          </div>
+        }
+      />
       <Card>
         <div className="grid gap-3 border-b p-4">
           <div className="relative">

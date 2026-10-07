@@ -6,3 +6,4 @@ export * from './commission';
 export * from './tasks';
 export * from './finance';
 export * from './people';
+export * from './analytics';

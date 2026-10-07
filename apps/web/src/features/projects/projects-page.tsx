@@ -1,5 +1,6 @@
 'use client';
 
+import { ExportMenu } from '@/features/analytics/export-menu';
 import { PROJECT_STATUSES, type ProjectStatus, type ProjectView } from '@fluggi/contracts';
 import { FolderKanban } from 'lucide-react';
 import { useTranslations } from 'next-intl';
@@ -34,7 +35,11 @@ export function ProjectsPage({ view }: { view: ProjectView }) {
 
   return (
     <>
-      <PageHeader title={t(`views.${view}`)} description={t(`viewsHint.${view}`)} />
+      <PageHeader
+        title={t(`views.${view}`)}
+        description={t(`viewsHint.${view}`)}
+        actions={<ExportMenu entity="projects" />}
+      />
       <Card>
         <div className="flex flex-col gap-3 border-b p-4 sm:flex-row">
           <Input

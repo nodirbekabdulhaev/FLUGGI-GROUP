@@ -63,7 +63,7 @@ test('CEO создаёт менеджера, менеджер входит и в
   await expect(passwordDialog).toBeVisible();
   const tempPassword = (await passwordDialog.locator('code').textContent())!.trim();
   await passwordDialog.getByRole('button', { name: 'Закрыть' }).last().click();
-  await page.getByLabel('Поиск').fill(email);
+  await page.getByLabel('Поиск', { exact: true }).fill(email);
   await expect(page.getByText(email)).toBeVisible();
 
   await logout(page);
@@ -82,9 +82,10 @@ test('CEO создаёт менеджера, менеджер входит и в
   const status = await page.evaluate(async () => (await fetch('/api/v1/users')).status);
   expect(status).toBe(403);
 
-  // Нереализованный раздел явно помечен, а не выдаётся за рабочий.
+  // Все разделы реализованы (Phase 8): менеджеру открыта своя аналитика, «в разработке» нет.
   await page.goto('/analytics');
-  await expect(page.getByText('Раздел в разработке')).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Аналитика' })).toBeVisible();
+  await expect(page.getByText('Раздел в разработке')).toHaveCount(0);
 });
 
 test('мобильное меню открывается как drawer', async ({ page, isMobile }) => {

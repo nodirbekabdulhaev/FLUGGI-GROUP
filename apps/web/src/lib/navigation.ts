@@ -99,7 +99,6 @@ export const NAVIGATION: NavSection[] = [
     href: '/analytics',
     icon: BarChart3,
     anyOf: ['analytics.read'],
-    plannedPhase: 8,
   },
   { key: 'notifications', href: '/notifications', icon: Bell },
   {

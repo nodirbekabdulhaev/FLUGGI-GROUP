@@ -21,6 +21,7 @@ import { useCan } from '@/lib/me-context';
 import { ClientFormDialog } from './client-form-dialog';
 import { ContactDialog } from './contact-dialog';
 import { ProjectsMiniList } from '@/features/projects/projects-mini-list';
+import { ClientInsight } from '@/features/analytics/client-insight';
 
 export function ClientCard({ id }: { id: string }) {
   const t = useTranslations();
@@ -101,6 +102,8 @@ export function ClientCard({ id }: { id: string }) {
           />
         </CardContent>
       </Card>
+
+      <ClientInsight id={c.id} />
 
       <Tabs
         value={tab}
