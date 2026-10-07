@@ -213,6 +213,26 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, PermissionMap> = {
     ]),
     ...own(['payroll.read']),
   },
+
+  /**
+   * Проект-менеджер направления (например, Медиа): ведёт все проекты своих направлений.
+   * Область «Отдел» для проектов означает «проекты моих направлений» (Команда → направления сотрудника).
+   */
+  PROJECT_MANAGER: {
+    ...team([
+      'project.read',
+      'project.update',
+      'project.assign',
+      'task.read',
+      'task.create',
+      'task.update',
+      'finance.read',
+      'expense.create',
+      'expense.update',
+    ]),
+    ...all(['employee.read']),
+    ...own(['dashboard.own', 'kpi.read', 'attendance.read', 'payroll.read']),
+  },
 };
 
 /** Права, которые нельзя снять с роли CEO (иначе можно потерять управление системой). */

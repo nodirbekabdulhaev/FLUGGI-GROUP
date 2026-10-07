@@ -13,6 +13,7 @@ import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation, useReferences } from '@/features/crm/api';
 import { useTariffs } from '@/features/finance/tariffs-api';
+import { useCan } from '@/lib/me-context';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { money, newIdempotencyKey } from '@/lib/format';
 
@@ -50,6 +51,8 @@ export function ProposalEditor({
 }) {
   const t = useTranslations('sales.proposals');
   const refs = useReferences();
+  // Цену и скидку по тарифу меняет РОП/CEO; у менеджера — как в тарифе (проверяется и на сервере)
+  const canPrice = useCan()('proposal.approve');
   const tariffs = useTariffs(open);
   const usd = Number(refs.data?.usdRate?.rateToUzs ?? 0);
   /** Цена тарифа в валюте КП (по текущему курсу USD). */
@@ -274,11 +277,14 @@ export function ProposalEditor({
                       value={l.unitPrice}
                       onChange={(e) => setLine(i, 'unitPrice', e.target.value)}
                       aria-invalid={Boolean(errors[`items.${i}.unitPrice`])}
+                      readOnly={Boolean(l.tariffId) && !canPrice}
+                      title={l.tariffId && !canPrice ? t('tariffPriceLocked') : undefined}
                     />
                     <Input
                       aria-label={t('discount')}
                       className="h-9"
                       inputMode="decimal"
+                      readOnly={Boolean(l.tariffId) && !canPrice}
                       value={l.discountPct}
                       onChange={(e) => setLine(i, 'discountPct', e.target.value)}
                     />

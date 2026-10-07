@@ -93,7 +93,9 @@ export function FollowUpsPage() {
   const [view, setView] = useState<View>('due');
   const [page, setPage] = useState(1);
   const [completing, setCompleting] = useState<FollowUpDto | null>(null);
-  useEffect(() => setPage(1), [view]);
+  useEffect(() => {
+    setPage(1);
+  }, [view]);
   const list = useFollowUps({
     due: view === 'due' ? 'true' : undefined,
     status: view === 'pending' ? 'PENDING' : undefined,

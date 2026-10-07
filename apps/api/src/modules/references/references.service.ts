@@ -29,6 +29,7 @@ export const toServiceDto = (s: Service): ServiceDto => ({
   minPrice: dec(s.minPrice),
   currency: s.currency,
   pricingType: s.pricingType,
+  directionId: s.directionId,
   isActive: s.isActive,
   sort: s.sort,
 });
@@ -64,8 +65,9 @@ export class ReferencesService {
   ) {}
 
   async all(): Promise<ReferencesDto> {
-    const [services, sources, lossReasons, stages, usd] = await Promise.all([
+    const [services, directions, sources, lossReasons, stages, usd] = await Promise.all([
       this.prisma.service.findMany({ orderBy: [{ sort: 'asc' }, { nameRu: 'asc' }] }),
+      this.prisma.direction.findMany({ orderBy: [{ sort: 'asc' }, { name: 'asc' }] }),
       this.prisma.leadSource.findMany({ orderBy: [{ sort: 'asc' }, { nameRu: 'asc' }] }),
       this.prisma.lossReason.findMany({ orderBy: [{ sort: 'asc' }, { nameRu: 'asc' }] }),
       this.prisma.dealStage.findMany({ orderBy: { sort: 'asc' } }),
@@ -77,6 +79,13 @@ export class ReferencesService {
     ]);
     return {
       services: services.map(toServiceDto),
+      directions: directions.map((d) => ({
+        id: d.id,
+        code: d.code,
+        name: d.name,
+        sort: d.sort,
+        isActive: d.isActive,
+      })),
       sources: sources.map(toItem),
       lossReasons: lossReasons.map(toItem),
       stages: stages.map(toStageDto),
@@ -116,6 +125,7 @@ export class ReferencesService {
       minPrice: input.minPrice ?? null,
       currency: input.currency,
       pricingType: input.pricingType,
+      directionId: input.directionId ?? null,
       isActive: input.isActive,
       sort: input.sort,
     };

@@ -19,6 +19,7 @@ enum RoleCode {
   MANAGER
   EXECUTOR
   HR_ADMIN
+  PROJECT_MANAGER
 }
 
 enum PermissionScope {
@@ -72,9 +73,10 @@ model User {
   updatedAt        DateTime   @updatedAt @map("updated_at")
   deletedAt        DateTime?  @map("deleted_at")
 
-  role        Role       @relation(fields: [roleId], references: [id])
-  team        Team?      @relation("TeamMembers", fields: [teamId], references: [id])
-  headedTeams Team[]     @relation("TeamHead")
+  role        Role            @relation(fields: [roleId], references: [id])
+  team        Team?           @relation("TeamMembers", fields: [teamId], references: [id])
+  headedTeams Team[]          @relation("TeamHead")
+  directions  UserDirection[]
   employee    Employee?
   sessions    Session[]
   auditLogs   AuditLog[]
@@ -204,20 +206,20 @@ model Team {
 
 /// HR-данные сотрудника. Отделены от users, чтобы не попадать в CRM-выборки.
 model Employee {
-  id         String             @id @default(uuid()) @db.Uuid
-  userId     String             @unique @map("user_id") @db.Uuid
-  position   String?
-  specialty  ExecutorSpecialty?
+  id             String             @id @default(uuid()) @db.Uuid
+  userId         String             @unique @map("user_id") @db.Uuid
+  position       String?
+  specialty      ExecutorSpecialty?
   /// Оклад (ТЗ §32). Виден только CEO и самому сотруднику — через модуль зарплаты.
-  baseSalary Decimal?           @map("base_salary") @db.Decimal(18, 2)
+  baseSalary     Decimal?           @map("base_salary") @db.Decimal(18, 2)
   /// KPI-бонус при выполнении KPI на 100% (сум); за месяц начисляется пропорционально, до 120%.
-  kpiBonusTarget Decimal?       @map("kpi_bonus_target") @db.Decimal(18, 2)
+  kpiBonusTarget Decimal?           @map("kpi_bonus_target") @db.Decimal(18, 2)
   /// Индивидуальный график; иначе — график роли.
-  scheduleId String?            @map("schedule_id") @db.Uuid
-  hiredAt    DateTime?          @map("hired_at") @db.Date
-  firedAt    DateTime?          @map("fired_at") @db.Date
-  createdAt  DateTime           @default(now()) @map("created_at")
-  updatedAt  DateTime           @updatedAt @map("updated_at")
+  scheduleId     String?            @map("schedule_id") @db.Uuid
+  hiredAt        DateTime?          @map("hired_at") @db.Date
+  firedAt        DateTime?          @map("fired_at") @db.Date
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
 
   user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   schedule WorkSchedule? @relation(fields: [scheduleId], references: [id])
@@ -388,11 +390,14 @@ model Service {
   minPrice    Decimal?    @map("min_price") @db.Decimal(18, 2)
   currency    Currency    @default(UZS)
   pricingType PricingType @default(FIXED) @map("pricing_type")
+  /// Направление бизнеса (IT, Медиа, Маркетинг) — для разграничения проектов
+  directionId String?     @map("direction_id") @db.Uuid
   isActive    Boolean     @default(true) @map("is_active")
   sort        Int         @default(0)
   createdAt   DateTime    @default(now()) @map("created_at")
   updatedAt   DateTime    @updatedAt @map("updated_at")
 
+  direction        Direction?        @relation(fields: [directionId], references: [id])
   leads            Lead[]
   deals            Deal[]
   proposalItems    ProposalItem[]
@@ -550,27 +555,27 @@ model Lead {
 }
 
 model Client {
-  id        String       @id @default(uuid()) @db.Uuid
-  number    Int          @unique @default(autoincrement())
-  name      String
-  type      ClientType   @default(COMPANY)
-  industry  String?
-  phone     String?
-  email     String?
-  telegram  String?
-  website   String?
-  city      String?
-  country   String?
-  ownerId   String       @map("owner_id") @db.Uuid
-  teamId    String?      @map("team_id") @db.Uuid
-  sourceId  String?      @map("source_id") @db.Uuid
-  health    ClientHealth @default(HEALTHY)
-  comment   String?
+  id         String       @id @default(uuid()) @db.Uuid
+  number     Int          @unique @default(autoincrement())
+  name       String
+  type       ClientType   @default(COMPANY)
+  industry   String?
+  phone      String?
+  email      String?
+  telegram   String?
+  website    String?
+  city       String?
+  country    String?
+  ownerId    String       @map("owner_id") @db.Uuid
+  teamId     String?      @map("team_id") @db.Uuid
+  sourceId   String?      @map("source_id") @db.Uuid
+  health     ClientHealth @default(HEALTHY)
+  comment    String?
   /// Реквизиты для договора (юр. название, ИНН, банк, МФО, р/с, подписант)
   requisites Json?
-  createdAt DateTime     @default(now()) @map("created_at")
-  updatedAt DateTime     @updatedAt @map("updated_at")
-  deletedAt DateTime?    @map("deleted_at")
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  deletedAt  DateTime?    @map("deleted_at")
 
   owner  User        @relation("ClientOwner", fields: [ownerId], references: [id])
   team   Team?       @relation(fields: [teamId], references: [id])
@@ -1138,6 +1143,8 @@ model Project {
   deadline    DateTime?     @db.Date
   description String?
   templateId  String?       @map("template_id") @db.Uuid
+  /// Направление бизнеса — из услуги сделки; проект-менеджер видит проекты своих направлений
+  directionId String?       @map("direction_id") @db.Uuid
   completedAt DateTime?     @map("completed_at")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
@@ -1148,6 +1155,7 @@ model Project {
   rop          User              @relation("ProjectRop", fields: [ropId], references: [id])
   manager      User              @relation("ProjectManager", fields: [managerId], references: [id])
   template     ProjectTemplate?  @relation(fields: [templateId], references: [id])
+  direction    Direction?        @relation(fields: [directionId], references: [id])
   payments     Payment[]
   members      ProjectMember[]
   tasks        Task[]
@@ -1932,4 +1940,33 @@ model ProjectCostLine {
 
   @@index([projectId])
   @@map("project_cost_lines")
+}
+
+/// Направление бизнеса группы: IT, Медиа (SMM, брендинг, продакшн), Маркетинг.
+model Direction {
+  id        String   @id @default(uuid()) @db.Uuid
+  code      String   @unique
+  name      String
+  sort      Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  services Service[]
+  projects Project[]
+  users    UserDirection[]
+
+  @@map("directions")
+}
+
+/// Зона ответственности сотрудника (проект-менеджер): видит и ведёт проекты этих направлений.
+model UserDirection {
+  userId      String @map("user_id") @db.Uuid
+  directionId String @map("direction_id") @db.Uuid
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direction Direction @relation(fields: [directionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, directionId])
+  @@map("user_directions")
 }

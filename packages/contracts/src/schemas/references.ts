@@ -18,9 +18,27 @@ export interface ServiceDto {
   minPrice: string | null;
   currency: Currency;
   pricingType: PricingType;
+  /** Направление бизнеса (IT, Медиа, Маркетинг) */
+  directionId: string | null;
   isActive: boolean;
   sort: number;
 }
+
+/** Направление бизнеса группы: проекты направления видит проект-менеджер направления. */
+export interface DirectionDto {
+  id: string;
+  code: string;
+  name: string;
+  sort: number;
+  isActive: boolean;
+}
+
+export const directionSchema = z.object({
+  name: z.string().trim().min(1, 'Введите название').max(80),
+  sort: z.coerce.number().int().min(0).max(1000).default(100),
+  isActive: z.boolean().default(true),
+});
+export type DirectionInput = z.input<typeof directionSchema>;
 
 export interface ReferenceItemDto {
   id: string;
@@ -53,6 +71,7 @@ export interface ExchangeRateDto {
 
 export interface ReferencesDto {
   services: ServiceDto[];
+  directions: DirectionDto[];
   sources: ReferenceItemDto[];
   lossReasons: ReferenceItemDto[];
   stages: StageDto[];
@@ -85,6 +104,7 @@ export const upsertServiceSchema = upsertReferenceItemSchema
     minPrice: optMoney,
     currency: z.enum(CURRENCIES).default('UZS'),
     pricingType: z.enum(PRICING_TYPES).default('FIXED'),
+    directionId: z.uuid().nullish(),
   });
 export type UpsertServiceInput = z.input<typeof upsertServiceSchema>;
 

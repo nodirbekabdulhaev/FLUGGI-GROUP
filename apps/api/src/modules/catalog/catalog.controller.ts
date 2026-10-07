@@ -11,6 +11,8 @@ import {
   Query,
 } from '@nestjs/common';
 import {
+  directionSchema,
+  type DirectionDto,
   employeeRatesSchema,
   financeCategorySchema,
   financeSettingsSchema,
@@ -154,6 +156,28 @@ export class CatalogController {
     @Body(zod(financeSettingsSchema)) body: FinanceSettings,
   ): Promise<FinanceSettings> {
     return this.overhead.saveSettings(body, auth.userId);
+  }
+
+  // ── Направления бизнеса (IT, Медиа, Маркетинг)
+  @Post('directions')
+  @RequirePermission('reference.manage', 'ALL')
+  createDirection(
+    @CurrentUser() auth: AuthContext,
+    @Body(zod(directionSchema)) body: z.output<typeof directionSchema>,
+    @ReqMeta() meta: RequestMeta,
+  ): Promise<DirectionDto> {
+    return this.catalog.saveDirection(auth, null, body, meta);
+  }
+
+  @Put('directions/:id')
+  @RequirePermission('reference.manage', 'ALL')
+  updateDirection(
+    @CurrentUser() auth: AuthContext,
+    @Param('id', UuidPipe) id: string,
+    @Body(zod(directionSchema)) body: z.output<typeof directionSchema>,
+    @ReqMeta() meta: RequestMeta,
+  ): Promise<DirectionDto> {
+    return this.catalog.saveDirection(auth, id, body, meta);
   }
 
   // ── Единицы работ

@@ -287,9 +287,26 @@ export interface MyKpiDto {
   expectedUzs: string;
 }
 
+/** Проект-менеджер направления: всё по проектам своих направлений. */
+export interface ProjectsDashboardDto {
+  directions: string[];
+  active: number;
+  /** Активные проекты с прошедшим дедлайном */
+  overdueProjects: number;
+  /** Активные проекты без исполнителей */
+  unassigned: number;
+  tasksOpen: number;
+  tasksOverdue: number;
+  /** Задачи со сроком сегодня */
+  tasksToday: number;
+  /** Проекты, завершённые за период */
+  completed: number;
+}
+
 export interface DashboardDto {
   from: string;
   to: string;
+  projects?: ProjectsDashboardDto;
   myKpi?: MyKpiDto;
   ceo?: CeoDashboardDto;
   team?: TeamDashboardDto;

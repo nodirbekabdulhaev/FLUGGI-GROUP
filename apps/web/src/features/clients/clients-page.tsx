@@ -28,7 +28,9 @@ export function ClientsPage() {
     const id = setTimeout(() => setSearch(q), 300);
     return () => clearTimeout(id);
   }, [q]);
-  useEffect(() => setPage(1), [search]);
+  useEffect(() => {
+    setPage(1);
+  }, [search]);
   const clients = useClients({ q: search || undefined, page, pageSize: 25 });
   const add = can('client.create') ? (
     <Button onClick={() => setOpen(true)}>

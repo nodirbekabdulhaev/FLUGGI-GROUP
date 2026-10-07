@@ -34,6 +34,7 @@ const ROLE_NAMES: Record<RoleCode, string> = {
   MANAGER: 'Менеджер',
   EXECUTOR: 'Исполнитель',
   HR_ADMIN: 'HR / Администратор',
+  PROJECT_MANAGER: 'Проект-менеджер',
 };
 
 export const ARGON2_OPTIONS = { memoryCost: 19456, timeCost: 2, parallelism: 1 } as const;
@@ -84,6 +85,8 @@ interface SeedUser {
   position?: string;
   specialty?: ExecutorSpecialty;
   team?: string;
+  /** Направления (проект-менеджер): коды из справочника directions */
+  directions?: string[];
 }
 
 async function upsertUser(u: SeedUser, password: string, teamIds: Map<string, string>) {
@@ -197,6 +200,13 @@ const DEMO_USERS: SeedUser[] = [
     role: 'HR_ADMIN',
     position: 'HR-менеджер',
   },
+  {
+    email: 'pm@fluggi.demo',
+    fullName: 'Дильноза Каримова',
+    role: 'PROJECT_MANAGER',
+    position: 'Проект-менеджер (Медиа)',
+    directions: ['MEDIA'],
+  },
 ];
 
 async function seedDemo() {
@@ -214,6 +224,15 @@ async function seedDemo() {
     if (created) credentials.push({ email: u.email, role: u.role, password });
     if (u.role === 'ROP' && u.team) {
       await prisma.team.update({ where: { id: teamIds.get(u.team)! }, data: { headId: id } });
+    }
+    for (const code of u.directions ?? []) {
+      const d = await prisma.direction.findUnique({ where: { code } });
+      if (d)
+        await prisma.userDirection.upsert({
+          where: { userId_directionId: { userId: id, directionId: d.id } },
+          update: {},
+          create: { userId: id, directionId: d.id },
+        });
     }
   }
 

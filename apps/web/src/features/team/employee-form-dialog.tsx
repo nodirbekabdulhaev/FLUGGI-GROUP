@@ -17,6 +17,7 @@ import { Dialog, DialogContent, DialogFooter } from '@/components/ui/dialog';
 import { Input, NativeSelect } from '@/components/ui/input';
 import { Field } from '@/components/ui/label';
 import { ApiError, errorMessage } from '@/lib/api-client';
+import { useReferences } from '@/features/crm/api';
 import { useMe } from '@/lib/me-context';
 import { useCreateUser, useTeams, useUpdateUser } from './api';
 
@@ -28,6 +29,8 @@ type FormValues = {
   teamId: string;
   position: string;
   specialty: string;
+  /** Направления (проект-менеджер): чекбоксы с одним именем дают массив id */
+  directionIds: string[] | string | false;
 };
 
 const SALES_ROLES = new Set(['ROP', 'MANAGER']);
@@ -51,6 +54,7 @@ export function EmployeeFormDialog({
   const t = useTranslations();
   const me = useMe();
   const teams = useTeams();
+  const refs = useReferences();
   const create = useCreateUser();
   const update = useUpdateUser();
 
@@ -67,6 +71,7 @@ export function EmployeeFormDialog({
       teamId: user?.team?.id ?? '',
       position: user?.position ?? '',
       specialty: user?.specialty ?? '',
+      directionIds: user?.directions.map((d) => d.id) ?? [],
     });
   }, [open, user, defaultRole, form]);
 
@@ -83,6 +88,10 @@ export function EmployeeFormDialog({
         roleCode === 'EXECUTOR' && v.specialty
           ? (v.specialty as CreateUserInput['specialty'])
           : null,
+      directionIds:
+        roleCode === 'PROJECT_MANAGER'
+          ? ([] as string[]).concat(v.directionIds || []).filter(Boolean)
+          : [],
     };
     try {
       if (user) {
@@ -179,6 +188,20 @@ export function EmployeeFormDialog({
               </Field>
             ) : null}
           </div>
+          {role === 'PROJECT_MANAGER' ? (
+            <fieldset className="grid gap-2 rounded-md border p-3">
+              <legend className="px-1 text-sm font-medium">{t('employees.directions')}</legend>
+              <p className="text-xs text-muted-foreground">{t('employees.directionsHint')}</p>
+              {refs.data?.directions
+                .filter((d) => d.isActive)
+                .map((d) => (
+                  <label key={d.id} className="flex items-center gap-2 text-sm">
+                    <input type="checkbox" value={d.id} {...form.register('directionIds')} />
+                    {d.name}
+                  </label>
+                ))}
+            </fieldset>
+          ) : null}
           <Field
             label={t('employees.position')}
             htmlFor="position"

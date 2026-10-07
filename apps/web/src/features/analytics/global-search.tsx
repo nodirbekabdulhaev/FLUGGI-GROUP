@@ -60,7 +60,9 @@ export function GlobalSearch() {
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, []);
-  useEffect(() => setActive(0), [query]);
+  useEffect(() => {
+    setActive(0);
+  }, [query]);
 
   const hits = useMemo(() => {
     const list = query.trim().length >= 2 ? (result.data ?? []) : [];

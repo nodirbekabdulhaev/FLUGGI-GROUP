@@ -180,6 +180,18 @@ PUT    /clients/:id/requisites   (client.update)
 ```
 `GET /proposals/:id/pdf` удалён — используйте `/documents/proposals/:id?format=pdf`.
 
+### Направления бизнеса и проект-менеджер
+```
+GET  /references            → + directions[]; services[].directionId
+POST /directions            PUT /directions/:id   { name, sort, isActive }  (reference.manage ALL)
+POST/PATCH /users           + directionIds[] — направления сотрудника (проект-менеджер)
+GET  /projects              ?directionId   → project.direction
+PATCH /projects/:id         + directionId (только CEO, project.update ALL)
+GET  /dashboard             → + projects { directions, active, overdueProjects, unassigned, tasksOpen, tasksOverdue, tasksToday, completed } (PROJECT_MANAGER)
+POST /recurring-todos/tax-calendar   — только CEO; регулярные дела другим ставит только CEO
+POST/PUT /proposals         — позиция с тарифом: цену и скидку меняет только proposal.approve (РОП/CEO)
+```
+
 ### Прочее
 ```
 POST /client-errors   { widget, message, stack?, path?, userAgent? } — ошибка виджета интерфейса → лог API (WARN ClientError)

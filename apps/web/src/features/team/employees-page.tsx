@@ -83,7 +83,9 @@ export function EmployeesPage({
   const [page, setPage] = useState(1);
   const search = useDebounced(q);
 
-  useEffect(() => setPage(1), [search, role, teamId, status]);
+  useEffect(() => {
+    setPage(1);
+  }, [search, role, teamId, status]);
 
   const users = useUsers({
     q: search || undefined,

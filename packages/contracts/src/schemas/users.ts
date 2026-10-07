@@ -26,6 +26,8 @@ export const createUserSchema = z.object({
   position: optionalText(120),
   specialty: z.enum(EXECUTOR_SPECIALTIES).nullish(),
   locale: z.enum(LOCALES).default('ru'),
+  /** Направления бизнеса (проект-менеджер видит проекты этих направлений) */
+  directionIds: z.array(z.uuid()).max(20).default([]),
   /** Если не указан — сервер сгенерирует временный пароль и вернёт его один раз. */
   password: passwordSchema.optional(),
 });
@@ -46,6 +48,7 @@ export const updateUserSchema = z
       .transform((v) => (v === '' ? null : v)),
     specialty: z.enum(EXECUTOR_SPECIALTIES).nullable(),
     locale: z.enum(LOCALES),
+    directionIds: z.array(z.uuid()).max(20),
   })
   .partial()
   .refine((v) => Object.values(v).some((x) => x !== undefined), 'Нет изменений');
@@ -70,6 +73,8 @@ export interface UserDto {
   specialty: ExecutorSpecialty | null;
   role: { code: RoleCode; name: string };
   team: { id: string; name: string } | null;
+  /** Направления бизнеса сотрудника */
+  directions: { id: string; name: string }[];
   telegramLinked: boolean;
   lastLoginAt: string | null;
   createdAt: string;

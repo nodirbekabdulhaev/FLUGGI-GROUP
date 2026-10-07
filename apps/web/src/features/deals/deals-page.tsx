@@ -36,7 +36,9 @@ export function DealsPage() {
     const id = setTimeout(() => setSearch(q), 300);
     return () => clearTimeout(id);
   }, [q]);
-  useEffect(() => setPage(1), [search, status, stageCode, serviceId, ownerId]);
+  useEffect(() => {
+    setPage(1);
+  }, [search, status, stageCode, serviceId, ownerId]);
 
   const deals = useDeals({
     q: search || undefined,

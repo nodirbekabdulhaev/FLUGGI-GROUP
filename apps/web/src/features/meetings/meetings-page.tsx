@@ -20,7 +20,9 @@ export function MeetingsPage() {
   const [view, setView] = useState<View>('upcoming');
   const [page, setPage] = useState(1);
   const [completing, setCompleting] = useState<string | null>(null);
-  useEffect(() => setPage(1), [view]);
+  useEffect(() => {
+    setPage(1);
+  }, [view]);
   const today = new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
   const meetings = useMeetings({
     status: view === 'done' ? 'DONE' : undefined,

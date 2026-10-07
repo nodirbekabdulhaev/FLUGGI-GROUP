@@ -107,7 +107,9 @@ export function TaskDetailDialog({
   useEffect(() => {
     if (task.data) setProgress(task.data.progressPct);
   }, [task.data]);
-  useEffect(() => setComment(''), [taskId]);
+  useEffect(() => {
+    setComment('');
+  }, [taskId]);
 
   const move = useCrmMutation((status: TaskStatus) =>
     api(`/tasks/${taskId}/move`, { method: 'POST', body: { status } }),

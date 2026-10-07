@@ -34,6 +34,7 @@ const include = {
   rop: { select: { id: true, fullName: true } },
   manager: { select: { id: true, fullName: true } },
   template: { select: { id: true, name: true } },
+  direction: { select: { id: true, name: true } },
 } satisfies Prisma.ProjectInclude;
 
 type Row = Prisma.ProjectGetPayload<{ include: typeof include }>;
@@ -84,6 +85,7 @@ export class ProjectsService {
       overdueDays: projectOverdueDays(deadline, ACTIVE_PROJECT_STATUSES.includes(p.status), now),
       description: p.description,
       template: p.template,
+      direction: p.direction,
       tasks: counts,
       completedAt: iso(p.completedAt),
       createdAt: p.createdAt.toISOString(),
@@ -140,6 +142,7 @@ export class ProjectsService {
     if (q.ropId) and.push({ ropId: q.ropId });
     if (q.clientId) and.push({ clientId: q.clientId });
     if (q.dealId) and.push({ dealId: q.dealId });
+    if (q.directionId) and.push({ directionId: q.directionId });
     if (q.q)
       and.push({
         OR: [
@@ -254,6 +257,16 @@ export class ProjectsService {
       });
       if (!rop) throw businessRule('РОП проекта — сотрудник с ролью РОП или CEO');
     }
+    // Направление определяет, кто видит проект, — меняет только CEO (project.update на всю компанию)
+    if (input.directionId !== undefined && input.directionId !== before.directionId) {
+      if (auth.permissions['project.update'] !== 'ALL') throw forbidden();
+      if (input.directionId) {
+        const d = await this.prisma.direction.findFirst({
+          where: { id: input.directionId, isActive: true },
+        });
+        if (!d) throw businessRule('Нет такого направления');
+      }
+    }
     const startDate = input.startDate !== undefined ? parseDate(input.startDate) : undefined;
     const deadline = input.deadline !== undefined ? parseDate(input.deadline) : undefined;
     const start = startDate === undefined ? before.startDate : startDate;
@@ -265,6 +278,7 @@ export class ProjectsService {
       description: input.description,
       priority: input.priority,
       ropId: input.ropId,
+      directionId: input.directionId,
       startDate,
       deadline,
     };
@@ -275,6 +289,7 @@ export class ProjectsService {
         'description',
         'priority',
         'ropId',
+        'directionId',
         'startDate',
         'deadline',
       ]);

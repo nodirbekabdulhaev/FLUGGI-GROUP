@@ -13,6 +13,8 @@ export interface AuthContext {
   teamId: string | null;
   teamName: string | null;
   headedTeamIds: string[];
+  /** Направления бизнеса, за которые отвечает сотрудник (проект-менеджер) */
+  directionIds: string[];
   permissions: PermissionMap;
   telegramLinked: boolean;
 }

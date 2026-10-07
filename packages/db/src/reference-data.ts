@@ -165,9 +165,37 @@ export const PROJECT_TEMPLATES: {
   },
 ];
 
+/** Направления бизнеса группы и услуги каждого направления. */
+export const DIRECTIONS: { code: string; name: string; services: string[] }[] = [
+  { code: 'IT', name: 'IT и разработка', services: ['WEBSITE', 'CRM', 'ERP'] },
+  {
+    code: 'MEDIA',
+    name: 'Медиа: SMM, брендинг, продакшн',
+    services: ['SMM', 'BRANDING', 'DESIGN', 'PHOTO', 'VIDEO'],
+  },
+  { code: 'MARKETING', name: 'Маркетинг и реклама', services: ['TARGET', 'MARKETING'] },
+];
+
 export async function seedReferences(prisma: PrismaClient) {
+  for (const [i, d] of DIRECTIONS.entries()) {
+    await prisma.direction.upsert({
+      where: { code: d.code },
+      update: {},
+      create: { code: d.code, name: d.name, sort: (i + 1) * 10 },
+    });
+  }
+  const directionOf = (code: string) => DIRECTIONS.find((d) => d.services.includes(code))?.code;
   for (const [i, [code, nameRu]] of SERVICES.entries()) {
-    await prisma.service.upsert({ where: { code }, update: {}, create: { code, nameRu, sort: i } });
+    const dir = directionOf(code);
+    const direction = dir ? await prisma.direction.findUnique({ where: { code: dir } }) : null;
+    const svc = await prisma.service.upsert({
+      where: { code },
+      update: {},
+      create: { code, nameRu, sort: i, directionId: direction?.id ?? null },
+    });
+    // Направление проставляем только если его ещё нет — правки CEO не затираем
+    if (!svc.directionId && direction)
+      await prisma.service.update({ where: { id: svc.id }, data: { directionId: direction.id } });
   }
   for (const [i, [code, nameRu]] of SOURCES.entries()) {
     await prisma.leadSource.upsert({

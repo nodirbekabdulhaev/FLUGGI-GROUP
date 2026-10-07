@@ -10,6 +10,7 @@ import {
   type Priority,
   type ProjectMemberStatus,
   type ProjectStatus,
+  type RoleCode,
   type TaskStatus,
 } from '../enums';
 import { paginationQuerySchema } from './common';
@@ -28,6 +29,7 @@ export const projectListQuerySchema = paginationQuerySchema.extend({
   ropId: z.uuid().optional(),
   clientId: z.uuid().optional(),
   dealId: z.uuid().optional(),
+  directionId: z.uuid().optional(),
   q: z.string().trim().max(100).optional(),
 });
 export type ProjectListQuery = z.input<typeof projectListQuerySchema>;
@@ -42,6 +44,8 @@ export const updateProjectSchema = z
     startDate: optDate,
     deadline: optDate,
     ropId: z.uuid(),
+    /** Направление бизнеса (меняет только тот, у кого project.update на всю компанию) */
+    directionId: z.uuid().nullable(),
   })
   .partial()
   .refine((v) => !v.startDate || !v.deadline || v.startDate <= v.deadline, {
@@ -83,6 +87,8 @@ export interface ProjectDto {
   overdueDays: number;
   description: string | null;
   template: NamedRef | null;
+  /** Направление бизнеса: IT, Медиа, Маркетинг */
+  direction: NamedRef | null;
   tasks: TaskCountsDto;
   completedAt: string | null;
   createdAt: string;
@@ -281,6 +287,6 @@ export interface ProjectTemplateDto {
 export interface MemberCandidateDto {
   id: string;
   name: string;
-  role: 'CEO' | 'ROP' | 'MANAGER' | 'EXECUTOR' | 'HR_ADMIN';
+  role: RoleCode;
   specialty: ExecutorSpecialty | null;
 }

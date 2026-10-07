@@ -16,6 +16,8 @@ type ProjectCode = Extract<
  *  Проект: OWN — я менеджер/РОП проекта или участник команды; TEAM — проекты моих отделов.
  *  Задача: OWN — я ответственный или автор, либо менеджер проекта; TEAM — задачи проектов отдела.
  * Участие в команде даёт только чтение: менять проект можно по праву project.update/assign.
+ * Направления: у сотрудника с направлениями (проект-менеджер) область TEAM включает
+ * все проекты этих направлений (например, вся «Медиа»), а проекты других направлений не видны.
  */
 @Injectable()
 export class ProjectAccessService {
@@ -39,9 +41,19 @@ export class ProjectAccessService {
     if (scope === 'TEAM')
       return {
         deletedAt: null,
-        OR: [{ teamId: { in: this.teamIds(auth) } }, ...lead, ...member],
+        OR: [
+          { teamId: { in: this.teamIds(auth) } },
+          ...this.directionScope(auth),
+          ...lead,
+          ...member,
+        ],
       };
     return { deletedAt: null, OR: [...lead, ...member] };
+  }
+
+  /** Проекты направлений сотрудника (пусто — у сотрудника нет направлений). */
+  private directionScope(auth: AuthContext): Prisma.ProjectWhereInput[] {
+    return auth.directionIds.length ? [{ directionId: { in: auth.directionIds } }] : [];
   }
 
   /** Задачи, на которые у пользователя есть право code. */
@@ -61,7 +73,11 @@ export class ProjectAccessService {
     if (scope === 'TEAM')
       return {
         ...base,
-        OR: [{ project: { teamId: { in: this.teamIds(auth) } } }, ...mine],
+        OR: [
+          { project: { teamId: { in: this.teamIds(auth) } } },
+          ...this.directionScope(auth).map((project) => ({ project })),
+          ...mine,
+        ],
       };
     return { ...base, OR: mine };
   }

@@ -341,6 +341,7 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
       teamId: null,
       teamName: null,
       headedTeamIds: [],
+      directionIds: [],
       permissions: all,
       telegramLinked: false,
     };

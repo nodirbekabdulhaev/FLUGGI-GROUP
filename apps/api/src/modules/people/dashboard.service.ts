@@ -12,6 +12,7 @@ import type { z } from 'zod';
 import type { AuthContext } from '../../core/auth/auth-context';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { FinanceService } from '../finance/finance.service';
+import { ProjectAccessService } from '../projects/project-access.service';
 import { KpiService } from './kpi.service';
 
 const TZ_MS = 5 * 3_600_000;
@@ -29,6 +30,7 @@ export class DashboardService {
     private readonly prisma: PrismaService,
     private readonly kpi: KpiService,
     private readonly finance: FinanceService,
+    private readonly projectsAccess: ProjectAccessService,
   ) {}
 
   async get(auth: AuthContext, q: z.output<typeof periodQuerySchema>): Promise<DashboardDto> {
@@ -156,6 +158,56 @@ export class DashboardService {
       ]);
       out.executor = { projects, today, overdue, inProgress, done };
     }
+    if (auth.roleCode === 'PROJECT_MANAGER') {
+      const now = new Date();
+      const todayStart = companyDayStart(companyDate(now));
+      const tomorrow = new Date(todayStart.getTime() + 86_400_000);
+      const visible = this.projectsAccess.projectWhere(auth);
+      const active = { AND: [visible, { status: { in: [...ACTIVE_PROJECT_STATUSES] } }] };
+      const tasks = this.projectsAccess.taskWhere(auth);
+      const open = { status: { in: [...OPEN_TASK_STATUSES] } };
+      const [
+        directions,
+        activeN,
+        overdueN,
+        unassigned,
+        tasksOpen,
+        tasksOverdue,
+        tasksToday,
+        completed,
+      ] = await Promise.all([
+        this.prisma.direction.findMany({
+          where: { id: { in: auth.directionIds } },
+          orderBy: { sort: 'asc' },
+        }),
+        this.prisma.project.count({ where: active }),
+        this.prisma.project.count({ where: { AND: [active, { deadline: { lt: todayStart } }] } }),
+        this.prisma.project.count({
+          where: {
+            AND: [active, { members: { none: { status: { not: 'REMOVED' } } } }],
+          },
+        }),
+        this.prisma.task.count({ where: { AND: [tasks, open] } }),
+        this.prisma.task.count({ where: { AND: [tasks, open, { deadline: { lt: now } }] } }),
+        this.prisma.task.count({
+          where: { AND: [tasks, open, { deadline: { gte: todayStart, lt: tomorrow } }] },
+        }),
+        this.prisma.project.count({
+          where: { AND: [visible, { status: 'COMPLETED', completedAt: inRange }] },
+        }),
+      ]);
+      out.projects = {
+        directions: directions.map((d) => d.name),
+        active: activeN,
+        overdueProjects: overdueN,
+        unassigned,
+        tasksOpen,
+        tasksOverdue,
+        tasksToday,
+        completed,
+      };
+    }
+
     if (auth.roleCode !== 'CEO') out.myKpi = (await this.myKpi(auth, period, range)) ?? undefined;
     return out;
   }

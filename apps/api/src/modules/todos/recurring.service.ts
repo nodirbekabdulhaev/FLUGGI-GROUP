@@ -4,8 +4,8 @@ import { addDays, atTashkent, companyDate, fillPeriod, nextDue } from '@fluggi/d
 import { Prisma } from '@fluggi/db';
 import type { z } from 'zod';
 import type { AuthContext } from '../../core/auth/auth-context';
-import { notFound } from '../../core/http/app.exception';
 import { parseDate } from '../../core/http/serialize';
+import { forbidden, notFound } from '../../core/http/app.exception';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { TodosService } from './todos.service';
@@ -84,6 +84,9 @@ export class RecurringTodosService {
 
   async create(auth: AuthContext, input: Input): Promise<RecurringTodoDto> {
     const ownerId = input.ownerId ?? auth.userId;
+    // Регулярные дела другим сотрудникам ставит только CEO; остальные — себе
+    if (ownerId !== auth.userId && auth.roleCode !== 'CEO')
+      throw forbidden('Регулярные дела можно ставить только себе');
     await this.todos.assertAssignable(auth, ownerId);
     const r = await this.prisma.recurringTodo.create({
       data: { ...this.data(input), ownerId, createdById: auth.userId },
@@ -120,6 +123,7 @@ export class RecurringTodosService {
 
   /** Налоговый календарь IT-Park одним нажатием; уже добавленные пункты не дублируются. */
   async addTaxCalendar(auth: AuthContext): Promise<RecurringTodoDto[]> {
+    if (auth.roleCode !== 'CEO') throw forbidden('Налоговый календарь доступен только CEO');
     const existing = await this.prisma.recurringTodo.findMany({
       where: { ownerId: auth.userId, deletedAt: null },
       select: { title: true },

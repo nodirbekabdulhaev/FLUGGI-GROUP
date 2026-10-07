@@ -224,6 +224,8 @@ erDiagram
 | `employee_rates` | Личная ставка сотрудника за работу |
 | `tariffs`, `tariff_items` | Тарифы услуг и их позиции (PIECE — сдельно, FIXED — фиксированно) |
 | `project_cost_lines` | План себестоимости проекта: PLANNED → ACCRUED (расход) / CANCELLED |
+| `directions`, `user_directions` | Направления бизнеса (IT, Медиа, Маркетинг) и зона ответственности проект-менеджера |
+| `services.direction_id`, `projects.direction_id` | Направление услуги; проекту — из услуги сделки при создании |
 | `employees.kpi_bonus_target` | KPI-бонус при 100% выполнения: бонус месяца = сумма × KPI% (до 120%) |
 | `clients.requisites` (JSONB) | Реквизиты клиента для договора |
 | `settings['documents']` | Город, текст договора, вступление и примечание КП |

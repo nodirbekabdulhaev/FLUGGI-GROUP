@@ -4,6 +4,7 @@ import {
   CURRENCIES,
   PRICING_TYPES,
   type ReferenceItemDto,
+  type DirectionDto,
   type ServiceDto,
   type StageDto,
 } from '@fluggi/contracts';
@@ -47,6 +48,7 @@ function useSave() {
 function ItemDialog({ editing, onClose }: { editing: Editing; onClose: () => void }) {
   const t = useTranslations('references');
   const save = useSave();
+  const refs = useReferences();
   const [v, setV] = useState<Record<string, string | boolean>>({});
   const [errors, setErrors] = useState<Record<string, string>>({});
   const item = editing?.item;
@@ -67,6 +69,7 @@ function ItemDialog({ editing, onClose }: { editing: Editing; onClose: () => voi
       currency: s?.currency ?? 'UZS',
       pricingType: s?.pricingType ?? 'FIXED',
       description: s?.description ?? '',
+      directionId: s?.directionId ?? '',
     });
   }, [editing, item]);
 
@@ -99,6 +102,7 @@ function ItemDialog({ editing, onClose }: { editing: Editing; onClose: () => voi
                 currency: v.currency,
                 pricingType: v.pricingType,
                 description: v.description || null,
+                directionId: v.directionId || null,
               });
             const base = isService ? '/references/services' : `/references/${editing.kind}`;
             try {
@@ -146,6 +150,20 @@ function ItemDialog({ editing, onClose }: { editing: Editing; onClose: () => voi
                   <NativeSelect id="r-cur" value={String(v.currency)} onChange={set('currency')}>
                     {CURRENCIES.map((c) => (
                       <option key={c}>{c}</option>
+                    ))}
+                  </NativeSelect>
+                </Field>
+                <Field label={t('direction')} htmlFor="r-dir" hint={t('directionHint')}>
+                  <NativeSelect
+                    id="r-dir"
+                    value={String(v.directionId ?? '')}
+                    onChange={set('directionId')}
+                  >
+                    <option value="">{t('noDirection')}</option>
+                    {refs.data?.directions.map((d) => (
+                      <option key={d.id} value={d.id}>
+                        {d.name}
+                      </option>
                     ))}
                   </NativeSelect>
                 </Field>
@@ -326,6 +344,87 @@ function RateCard() {
   );
 }
 
+/** Направления бизнеса (IT, Медиа, Маркетинг): услуга → направление → проекты проект-менеджера. */
+function DirectionsCard({ directions, canEdit }: { directions: DirectionDto[]; canEdit: boolean }) {
+  const t = useTranslations('references');
+  const save = useSave();
+  const [edit, setEdit] = useState<{ item: DirectionDto | null; name: string } | null>(null);
+  return (
+    <Card>
+      <CardHeader className="flex-row items-center justify-between gap-4 border-b pb-4">
+        <div>
+          <CardTitle>{t('directions')}</CardTitle>
+          <CardDescription>{t('directionsText')}</CardDescription>
+        </div>
+        {canEdit ? (
+          <Button size="sm" variant="outline" onClick={() => setEdit({ item: null, name: '' })}>
+            <Plus /> {t('add')}
+          </Button>
+        ) : null}
+      </CardHeader>
+      <ul className="divide-y">
+        {directions.map((d) => (
+          <li key={d.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
+            <span className="flex-1">{d.name}</span>
+            {!d.isActive ? <Badge tone="warning">{t('inactive')}</Badge> : null}
+            {canEdit ? (
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                aria-label={`Изменить: ${d.name}`}
+                onClick={() => setEdit({ item: d, name: d.name })}
+              >
+                <Pencil />
+              </Button>
+            ) : null}
+          </li>
+        ))}
+      </ul>
+      <Dialog open={Boolean(edit)} onOpenChange={(o) => !o && setEdit(null)}>
+        <DialogContent title={edit?.item ? edit.item.name : t('newDirection')}>
+          <form
+            className="grid gap-4"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              if (!edit) return;
+              try {
+                await save.mutateAsync({
+                  path: edit.item ? `/directions/${edit.item.id}` : '/directions',
+                  method: edit.item ? 'PUT' : 'POST',
+                  body: {
+                    name: edit.name,
+                    sort: edit.item?.sort ?? 100,
+                    isActive: edit.item?.isActive ?? true,
+                  },
+                });
+                toast.success('Сохранено');
+                setEdit(null);
+              } catch (err) {
+                toast.error(errorMessage(err));
+              }
+            }}
+          >
+            <Field label={t('name')} htmlFor="dir-name">
+              <Input
+                id="dir-name"
+                required
+                autoFocus
+                value={edit?.name ?? ''}
+                onChange={(e) => setEdit((s) => (s ? { ...s, name: e.target.value } : s))}
+              />
+            </Field>
+            <DialogFooter>
+              <Button type="submit" loading={save.isPending}>
+                Сохранить
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 export function ReferencesSettings() {
   const t = useTranslations('references');
   const can = useCan();
@@ -359,6 +458,11 @@ export function ReferencesSettings() {
         {items.map((i) => (
           <li key={i.id} className="flex items-center gap-3 px-5 py-2.5 text-sm">
             <span className="flex-1">{i.name}</span>
+            {'directionId' in i && i.directionId ? (
+              <Badge tone="accent">
+                {refs.data.directions.find((d) => d.id === i.directionId)?.name ?? ''}
+              </Badge>
+            ) : null}
             {'basePrice' in i && i.basePrice ? (
               <span className="text-muted-foreground">{money(i.basePrice, i.currency)}</span>
             ) : null}
@@ -388,6 +492,7 @@ export function ReferencesSettings() {
       <div className="grid gap-6 lg:grid-cols-2">
         {list('services', t('services'), refs.data.services)}
         <div className="grid content-start gap-6">
+          <DirectionsCard directions={refs.data.directions} canEdit={canEdit} />
           {list('sources', t('sources'), refs.data.sources)}
           {list('loss-reasons', t('lossReasons'), refs.data.lossReasons)}
         </div>

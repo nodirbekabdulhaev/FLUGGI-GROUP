@@ -28,7 +28,7 @@ import { Field } from '@/components/ui/label';
 import { Table, TBody, TD, TH, THead, TR } from '@/components/ui/table';
 import { Textarea } from '@/components/ui/textarea';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
-import { useCan } from '@/lib/me-context';
+import { useCan, useMe } from '@/lib/me-context';
 import { cn } from '@/lib/utils';
 import { useRecurring, useTodoMutation, useTodos } from './api';
 import { TodoDialog } from './todo-dialog';
@@ -58,7 +58,9 @@ function TodoList({ view }: { view: 'mine' | 'assigned' | 'all' }) {
     open: false,
     todo: null,
   });
-  useEffect(() => setPage(1), [status, view]);
+  useEffect(() => {
+    setPage(1);
+  }, [status, view]);
   const list = useTodos({ view, status, page, pageSize: 50 });
   const act = useTodoMutation(
     ({ id, action }: { id: string; action: 'complete' | 'reopen' | 'delete' }) =>
@@ -411,6 +413,8 @@ function RecurringDialog({
 
 function RecurringList() {
   const t = useTranslations('todos');
+  // Налоговый календарь компании — только у CEO; остальные ведут свои регулярные дела
+  const isCeo = useMe().role.code === 'CEO';
   const rules = useRecurring();
   const [dialog, setDialog] = useState<{ open: boolean; rule: RecurringTodoDto | null }>({
     open: false,
@@ -429,20 +433,22 @@ function RecurringList() {
             <CardDescription>{t('recurringText')}</CardDescription>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button
-              variant="outline"
-              loading={calendar.isPending}
-              onClick={async () => {
-                try {
-                  await calendar.mutateAsync(undefined);
-                  toast.success(t('calendarAdded'));
-                } catch (err) {
-                  toast.error(errorMessage(err));
-                }
-              }}
-            >
-              <CalendarClock className="size-4" /> {t('taxCalendar')}
-            </Button>
+            {isCeo ? (
+              <Button
+                variant="outline"
+                loading={calendar.isPending}
+                onClick={async () => {
+                  try {
+                    await calendar.mutateAsync(undefined);
+                    toast.success(t('calendarAdded'));
+                  } catch (err) {
+                    toast.error(errorMessage(err));
+                  }
+                }}
+              >
+                <CalendarClock className="size-4" /> {t('taxCalendar')}
+              </Button>
+            ) : null}
             <Button onClick={() => setDialog({ open: true, rule: null })}>
               <Plus className="size-4" /> {t('ruleNew')}
             </Button>
@@ -526,6 +532,7 @@ function RecurringList() {
 export function TodosPage() {
   const t = useTranslations('todos');
   const can = useCan();
+  const me = useMe();
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
@@ -533,7 +540,7 @@ export function TodosPage() {
     'mine',
     'assigned',
     // «Все»: CEO — вся компания, РОП — свой отдел (проверка — на сервере)
-    ...(can('task.read', 'TEAM') ? (['all'] as const) : []),
+    ...(can('task.read', 'ALL') || me.role.code === 'ROP' ? (['all'] as const) : []),
     'recurring',
   ];
   const raw = params.get('view') as View | null;

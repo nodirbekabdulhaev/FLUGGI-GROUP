@@ -15,6 +15,7 @@ import { Input, NativeSelect } from '@/components/ui/input';
 import { TBody, TD, TH, THead, TR, Table } from '@/components/ui/table';
 import { date, money } from '@/lib/format';
 import { useProjects } from './api';
+import { useReferences } from '@/features/crm/api';
 import { OverdueBadge, ProjectStatusBadge, TaskProgress } from './status';
 
 /** Списки проектов: все / в работе / просроченные / завершённые (ТЗ §4). */
@@ -23,11 +24,14 @@ export function ProjectsPage({ view }: { view: ProjectView }) {
   const ts = useTranslations('sales.projectStatus');
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<ProjectStatus | ''>('');
+  const [directionId, setDirectionId] = useState('');
+  const refs = useReferences();
   const [page, setPage] = useState(1);
   const list = useProjects({
     view,
     q: search.trim() || undefined,
     status: status || undefined,
+    directionId: directionId || undefined,
     page,
     pageSize: 25,
   });
@@ -65,6 +69,21 @@ export function ProjectsPage({ view }: { view: ProjectView }) {
               ))}
             </NativeSelect>
           ) : null}
+          {refs.data && refs.data.directions.length ? (
+            <NativeSelect
+              aria-label={t('direction')}
+              className="sm:w-56"
+              value={directionId}
+              onChange={(e) => (setDirectionId(e.target.value), setPage(1))}
+            >
+              <option value="">{t('allDirections')}</option>
+              {refs.data.directions.map((d) => (
+                <option key={d.id} value={d.id}>
+                  {d.name}
+                </option>
+              ))}
+            </NativeSelect>
+          ) : null}
         </div>
         {list.isPending ? (
           <TableSkeleton />
@@ -94,8 +113,9 @@ export function ProjectsPage({ view }: { view: ProjectView }) {
                         <Link href={`/projects/${p.id}`} className="font-medium hover:underline">
                           {p.number} · {p.name}
                         </Link>
-                        <span className="block">
+                        <span className="block text-xs text-muted-foreground">
                           <PriorityText priority={p.priority} />
+                          {p.direction ? ` · ${p.direction.name}` : ''}
                         </span>
                       </TD>
                       <TD>{p.client.name}</TD>

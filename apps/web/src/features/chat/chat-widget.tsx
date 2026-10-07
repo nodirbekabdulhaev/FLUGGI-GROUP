@@ -58,7 +58,9 @@ function Conversation({ id, peer, onBack }: { id: string; peer: string; onBack: 
       void qc.invalidateQueries({ queryKey: ['chat', 'list'] });
     });
   }, [id, count, qc]);
-  useEffect(() => bottom.current?.scrollIntoView({ block: 'end' }), [count]);
+  useEffect(() => {
+    bottom.current?.scrollIntoView({ block: 'end' });
+  }, [count]);
 
   const send = async () => {
     const body = text.trim();

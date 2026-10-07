@@ -344,6 +344,20 @@ export class PaymentsService {
     );
   }
 
+  /** Направление проекта: услуга сделки, иначе — первая услуга с направлением в принятом КП. */
+  private async directionOf(tx: Tx, deal: Deal): Promise<string | null> {
+    if (deal.serviceId) {
+      const s = await tx.service.findUnique({ where: { id: deal.serviceId } });
+      if (s?.directionId) return s.directionId;
+    }
+    const item = await tx.proposalItem.findFirst({
+      where: { proposal: { dealId: deal.id }, service: { directionId: { not: null } } },
+      orderBy: [{ proposal: { acceptedAt: { sort: 'desc', nulls: 'last' } } }, { sort: 'asc' }],
+      select: { service: { select: { directionId: true } } },
+    });
+    return item?.service?.directionId ?? null;
+  }
+
   /** Rule 1, 3, 4: проект всегда с клиентом и сделкой; РОП — руководитель отдела сделки. */
   private async ensureProject(tx: Tx, deal: Deal, auth: AuthContext) {
     const existing = await tx.project.findUnique({ where: { dealId: deal.id } });
@@ -364,6 +378,7 @@ export class PaymentsService {
     });
     const project = await tx.project.create({
       data: {
+        directionId: await this.directionOf(tx, deal),
         name: deal.title,
         clientId: deal.clientId,
         dealId: deal.id,

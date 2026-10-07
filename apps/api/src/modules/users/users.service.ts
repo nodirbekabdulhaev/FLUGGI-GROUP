@@ -83,6 +83,15 @@ export class UsersService {
     return toUserDto(user);
   }
 
+  private async assertDirections(ids: string[]) {
+    if (!ids.length) return;
+    const n = await this.prisma.direction.count({ where: { id: { in: ids } } });
+    if (n !== new Set(ids).size)
+      throw businessRule('Нет такого направления', [
+        { path: 'directionIds', message: 'Выберите направление из списка' },
+      ]);
+  }
+
   async create(
     auth: AuthContext,
     input: CreateUser,
@@ -94,6 +103,7 @@ export class UsersService {
     }
     const role = await this.prisma.role.findUniqueOrThrow({ where: { code: input.roleCode } });
     if (input.teamId) await this.assertTeamExists(input.teamId);
+    await this.assertDirections(input.directionIds);
 
     const temporaryPassword = input.password ? undefined : this.passwords.generateTemporary();
     const passwordHash = await this.passwords.hash(input.password ?? temporaryPassword!);
@@ -114,6 +124,7 @@ export class UsersService {
               specialty: input.roleCode === 'EXECUTOR' ? (input.specialty ?? null) : null,
             },
           },
+          directions: { create: input.directionIds.map((directionId) => ({ directionId })) },
         },
         include: userInclude,
       });
@@ -157,6 +168,7 @@ export class UsersService {
       if (before.role.code === 'ROP') await this.assertNotTeamHead(id);
     }
     if (input.teamId) await this.assertTeamExists(input.teamId);
+    if (input.directionIds) await this.assertDirections(input.directionIds);
     if (input.email && input.email !== before.email) {
       if (await this.prisma.user.findUnique({ where: { email: input.email } })) {
         throw conflict('Сотрудник с таким email уже существует');
@@ -193,6 +205,13 @@ export class UsersService {
               update: { position, specialty },
             },
           },
+          // Направления меняют видимость проектов сразу: контекст сессии читается из БД на каждый запрос
+          directions: input.directionIds
+            ? {
+                deleteMany: {},
+                create: input.directionIds.map((directionId) => ({ directionId })),
+              }
+            : undefined,
         },
         include: userInclude,
       });
@@ -207,6 +226,7 @@ export class UsersService {
           role: before.role.code as string,
           position: before.employee?.position ?? null,
           specialty: before.employee?.specialty ?? null,
+          directions: before.directions.map((d) => d.direction.name).join(', '),
         },
         {
           email: updated.email,
@@ -217,8 +237,19 @@ export class UsersService {
           role: updated.role.code,
           position: updated.employee?.position ?? null,
           specialty: updated.employee?.specialty ?? null,
+          directions: updated.directions.map((d) => d.direction.name).join(', '),
         },
-        ['email', 'fullName', 'phone', 'locale', 'teamId', 'role', 'position', 'specialty'],
+        [
+          'email',
+          'fullName',
+          'phone',
+          'locale',
+          'teamId',
+          'role',
+          'position',
+          'specialty',
+          'directions',
+        ],
       );
       if (changes) {
         await this.audit.log(tx, {

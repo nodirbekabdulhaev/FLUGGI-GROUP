@@ -5,6 +5,7 @@ export const userInclude = {
   role: true,
   team: true,
   employee: true,
+  directions: { include: { direction: { select: { id: true, name: true } } } },
 } satisfies Prisma.UserInclude;
 
 export type UserWithRelations = Prisma.UserGetPayload<{ include: typeof userInclude }>;
@@ -21,6 +22,7 @@ export function toUserDto(u: UserWithRelations): UserDto {
     specialty: u.employee?.specialty ?? null,
     role: { code: u.role.code, name: u.role.name },
     team: u.team && !u.team.deletedAt ? { id: u.team.id, name: u.team.name } : null,
+    directions: u.directions.map((d) => d.direction),
     telegramLinked: u.telegramChatId !== null,
     lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
     createdAt: u.createdAt.toISOString(),

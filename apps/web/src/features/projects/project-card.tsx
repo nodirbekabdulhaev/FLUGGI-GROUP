@@ -40,7 +40,7 @@ import {
 import { Input, NativeSelect } from '@/components/ui/input';
 import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { useCrmMutation } from '@/features/crm/api';
+import { useCrmMutation, useReferences } from '@/features/crm/api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { date, dateTime, money } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
@@ -68,8 +68,12 @@ function EditProjectDialog({
     priority: 'MEDIUM' as Priority,
     startDate: '',
     deadline: '',
+    directionId: '',
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
+  // Направление решает, кто видит проект, — меняет только CEO (проверка и на сервере)
+  const canDirection = useCan()('project.update', 'ALL');
+  const refs = useReferences();
   useEffect(() => {
     if (!open) return;
     setErrors({});
@@ -79,6 +83,7 @@ function EditProjectDialog({
       priority: project.priority,
       startDate: project.startDate ?? '',
       deadline: project.deadline ?? '',
+      directionId: project.direction?.id ?? '',
     });
   }, [open, project]);
   const save = useCrmMutation(() =>
@@ -90,6 +95,7 @@ function EditProjectDialog({
         priority: form.priority,
         startDate: form.startDate || null,
         deadline: form.deadline || null,
+        ...(canDirection ? { directionId: form.directionId || null } : {}),
       },
     }),
   );
@@ -134,6 +140,18 @@ function EditProjectDialog({
               <Input id="p-deadline" type="date" value={form.deadline} onChange={set('deadline')} />
             </Field>
           </div>
+          {canDirection ? (
+            <Field label={t('direction')} htmlFor="p-direction">
+              <NativeSelect id="p-direction" value={form.directionId} onChange={set('directionId')}>
+                <option value="">{t('noDirection')}</option>
+                {refs.data?.directions.map((d) => (
+                  <option key={d.id} value={d.id}>
+                    {d.name}
+                  </option>
+                ))}
+              </NativeSelect>
+            </Field>
+          ) : null}
           <Field label={t('fields.description')} htmlFor="p-desc">
             <Textarea id="p-desc" rows={4} value={form.description} onChange={set('description')} />
           </Field>
@@ -244,7 +262,9 @@ function TemplateDialog({
   const tt = useTranslations('templates');
   const templates = useTemplates(open);
   const [templateId, setTemplateId] = useState('');
-  useEffect(() => setTemplateId(''), [open]);
+  useEffect(() => {
+    setTemplateId('');
+  }, [open]);
   const apply = useCrmMutation(() =>
     api(`/projects/${project.id}/apply-template`, { method: 'POST', body: { templateId } }),
   );
@@ -573,6 +593,7 @@ export function ProjectCard({ id }: { id: string }) {
                   ) : null,
                 ],
                 [t('fields.price'), p.price !== null ? money(p.price, p.currency) : t('noMoney')],
+                [t('direction'), p.direction?.name ?? t('noDirection')],
                 [t('fields.rop'), p.rop.name],
                 [t('fields.manager'), p.manager.name],
                 [t('fields.startDate'), date(p.startDate)],

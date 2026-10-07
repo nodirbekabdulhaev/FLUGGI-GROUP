@@ -50,6 +50,7 @@ export class SessionService {
             role: { include: { permissions: { include: { permission: true } } } },
             team: true,
             headedTeams: { where: { deletedAt: null }, select: { id: true } },
+            directions: { select: { directionId: true } },
           },
         },
       },
@@ -84,6 +85,7 @@ export class SessionService {
       teamId: user.team && !user.team.deletedAt ? user.team.id : null,
       teamName: user.team && !user.team.deletedAt ? user.team.name : null,
       headedTeamIds: user.headedTeams.map((t) => t.id),
+      directionIds: user.directions.map((d) => d.directionId),
       permissions,
       telegramLinked: user.telegramChatId !== null,
     };

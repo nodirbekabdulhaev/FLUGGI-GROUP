@@ -1,4 +1,11 @@
-export const ROLE_CODES = ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN'] as const;
+export const ROLE_CODES = [
+  'CEO',
+  'ROP',
+  'MANAGER',
+  'EXECUTOR',
+  'HR_ADMIN',
+  'PROJECT_MANAGER',
+] as const;
 export type RoleCode = (typeof ROLE_CODES)[number];
 
 /** Область видимости права: свои записи, записи своего отдела, все записи. */

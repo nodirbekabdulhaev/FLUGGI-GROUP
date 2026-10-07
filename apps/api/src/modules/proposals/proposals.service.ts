@@ -108,7 +108,7 @@ export class ProposalsService {
     }));
   }
 
-  private async compute(input: Upsert) {
+  private async compute(auth: AuthContext, input: Upsert) {
     // Тариф определяет услугу позиции; архивный тариф в новое КП не добавить
     const tariffIds = [
       ...new Set(input.items.map((i) => i.tariffId).filter((x): x is string => Boolean(x))),
@@ -123,6 +123,26 @@ export class ProposalsService {
             { path: `items.${idx}.tariffId`, message: 'Выберите действующий тариф' },
           ]);
         item.serviceId = t.serviceId;
+        // Цену и скидку по тарифу меняет только РОП/CEO (право утверждать КП); себестоимость
+        // исполнителей от цены не зависит, а KPI и комиссии считаются от фактической цены.
+        if (!auth.permissions['proposal.approve']) {
+          const rate = Number(await this.rates.rateFor('USD'));
+          const expected =
+            t.currency === input.currency
+              ? Number(t.price)
+              : t.currency === 'USD'
+                ? Number(t.price) * rate
+                : Number(t.price) / rate;
+          const price = Number(item.unitPrice);
+          const tolerance = t.currency === input.currency ? 0.01 : expected * 0.01;
+          if (Math.abs(price - expected) > tolerance || Number(item.discountPct ?? 0) > 0)
+            throw businessRule('Цену тарифа меняет РОП', [
+              {
+                path: `items.${idx}.unitPrice`,
+                message: 'Цена и скидка по тарифу — как в тарифе; изменить может РОП',
+              },
+            ]);
+        }
       }
     }
     const totals = proposalTotals(input.items);
@@ -168,7 +188,7 @@ export class ProposalsService {
   ): Promise<ProposalDto> {
     const deal = await this.access.deal(auth, input.dealId, 'proposal.create');
     if (deal.status !== 'OPEN') throw businessRule('Сделка закрыта');
-    const { totals, rate, totalUzs } = await this.compute(input);
+    const { totals, rate, totalUzs } = await this.compute(auth, input);
     return this.prisma.$transaction(async (tx) => {
       const p = await tx.proposal.create({
         data: {
@@ -229,7 +249,7 @@ export class ProposalsService {
     const before = await this.find(auth, id, 'proposal.update');
     if (!EDITABLE.includes(before.status))
       throw businessRule('Принятое КП изменить нельзя — создайте новое');
-    const { totals, rate, totalUzs } = await this.compute(input);
+    const { totals, rate, totalUzs } = await this.compute(auth, input);
     return this.prisma.$transaction(async (tx) => {
       await tx.proposalItem.deleteMany({ where: { proposalId: id } });
       const version = before.currentVersion + 1;

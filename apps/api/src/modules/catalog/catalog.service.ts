@@ -1,6 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { Injectable } from '@nestjs/common';
 import {
+  directionSchema,
+  type DirectionDto,
   formatNumber,
   type AuditChange,
   type employeeRatesSchema,
@@ -335,6 +337,31 @@ export class CatalogService {
       meta,
     );
     return workItemDto(w);
+  }
+
+  /** Направление бизнеса: создать или переименовать (код генерируется). */
+  async saveDirection(
+    auth: AuthContext,
+    id: string | null,
+    input: z.output<typeof directionSchema>,
+    meta: RequestMeta,
+  ): Promise<DirectionDto> {
+    const before = id ? await this.prisma.direction.findUnique({ where: { id } }) : null;
+    if (id && !before) throw notFound('Направление');
+    const d = id
+      ? await this.prisma.direction.update({ where: { id }, data: input })
+      : await this.prisma.direction.create({
+          data: { ...input, code: `D_${randomBytes(4).toString('hex').toUpperCase()}` },
+        });
+    await this.log(
+      auth,
+      id ? 'direction.update' : 'direction.create',
+      'direction',
+      d.id,
+      { name: { old: before?.name ?? null, new: d.name } },
+      meta,
+    );
+    return { id: d.id, code: d.code, name: d.name, sort: d.sort, isActive: d.isActive };
   }
 
   /** Ставки сотрудника: CEO (зарплаты) — любого, сотрудник — свои. */

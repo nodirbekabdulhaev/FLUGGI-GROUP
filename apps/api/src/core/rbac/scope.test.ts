@@ -13,6 +13,7 @@ const base: AuthContext = {
   teamId: 't1',
   teamName: 'T1',
   headedTeamIds: ['t1', 't2'],
+  directionIds: [],
   permissions: {},
   telegramLinked: false,
 };

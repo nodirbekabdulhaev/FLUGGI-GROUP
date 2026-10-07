@@ -390,15 +390,53 @@ export function DashboardPage() {
             </section>
           ) : null}
 
+          {d?.projects ? (
+            <section className="grid gap-3">
+              <h2 className="font-semibold">
+                {td('pmTitle', { directions: d.projects.directions.join(', ') || '—' })}
+              </h2>
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+                <Stat label={td('pmActive')} value={d.projects.active} href="/projects/active" />
+                <Stat
+                  label={td('pmOverdueProjects')}
+                  value={d.projects.overdueProjects}
+                  href="/projects/overdue"
+                  tone={d.projects.overdueProjects ? 'danger' : undefined}
+                />
+                <Stat
+                  label={td('pmUnassigned')}
+                  value={d.projects.unassigned}
+                  hint={td('pmUnassignedHint')}
+                  href="/projects/active"
+                  tone={d.projects.unassigned ? 'danger' : undefined}
+                />
+                <Stat
+                  label={td('pmCompleted')}
+                  value={d.projects.completed}
+                  href="/projects/completed"
+                />
+                <Stat label={td('pmTasksOpen')} value={d.projects.tasksOpen} href="/tasks" />
+                <Stat label={td('pmTasksToday')} value={d.projects.tasksToday} href="/tasks" />
+                <Stat
+                  label={td('pmTasksOverdue')}
+                  value={d.projects.tasksOverdue}
+                  href="/tasks"
+                  tone={d.projects.tasksOverdue ? 'danger' : undefined}
+                />
+                <AttendanceCard />
+              </div>
+            </section>
+          ) : null}
+
           {d?.myKpi ? <MyKpiCard k={d.myKpi} /> : null}
 
-          {!d?.own && !d?.executor ? (
+          {!d?.own && !d?.executor && !d?.projects ? (
             <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <AttendanceCard />
             </section>
           ) : null}
 
-          {!d?.ceo && !d?.team && !d?.own && !d?.executor ? (
+          {!d?.ceo && !d?.team && !d?.own && !d?.executor && !d?.projects ? (
             <Card>
               <CardContent className="pt-5 text-sm text-muted-foreground">
                 {t('dashboard.accessText')}
