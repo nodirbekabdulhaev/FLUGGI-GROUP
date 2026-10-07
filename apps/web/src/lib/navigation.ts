@@ -47,6 +47,7 @@ export const NAVIGATION: NavSection[] = [
       { key: 'meetings', href: '/sales/meetings', anyOf: ['meeting.read'] },
       { key: 'proposals', href: '/sales/proposals', anyOf: ['proposal.read'] },
       { key: 'contracts', href: '/sales/contracts', anyOf: ['contract.read'] },
+      { key: 'followUps', href: '/sales/follow-ups', anyOf: ['client.read'] },
     ],
   },
   { key: 'clients', href: '/clients', icon: Briefcase, anyOf: ['client.read'] },

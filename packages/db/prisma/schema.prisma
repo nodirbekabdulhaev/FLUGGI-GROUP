@@ -120,6 +120,12 @@ model User {
   payroll          PayrollEntry[] @relation("PayrollUser")
   payrollApproved  PayrollEntry[] @relation("PayrollApprover")
 
+  telegramLinkTokens   TelegramLinkToken[]
+  notificationSettings NotificationSetting[]
+  deliveries           NotificationDelivery[]
+  followUpsOwned       FollowUp[]             @relation("FollowUpOwner")
+  followUpsCompleted   FollowUp[]             @relation("FollowUpCompleter")
+
   @@index([roleId])
   @@index([teamId])
   @@index([status])
@@ -563,6 +569,8 @@ model Client {
   payments   Payment[]
   projects   Project[]
 
+  followUps FollowUp[]
+
   @@index([ownerId])
   @@index([teamId])
   @@map("clients")
@@ -636,6 +644,8 @@ model Deal {
   project      Project?
   commissions  Commission[]
   files        StoredFile[]
+
+  followUpResults FollowUp[] @relation("FollowUpDeal")
 
   @@index([ownerId])
   @@index([teamId])
@@ -875,6 +885,29 @@ enum PayrollStatus {
   PAID
 }
 
+enum NotificationChannel {
+  IN_APP
+  TELEGRAM
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum FollowUpKind {
+  CONTACT
+  NEW_PROJECT
+  REPEAT_SALE
+}
+
+enum FollowUpStatus {
+  PENDING
+  DONE
+  SKIPPED
+}
+
 enum ExpenseScope {
   PROJECT
   COMPANY
@@ -1111,6 +1144,8 @@ model Project {
   activities Activity[]
   files      StoredFile[]
   expenses   Expense[]
+
+  followUps FollowUp[]
 
   @@index([ropId])
   @@index([managerId])
@@ -1370,6 +1405,120 @@ model PayrollEntry {
   @@unique([userId, period])
   @@index([period])
   @@map("payroll_entries")
+}
+
+/// Одноразовый код привязки Telegram (ТЗ §53): /start <код> в боте связывает чат с аккаунтом.
+model TelegramLinkToken {
+  id        String    @id @default(uuid()) @db.Uuid
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id") @db.Uuid
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("telegram_link_tokens")
+}
+
+/// Индивидуальные настройки уведомлений (ТЗ §14). Нет строки — уведомление включено.
+model NotificationSetting {
+  userId    String              @map("user_id") @db.Uuid
+  eventType String              @map("event_type")
+  channel   NotificationChannel
+  enabled   Boolean
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventType, channel])
+  @@map("notification_settings")
+}
+
+/// Доставка во внешний канал (Telegram) с повторами и журналом (ТЗ §53).
+model NotificationDelivery {
+  id            String              @id @default(uuid()) @db.Uuid
+  userId        String              @map("user_id") @db.Uuid
+  channel       NotificationChannel
+  type          String
+  title         String
+  body          String?
+  link          String?
+  status        DeliveryStatus      @default(PENDING)
+  attempts      Int                 @default(0)
+  lastError     String?             @map("last_error")
+  nextAttemptAt DateTime            @default(now()) @map("next_attempt_at")
+  sentAt        DateTime?           @map("sent_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@map("notification_deliveries")
+}
+
+/// Журнал умных напоминаний (ТЗ §41): ключ не даёт напомнить дважды об одном и том же.
+model ReminderLog {
+  id        String   @id @default(uuid()) @db.Uuid
+  kind      String
+  dedupeKey String   @unique @map("dedupe_key")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([kind, createdAt])
+  @@map("reminder_log")
+}
+
+/// Повторный контакт после завершения проекта (ТЗ §38).
+model FollowUp {
+  id            String         @id @default(uuid()) @db.Uuid
+  clientId      String         @map("client_id") @db.Uuid
+  projectId     String?        @map("project_id") @db.Uuid
+  ownerId       String         @map("owner_id") @db.Uuid
+  kind          FollowUpKind
+  dueDate       DateTime       @map("due_date") @db.Date
+  status        FollowUpStatus @default(PENDING)
+  result        String?
+  resultDealId  String?        @map("result_deal_id") @db.Uuid
+  notifiedAt    DateTime?      @map("notified_at")
+  completedAt   DateTime?      @map("completed_at")
+  completedById String?        @map("completed_by_id") @db.Uuid
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  client      Client   @relation(fields: [clientId], references: [id])
+  project     Project? @relation(fields: [projectId], references: [id])
+  owner       User     @relation("FollowUpOwner", fields: [ownerId], references: [id])
+  completedBy User?    @relation("FollowUpCompleter", fields: [completedById], references: [id])
+  resultDeal  Deal?    @relation("FollowUpDeal", fields: [resultDealId], references: [id])
+
+  @@index([status, dueDate])
+  @@index([ownerId, status])
+  @@map("follow_ups")
+}
+
+/// Системные настройки (порог крупной сделки, интервалы follow-up и т.п.).
+model Setting {
+  key         String   @id
+  value       Json
+  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+/// Запуски планировщика (ТЗ §55): уникальный слот — задача выполняется один раз даже при нескольких worker'ах.
+model JobRun {
+  id         String    @id @default(uuid()) @db.Uuid
+  job        String
+  slot       String
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  error      String?
+  result     Json?
+
+  @@unique([job, slot])
+  @@index([job, startedAt])
+  @@map("job_runs")
 }
 
 /// Правила комиссий (ТЗ §33–34) — данные, а не код.

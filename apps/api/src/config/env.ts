@@ -11,6 +11,27 @@ const envSchema = z.object({
   /** Значение для express `trust proxy` (за Nginx / Next.js rewrite). */
   TRUST_PROXY: z.string().default('loopback, linklocal, uniquelocal'),
   /** Отключает rate limit (только для тестов). */
+  /** Telegram-бот (ТЗ §53). Без токена уведомления только в CRM. */
+  TELEGRAM_BOT_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  TELEGRAM_BOT_USERNAME: z
+    .string()
+    .optional()
+    .transform((v) => v?.replace(/^@/, '') || undefined),
+  TELEGRAM_WEBHOOK_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  /** polling — бот сам забирает сообщения (локально, без домена); webhook — Telegram присылает их на /api/v1/telegram/webhook */
+  TELEGRAM_MODE: z.enum(['polling', 'webhook']).default('polling'),
+  TELEGRAM_API_BASE: z.url().default('https://api.telegram.org'),
+  /** Планировщик (напоминания, отчёты). false — выключить (тесты, отдельный API без worker). */
+  SCHEDULER_ENABLED: z
+    .enum(['true', 'false'])
+    .default('true')
+    .transform((v) => v === 'true'),
   RATE_LIMIT_DISABLED: z
     .enum(['true', 'false'])
     .default('false')

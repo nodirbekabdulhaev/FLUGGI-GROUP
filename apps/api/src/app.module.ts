@@ -30,6 +30,9 @@ import { FilesModule } from './modules/files/files.module';
 import { PaymentsModule } from './modules/payments/payments.module';
 import { FinanceModule } from './modules/finance/finance.module';
 import { PeopleModule } from './modules/people/people.module';
+import { AutomationModule } from './modules/automation/automation.module';
+import { TelegramModule } from './modules/telegram/telegram.module';
+import { SettingsModule } from './core/settings/settings.service';
 import { OverdueModule } from './modules/projects/overdue.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
@@ -90,6 +93,9 @@ const env = loadEnv();
     OverdueModule,
     FinanceModule,
     PeopleModule,
+    SettingsModule,
+    TelegramModule,
+    AutomationModule,
   ],
   controllers: [HealthController],
   providers: [

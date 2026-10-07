@@ -20,6 +20,7 @@ import { Input } from '@/components/ui/input';
 import { Field } from '@/components/ui/label';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { useMe } from '@/lib/me-context';
+import { NotificationSettingsCard, TelegramCard } from './telegram-card';
 
 function ChangePassword() {
   const t = useTranslations();
@@ -112,7 +113,7 @@ function Sessions() {
       ) : sessions.isError ? (
         <ErrorState error={sessions.error} onRetry={() => sessions.refetch()} />
       ) : (
-        <ul className="divide-y border-t">
+        <ul className="max-h-96 divide-y overflow-y-auto border-t">
           {sessions.data.map((s) => (
             <li key={s.id} className="flex items-center gap-3 px-5 py-3">
               <Monitor className="size-4 shrink-0 text-muted-foreground" />
@@ -158,7 +159,6 @@ export function ProfilePage() {
     [t('employees.email'), me.email],
     [t('employees.role'), t(`roles.${me.role.code}`)],
     [t('employees.team'), me.team?.name ?? t('common.notSet')],
-    [t('profile.telegram'), me.telegramLinked ? t('common.yes') : t('profile.telegramPending')],
   ];
   return (
     <>
@@ -180,8 +180,10 @@ export function ProfilePage() {
           </CardContent>
         </Card>
         <ChangePassword />
+        <TelegramCard />
+        <Sessions />
         <div className="lg:col-span-2">
-          <Sessions />
+          <NotificationSettingsCard />
         </div>
       </div>
     </>

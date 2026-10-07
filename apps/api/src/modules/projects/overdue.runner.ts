@@ -1,10 +1,9 @@
-import { Injectable, Logger, OnApplicationBootstrap, OnApplicationShutdown } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { OPEN_TASK_STATUSES } from '@fluggi/contracts';
 import { taskOverdueDays } from '@fluggi/domain';
 import { OutboxService } from '../../core/outbox/outbox.service';
 import { PrismaService } from '../../core/prisma/prisma.service';
 
-const SCAN_MS = 5 * 60_000;
 /** Пороги напоминаний о просрочке, дней (ТЗ §24: «Просрочено 1 / 3 / 7 дней»). */
 export const OVERDUE_STEPS = [1, 3, 7] as const;
 
@@ -13,9 +12,8 @@ const step = (days: number) => OVERDUE_STEPS.filter((s) => days >= s).length;
 /**
  * Поиск просроченных задач и постановка уведомлений в outbox.
  * Уведомление отправляется при переходе порога 1, 3 и 7 дней — не чаще.
- * Работает там же, где обработка outbox (API в разработке, worker в production);
- * несколько экземпляров безопасны: строка задачи блокируется FOR UPDATE SKIP LOCKED.
- * Полноценный планировщик (pg-boss) и Telegram — Phase 7.
+ * Запускается планировщиком (automation) раз в час; несколько экземпляров безопасны:
+ * строка задачи блокируется FOR UPDATE SKIP LOCKED.
  */
 @Injectable()
 export class OverdueScanner {
@@ -67,25 +65,5 @@ export class OverdueScanner {
     }
     if (sent > 0) this.logger.log(`Overdue notifications queued: ${sent}`);
     return sent;
-  }
-}
-
-@Injectable()
-export class OverdueRunner implements OnApplicationBootstrap, OnApplicationShutdown {
-  private readonly logger = new Logger(OverdueRunner.name);
-  private timer: NodeJS.Timeout | undefined;
-
-  constructor(private readonly scanner: OverdueScanner) {}
-
-  onApplicationBootstrap() {
-    if (process.env.OUTBOX_IN_API === 'false') return;
-    this.timer = setInterval(() => {
-      this.scanner.scan().catch((err) => this.logger.error(err, 'Overdue scan failed'));
-    }, SCAN_MS);
-    this.timer.unref();
-  }
-
-  onApplicationShutdown() {
-    if (this.timer) clearInterval(this.timer);
   }
 }

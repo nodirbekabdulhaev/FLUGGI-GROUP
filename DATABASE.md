@@ -189,9 +189,17 @@ erDiagram
 
 **notification_settings** (§14) — `user_id, event_type, channel (IN_APP|TELEGRAM), enabled` · PK (user_id, event_type, channel)
 
-**notification_deliveries** — `id, notification_id, channel, status (QUEUED|SENT|FAILED), attempts, error, sent_at`
+**notification_deliveries** (Phase 7) — `id, user_id, channel, type, title, body, link, status (PENDING|SENT|FAILED), attempts, next_attempt_at, last_error, sent_at, created_at` — очередь отправки в Telegram
 
-**reminders** (§41) — `id, user_id, kind, due_at, lead_id, deal_id, meeting_id, task_id, project_id, payment_id, dedupe_key (unique), status (PENDING|SENT|DISMISSED), created_at`
+**telegram_link_tokens** — `id, token_hash (unique, sha256), user_id, expires_at, used_at, created_at`
+
+**reminder_log** (§41) — `id, kind, dedupe_key (unique), created_at` — append-only; одно напоминание отправляется один раз
+
+**follow_ups** (§38) — `id, client_id, project_id, owner_id, kind (CONTACT|NEW_PROJECT|REPEAT_SALE), due_date, status (PENDING|DONE|SKIPPED), result, result_deal_id, notified_at, completed_at, completed_by_id, created_at`
+
+**settings** — `key (PK), value jsonb, updated_by_id, updated_at` — сейчас `automation` (порог крупной сделки, интервалы follow-up, отчёты)
+
+**job_runs** (§55) — `id, job, slot, started_at, finished_at, result jsonb, error` · unique (job, slot) — запуск задачи планировщика ровно один раз
 
 **outbox_events** — `id, type, payload jsonb, actor_id, created_at, processed_at, attempts, last_error`
 
@@ -209,4 +217,4 @@ erDiagram
 | 4 | projects, project_members, tasks, task_status_history, task_comments, project/task_templates |
 | 5 | expenses, commission_rules, commissions |
 | 6 | kpi_targets, kpi_results (MVP); work_schedules, attendance, payroll (после MVP) |
-| 7 | telegram_link_tokens, notification_deliveries, reminders, notification_templates, follow_ups |
+| 7 ✅ | telegram_link_tokens, notification_settings, notification_deliveries, reminder_log, follow_ups, settings, job_runs (notification_templates — после MVP) |

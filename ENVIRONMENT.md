@@ -21,8 +21,13 @@ API проверяет переменные при старте и не запу
 | `SEED_DEMO_PASSWORD` | seed | — | общий пароль демо-аккаунтов; пусто — сгенерировать и показать в консоли |
 | `SEED_CEO_EMAIL`, `SEED_CEO_PASSWORD`, `SEED_CEO_NAME` | seed | для первого запуска prod | создаёт первого CEO |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | docker-compose.prod | prod | параметры контейнера PostgreSQL |
-| `TELEGRAM_BOT_TOKEN`, `TELEGRAM_WEBHOOK_SECRET` | api | Phase 7 | зарезервированы, пока не используются |
+| `TELEGRAM_BOT_TOKEN` | api, worker | — | токен бота от @BotFather. Пусто — Telegram выключен, уведомления только в CRM |
+| `TELEGRAM_BOT_USERNAME` | api | — | имя бота без `@`; если не задано — берётся через `getMe` |
+| `TELEGRAM_MODE` | api, worker | `polling` | `polling` — бот сам забирает сообщения (локально, без домена); `webhook` — Telegram присылает их на `/api/v1/telegram/webhook` (production) |
+| `TELEGRAM_WEBHOOK_SECRET` | api | — | секрет заголовка `X-Telegram-Bot-Api-Secret-Token`; без него webhook отвечает 403 |
+| `TELEGRAM_API_BASE` | api, worker | `https://api.telegram.org` | адрес Bot API (меняется только в тестах) |
+| `SCHEDULER_ENABLED` | api, worker | `true` | `false` — выключить задачи по расписанию (отчёты, напоминания, просрочки, отметка отсутствующих) |
 | `STORAGE_DRIVER` | api | — | `local` (по умолчанию) — файлы в папке на диске; `s3` — S3-совместимое хранилище |
 | `STORAGE_LOCAL_DIR` | api | — | папка для `local`; по умолчанию `apps/api/storage`. В Docker — `/data/storage` (volume) |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET` | api | для `s3` | Beget S3: endpoint `https://s3.ru1.storage.beget.cloud`, ключи и бакет — из панели Beget |
-| `OUTBOX_IN_API` | api | — | `false` — события (уведомления) обрабатывает только worker. По умолчанию их обрабатывает и API, чтобы при разработке не запускать worker |
+| `OUTBOX_IN_API` | api | — | `false` — события, отправку в Telegram и планировщик выполняет только worker. По умолчанию всё это работает и в API, чтобы при разработке не запускать worker |

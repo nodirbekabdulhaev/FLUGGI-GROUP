@@ -2,16 +2,14 @@ import { Injectable, OnModuleInit } from '@nestjs/common';
 import { formatNumber } from '@fluggi/contracts';
 import { OutboxDispatcher } from '../../core/outbox/outbox.dispatcher';
 import { PrismaService } from '../../core/prisma/prisma.service';
+import { SettingsService } from '../../core/settings/settings.service';
 import { NotificationsService } from './notifications.service';
-
-/** Порог «крупного» лида/сделки, UZS. Станет настройкой в Phase 7 вместе с Telegram. */
-export const LARGE_AMOUNT_UZS = 50_000_000;
 
 const fmt = (uzs: string | number) => `${Math.round(Number(uzs)).toLocaleString('ru-RU')} UZS`;
 
 /**
- * Подписчики событий → in-app уведомления (ТЗ §14). Telegram-канал подключится в Phase 7
- * к этим же событиям.
+ * Подписчики событий → уведомления (ТЗ §14, §54): in-app и Telegram через
+ * NotificationsService с учётом личных настроек. Порог «крупного» — из настроек.
  */
 @Injectable()
 export class NotificationEvents implements OnModuleInit {
@@ -19,7 +17,12 @@ export class NotificationEvents implements OnModuleInit {
     private readonly dispatcher: OutboxDispatcher,
     private readonly notifications: NotificationsService,
     private readonly prisma: PrismaService,
+    private readonly settings: SettingsService,
   ) {}
+
+  private async large() {
+    return (await this.settings.automation()).largeAmountUzs;
+  }
 
   private async teamHead(teamId: string | null) {
     if (!teamId) return null;
@@ -43,7 +46,7 @@ export class NotificationEvents implements OnModuleInit {
         { type: 'lead.created', title: 'Новый лид', body: lead.title, link },
         meta.actorId,
       );
-      if (e.budgetUzs && Number(e.budgetUzs) >= LARGE_AMOUNT_UZS) {
+      if (e.budgetUzs && Number(e.budgetUzs) >= (await this.large())) {
         await this.notifications.notify(
           [await this.teamHead(e.teamId), ...(await this.ceoIds())],
           {
@@ -75,7 +78,7 @@ export class NotificationEvents implements OnModuleInit {
     this.dispatcher.on('deal.created', async (e, meta) => {
       const deal = await this.prisma.deal.findUnique({ where: { id: e.dealId } });
       if (!deal) return;
-      const large = Number(e.amountUzs) >= LARGE_AMOUNT_UZS;
+      const large = Number(e.amountUzs) >= (await this.large());
       await this.notifications.notify(
         [await this.teamHead(e.teamId), ...(large ? await this.ceoIds() : [])],
         {
@@ -89,7 +92,7 @@ export class NotificationEvents implements OnModuleInit {
     });
 
     this.dispatcher.on('deal.lost', async (e, meta) => {
-      if (Number(e.amountUzs) < LARGE_AMOUNT_UZS) return;
+      if (Number(e.amountUzs) < (await this.large())) return;
       const deal = await this.prisma.deal.findUnique({
         where: { id: e.dealId },
         include: { client: true },
@@ -251,6 +254,32 @@ export class NotificationEvents implements OnModuleInit {
           meta.actorId,
         );
       }
+    });
+
+    // Исполнителю: изменение дедлайна (ТЗ §14)
+    this.dispatcher.on('task.deadline_changed', async (e, meta) => {
+      const task = await this.prisma.task.findUnique({
+        where: { id: e.taskId },
+        include: { project: true },
+      });
+      if (!task) return;
+      const when = task.deadline
+        ? task.deadline.toLocaleString('ru-RU', {
+            timeZone: 'Asia/Tashkent',
+            dateStyle: 'short',
+            timeStyle: 'short',
+          })
+        : 'без срока';
+      await this.notifications.notify(
+        [task.assigneeId],
+        {
+          type: 'task.deadline_changed',
+          title: 'Изменён дедлайн задачи',
+          body: `${task.title}: ${when}`,
+          link: `/projects/${task.projectId}?task=${task.id}`,
+        },
+        meta.actorId,
+      );
     });
 
     this.dispatcher.on('task.overdue', async (e) => {

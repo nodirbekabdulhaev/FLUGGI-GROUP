@@ -135,6 +135,19 @@ POST            /files/upload-url   { category, mime, size, entityRef } → { fi
 POST            /files/:id/complete GET /files/:id/download-url
 ```
 
+### Telegram и автоматизация (Phase 7)
+```
+GET/DELETE      /me/telegram          статус привязки / отключить
+POST            /me/telegram/link     → { deepLink, command, expiresAt } (код на 15 минут)
+POST            /me/telegram/test     тестовое сообщение себе
+GET/PUT         /notifications/settings   { settings: [{ eventType, channel: IN_APP|TELEGRAM, enabled }] }
+GET/PUT         /settings/automation  (settings.manage ALL) порог, интервалы follow-up, отчёты
+GET             /automation/jobs      POST /automation/jobs/:name/run   (settings.manage ALL)
+GET             /reports/preview?kind=daily|weekly   CEO — компания, РОП — свой отдел
+GET             /follow-ups           ?status&due=true&clientId&page
+POST            /follow-ups/:id/complete  { status: DONE|SKIPPED, result?, createDeal? }
+```
+
 ### Внешние
 ```
 POST /telegram/webhook   (проверка X-Telegram-Bot-Api-Secret-Token)

@@ -10,3 +10,4 @@ process.env.STORAGE_LOCAL_DIR = require('node:path').join(
   require('node:os').tmpdir(),
   'fluggi-test-storage',
 );
+process.env.SCHEDULER_ENABLED = 'false';

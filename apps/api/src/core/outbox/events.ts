@@ -61,6 +61,7 @@ export interface DomainEvents {
   'task.assigned': { taskId: string; assigneeId: string };
   'task.status_changed': { taskId: string; projectId: string; from: string; to: string };
   'task.overdue': { taskId: string; overdueDays: number };
+  'task.deadline_changed': { taskId: string };
 }
 
 export type DomainEventType = keyof DomainEvents;

@@ -13,7 +13,7 @@
 Интернет → Nginx (443, TLS Let's Encrypt)
               ├─ /api/*  → api:4000   (NestJS)
               └─ /       → web:3000   (Next.js)
-           worker  — фоновые задачи (outbox, позже cron и Telegram)
+           worker  — фоновые задачи: outbox, планировщик, отправка в Telegram
            postgres — данные (volume pgdata)
 ```
 
@@ -127,7 +127,25 @@ STORAGE_SECRET_KEY=<секрет>
 
 Копируйте дампы за пределы VPS (например в Beget S3).
 
-## 8. Проверка
+## 8. Telegram-бот
+
+1. Создайте бота у @BotFather (README, раздел 9) и укажите в `.env` на сервере:
+   `TELEGRAM_BOT_TOKEN`, `TELEGRAM_BOT_USERNAME`, `TELEGRAM_MODE=webhook`,
+   `TELEGRAM_WEBHOOK_SECRET=$(openssl rand -hex 24)`, `OUTBOX_IN_API=false`.
+2. `docker compose -f docker-compose.prod.yml up -d api worker`
+3. Зарегистрируйте webhook (один раз и после смены домена/секрета):
+
+```bash
+set -a; . ./.env; set +a
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/setWebhook" \
+  -d url="$APP_URL/api/v1/telegram/webhook" -d secret_token="$TELEGRAM_WEBHOOK_SECRET"
+curl -s "https://api.telegram.org/bot$TELEGRAM_BOT_TOKEN/getWebhookInfo"
+```
+
+Планировщик работает в worker по времени Ташкента; каждая задача выполняется один раз
+за свой интервал (таблица `job_runs`), поэтому второй экземпляр worker безопасен.
+
+## 9. Проверка
 
 ```bash
 curl https://crm.fluggi.uz/api/v1/ready   # {"status":"ok","database":"ok"}

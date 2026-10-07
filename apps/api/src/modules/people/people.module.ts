@@ -9,5 +9,6 @@ import { PeopleService } from './people.service';
   imports: [FinanceModule],
   controllers: [PeopleController],
   providers: [KpiService, PeopleService, DashboardService],
+  exports: [PeopleService, KpiService],
 })
 export class PeopleModule {}

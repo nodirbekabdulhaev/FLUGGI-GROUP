@@ -325,6 +325,8 @@ export class TasksService {
         taskId: id,
         payload: { number: task(t.number), title: t.title, fields: Object.keys(changes) },
       });
+      if (changes.deadline)
+        await this.outbox.publish(tx, 'task.deadline_changed', { taskId: id }, auth.userId);
       if (changes.assigneeId && input.assigneeId && input.assigneeId !== auth.userId)
         await this.outbox.publish(
           tx,

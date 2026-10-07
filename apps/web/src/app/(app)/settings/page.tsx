@@ -1,7 +1,7 @@
 import { hasPermission } from '@fluggi/contracts';
 import { redirect } from 'next/navigation';
 import { Forbidden } from '@/components/shared/states';
-import { SETTINGS_TABS } from '@/features/settings/settings-tabs';
+import { SETTINGS_TABS } from '@/features/settings/tabs';
 import { getMe } from '@/lib/server-api';
 
 export default async function SettingsIndex() {
