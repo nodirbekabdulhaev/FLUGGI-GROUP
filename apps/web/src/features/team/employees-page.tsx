@@ -7,7 +7,17 @@ import {
   type UserDto,
   type UserStatus,
 } from '@fluggi/contracts';
-import { Coins, KeyRound, Lock, MoreHorizontal, Pencil, Plus, Search, Send, Unlock } from 'lucide-react';
+import {
+  Coins,
+  KeyRound,
+  Lock,
+  MoreHorizontal,
+  Pencil,
+  Plus,
+  Search,
+  Send,
+  Unlock,
+} from 'lucide-react';
 import { useFormatter, useNow, useTranslations } from 'next-intl';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';

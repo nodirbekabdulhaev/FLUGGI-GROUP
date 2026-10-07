@@ -8,3 +8,4 @@ export * from './finance';
 export * from './people';
 export * from './analytics';
 export * from './recurrence';
+export * from './words';

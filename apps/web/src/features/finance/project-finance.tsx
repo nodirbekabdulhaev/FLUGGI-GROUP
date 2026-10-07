@@ -93,7 +93,10 @@ function CostLineDialog({
                 />
               </Field>
             ) : null}
-            <Field label={`${t(line?.kind === 'PIECE' ? 'rate' : 'amount')}, ${line?.currency ?? ''}`} htmlFor="cl-rate">
+            <Field
+              label={`${t(line?.kind === 'PIECE' ? 'rate' : 'amount')}, ${line?.currency ?? ''}`}
+              htmlFor="cl-rate"
+            >
               <MoneyInput
                 id="cl-rate"
                 required
@@ -123,8 +126,12 @@ function CostLines({ project }: { project: ProjectDetailDto }) {
   const can = useCan();
   const lines = useCostLines(project.id);
   const [editing, setEditing] = useState<ProjectCostLineDto | null>(null);
-  const accrue = useCatalogMutation((id: string) => api(`/cost-lines/${id}/accrue`, { method: 'POST' }));
-  const cancel = useCatalogMutation((id: string) => api(`/cost-lines/${id}/cancel`, { method: 'POST' }));
+  const accrue = useCatalogMutation((id: string) =>
+    api(`/cost-lines/${id}/accrue`, { method: 'POST' }),
+  );
+  const cancel = useCatalogMutation((id: string) =>
+    api(`/cost-lines/${id}/cancel`, { method: 'POST' }),
+  );
   const canEdit = can('expense.update');
   if (lines.isPending) return <TableSkeleton rows={3} cols={4} />;
   if (lines.isError) return <ErrorState error={lines.error} onRetry={() => lines.refetch()} />;
@@ -173,13 +180,17 @@ function CostLines({ project }: { project: ProjectDetailDto }) {
                   ) : null}
                 </TD>
                 <TD className="whitespace-nowrap text-right tabular-nums">
-                  {l.kind === 'PIECE' ? `${Number(l.quantity)} × ${money(l.rate, l.currency)}` : t('fixed')}
+                  {l.kind === 'PIECE'
+                    ? `${Number(l.quantity)} × ${money(l.rate, l.currency)}`
+                    : t('fixed')}
                 </TD>
                 <TD className="whitespace-nowrap text-right font-medium tabular-nums">
                   {money(l.amount, l.currency)}
                 </TD>
                 <TD>
-                  <Badge tone={l.status === 'ACCRUED' ? 'success' : 'neutral'}>{t(`status${l.status}`)}</Badge>
+                  <Badge tone={l.status === 'ACCRUED' ? 'success' : 'neutral'}>
+                    {t(`status${l.status}`)}
+                  </Badge>
                   {l.expense ? (
                     <span className="block text-xs text-muted-foreground">{l.expense.number}</span>
                   ) : null}

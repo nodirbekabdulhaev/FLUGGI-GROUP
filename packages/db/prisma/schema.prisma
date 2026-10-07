@@ -564,6 +564,8 @@ model Client {
   sourceId  String?      @map("source_id") @db.Uuid
   health    ClientHealth @default(HEALTHY)
   comment   String?
+  /// Реквизиты для договора (юр. название, ИНН, банк, МФО, р/с, подписант)
+  requisites Json?
   createdAt DateTime     @default(now()) @map("created_at")
   updatedAt DateTime     @updatedAt @map("updated_at")
   deletedAt DateTime?    @map("deleted_at")

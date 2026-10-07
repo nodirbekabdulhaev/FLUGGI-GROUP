@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import type { ClientRequisites } from './documents';
 import {
   CLIENT_TYPES,
   CLOSE_STATUSES,
@@ -292,6 +293,8 @@ export interface ClientDto {
 export interface ClientDetailDto extends ClientDto {
   contacts: ContactDto[];
   deals: DealDto[];
+  /** Реквизиты для договора (null — ещё не заполнены) */
+  requisites: ClientRequisites | null;
 }
 
 // ─────────────────────────── Сделки ───────────────────────────

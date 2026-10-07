@@ -116,7 +116,8 @@ test('финансы: оплата, расходы проекта, дашбор�
   await expect(rop.getByText('Расход добавлен')).toBeVisible();
   await expect(rop.getByRole('cell', { name: /2 500 000 UZS/ })).toBeVisible();
   // 7 000 000 − 2 500 000 = 4 500 000, маржа 64.29%
-  await expect(rop.getByText('4 500 000 UZS')).toBeVisible();
+  // Валовая и чистая прибыль совпадают, пока нет накладных
+  await expect(rop.getByText('4 500 000 UZS').first()).toBeVisible();
   await expect(rop.getByText('64.29%')).toBeVisible();
 
   // CEO: дашборд, прибыль по проектам, утверждение комиссий

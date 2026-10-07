@@ -24,6 +24,8 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { date, dateTime, money } from '@/lib/format';
 import { SalesBadge } from './status';
+import { DocumentDialog } from '@/features/documents/document-dialog';
+import { FileText } from 'lucide-react';
 
 function useStatusFilter<T extends string>() {
   const [status, setStatus] = useState<T | ''>('');
@@ -58,6 +60,7 @@ export function ProposalsPage() {
   const t = useTranslations('sales');
   const f = useStatusFilter<(typeof PROPOSAL_STATUSES)[number]>();
   const list = useProposals({ status: f.status || undefined, page: f.page, pageSize: 25 });
+  const [doc, setDoc] = useState<{ id: string; title: string } | null>(null);
   return (
     <>
       <PageHeader title={t('proposals.title')} description={t('proposals.subtitle')} />
@@ -95,6 +98,7 @@ export function ProposalsPage() {
                     <TH className="text-right">Итого</TH>
                     <TH>Менеджер</TH>
                     <TH>Обновлено</TH>
+                    <TH />
                   </tr>
                 </THead>
                 <TBody>
@@ -125,6 +129,16 @@ export function ProposalsPage() {
                       <TD className="whitespace-nowrap text-muted-foreground">
                         {dateTime(p.updatedAt)}
                       </TD>
+                      <TD>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          aria-label={`${t('proposals.document')} ${p.number}`}
+                          onClick={() => setDoc({ id: p.id, title: `${p.number} · ${p.title}` })}
+                        >
+                          <FileText />
+                        </Button>
+                      </TD>
                     </TR>
                   ))}
                 </TBody>
@@ -148,6 +162,12 @@ export function ProposalsPage() {
           </>
         )}
       </Card>
+      <DocumentDialog
+        kind="proposals"
+        id={doc?.id ?? null}
+        title={doc?.title ?? ''}
+        onClose={() => setDoc(null)}
+      />
     </>
   );
 }
@@ -156,6 +176,7 @@ export function ContractsPage() {
   const t = useTranslations('sales');
   const f = useStatusFilter<(typeof CONTRACT_STATUSES)[number]>();
   const list = useContracts({ status: f.status || undefined, page: f.page, pageSize: 25 });
+  const [doc, setDoc] = useState<{ id: string; title: string } | null>(null);
   return (
     <>
       <PageHeader title={t('contracts.title')} description={t('contracts.subtitle')} />
@@ -193,6 +214,7 @@ export function ContractsPage() {
                     <TH className="text-right">Сумма</TH>
                     <TH className="text-right">Оплачено</TH>
                     <TH>Подписан</TH>
+                    <TH />
                   </tr>
                 </THead>
                 <TBody>
@@ -221,6 +243,21 @@ export function ContractsPage() {
                       </TD>
                       <TD className="whitespace-nowrap text-right">{money(c.paidUzs, 'UZS')}</TD>
                       <TD className="text-muted-foreground">{date(c.signedAt)}</TD>
+                      <TD>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          aria-label={`${t('contracts.document')} ${c.number}`}
+                          onClick={() =>
+                            setDoc({
+                              id: c.id,
+                              title: `${t('contracts.documentTitle')} ${c.number}`,
+                            })
+                          }
+                        >
+                          <FileText />
+                        </Button>
+                      </TD>
                     </TR>
                   ))}
                 </TBody>
@@ -244,6 +281,12 @@ export function ContractsPage() {
           </>
         )}
       </Card>
+      <DocumentDialog
+        kind="contracts"
+        id={doc?.id ?? null}
+        title={doc?.title ?? ''}
+        onClose={() => setDoc(null)}
+      />
     </>
   );
 }

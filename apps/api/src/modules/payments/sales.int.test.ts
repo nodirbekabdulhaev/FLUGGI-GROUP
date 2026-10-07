@@ -77,7 +77,7 @@ describe('Сценарий приёмки §84, шаги 9–16 и 25', () => {
     ]);
 
     // PDF
-    const pdf = await manager.get(`/api/v1/proposals/${kp.body.id}/pdf`);
+    const pdf = await manager.get(`/api/v1/documents/proposals/${kp.body.id}?format=pdf`);
     expect(pdf.status).toBe(200);
     expect(pdf.headers['content-type']).toBe('application/pdf');
 

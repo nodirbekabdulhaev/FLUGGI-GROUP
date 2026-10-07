@@ -40,7 +40,13 @@ function CategoryDialog({
   onOpenChange: (o: boolean) => void;
 }) {
   const t = useTranslations('financeSettings');
-  const [v, setV] = useState({ name: '', accountHint: '', isOverhead: false, isActive: true, sort: '100' });
+  const [v, setV] = useState({
+    name: '',
+    accountHint: '',
+    isOverhead: false,
+    isActive: true,
+    sort: '100',
+  });
   const [errors, setErrors] = useState<Record<string, string>>({});
   useEffect(() => {
     if (!open) return;
@@ -61,7 +67,13 @@ function CategoryDialog({
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent title={category ? t('categoryEdit') : t(kind === 'EXPENSE' ? 'newExpenseCategory' : 'newIncomeCategory')}>
+      <DialogContent
+        title={
+          category
+            ? t('categoryEdit')
+            : t(kind === 'EXPENSE' ? 'newExpenseCategory' : 'newIncomeCategory')
+        }
+      >
         <form
           className="grid gap-4"
           onSubmit={async (e) => {
@@ -77,10 +89,19 @@ function CategoryDialog({
           }}
         >
           <Field label={t('name')} htmlFor="fc-name" error={errors.name}>
-            <Input id="fc-name" required value={v.name} onChange={(e) => setV((s) => ({ ...s, name: e.target.value }))} />
+            <Input
+              id="fc-name"
+              required
+              value={v.name}
+              onChange={(e) => setV((s) => ({ ...s, name: e.target.value }))}
+            />
           </Field>
           <Field label={t('accountHint')} htmlFor="fc-acc" hint={t('accountHintText')}>
-            <Input id="fc-acc" value={v.accountHint} onChange={(e) => setV((s) => ({ ...s, accountHint: e.target.value }))} />
+            <Input
+              id="fc-acc"
+              value={v.accountHint}
+              onChange={(e) => setV((s) => ({ ...s, accountHint: e.target.value }))}
+            />
           </Field>
           {kind === 'EXPENSE' ? (
             <label className="flex items-start gap-2 text-sm">
@@ -97,7 +118,11 @@ function CategoryDialog({
             </label>
           ) : null}
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={v.isActive} onChange={(e) => setV((s) => ({ ...s, isActive: e.target.checked }))} />
+            <input
+              type="checkbox"
+              checked={v.isActive}
+              onChange={(e) => setV((s) => ({ ...s, isActive: e.target.checked }))}
+            />
             {t('active')}
           </label>
           <DialogFooter>
@@ -117,14 +142,21 @@ function CategoryDialog({
 function Categories({ kind }: { kind: FinanceCategoryKind }) {
   const t = useTranslations('financeSettings');
   const list = useFinanceCategories(kind);
-  const [dialog, setDialog] = useState<{ open: boolean; c: FinanceCategoryDto | null }>({ open: false, c: null });
-  const remove = useCatalogMutation((id: string) => api(`/finance-categories/${id}`, { method: 'DELETE' }));
+  const [dialog, setDialog] = useState<{ open: boolean; c: FinanceCategoryDto | null }>({
+    open: false,
+    c: null,
+  });
+  const remove = useCatalogMutation((id: string) =>
+    api(`/finance-categories/${id}`, { method: 'DELETE' }),
+  );
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
         <div>
           <CardTitle>{t(kind === 'EXPENSE' ? 'expenseCategories' : 'incomeCategories')}</CardTitle>
-          <CardDescription>{t(kind === 'EXPENSE' ? 'expenseCategoriesText' : 'incomeCategoriesText')}</CardDescription>
+          <CardDescription>
+            {t(kind === 'EXPENSE' ? 'expenseCategoriesText' : 'incomeCategoriesText')}
+          </CardDescription>
         </div>
         <Button size="sm" onClick={() => setDialog({ open: true, c: null })}>
           <Plus className="size-4" /> {t('add')}
@@ -155,7 +187,12 @@ function Categories({ kind }: { kind: FinanceCategoryKind }) {
                 <TD className="text-muted-foreground">{c.accountHint ?? '—'}</TD>
                 <TD className="text-right tabular-nums">{c.usage}</TD>
                 <TD className="whitespace-nowrap text-right">
-                  <Button size="sm" variant="ghost" aria-label={`${t('categoryEdit')}: ${c.name}`} onClick={() => setDialog({ open: true, c })}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`${t('categoryEdit')}: ${c.name}`}
+                    onClick={() => setDialog({ open: true, c })}
+                  >
                     <Pencil className="size-4" />
                   </Button>
                   {c.usage === 0 ? (
@@ -181,7 +218,12 @@ function Categories({ kind }: { kind: FinanceCategoryKind }) {
           </TBody>
         </Table>
       )}
-      <CategoryDialog kind={kind} category={dialog.c} open={dialog.open} onOpenChange={(o) => setDialog((s) => ({ ...s, open: o }))} />
+      <CategoryDialog
+        kind={kind}
+        category={dialog.c}
+        open={dialog.open}
+        onOpenChange={(o) => setDialog((s) => ({ ...s, open: o }))}
+      />
     </Card>
   );
 }
@@ -197,7 +239,10 @@ function Overhead() {
     setDivisor(String(s.data.overheadDivisor ?? 5));
   }, [s.data]);
   const save = useCatalogMutation(() =>
-    api('/settings/finance', { method: 'PUT', body: { overheadDivisor: mode === 'fixed' ? Number(divisor) : null } }),
+    api('/settings/finance', {
+      method: 'PUT',
+      body: { overheadDivisor: mode === 'fixed' ? Number(divisor) : null },
+    }),
   );
   return (
     <Card>
@@ -219,11 +264,21 @@ function Overhead() {
           }}
         >
           <label className="flex items-center gap-2">
-            <input type="radio" name="oh" checked={mode === 'auto'} onChange={() => setMode('auto')} />
+            <input
+              type="radio"
+              name="oh"
+              checked={mode === 'auto'}
+              onChange={() => setMode('auto')}
+            />
             {t('overheadAuto')}
           </label>
           <label className="flex flex-wrap items-center gap-2">
-            <input type="radio" name="oh" checked={mode === 'fixed'} onChange={() => setMode('fixed')} />
+            <input
+              type="radio"
+              name="oh"
+              checked={mode === 'fixed'}
+              onChange={() => setMode('fixed')}
+            />
             {t('overheadFixed')}
             <Input
               aria-label={t('divisor')}
@@ -248,10 +303,25 @@ function Overhead() {
   );
 }
 
-function WorkItemDialog({ item, open, onOpenChange }: { item: WorkItemDto | null; open: boolean; onOpenChange: (o: boolean) => void }) {
+function WorkItemDialog({
+  item,
+  open,
+  onOpenChange,
+}: {
+  item: WorkItemDto | null;
+  open: boolean;
+  onOpenChange: (o: boolean) => void;
+}) {
   const t = useTranslations('financeSettings');
   const ts = useTranslations('specialties');
-  const [v, setV] = useState({ name: '', unit: 'шт', specialty: '' as ExecutorSpecialty | '', defaultRate: '', currency: 'UZS' as Currency, isActive: true });
+  const [v, setV] = useState({
+    name: '',
+    unit: 'шт',
+    specialty: '' as ExecutorSpecialty | '',
+    defaultRate: '',
+    currency: 'UZS' as Currency,
+    isActive: true,
+  });
   useEffect(() => {
     if (!open) return;
     setV({
@@ -265,7 +335,9 @@ function WorkItemDialog({ item, open, onOpenChange }: { item: WorkItemDto | null
   }, [open, item]);
   const save = useCatalogMutation(() => {
     const body = { ...v, specialty: v.specialty || null };
-    return item ? api(`/work-items/${item.id}`, { method: 'PUT', body }) : api('/work-items', { method: 'POST', body });
+    return item
+      ? api(`/work-items/${item.id}`, { method: 'PUT', body })
+      : api('/work-items', { method: 'POST', body });
   });
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -284,11 +356,22 @@ function WorkItemDialog({ item, open, onOpenChange }: { item: WorkItemDto | null
           }}
         >
           <Field label={t('name')} htmlFor="wi-name">
-            <Input id="wi-name" required value={v.name} onChange={(e) => setV((s) => ({ ...s, name: e.target.value }))} />
+            <Input
+              id="wi-name"
+              required
+              value={v.name}
+              onChange={(e) => setV((s) => ({ ...s, name: e.target.value }))}
+            />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('specialty')} htmlFor="wi-spec">
-              <NativeSelect id="wi-spec" value={v.specialty} onChange={(e) => setV((s) => ({ ...s, specialty: e.target.value as ExecutorSpecialty | '' }))}>
+              <NativeSelect
+                id="wi-spec"
+                value={v.specialty}
+                onChange={(e) =>
+                  setV((s) => ({ ...s, specialty: e.target.value as ExecutorSpecialty | '' }))
+                }
+              >
                 <option value="">—</option>
                 {EXECUTOR_SPECIALTIES.map((sp) => (
                   <option key={sp} value={sp}>
@@ -298,13 +381,26 @@ function WorkItemDialog({ item, open, onOpenChange }: { item: WorkItemDto | null
               </NativeSelect>
             </Field>
             <Field label={t('unit')} htmlFor="wi-unit">
-              <Input id="wi-unit" value={v.unit} onChange={(e) => setV((s) => ({ ...s, unit: e.target.value }))} />
+              <Input
+                id="wi-unit"
+                value={v.unit}
+                onChange={(e) => setV((s) => ({ ...s, unit: e.target.value }))}
+              />
             </Field>
             <Field label={t('defaultRate')} htmlFor="wi-rate">
-              <MoneyInput id="wi-rate" required value={v.defaultRate} onChange={(e) => setV((s) => ({ ...s, defaultRate: e.target.value }))} />
+              <MoneyInput
+                id="wi-rate"
+                required
+                value={v.defaultRate}
+                onChange={(e) => setV((s) => ({ ...s, defaultRate: e.target.value }))}
+              />
             </Field>
             <Field label={t('currency')} htmlFor="wi-cur">
-              <NativeSelect id="wi-cur" value={v.currency} onChange={(e) => setV((s) => ({ ...s, currency: e.target.value as Currency }))}>
+              <NativeSelect
+                id="wi-cur"
+                value={v.currency}
+                onChange={(e) => setV((s) => ({ ...s, currency: e.target.value as Currency }))}
+              >
                 {CURRENCIES.map((c) => (
                   <option key={c}>{c}</option>
                 ))}
@@ -312,7 +408,11 @@ function WorkItemDialog({ item, open, onOpenChange }: { item: WorkItemDto | null
             </Field>
           </div>
           <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={v.isActive} onChange={(e) => setV((s) => ({ ...s, isActive: e.target.checked }))} />
+            <input
+              type="checkbox"
+              checked={v.isActive}
+              onChange={(e) => setV((s) => ({ ...s, isActive: e.target.checked }))}
+            />
             {t('active')}
           </label>
           <DialogFooter>
@@ -330,7 +430,10 @@ function WorkItems() {
   const t = useTranslations('financeSettings');
   const ts = useTranslations('specialties');
   const list = useWorkItems();
-  const [dialog, setDialog] = useState<{ open: boolean; w: WorkItemDto | null }>({ open: false, w: null });
+  const [dialog, setDialog] = useState<{ open: boolean; w: WorkItemDto | null }>({
+    open: false,
+    w: null,
+  });
   return (
     <Card>
       <CardHeader className="flex flex-row flex-wrap items-start justify-between gap-3">
@@ -365,7 +468,12 @@ function WorkItems() {
                   {money(w.defaultRate, w.currency)} / {w.unit}
                 </TD>
                 <TD>
-                  <Button size="sm" variant="ghost" aria-label={`${t('workItemEdit')}: ${w.name}`} onClick={() => setDialog({ open: true, w })}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    aria-label={`${t('workItemEdit')}: ${w.name}`}
+                    onClick={() => setDialog({ open: true, w })}
+                  >
                     <Pencil className="size-4" />
                   </Button>
                 </TD>
@@ -374,7 +482,11 @@ function WorkItems() {
           </TBody>
         </Table>
       )}
-      <WorkItemDialog item={dialog.w} open={dialog.open} onOpenChange={(o) => setDialog((s) => ({ ...s, open: o }))} />
+      <WorkItemDialog
+        item={dialog.w}
+        open={dialog.open}
+        onOpenChange={(o) => setDialog((s) => ({ ...s, open: o }))}
+      />
     </Card>
   );
 }

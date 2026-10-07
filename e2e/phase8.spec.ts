@@ -100,10 +100,10 @@ test('глобальный поиск и экспорт', async ({ browser, isMo
 test('пакет для бухгалтера: реквизиты и скачивание Excel за год', async ({ browser, isMobile }) => {
   test.skip(isMobile, 'desktop');
   const ceo = await login(browser, 'ceo@fluggi.demo');
-  await ceo.goto('/settings/automation');
+  await ceo.goto('/settings/documents');
   await ceo.getByLabel('Налоговый режим').selectOption('IT_PARK');
-  await ceo.getByLabel('Название').fill('ООО «Fluggi»');
-  await ceo.getByRole('button', { name: 'Сохранить' }).last().click();
+  await ceo.getByLabel('Юридическое название').fill('ООО «Fluggi»');
+  await ceo.getByRole('button', { name: 'Сохранить реквизиты' }).click();
   await expect(ceo.getByText('Реквизиты сохранены')).toBeVisible();
 
   await ceo.goto('/finance/revenue');

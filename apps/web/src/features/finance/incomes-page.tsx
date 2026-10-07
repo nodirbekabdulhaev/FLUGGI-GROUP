@@ -172,7 +172,9 @@ export function IncomesPage() {
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<OtherIncomeDto | null | 'new'>(null);
   const list = useOtherIncomes({ category: category || undefined, page, pageSize: 25 });
-  const remove = useCatalogMutation((id: string) => api(`/other-incomes/${id}`, { method: 'DELETE' }));
+  const remove = useCatalogMutation((id: string) =>
+    api(`/other-incomes/${id}`, { method: 'DELETE' }),
+  );
   return (
     <>
       <PageHeader

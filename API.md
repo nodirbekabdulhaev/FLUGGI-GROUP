@@ -163,6 +163,23 @@ GET    /chats              GET /chats/unread   GET /chats/contacts   POST /chats
 GET    /chats/:id/messages ?before&limit      POST /chats/:id/messages { body }   POST /chats/:id/read
 ```
 
+### Тарифы, категории, себестоимость, документы (Phase 10)
+```
+GET    /finance-categories ?kind=EXPENSE|INCOME   POST / PUT /:id / DELETE /:id   (reference.manage ALL)
+GET    /other-incomes      ?category&dateFrom&dateTo&page   POST / PUT /:id / DELETE /:id   (finance.company.read ALL)
+GET    /settings/finance   PUT /settings/finance { overheadDivisor: number|null }
+GET    /work-items         POST / PUT /:id                   — работы исполнителей и базовые ставки
+GET    /users/:id/rates    PUT /users/:id/rates { rates[] } — личные сдельные ставки (PUT: payroll.manage ALL)
+GET    /tariffs            ?serviceId&all=true   POST / PUT /:id  — economics только с finance.company.read ALL
+GET    /projects/:id/cost-lines   PATCH /cost-lines/:id   POST /cost-lines/:id/accrue|cancel
+GET    /documents/proposals/:id   ?format=html|pdf|docx|txt&download=true   (proposal.read)
+GET    /documents/contracts/:id   ?format=html|pdf|docx|txt&download=true   (contract.read)
+GET    /documents/{proposals|contracts}/:id/check  → { missing: string[] }
+GET    /settings/documents  PUT /settings/documents { city, contractTemplate, proposalIntro, proposalNote }
+PUT    /clients/:id/requisites   (client.update)
+```
+`GET /proposals/:id/pdf` удалён — используйте `/documents/proposals/:id?format=pdf`.
+
 ### Внешние
 ```
 POST /telegram/webhook   (проверка X-Telegram-Bot-Api-Secret-Token)

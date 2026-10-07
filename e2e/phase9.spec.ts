@@ -92,11 +92,10 @@ test('чат сотрудников: сообщение и непрочитан�
   await manager.getByRole('button', { name: /^Открыть чат/ }).click();
   await manager.getByRole('button', { name: /Нодир Абдулхаев/ }).click();
   await expect(manager.getByTestId('chat-messages').getByText(text)).toBeVisible();
-  await manager.getByLabel('Сообщение').fill('Всё хорошо, договор подписан');
+  const reply = `Всё хорошо, договор подписан ${Date.now() % 100000}`;
+  await manager.getByLabel('Сообщение').fill(reply);
   await manager.getByRole('button', { name: 'Отправить' }).click();
-  await expect(
-    ceo.getByTestId('chat-messages').getByText('Всё хорошо, договор подписан'),
-  ).toBeVisible({
+  await expect(ceo.getByTestId('chat-messages').getByText(reply)).toBeVisible({
     timeout: 10_000,
   });
 });

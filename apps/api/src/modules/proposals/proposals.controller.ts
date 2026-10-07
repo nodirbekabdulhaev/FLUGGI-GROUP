@@ -1,15 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  HttpCode,
-  Param,
-  Post,
-  Put,
-  Query,
-  Res,
-  StreamableFile,
-} from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import {
   createProposalSchema,
   proposalListQuerySchema,
@@ -18,13 +7,11 @@ import {
   type ProposalDto,
   type ProposalVersionDto,
 } from '@fluggi/contracts';
-import type { Response } from 'express';
 import type { z } from 'zod';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
 import { CurrentUser, ReqMeta, RequirePermission } from '../../core/auth/decorators';
 import { UuidPipe } from '../../core/http/uuid.pipe';
 import { zod } from '../../core/http/zod.pipe';
-import { renderProposalPdf } from './proposal-pdf';
 import { ProposalsService } from './proposals.service';
 
 @Controller('proposals')
@@ -53,21 +40,6 @@ export class ProposalsController {
     @Param('id', UuidPipe) id: string,
   ): Promise<ProposalVersionDto[]> {
     return this.proposals.versions(auth, id);
-  }
-
-  @Get(':id/pdf')
-  @RequirePermission('proposal.read')
-  async pdf(
-    @CurrentUser() auth: AuthContext,
-    @Param('id', UuidPipe) id: string,
-    @Res({ passthrough: true }) res: Response,
-  ) {
-    const p = await this.proposals.get(auth, id);
-    res.setHeader('Content-Type', 'application/pdf');
-    res.setHeader('Content-Disposition', `inline; filename="${p.number}.pdf"`);
-    const doc = renderProposalPdf(p);
-    doc.end();
-    return new StreamableFile(doc);
   }
 
   @Post()

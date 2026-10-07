@@ -20,6 +20,7 @@ import { dateTime, money } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
 import { ClientFormDialog } from './client-form-dialog';
 import { ContactDialog } from './contact-dialog';
+import { RequisitesPanel } from './requisites';
 import { ProjectsMiniList } from '@/features/projects/projects-mini-list';
 import { ClientInsight } from '@/features/analytics/client-insight';
 
@@ -111,6 +112,7 @@ export function ClientCard({ id }: { id: string }) {
         items={[
           { key: 'deals', label: t('clients.deals'), count: c.deals.length },
           { key: 'contacts', label: t('clients.contacts'), count: c.contacts.length },
+          { key: 'requisites', label: t('requisites.tab') },
           { key: 'activity', label: t('leads.tabs.activity') },
           { key: 'comments', label: t('leads.tabs.comments') },
           ...(can('project.read') ? [{ key: 'projects', label: t('leads.tabs.projects') }] : []),
@@ -215,6 +217,8 @@ export function ClientCard({ id }: { id: string }) {
               </ul>
             )}
           </div>
+        ) : tab === 'requisites' ? (
+          <RequisitesPanel client={c} canEdit={canEdit} />
         ) : tab === 'projects' ? (
           <ProjectsMiniList query={{ clientId: id }} />
         ) : (

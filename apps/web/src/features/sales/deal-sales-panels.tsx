@@ -11,7 +11,16 @@ import {
   type PaymentType,
   type ProposalDto,
 } from '@fluggi/contracts';
-import { Download, FileText, History, Paperclip, Pencil, Plus, Upload } from 'lucide-react';
+import {
+  Download,
+  FileSignature,
+  FileText,
+  History,
+  Paperclip,
+  Pencil,
+  Plus,
+  Upload,
+} from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { toast } from 'sonner';
@@ -23,6 +32,7 @@ import { MoneyInput } from '@/components/ui/money-input';
 import { Field } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation } from '@/features/crm/api';
+import { DocumentDialog } from '@/features/documents/document-dialog';
 import {
   useContracts,
   useDealFiles,
@@ -71,6 +81,7 @@ export function ProposalsPanel({ deal }: { deal: DealDto }) {
     p: null,
   });
   const [showVersions, setShowVersions] = useState<string | null>(null);
+  const [doc, setDoc] = useState<ProposalDto | null>(null);
   const act = useCrmMutation(({ id, action }: { id: string; action: string }) =>
     api(`/proposals/${id}/${action}`, { method: 'POST' }),
   );
@@ -186,14 +197,8 @@ export function ProposalsPanel({ deal }: { deal: DealDto }) {
                       <Pencil /> Изменить
                     </Button>
                   ) : null}
-                  <Button asChild size="sm" variant="ghost">
-                    <a
-                      href={`/api/v1/proposals/${p.id}/pdf`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Download /> {t('pdf')}
-                    </a>
+                  <Button size="sm" variant="ghost" onClick={() => setDoc(p)}>
+                    <FileText /> {t('document')}
                   </Button>
                   <Button
                     size="sm"
@@ -209,6 +214,12 @@ export function ProposalsPanel({ deal }: { deal: DealDto }) {
           })}
         </ul>
       )}
+      <DocumentDialog
+        kind="proposals"
+        id={doc?.id ?? null}
+        title={doc ? `${doc.number} · ${doc.title}` : ''}
+        onClose={() => setDoc(null)}
+      />
       <ProposalEditor
         open={editing.open}
         onOpenChange={(o) => setEditing((s) => ({ ...s, open: o }))}
@@ -428,6 +439,7 @@ export function ContractsPanel({ deal }: { deal: DealDto }) {
   const can = useCan();
   const list = useContracts({ dealId: deal.id, pageSize: 50 });
   const [open, setOpen] = useState(false);
+  const [doc, setDoc] = useState<ContractDto | null>(null);
   const act = useCrmMutation(({ id, action }: { id: string; action: string }) =>
     api(`/contracts/${id}/${action}`, { method: 'POST' }),
   );
@@ -466,6 +478,11 @@ export function ContractsPanel({ deal }: { deal: DealDto }) {
                     {t('paid')}: {money(c.paidUzs, 'UZS')}
                   </span>
                 </span>
+              </div>
+              <div>
+                <Button size="sm" variant="outline" onClick={() => setDoc(c)}>
+                  <FileSignature /> {t('document')}
+                </Button>
               </div>
               {c.files.length ? (
                 <ul className="flex flex-wrap gap-2 text-xs">
@@ -532,6 +549,12 @@ export function ContractsPanel({ deal }: { deal: DealDto }) {
         </ul>
       )}
       <ContractDialog deal={deal} open={open} onOpenChange={setOpen} />
+      <DocumentDialog
+        kind="contracts"
+        id={doc?.id ?? null}
+        title={doc ? `${t('documentTitle')} ${doc.number}` : ''}
+        onClose={() => setDoc(null)}
+      />
     </div>
   );
 }

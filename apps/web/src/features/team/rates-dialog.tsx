@@ -37,7 +37,10 @@ export function RatesDialog({
       Object.fromEntries(
         rates.data.map((r) => [
           r.workItem.id,
-          { rate: r.rate ? String(Number(r.rate)) : '', currency: r.currency ?? r.workItem.currency },
+          {
+            rate: r.rate ? String(Number(r.rate)) : '',
+            currency: r.currency ?? r.workItem.currency,
+          },
         ]),
       ),
     );
@@ -93,7 +96,8 @@ export function RatesDialog({
                       <TD>
                         <div className="font-medium">{r.workItem.name}</div>
                         <div className="text-xs text-muted-foreground">
-                          {r.workItem.specialty ? ts(r.workItem.specialty) : '—'} · {r.workItem.unit}
+                          {r.workItem.specialty ? ts(r.workItem.specialty) : '—'} ·{' '}
+                          {r.workItem.unit}
                         </div>
                       </TD>
                       <TD className="whitespace-nowrap text-right tabular-nums text-muted-foreground">
@@ -107,7 +111,10 @@ export function RatesDialog({
                               placeholder={t('asBase')}
                               value={cur.rate}
                               onChange={(e) =>
-                                setV((s) => ({ ...s, [r.workItem.id]: { ...cur, rate: e.target.value } }))
+                                setV((s) => ({
+                                  ...s,
+                                  [r.workItem.id]: { ...cur, rate: e.target.value },
+                                }))
                               }
                             />
                             <NativeSelect
@@ -127,7 +134,9 @@ export function RatesDialog({
                             </NativeSelect>
                           </div>
                         ) : r.rate ? (
-                          <span className="font-medium tabular-nums">{money(r.rate, r.currency ?? 'UZS')}</span>
+                          <span className="font-medium tabular-nums">
+                            {money(r.rate, r.currency ?? 'UZS')}
+                          </span>
                         ) : (
                           <span className="text-muted-foreground">{t('asBase')}</span>
                         )}

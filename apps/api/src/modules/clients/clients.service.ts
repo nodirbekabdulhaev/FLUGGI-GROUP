@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import {
+  clientRequisitesSchema,
   formatNumber,
   type ClientDetailDto,
   type ClientDto,
@@ -134,6 +135,9 @@ export class ClientsService {
       ...toClientDto(client),
       contacts: client.contacts.map(toContactDto),
       deals: deals.map(toDealDto),
+      requisites: client.requisites
+        ? (clientRequisitesSchema.safeParse(client.requisites).data ?? null)
+        : null,
     };
   }
 

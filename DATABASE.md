@@ -215,6 +215,19 @@ erDiagram
 
 **conversations** — `id, direct_key (unique), last_message_at` · **conversation_members** — `conversation_id, user_id, last_read_at, notified_at` · **chat_messages** — `id, conversation_id, author_id, body, created_at`
 
+### 3.10 Тарифы, себестоимость, документы
+| Таблица | Назначение |
+|---|---|
+| `finance_categories` | Категории расходов и прочих доходов (код, название, счёт НСБУ, накладная) |
+| `other_incomes` | Прочие поступления (не от клиентов) |
+| `work_items` | Работы исполнителей: рилс, обложка, сторис — базовая ставка |
+| `employee_rates` | Личная ставка сотрудника за работу |
+| `tariffs`, `tariff_items` | Тарифы услуг и их позиции (PIECE — сдельно, FIXED — фиксированно) |
+| `project_cost_lines` | План себестоимости проекта: PLANNED → ACCRUED (расход) / CANCELLED |
+| `clients.requisites` (JSONB) | Реквизиты клиента для договора |
+| `settings['documents']` | Город, текст договора, вступление и примечание КП |
+| `settings['company']` | Реквизиты компании (юр. название, ИНН, банк, МФО, р/с, подписант) |
+
 ## 4. Распределение по фазам
 
 | Фаза | Таблицы |

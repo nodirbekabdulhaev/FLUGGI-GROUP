@@ -217,6 +217,31 @@ export const companySettingsSchema = z.object({
   director: z.string().trim().max(120),
   accountant: z.string().trim().max(120),
   taxRegime: z.enum(TAX_REGIMES),
+  // Реквизиты для КП и договоров (подставляются в документы автоматически)
+  legalName: z.string().trim().max(300).default(''),
+  directorPosition: z.string().trim().max(120).default('Директор'),
+  /** «в лице …» — родительный падеж: «директора Иванова Ивана Ивановича» */
+  signerGenitive: z.string().trim().max(200).default(''),
+  basis: z.string().trim().max(200).default('Устава'),
+  address: z.string().trim().max(300).default(''),
+  phone: z.string().trim().max(60).default(''),
+  email: z.string().trim().max(120).default(''),
+  website: z.string().trim().max(120).default(''),
+  bank: z.string().trim().max(200).default(''),
+  /** МФО банка — 5 цифр */
+  mfo: z
+    .string()
+    .trim()
+    .regex(/^(\d{5})?$/, 'МФО — 5 цифр')
+    .default(''),
+  /** Расчётный счёт — 20 цифр */
+  account: z
+    .string()
+    .trim()
+    .regex(/^(\d{20})?$/, 'Расчётный счёт — 20 цифр')
+    .default(''),
+  oked: z.string().trim().max(10).default(''),
+  vatCode: z.string().trim().max(20).default(''),
 });
 export type CompanySettings = z.output<typeof companySettingsSchema>;
 
@@ -226,4 +251,17 @@ export const DEFAULT_COMPANY_SETTINGS: CompanySettings = {
   director: '',
   accountant: '',
   taxRegime: 'OTHER',
+  legalName: '',
+  directorPosition: 'Директор',
+  signerGenitive: '',
+  basis: 'Устава',
+  address: '',
+  phone: '',
+  email: '',
+  website: '',
+  bank: '',
+  mfo: '',
+  account: '',
+  oked: '',
+  vatCode: '',
 };
