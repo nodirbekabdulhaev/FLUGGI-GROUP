@@ -82,11 +82,15 @@ export class TelegramSender {
   }
 }
 
+const HEARTBEAT_MS = 30_000;
+
 @Injectable()
 export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShutdown {
   private readonly logger = new Logger(TelegramRunner.name);
   private stopped = false;
   private offset = 0;
+  private bot: string | null = null;
+  private lastBeat = 0;
 
   constructor(
     private readonly sender: TelegramSender,
@@ -96,28 +100,44 @@ export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShut
 
   onApplicationBootstrap() {
     if (!backgroundEnabled() || !this.client.configured) return;
+    const mode = loadEnv().TELEGRAM_MODE;
     void this.check().then((ok) => {
-      if (ok) this.logger.log(`Telegram-бот подключён, режим ${loadEnv().TELEGRAM_MODE}`);
+      if (ok) this.logger.log(`Telegram-бот @${this.bot} подключён, режим ${mode}`);
+      void this.sendLoop();
+      if (mode === 'polling') void this.pollLoop();
+      else void this.webhookHeartbeat();
     });
-    void this.sendLoop();
-    if (loadEnv().TELEGRAM_MODE === 'polling') void this.pollLoop();
-  }
-
-  /** Проверка токена (getMe); причина сбоя показывается в профиле и в логе. */
-  async check(): Promise<boolean> {
-    try {
-      await this.client.getMe();
-      this.telegram.setProblem(null);
-      return true;
-    } catch (err) {
-      this.telegram.setProblem(TelegramService.explain(err));
-      this.logger.error(`Telegram: ${TelegramService.explain(err)}`);
-      return false;
-    }
   }
 
   onApplicationShutdown() {
     this.stopped = true;
+  }
+
+  /**
+   * Проверка токена (getMe) и имени бота. Результат сохраняется в БД: профиль показывает
+   * причину сбоя, а если проверок давно не было — что бот не запущен.
+   */
+  async check(): Promise<boolean> {
+    let problem: string | null = null;
+    try {
+      this.bot = (await this.client.getMe()).username;
+      const configured = this.client.username;
+      if (configured && configured.toLowerCase() !== this.bot.toLowerCase())
+        problem = `TELEGRAM_BOT_USERNAME (@${configured}) не совпадает с ботом, которому принадлежит токен (@${this.bot}). Исправьте .env или удалите TELEGRAM_BOT_USERNAME и перезапустите API`;
+    } catch (err) {
+      problem = TelegramService.explain(err);
+    }
+    if (problem) this.logger.error(`Telegram: ${problem}`);
+    await this.beat(problem, true);
+    return !problem;
+  }
+
+  private async beat(problem: string | null, force = false) {
+    if (!force && !problem && Date.now() - this.lastBeat < HEARTBEAT_MS) return;
+    this.lastBeat = Date.now();
+    await this.telegram
+      .reportHealth({ problem, bot: this.bot })
+      .catch((err) => this.logger.warn(`Telegram health: ${(err as Error).message}`));
   }
 
   private sleep(ms: number) {
@@ -136,21 +156,34 @@ export class TelegramRunner implements OnApplicationBootstrap, OnApplicationShut
     }
   }
 
+  /** Режим webhook: сообщения принимает API, здесь — только периодическая проверка токена. */
+  private async webhookHeartbeat() {
+    while (!this.stopped) {
+      await this.sleep(60_000);
+      await this.check();
+    }
+  }
+
   /** Режим polling: бот сам забирает сообщения — подходит для локального запуска без домена. */
   private async pollLoop() {
+    let failing = false;
     while (!this.stopped) {
       try {
         const updates = await this.client.getUpdates(this.offset, 25);
-        this.telegram.setProblem(null);
+        if (failing) this.logger.log('Telegram polling восстановлен');
+        // После сбоя — сразу снять ошибку, иначе профиль ещё долго показывал бы её
+        await this.beat(null, failing);
+        failing = false;
         for (const u of updates) {
           this.offset = u.update_id + 1;
           await this.telegram.handleUpdate(u);
         }
       } catch (err) {
         const e = err as TelegramApiError;
-        // 409 — запущен webhook или второй poller; ждём дольше
-        this.telegram.setProblem(TelegramService.explain(err));
+        failing = true;
+        await this.beat(TelegramService.explain(err), true);
         this.logger.warn(`Telegram polling: ${e.message}`);
+        // 409 — запущен webhook или второй poller; ждём дольше
         await this.sleep(e.status === 409 ? 60_000 : 10_000);
       }
     }

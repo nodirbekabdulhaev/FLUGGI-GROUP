@@ -34,6 +34,8 @@ test('Telegram и личные настройки уведомлений', async
   if (SECRET) {
     // Если уже подключён с прошлого прогона — отключаем
     const unlink = manager.getByRole('button', { name: 'Отключить' });
+    const connect = manager.getByRole('button', { name: 'Подключить Telegram' });
+    await expect(unlink.or(connect)).toBeVisible();
     if (await unlink.isVisible()) await unlink.click();
     await manager.getByRole('button', { name: 'Подключить Telegram' }).click();
     const command = (await manager.getByTestId('telegram-command').textContent())!.trim();

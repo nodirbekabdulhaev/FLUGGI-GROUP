@@ -77,6 +77,9 @@ beforeEach(async () => {
   calls.length = 0;
   failNext = null;
   app.get(SettingsService).invalidate();
+  // Фоновый процесс бота проверил токен (в тестах фоновые циклы выключены)
+  await app.get(TelegramRunner).check();
+  calls.length = 0;
 });
 
 const drain = async () => {
@@ -155,19 +158,52 @@ describe('Telegram-бот (ТЗ §53)', () => {
     expect((await rop.get('/api/v1/me/telegram')).body.linked).toBe(false);
   });
 
-  it('неверный токен: CRM показывает причину и не выдаёт код', async () => {
+  it('бот не работает: CRM показывает причину и не выдаёт код', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
     const runner = app.get(TelegramRunner);
+    const problem = async () => (await manager.get('/api/v1/me/telegram')).body.problem as string;
+
+    // Неверный токен
     failNext = { status: 401, description: 'Unauthorized', method: 'getMe' };
     expect(await runner.check()).toBe(false);
-    const s = (await manager.get('/api/v1/me/telegram')).body;
-    expect(s.problem).toContain('Токен бота недействителен');
+    expect(await problem()).toContain('Токен бота недействителен');
     const l = await manager.post('/api/v1/me/telegram/link');
     expect(l.status).toBe(422);
     expect(l.body.error.message).toContain('TELEGRAM_BOT_TOKEN');
+
     // Токен исправлен — проблема уходит
     expect(await runner.check()).toBe(true);
-    expect((await manager.get('/api/v1/me/telegram')).body.problem).toBeNull();
+    expect(await problem()).toBeNull();
+
+    // Имя бота в .env не совпадает с ботом токена — ссылка вела бы не в того бота
+    process.env.TELEGRAM_BOT_USERNAME = '@other_bot';
+    resetEnvCache();
+    try {
+      expect(await runner.check()).toBe(false);
+      expect(await problem()).toContain('не совпадает');
+    } finally {
+      delete process.env.TELEGRAM_BOT_USERNAME;
+      resetEnvCache();
+    }
+    expect(await runner.check()).toBe(true);
+    // Ссылка — на настоящего бота из getMe
+    expect((await manager.post('/api/v1/me/telegram/link')).body.deepLink).toContain(
+      't.me/fluggi_test_bot?',
+    );
+
+    // Фоновый процесс давно не отзывался (API не перезапущен, worker не запущен) — «бот не запущен»
+    await prisma.setting.update({
+      where: { key: 'telegram.health' },
+      data: {
+        value: {
+          at: new Date(Date.now() - 10 * 60_000).toISOString(),
+          problem: null,
+          bot: 'fluggi_test_bot',
+        },
+      },
+    });
+    expect(await problem()).toContain('Бот не запущен');
+    expect((await manager.post('/api/v1/me/telegram/link')).status).toBe(422);
   });
 
   it('доставка: очередь, повтор после ошибки, личные настройки каналов', async () => {

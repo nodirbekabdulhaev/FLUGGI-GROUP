@@ -4,14 +4,15 @@ import type { TelegramLinkDto, TelegramStatusDto } from '@fluggi/contracts';
 import type { AuthContext } from '../../core/auth/auth-context';
 import { businessRule } from '../../core/http/app.exception';
 import { PrismaService } from '../../core/prisma/prisma.service';
-import {
-  backgroundEnabled,
-  TelegramApiError,
-  TelegramClient,
-  type TelegramUpdate,
-} from './telegram.client';
+import { TelegramApiError, TelegramClient, type TelegramUpdate } from './telegram.client';
 
 const LINK_TTL_MS = 15 * 60_000;
+const HEALTH_KEY = 'telegram.health';
+interface Health {
+  at: string;
+  problem: string | null;
+  bot: string | null;
+}
 const hash = (t: string) => createHash('sha256').update(t).digest('hex');
 
 /**
@@ -21,12 +22,8 @@ const hash = (t: string) => createHash('sha256').update(t).digest('hex');
 @Injectable()
 export class TelegramService {
   private readonly logger = new Logger(TelegramService.name);
-  private botUsername: string | null = null;
-  private problem: string | null = null;
-
-  setProblem(problem: string | null) {
-    this.problem = problem;
-  }
+  /** Бот «молчит» дольше этого — значит, сообщения никто не принимает. */
+  static readonly STALE_MS = 2 * 60_000;
 
   /** Понятная причина сбоя Telegram для CEO. */
   static explain(err: unknown): string {
@@ -40,10 +37,31 @@ export class TelegramService {
     return `Нет связи с Telegram: ${(err as Error).message}`;
   }
 
-  /** Почему бот может не отвечать — показывается в профиле (проверка в этом процессе). */
-  currentProblem(): string | null {
+  /**
+   * Состояние бота пишет фоновый процесс (API в разработке или worker) — в БД,
+   * чтобы любой экземпляр API видел, принимает ли кто-то сообщения.
+   */
+  async reportHealth(h: { problem: string | null; bot: string | null }) {
+    const value = { ...h, at: new Date().toISOString() };
+    await this.prisma.setting.upsert({
+      where: { key: HEALTH_KEY },
+      update: { value },
+      create: { key: HEALTH_KEY, value },
+    });
+  }
+
+  private async health(): Promise<Health | null> {
+    const row = await this.prisma.setting.findUnique({ where: { key: HEALTH_KEY } });
+    return (row?.value as Health | undefined) ?? null;
+  }
+
+  /** Почему бот может не отвечать — показывается в профиле. */
+  async currentProblem(): Promise<string | null> {
     if (!this.client.configured) return null;
-    return this.problem;
+    const h = await this.health();
+    if (!h || Date.now() - new Date(h.at).getTime() > TelegramService.STALE_MS)
+      return 'Бот не запущен: сообщения боту сейчас никто не принимает. Перезапустите API (после изменения .env это обязательно); в production — запустите worker. В логе при запуске должно быть «Telegram-бот @… подключён»';
+    return h.problem;
   }
 
   constructor(
@@ -51,16 +69,9 @@ export class TelegramService {
     private readonly client: TelegramClient,
   ) {}
 
-  /** Имя бота: из настроек или через getMe (кэшируется). */
+  /** Имя бота: настоящее (из getMe, его сохраняет фоновый процесс), иначе из .env. */
   async username(): Promise<string | null> {
-    if (this.client.username) return this.client.username;
-    if (this.botUsername || !this.client.configured) return this.botUsername;
-    try {
-      this.botUsername = (await this.client.getMe()).username;
-    } catch (err) {
-      this.logger.warn(`getMe failed: ${(err as Error).message}`);
-    }
-    return this.botUsername;
+    return (await this.health())?.bot ?? this.client.username;
   }
 
   async status(auth: AuthContext): Promise<TelegramStatusDto> {
@@ -70,7 +81,7 @@ export class TelegramService {
       botUsername: await this.username(),
       linked: Boolean(user.telegramChatId),
       username: user.telegramUsername,
-      problem: this.currentProblem(),
+      problem: await this.currentProblem(),
     };
   }
 
@@ -79,7 +90,7 @@ export class TelegramService {
       throw businessRule(
         'Telegram-бот не настроен: CEO должен указать TELEGRAM_BOT_TOKEN на сервере',
       );
-    const problem = this.currentProblem();
+    const problem = await this.currentProblem();
     if (problem) throw businessRule(problem);
     const bot = await this.username();
     if (!bot) throw businessRule('Не удалось получить имя бота. Укажите TELEGRAM_BOT_USERNAME');
