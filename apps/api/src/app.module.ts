@@ -35,6 +35,7 @@ import { AutomationModule } from './modules/automation/automation.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
 import { CatalogModule } from './modules/catalog/catalog.module';
 import { DocumentsModule } from './modules/documents/documents.module';
+import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { TodosModule } from './modules/todos/todos.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
@@ -107,6 +108,7 @@ const env = loadEnv();
     ChatModule,
     CatalogModule,
     DocumentsModule,
+    IntegrationsModule,
   ],
   controllers: [HealthController, ClientErrorsController],
   providers: [

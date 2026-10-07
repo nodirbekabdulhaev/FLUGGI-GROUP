@@ -38,6 +38,24 @@ const envSchema = z.object({
         .regex(/^(https?|socks5):\/\/.+/, 'Ожидается http://, https:// или socks5://')
         .optional(),
     ),
+  /**
+   * Instagram / Facebook (Meta): Директ, комментарии, лид-формы таргета.
+   * Секрет приложения — проверка подписи webhook; токен проверки — при подключении webhook;
+   * токен страницы — ответы из CRM и чтение лидов таргета. Без них интеграция выключена.
+   */
+  META_APP_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  META_VERIFY_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  META_PAGE_ACCESS_TOKEN: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined),
+  META_GRAPH_BASE: z.url().default('https://graph.facebook.com/v21.0'),
   /** Планировщик (напоминания, отчёты). false — выключить (тесты, отдельный API без worker). */
   SCHEDULER_ENABLED: z
     .enum(['true', 'false'])

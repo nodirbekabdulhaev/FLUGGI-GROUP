@@ -9,6 +9,13 @@ export const AUTHENTICATED_ONLY = 'fluggi:authenticatedOnly';
 /** Endpoint доступен без входа (логин, health, webhook). */
 export const Public = () => SetMetadata(IS_PUBLIC, true);
 
+export const CROSS_ORIGIN = 'fluggi:crossOrigin';
+/**
+ * Публичный приём данных с других сайтов (форма на WordPress, webhook Meta): без проверки Origin.
+ * Сессия здесь не используется — cookie на межсайтовый POST не уходят (SameSite=Lax).
+ */
+export const CrossOrigin = () => SetMetadata(CROSS_ORIGIN, true);
+
 export interface RequiredPermission {
   code: PermissionCode;
   minScope: Scope;

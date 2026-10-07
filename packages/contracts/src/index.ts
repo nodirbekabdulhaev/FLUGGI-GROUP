@@ -20,3 +20,4 @@ export * from './schemas/analytics';
 export * from './schemas/todos';
 export * from './schemas/catalog';
 export * from './schemas/documents';
+export * from './schemas/integrations';

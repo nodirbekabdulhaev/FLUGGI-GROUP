@@ -61,6 +61,16 @@ export const NOTIFICATION_EVENTS: { type: string; label: string; roles: RoleCode
     label: 'Сообщение в чате',
     roles: ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN'],
   },
+  {
+    type: 'social.message',
+    label: 'Instagram: Директ и комментарии',
+    roles: ['CEO', 'ROP', 'MANAGER'],
+  },
+  {
+    type: 'lead.inbound_repeat',
+    label: 'Повторная заявка клиента',
+    roles: ['CEO', 'ROP', 'MANAGER'],
+  },
   { type: 'report.daily', label: 'Ежедневный отчёт', roles: ['CEO', 'ROP'] },
   { type: 'report.weekly', label: 'Еженедельный отчёт', roles: ['CEO'] },
   { type: 'payroll.calculated', label: 'Предварительный расчёт зарплаты', roles: ['CEO'] },

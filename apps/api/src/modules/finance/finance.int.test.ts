@@ -63,6 +63,7 @@ describe('Финансы (ТЗ §25–27)', () => {
   it('финансовая карточка проекта: пример ТЗ §25 — прибыль 4 300 000, маржа 47.78%', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
     const rop = await Client.login(app, 'rop@test.uz');
+    const ceo = await Client.login(app, 'ceo@test.uz');
     const { projectId } = await sale(manager, rop, ['9000000']);
 
     const items: [string, string][] = [
@@ -74,7 +75,7 @@ describe('Финансы (ТЗ §25–27)', () => {
       ['OTHER', '200000'],
     ];
     for (const [category, amount] of items) {
-      const r = await rop.post('/api/v1/expenses', {
+      const r = await ceo.post('/api/v1/expenses', {
         scope: 'PROJECT',
         projectId,
         category,
@@ -83,7 +84,7 @@ describe('Финансы (ТЗ §25–27)', () => {
       });
       expect(r.status, JSON.stringify(r.body)).toBe(201);
     }
-    const f = (await rop.get(`/api/v1/projects/${projectId}/finance`)).body;
+    const f = (await ceo.get(`/api/v1/projects/${projectId}/finance`)).body;
     expect(f).toMatchObject({
       revenueUzs: '9000000.00',
       collectedUzs: '9000000.00',
@@ -99,14 +100,26 @@ describe('Финансы (ТЗ §25–27)', () => {
       amountUzs: '2500000.00',
     });
 
-    // Исполнитель и менеджер финансы проекта не видят (Rule 10)
+    // Финансы проекта — только CEO: РОП, менеджер и исполнитель их не видят
+    expect((await rop.get(`/api/v1/projects/${projectId}/finance`)).status).toBe(403);
+    expect(
+      (
+        await rop.post('/api/v1/expenses', {
+          scope: 'PROJECT',
+          projectId,
+          category: 'OTHER',
+          amount: '1',
+          expenseDate: today(),
+        })
+      ).status,
+    ).toBe(403);
     expect((await manager.get(`/api/v1/projects/${projectId}/finance`)).status).toBe(403);
     expect((await manager.get('/api/v1/expenses')).status).toBe(403);
     const ex = await Client.login(app, 'executor@test.uz');
     expect((await ex.get(`/api/v1/projects/${projectId}/finance`)).status).toBe(403);
   });
 
-  it('расходы: РОП — только проектные, CEO — и компании; правка и мягкое удаление с аудитом', async () => {
+  it('расходы ведёт только CEO: проектные и компании; правка и мягкое удаление с аудитом', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
     const rop = await Client.login(app, 'rop@test.uz');
     const ceo = await Client.login(app, 'ceo@test.uz');
@@ -124,7 +137,7 @@ describe('Финансы (ТЗ §25–27)', () => {
     expect((await ceo.post('/api/v1/expenses', { ...company, scope: 'PROJECT' })).status).toBe(422);
     expect((await ceo.post('/api/v1/expenses', { ...company, projectId })).status).toBe(422);
 
-    const e = await rop.post('/api/v1/expenses', {
+    const e = await ceo.post('/api/v1/expenses', {
       scope: 'PROJECT',
       projectId,
       category: 'DESIGN',
@@ -135,18 +148,17 @@ describe('Финансы (ТЗ §25–27)', () => {
     });
     expect(e.body.amountUzs).toBe('1265000.00'); // курс 12 650
     expect(e.body.number).toMatch(/^EXP-\d{5}$/);
-    // РОП не видит расходы компании
-    const ropList = (await rop.get('/api/v1/expenses')).body;
-    expect(ropList.items.map((x: { scope: string }) => x.scope)).toEqual(['PROJECT']);
+    // РОП расходы не видит
+    expect((await rop.get('/api/v1/expenses')).status).toBe(403);
     expect((await ceo.get('/api/v1/expenses')).body.total).toBe(2);
 
-    const fixed = await rop.patch(`/api/v1/expenses/${e.body.id}`, {
+    const fixed = await ceo.patch(`/api/v1/expenses/${e.body.id}`, {
       amount: '1 500 000',
       currency: 'UZS',
     });
     expect(fixed.body.amountUzs).toBe('1500000.00');
-    expect((await rop.delete(`/api/v1/expenses/${e.body.id}`)).status).toBe(204);
-    expect((await rop.get('/api/v1/expenses')).body.total).toBe(0);
+    expect((await ceo.delete(`/api/v1/expenses/${e.body.id}`)).status).toBe(204);
+    expect((await ceo.get('/api/v1/expenses')).body.total).toBe(1);
     expect(await prisma.expense.count()).toBe(2); // запись осталась (soft delete)
     const audit = await prisma.auditLog.findMany({
       where: { entityType: 'expense', entityId: e.body.id },
@@ -159,12 +171,12 @@ describe('Финансы (ТЗ §25–27)', () => {
     ]);
   });
 
-  it('финансовый дашборд: CEO видит прибыль компании, РОП — отдела без расходов компании', async () => {
+  it('финансовый дашборд: прибыль компании видит только CEO', async () => {
     const manager = await Client.login(app, 'manager@test.uz');
     const rop = await Client.login(app, 'rop@test.uz');
     const ceo = await Client.login(app, 'ceo@test.uz');
     const { projectId, pay } = await sale(manager, rop, ['5000000']);
-    await rop.post('/api/v1/expenses', {
+    await ceo.post('/api/v1/expenses', {
       scope: 'PROJECT',
       projectId,
       category: 'DESIGN',
@@ -199,10 +211,7 @@ describe('Финансы (ТЗ §25–27)', () => {
       operatingProfitUzs: '4100000.00',
       marginPct: '75.00',
     });
-    const r = (await rop.get('/api/v1/finance/summary?period=week')).body;
-    expect(r.companyExpensesUzs).toBeNull();
-    expect(r.operatingProfitUzs).toBeNull();
-    expect(r.grossProfitUzs).toBe('6000000.00');
+    expect((await rop.get('/api/v1/finance/summary?period=week')).status).toBe(403);
     // Прошлый год — пусто
     const empty = (
       await ceo.get('/api/v1/finance/summary?period=custom&from=2020-01-01&to=2020-12-31')
@@ -234,7 +243,7 @@ describe('Финансы (ТЗ §25–27)', () => {
     expect(rule.status, JSON.stringify(rule.body)).toBe(201);
 
     const { projectId, pay } = await sale(manager, rop, ['8000000']);
-    await rop.post('/api/v1/expenses', {
+    await ceo.post('/api/v1/expenses', {
       scope: 'PROJECT',
       projectId,
       category: 'DEVELOPMENT',

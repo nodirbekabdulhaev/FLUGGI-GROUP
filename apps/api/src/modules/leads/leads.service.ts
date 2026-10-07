@@ -192,6 +192,75 @@ export class LeadsService {
     });
   }
 
+  /**
+   * Лид из внешнего канала (форма сайта, Instagram, таргет): без пользователя-автора,
+   * ответственный выбран заранее. Источник — по коду справочника.
+   */
+  async createInbound(input: {
+    title: string;
+    contactName?: string | null;
+    companyName?: string | null;
+    phone?: string | null;
+    email?: string | null;
+    instagram?: string | null;
+    comment?: string | null;
+    sourceCode: string;
+    sourceId?: string | null;
+    serviceId?: string | null;
+    ownerId: string;
+    channel: string;
+  }): Promise<{ id: string; number: number; title: string }> {
+    const [source, stage, owner] = await Promise.all([
+      input.sourceId
+        ? this.prisma.leadSource.findUnique({ where: { id: input.sourceId } })
+        : this.prisma.leadSource.findUnique({ where: { code: input.sourceCode } }),
+      this.stage('NEW'),
+      this.prisma.user.findUniqueOrThrow({ where: { id: input.ownerId } }),
+    ]);
+    const src =
+      source ?? (await this.prisma.leadSource.findFirstOrThrow({ where: { code: 'OTHER' } }));
+    return this.prisma.$transaction(async (tx) => {
+      const lead = await tx.lead.create({
+        data: {
+          title: input.title.slice(0, 200),
+          contactName: input.contactName ?? null,
+          companyName: input.companyName ?? null,
+          phone: input.phone ?? null,
+          email: input.email ?? null,
+          instagram: input.instagram ?? null,
+          comment: input.comment ?? null,
+          sourceId: src.id,
+          serviceId: input.serviceId ?? null,
+          ownerId: owner.id,
+          teamId: owner.teamId,
+          stageId: stage.id,
+          createdById: owner.id,
+        },
+      });
+      await this.rescore(tx, lead.id);
+      await this.activity.stageChange(tx, { leadId: lead.id }, null, stage.id, owner.id);
+      await this.activity.log(tx, {
+        type: 'lead.created',
+        actorId: null,
+        leadId: lead.id,
+        payload: { owner: owner.fullName, source: src.nameRu, channel: input.channel },
+      });
+      await this.outbox.publish(
+        tx,
+        'lead.created',
+        {
+          leadId: lead.id,
+          ownerId: owner.id,
+          teamId: owner.teamId,
+          createdById: owner.id,
+          budgetUzs: null,
+        },
+        null,
+      );
+      return { id: lead.id, number: lead.number, title: lead.title };
+    });
+  }
+
   async update(
     auth: AuthContext,
     id: string,

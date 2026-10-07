@@ -25,6 +25,7 @@ export const SOURCES: [string, string][] = [
   ['REFERRAL', 'Рекомендация'],
   ['COLD_OUTREACH', 'Холодный контакт'],
   ['ADVERTISEMENT', 'Реклама'],
+  ['TARGET', 'Таргет (Meta Ads)'],
   ['PHONE', 'Звонок'],
   ['OTHER', 'Другой'],
 ];

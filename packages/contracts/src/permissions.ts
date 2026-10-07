@@ -100,6 +100,7 @@ const own = (codes: PermissionCode[]): PermissionMap =>
 export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, PermissionMap> = {
   CEO: all(PERMISSION_CODES),
 
+  // Финансы проектов (прибыль, расходы) — только CEO; РОП назначает исполнителей
   ROP: {
     ...team([
       'dashboard.team',
@@ -138,9 +139,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, PermissionMap> = {
       'task.read',
       'task.create',
       'task.update',
-      'finance.read',
-      'expense.create',
-      'expense.update',
       'commission.read',
       'kpi.read',
       'kpi.target.manage',
@@ -226,9 +224,6 @@ export const DEFAULT_ROLE_PERMISSIONS: Record<RoleCode, PermissionMap> = {
       'task.read',
       'task.create',
       'task.update',
-      'finance.read',
-      'expense.create',
-      'expense.update',
     ]),
     ...all(['employee.read']),
     ...own(['dashboard.own', 'kpi.read', 'attendance.read', 'payroll.read']),

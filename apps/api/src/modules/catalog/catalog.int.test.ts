@@ -111,7 +111,7 @@ describe('Категории доходов и расходов', () => {
     expect(s.otherIncomeUzs).toBe('2000000.00');
     // 0 оплат − 0,5 млн расходов компании + 2 млн прочих
     expect(s.operatingProfitUzs).toBe('1500000.00');
-    expect((await rop.get('/api/v1/finance/summary?period=month')).body.otherIncomeUzs).toBeNull();
+    expect((await rop.get('/api/v1/finance/summary?period=month')).status).toBe(403);
     expect((await ceo.delete(`/api/v1/other-incomes/${inc.body.id}`)).status).toBe(204);
     expect((await ceo.get('/api/v1/finance/summary?period=month')).body.otherIncomeUzs).toBe(
       '0.00',
@@ -235,7 +235,7 @@ describe('Тарифы, ставки исполнителей и себесто�
     await drain();
 
     // Плановая себестоимость из тарифа
-    let lines = (await rop.get(`/api/v1/projects/${projectId}/cost-lines`)).body;
+    let lines = (await ceo.get(`/api/v1/projects/${projectId}/cost-lines`)).body;
     expect(
       lines.map((l: { label: string; quantity: string; rate: string; currency: string }) => [
         l.label,
@@ -249,13 +249,13 @@ describe('Тарифы, ставки исполнителей и себесто�
       ['Карусель (5 картинок)', '4', '150000.00', 'UZS'],
       ['Сторис', '15', '50000.00', 'UZS'],
     ]);
-    let fin = (await rop.get(`/api/v1/projects/${projectId}/finance`)).body;
+    let fin = (await ceo.get(`/api/v1/projects/${projectId}/finance`)).body;
     expect(fin.plannedCostUzs).toBe('2922000.00');
 
     // Видеограф в команде → его строка с личной ставкой 12 $
     await rop.post(`/api/v1/projects/${projectId}/members`, { userId: fx.users.executor.id });
     await drain();
-    lines = (await rop.get(`/api/v1/projects/${projectId}/cost-lines`)).body;
+    lines = (await ceo.get(`/api/v1/projects/${projectId}/cost-lines`)).body;
     const reelLine = lines[0];
     expect(reelLine).toMatchObject({
       rate: '12.00',
@@ -264,16 +264,18 @@ describe('Тарифы, ставки исполнителей и себесто�
       amount: '96.00',
     });
     // Без исполнителя не начислить; исполнитель вне команды — нельзя
-    expect((await rop.post(`/api/v1/cost-lines/${lines[1].id}/accrue`)).status).toBe(422);
+    expect((await ceo.post(`/api/v1/cost-lines/${lines[1].id}/accrue`)).status).toBe(422);
     expect(
-      (await rop.patch(`/api/v1/cost-lines/${lines[1].id}`, { assigneeId: fx.users.manager.id }))
+      (await ceo.patch(`/api/v1/cost-lines/${lines[1].id}`, { assigneeId: fx.users.manager.id }))
         .status,
     ).toBe(422);
-    // Менеджер (без права на расходы проекта) не начисляет
+    // РОП и менеджер (без права на расходы проекта) план не видят и не начисляют
+    expect((await rop.get(`/api/v1/projects/${projectId}/cost-lines`)).status).toBe(403);
+    expect((await rop.post(`/api/v1/cost-lines/${reelLine.id}/accrue`)).status).toBe(403);
     expect((await manager.post(`/api/v1/cost-lines/${reelLine.id}/accrue`)).status).toBe(403);
 
     // Начислить → расход проекта «Исполнитель» на 96 $
-    const acc = await rop.post(`/api/v1/cost-lines/${reelLine.id}/accrue`);
+    const acc = await ceo.post(`/api/v1/cost-lines/${reelLine.id}/accrue`);
     expect(acc.status, JSON.stringify(acc.body)).toBe(200);
     expect(acc.body).toMatchObject({
       status: 'ACCRUED',
@@ -286,14 +288,14 @@ describe('Тарифы, ставки исполнителей и себесто�
       currency: 'USD',
     });
     expect(exp.amount.toFixed(2)).toBe('96.00');
-    expect((await rop.post(`/api/v1/cost-lines/${reelLine.id}/accrue`)).status).toBe(422);
-    fin = (await rop.get(`/api/v1/projects/${projectId}/finance`)).body;
+    expect((await ceo.post(`/api/v1/cost-lines/${reelLine.id}/accrue`)).status).toBe(422);
+    fin = (await ceo.get(`/api/v1/projects/${projectId}/finance`)).body;
     expect(fin.expensesUzs).toBe('1214400.00');
     expect(fin.plannedCostUzs).toBe('1910000.00');
 
     // Отмена плановой строки
-    expect((await rop.post(`/api/v1/cost-lines/${lines[3].id}/cancel`)).status).toBe(204);
-    expect((await rop.get(`/api/v1/projects/${projectId}/cost-lines`)).body).toHaveLength(3);
+    expect((await ceo.post(`/api/v1/cost-lines/${lines[3].id}/cancel`)).status).toBe(204);
+    expect((await ceo.get(`/api/v1/projects/${projectId}/cost-lines`)).body).toHaveLength(3);
 
     // Накладные: аренда 10 млн за месяц делится на проекты месяца (1) → весь в проект; делитель 5 → 2 млн
     await ceo.post('/api/v1/expenses', {
