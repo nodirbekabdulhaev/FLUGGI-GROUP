@@ -105,7 +105,9 @@ type Specialty =
   | 'TARGETOLOGIST'
   | 'DEVELOPER'
   | 'PHOTOGRAPHER'
-  | 'COPYWRITER';
+  | 'COPYWRITER'
+  | 'MOBILOGRAPHER'
+  | 'BRANDFACE';
 
 /** [название задачи, роль исполнителя, начало (дней от старта проекта), длительность (дней)] */
 export const PROJECT_TEMPLATES: {
@@ -289,6 +291,56 @@ export async function seedReferences(prisma: PrismaClient) {
       ],
     });
   }
+  // Категории доходов и расходов (меняются в настройках; код постоянный)
+  for (const [i, [code, kind, name, accountHint, isOverhead]] of FINANCE_CATEGORIES.entries()) {
+    await prisma.financeCategory.upsert({
+      where: { code },
+      update: {},
+      create: { code, kind, name, accountHint, isOverhead, sort: i },
+    });
+  }
+  // Единицы работ исполнителей и базовые ставки (CEO меняет в «Настройки → Тарифы»)
+  for (const [i, w] of WORK_ITEMS.entries()) {
+    await prisma.workItem.upsert({
+      where: { code: w.code },
+      update: {},
+      create: { ...w, sort: i },
+    });
+  }
+  // Тарифы — пример из ТЗ, создаются только если тарифов ещё нет
+  if ((await prisma.tariff.count()) === 0) {
+    for (const t of TARIFFS) {
+      const service = await prisma.service.findUnique({ where: { code: t.service } });
+      if (!service) continue;
+      const items = [];
+      for (const [sort, it] of t.items.entries()) {
+        const workItem = it.workItem
+          ? await prisma.workItem.findUnique({ where: { code: it.workItem } })
+          : null;
+        items.push({
+          kind: it.kind,
+          workItemId: workItem?.id ?? null,
+          quantity: it.quantity ?? 1,
+          specialty: it.specialty ?? null,
+          amount: it.amount ?? null,
+          currency: it.currency ?? 'UZS',
+          label: it.label ?? null,
+          sort,
+        });
+      }
+      await prisma.tariff.create({
+        data: {
+          serviceId: service.id,
+          name: t.name,
+          description: t.description,
+          price: t.price,
+          currency: t.currency,
+          sort: t.sort,
+          items: { create: items },
+        },
+      });
+    }
+  }
   return {
     services: SERVICES.length,
     sources: SOURCES.length,
@@ -296,3 +348,147 @@ export async function seedReferences(prisma: PrismaClient) {
     stages: STAGES.length,
   };
 }
+
+export const FINANCE_CATEGORIES: [string, 'EXPENSE' | 'INCOME', string, string, boolean][] = [
+  ['EXECUTOR', 'EXPENSE', 'Исполнитель', '9130', false],
+  ['ADS', 'EXPENSE', 'Реклама', '9410', false],
+  ['PRODUCTION', 'EXPENSE', 'Производство', '9130', false],
+  ['PHOTO', 'EXPENSE', 'Фото', '9130', false],
+  ['VIDEO', 'EXPENSE', 'Видео', '9130', false],
+  ['DESIGN', 'EXPENSE', 'Дизайн', '9130', false],
+  ['DEVELOPMENT', 'EXPENSE', 'Разработка', '9130', false],
+  ['TRANSPORT', 'EXPENSE', 'Транспорт', '9420', false],
+  ['MATERIALS', 'EXPENSE', 'Материалы', '9130', false],
+  ['SERVICES', 'EXPENSE', 'Сервисы', '9420', false],
+  ['OTHER', 'EXPENSE', 'Прочее', '9420', false],
+  ['RENT', 'EXPENSE', 'Аренда', '9420', true],
+  ['OFFICE', 'EXPENSE', 'Офис (связь, интернет, хозтовары)', '9420', true],
+  ['TAXES', 'EXPENSE', 'Налоги и сборы', '9430', false],
+  ['BANK', 'EXPENSE', 'Банковские комиссии', '9430', false],
+  ['PARTNER', 'INCOME', 'Партнёрское вознаграждение', '9390', false],
+  ['SUPPLIER_REFUND', 'INCOME', 'Возврат от поставщика', '9390', false],
+  ['BANK_INTEREST', 'INCOME', 'Проценты банка', '9530', false],
+  ['FX_GAIN', 'INCOME', 'Курсовая разница', '9540', false],
+  ['OTHER_INCOME', 'INCOME', 'Прочие доходы', '9390', false],
+];
+
+/** Единицы работ и базовые ставки (пример CEO; личные ставки — в карточке сотрудника). */
+export const WORK_ITEMS: {
+  code: string;
+  name: string;
+  unit: string;
+  specialty: Specialty;
+  defaultRate: number;
+  currency: 'UZS' | 'USD';
+}[] = [
+  {
+    code: 'REEL',
+    name: 'Рилс (съёмка)',
+    unit: 'шт',
+    specialty: 'VIDEOGRAPHER',
+    defaultRate: 10,
+    currency: 'USD',
+  },
+  {
+    code: 'COVER',
+    name: 'Обложка',
+    unit: 'шт',
+    specialty: 'DESIGNER',
+    defaultRate: 70000,
+    currency: 'UZS',
+  },
+  {
+    code: 'CAROUSEL',
+    name: 'Карусель (5 картинок)',
+    unit: 'шт',
+    specialty: 'DESIGNER',
+    defaultRate: 150000,
+    currency: 'UZS',
+  },
+  {
+    code: 'STORY',
+    name: 'Сторис',
+    unit: 'шт',
+    specialty: 'MOBILOGRAPHER',
+    defaultRate: 50000,
+    currency: 'UZS',
+  },
+  {
+    code: 'BRANDFACE_REEL',
+    name: 'Рилс с брендфейсом',
+    unit: 'шт',
+    specialty: 'BRANDFACE',
+    defaultRate: 200000,
+    currency: 'UZS',
+  },
+];
+
+type TariffSeed = {
+  service: string;
+  name: string;
+  description: string;
+  price: number;
+  currency: 'UZS' | 'USD';
+  sort: number;
+  items: {
+    kind: 'PIECE' | 'FIXED';
+    workItem?: string;
+    quantity?: number;
+    specialty?: Specialty;
+    amount?: number;
+    currency?: 'UZS' | 'USD';
+    label?: string;
+  }[];
+};
+
+/** Тарифы — пример из ТЗ (CEO меняет цены и состав в настройках). */
+export const TARIFFS: TariffSeed[] = [
+  {
+    service: 'SMM',
+    name: 'Эконом',
+    description: '8 рилсов, 8 обложек, 4 карусели, 15 сторис в месяц',
+    price: 650,
+    currency: 'USD',
+    sort: 0,
+    items: [
+      { kind: 'PIECE', workItem: 'REEL', quantity: 8 },
+      { kind: 'PIECE', workItem: 'COVER', quantity: 8 },
+      { kind: 'PIECE', workItem: 'CAROUSEL', quantity: 4 },
+      { kind: 'PIECE', workItem: 'STORY', quantity: 15 },
+    ],
+  },
+  {
+    service: 'WEBSITE',
+    name: 'Эконом',
+    description: 'Лендинг до 5 блоков',
+    price: 750,
+    currency: 'USD',
+    sort: 0,
+    items: [
+      {
+        kind: 'FIXED',
+        specialty: 'DEVELOPER',
+        amount: 3000000,
+        currency: 'UZS',
+        label: 'Веб-разработчик',
+      },
+    ],
+  },
+  {
+    service: 'WEBSITE',
+    name: 'Стандарт',
+    description: 'Корпоративный сайт до 10 страниц',
+    price: 1150,
+    currency: 'USD',
+    sort: 1,
+    items: [
+      {
+        kind: 'FIXED',
+        specialty: 'DEVELOPER',
+        amount: 5000000,
+        currency: 'UZS',
+        label: 'Веб-разработчик',
+      },
+    ],
+  },
+];

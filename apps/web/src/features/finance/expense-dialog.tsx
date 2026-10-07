@@ -1,11 +1,6 @@
 'use client';
 
-import {
-  EXPENSE_CATEGORIES,
-  type ExpenseCategory,
-  type ExpenseDto,
-  type ExpenseScope,
-} from '@fluggi/contracts';
+import { type ExpenseCategory, type ExpenseDto, type ExpenseScope } from '@fluggi/contracts';
 import { useTranslations } from 'next-intl';
 import { useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -21,6 +16,7 @@ import { useUsers } from '@/features/team/api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { newIdempotencyKey } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
+import { useFinanceCategories } from './api';
 
 const today = () => new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 10);
 
@@ -41,6 +37,7 @@ export function ExpenseDialog({
   projectId?: string;
 }) {
   const t = useTranslations('finance');
+  const categories = useFinanceCategories('EXPENSE');
   const can = useCan();
   const company = can('finance.company.read', 'ALL');
   const [v, setV] = useState({
@@ -188,11 +185,13 @@ export function ExpenseDialog({
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t('expenses.category')} htmlFor="ex-cat">
               <NativeSelect id="ex-cat" value={v.category} onChange={set('category')}>
-                {EXPENSE_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>
-                    {t(`category.${c}`)}
-                  </option>
-                ))}
+                {(categories.data ?? [])
+                  .filter((c) => c.isActive || c.code === v.category)
+                  .map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
               </NativeSelect>
             </Field>
             <Field label={t('expenses.date')} htmlFor="ex-date" error={errors.expenseDate}>

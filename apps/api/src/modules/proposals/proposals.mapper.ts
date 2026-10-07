@@ -7,7 +7,13 @@ export const proposalInclude = {
   client: { select: { id: true, name: true } },
   manager: { select: { id: true, fullName: true } },
   approvedBy: { select: { id: true, fullName: true } },
-  items: { include: { service: { select: { id: true, nameRu: true } } }, orderBy: { sort: 'asc' } },
+  items: {
+    include: {
+      service: { select: { id: true, nameRu: true } },
+      tariff: { select: { id: true, name: true } },
+    },
+    orderBy: { sort: 'asc' },
+  },
 } satisfies Prisma.ProposalInclude;
 
 export type ProposalRow = Prisma.ProposalGetPayload<{ include: typeof proposalInclude }>;
@@ -41,6 +47,7 @@ export const toProposalDto = (p: ProposalRow): ProposalDto => ({
   items: p.items.map((i) => ({
     id: i.id,
     service: i.service ? { id: i.service.id, name: i.service.nameRu } : null,
+    tariff: i.tariff ? { id: i.tariff.id, name: i.tariff.name } : null,
     description: i.description,
     quantity: i.quantity.toString(),
     unitPrice: decReq(i.unitPrice),

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { useCan } from '@/lib/me-context';
 import { GlobalSearch } from '@/features/analytics/global-search';
+import { WidgetBoundary } from '@/components/shared/widget-boundary';
 import { ChatWidget } from '@/features/chat/chat-widget';
 import { TodoDock } from '@/features/todos/todo-dock';
 import { PeriodSelect } from './period-select';
@@ -63,10 +64,14 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </header>
 
       <main className="mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:pt-8">{children}</main>
-      <TodoDock />
-      <Suspense>
-        <ChatWidget />
-      </Suspense>
+      <WidgetBoundary name="todo-dock">
+        <TodoDock />
+      </WidgetBoundary>
+      <WidgetBoundary name="chat">
+        <Suspense>
+          <ChatWidget />
+        </Suspense>
+      </WidgetBoundary>
     </div>
   );
 }

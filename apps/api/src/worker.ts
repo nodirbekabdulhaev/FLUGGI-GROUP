@@ -11,6 +11,9 @@ import { OutboxModule } from './core/outbox/outbox.module';
 import { PrismaModule } from './core/prisma/prisma.module';
 import { SettingsModule } from './core/settings/settings.service';
 import { AutomationModule } from './modules/automation/automation.module';
+import { CrmModule } from './modules/crm/crm.module';
+import { FinanceModule } from './modules/finance/finance.module';
+import { ReferencesModule } from './modules/references/references.module';
 import { TelegramWorkerModule } from './modules/telegram/telegram.module';
 
 // Worker обрабатывает outbox всегда, независимо от настройки API.
@@ -23,7 +26,11 @@ process.env.OUTBOX_IN_API = 'true';
     OutboxModule,
     SettingsModule,
     TelegramWorkerModule,
+    CrmModule,
+    ReferencesModule,
     AutomationModule,
+    // Себестоимость проекта по тарифу (события project.created / project.member_added)
+    FinanceModule,
   ],
 })
 class WorkerModule {}

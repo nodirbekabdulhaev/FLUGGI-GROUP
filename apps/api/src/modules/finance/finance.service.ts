@@ -17,7 +17,9 @@ import type { AuthContext } from '../../core/auth/auth-context';
 import { PrismaService } from '../../core/prisma/prisma.service';
 import { CrmAccessService } from '../crm/crm-access.service';
 import { ProjectAccessService } from '../projects/project-access.service';
+import { ExchangeRateService } from '../references/exchange-rate.service';
 import { ExpensesService } from './expenses.service';
+import { OverheadService } from './overhead.service';
 
 const ZERO = new Prisma.Decimal(0);
 const dec = (v: Prisma.Decimal | null | undefined) => v ?? ZERO;
@@ -31,7 +33,31 @@ export class FinanceService {
     private readonly projects: ProjectAccessService,
     private readonly crm: CrmAccessService,
     private readonly expenses: ExpensesService,
+    private readonly overhead: OverheadService,
+    private readonly rates: ExchangeRateService,
   ) {}
+
+  /** Названия категорий по коду (справочник редактирует CEO). */
+  private async categoryNames() {
+    const rows = await this.prisma.financeCategory.findMany({ select: { code: true, name: true } });
+    return new Map(rows.map((r) => [r.code, r.name]));
+  }
+
+  /** Плановые (ещё не начисленные) расходы по тарифу, UZS. */
+  private async plannedCost(projectId: string) {
+    const lines = await this.prisma.projectCostLine.findMany({
+      where: { projectId, status: 'PLANNED' },
+      select: { quantity: true, rate: true, currency: true },
+    });
+    if (!lines.length) return ZERO;
+    const usd = lines.some((l) => l.currency === 'USD')
+      ? new Prisma.Decimal(await this.rates.rateFor('USD').catch(() => '0'))
+      : ZERO;
+    return lines.reduce(
+      (s, l) => s.add(l.quantity.mul(l.rate).mul(l.currency === 'USD' ? usd : 1)),
+      ZERO,
+    );
+  }
 
   /** Получено по сделкам: оплаты минус возвраты, по каждой сделке. */
   private async collectedByDeal(dealIds: string[]) {
@@ -60,7 +86,7 @@ export class FinanceService {
   /** Финансовая карточка проекта (ТЗ §25). */
   async project(auth: AuthContext, id: string): Promise<ProjectFinanceDto> {
     const p = await this.projects.project(auth, id, 'finance.read');
-    const [collected, byCat, commissions] = await Promise.all([
+    const [collected, byCat, commissions, names, overhead, planned] = await Promise.all([
       this.collectedByDeal([p.dealId]),
       this.prisma.expense.groupBy({
         by: ['category'],
@@ -71,7 +97,11 @@ export class FinanceService {
         where: { dealId: p.dealId, status: { not: 'CANCELLED' } },
         _sum: { amountUzs: true },
       }),
+      this.categoryNames(),
+      this.overhead.forProjects([p]),
+      this.plannedCost(id),
     ]);
+    const overheadUzs = overhead.get(p.id) ?? ZERO;
     const expenses = byCat.reduce((s, r) => s.add(dec(r._sum.amountUzs)), ZERO);
     const got = collected.get(p.dealId) ?? ZERO;
     const f = projectFinance(p.priceUzs.toString(), expenses.toString());
@@ -81,11 +111,18 @@ export class FinanceService {
       receivableUzs: money(Prisma.Decimal.max(p.priceUzs.sub(got), ZERO)),
       expensesUzs: money(expenses),
       byCategory: byCat
-        .map((r) => ({ category: r.category, amountUzs: money(dec(r._sum.amountUzs)) }))
+        .map((r) => ({
+          category: r.category,
+          name: names.get(r.category) ?? r.category,
+          amountUzs: money(dec(r._sum.amountUzs)),
+        }))
         .sort((a, b) => Number(b.amountUzs) - Number(a.amountUzs)),
       grossProfitUzs: f.grossProfit,
       marginPct: f.marginPct,
       commissionsUzs: money(dec(commissions._sum.amountUzs)),
+      overheadUzs: money(overheadUzs),
+      netProfitUzs: money(new Prisma.Decimal(f.grossProfit).sub(overheadUzs)),
+      plannedCostUzs: money(planned),
     };
   }
 
@@ -108,45 +145,61 @@ export class FinanceService {
       lt: new Date(to.getTime() + 5 * 3_600_000),
     };
 
-    const [revenue, collected, refunds, projectExp, companyExp, commissions, byCat] =
-      await Promise.all([
-        this.prisma.contract.aggregate({
-          where: { status: 'SIGNED', signedAt: inRange, deal: deals },
-          _sum: { amountUzs: true },
-        }),
-        this.prisma.payment.aggregate({
-          where: { status: 'PAID', type: { not: 'REFUND' }, paidAt: inRange, deal: deals },
-          _sum: { amountUzs: true },
-        }),
-        this.prisma.payment.aggregate({
-          where: { status: 'PAID', type: 'REFUND', paidAt: inRange, deal: deals },
-          _sum: { amountUzs: true },
-        }),
-        this.prisma.expense.aggregate({
-          where: {
-            deletedAt: null,
-            scope: 'PROJECT',
-            expenseDate: dateRange,
-            project: projectScope,
-          },
-          _sum: { amountUzs: true },
-        }),
-        company
-          ? this.prisma.expense.aggregate({
-              where: { deletedAt: null, scope: 'COMPANY', expenseDate: dateRange },
-              _sum: { amountUzs: true },
-            })
-          : null,
-        this.prisma.commission.aggregate({
-          where: { status: { not: 'CANCELLED' }, createdAt: inRange, deal: deals },
-          _sum: { amountUzs: true },
-        }),
-        this.prisma.expense.groupBy({
-          by: ['category'],
-          where: { AND: [this.expenses.where(auth), { expenseDate: dateRange }] },
-          _sum: { amountUzs: true },
-        }),
-      ]);
+    const [
+      revenue,
+      collected,
+      refunds,
+      projectExp,
+      companyExp,
+      commissions,
+      byCat,
+      otherIncome,
+      names,
+    ] = await Promise.all([
+      this.prisma.contract.aggregate({
+        where: { status: 'SIGNED', signedAt: inRange, deal: deals },
+        _sum: { amountUzs: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: { status: 'PAID', type: { not: 'REFUND' }, paidAt: inRange, deal: deals },
+        _sum: { amountUzs: true },
+      }),
+      this.prisma.payment.aggregate({
+        where: { status: 'PAID', type: 'REFUND', paidAt: inRange, deal: deals },
+        _sum: { amountUzs: true },
+      }),
+      this.prisma.expense.aggregate({
+        where: {
+          deletedAt: null,
+          scope: 'PROJECT',
+          expenseDate: dateRange,
+          project: projectScope,
+        },
+        _sum: { amountUzs: true },
+      }),
+      company
+        ? this.prisma.expense.aggregate({
+            where: { deletedAt: null, scope: 'COMPANY', expenseDate: dateRange },
+            _sum: { amountUzs: true },
+          })
+        : null,
+      this.prisma.commission.aggregate({
+        where: { status: { not: 'CANCELLED' }, createdAt: inRange, deal: deals },
+        _sum: { amountUzs: true },
+      }),
+      this.prisma.expense.groupBy({
+        by: ['category'],
+        where: { AND: [this.expenses.where(auth), { expenseDate: dateRange }] },
+        _sum: { amountUzs: true },
+      }),
+      company
+        ? this.prisma.otherIncome.aggregate({
+            where: { deletedAt: null, incomeDate: dateRange },
+            _sum: { amountUzs: true },
+          })
+        : null,
+      this.categoryNames(),
+    ]);
 
     const f = companyFinance({
       collected: dec(collected._sum.amountUzs).toString(),
@@ -154,9 +207,14 @@ export class FinanceService {
       projectExpenses: dec(projectExp._sum.amountUzs).toString(),
       companyExpenses: dec(companyExp?._sum.amountUzs).toString(),
       commissions: dec(commissions._sum.amountUzs).toString(),
+      otherIncome: dec(otherIncome?._sum.amountUzs).toString(),
     });
     const expensesByCategory: CategoryAmountDto[] = byCat
-      .map((r) => ({ category: r.category, amountUzs: money(dec(r._sum.amountUzs)) }))
+      .map((r) => ({
+        category: r.category,
+        name: names.get(r.category) ?? r.category,
+        amountUzs: money(dec(r._sum.amountUzs)),
+      }))
       .sort((a, b) => Number(b.amountUzs) - Number(a.amountUzs));
 
     return {
@@ -169,6 +227,7 @@ export class FinanceService {
       projectExpensesUzs: money(dec(projectExp._sum.amountUzs)),
       companyExpensesUzs: company ? money(dec(companyExp?._sum.amountUzs)) : null,
       commissionsUzs: money(dec(commissions._sum.amountUzs)),
+      otherIncomeUzs: company ? money(dec(otherIncome?._sum.amountUzs)) : null,
       grossProfitUzs: f.grossProfit,
       operatingProfitUzs: company ? f.operatingProfit : null,
       marginPct: f.marginPct,
@@ -219,9 +278,10 @@ export class FinanceService {
       }),
       this.prisma.project.count({ where }),
     ]);
-    const [expenses, collected] = await Promise.all([
+    const [expenses, collected, overhead] = await Promise.all([
       this.expensesByProject(rows.map((r) => r.id)),
       this.collectedByDeal(rows.map((r) => r.dealId)),
+      this.overhead.forProjects(rows),
     ]);
     return {
       items: rows.map((p) => {
@@ -236,6 +296,8 @@ export class FinanceService {
           expensesUzs: money(exp),
           grossProfitUzs: f.grossProfit,
           marginPct: f.marginPct,
+          overheadUzs: money(overhead.get(p.id) ?? ZERO),
+          netProfitUzs: money(new Prisma.Decimal(f.grossProfit).sub(overhead.get(p.id) ?? ZERO)),
         };
       }),
       total,

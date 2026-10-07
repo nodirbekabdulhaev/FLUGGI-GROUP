@@ -32,6 +32,7 @@ import { FinanceModule } from './modules/finance/finance.module';
 import { PeopleModule } from './modules/people/people.module';
 import { AutomationModule } from './modules/automation/automation.module';
 import { AnalyticsModule } from './modules/analytics/analytics.module';
+import { CatalogModule } from './modules/catalog/catalog.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { TodosModule } from './modules/todos/todos.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
@@ -102,6 +103,7 @@ const env = loadEnv();
     AnalyticsModule,
     TodosModule,
     ChatModule,
+    CatalogModule,
   ],
   controllers: [HealthController],
   providers: [

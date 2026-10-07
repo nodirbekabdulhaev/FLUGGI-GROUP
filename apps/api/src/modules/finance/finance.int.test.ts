@@ -93,7 +93,11 @@ describe('Финансы (ТЗ §25–27)', () => {
       marginPct: '47.78',
       commissionsUzs: '1800000.00',
     });
-    expect(f.byCategory[0]).toEqual({ category: 'DEVELOPMENT', amountUzs: '2500000.00' });
+    expect(f.byCategory[0]).toEqual({
+      category: 'DEVELOPMENT',
+      name: 'Разработка',
+      amountUzs: '2500000.00',
+    });
 
     // Исполнитель и менеджер финансы проекта не видят (Rule 10)
     expect((await manager.get(`/api/v1/projects/${projectId}/finance`)).status).toBe(403);

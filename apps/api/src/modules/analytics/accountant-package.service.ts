@@ -26,9 +26,10 @@ const MONTHS = [
 ];
 
 /** Куда бухгалтеру отнести расход (подсказка по плану счетов НСБУ №21). */
-export function expenseAccount(scope: string, category: string): string {
+export function expenseAccount(scope: string, accountHint: string | null): string {
   if (scope === 'PROJECT') return 'Себестоимость услуг (9130)';
-  if (category === 'ADS') return 'Расходы по реализации (9410)';
+  if (accountHint === '9410') return 'Расходы по реализации (9410)';
+  if (accountHint === '9430') return 'Прочие операционные расходы (9430)';
   return 'Административные расходы (9420)';
 }
 
@@ -66,6 +67,7 @@ export class AccountantPackageService {
       payroll,
       commissions,
       projects,
+      incomes,
     ] = await Promise.all([
       this.settings.company(),
       this.prisma.contract.findMany({
@@ -92,7 +94,7 @@ export class AccountantPackageService {
       }),
       this.prisma.expense.findMany({
         where: { deletedAt: null, expenseDate: dateYear },
-        include: { project: true, payee: true, createdBy: true },
+        include: { project: true, payee: true, createdBy: true, categoryRef: true },
         orderBy: { expenseDate: 'asc' },
       }),
       this.prisma.payrollEntry.findMany({
@@ -129,6 +131,11 @@ export class AccountantPackageService {
         },
         orderBy: { number: 'asc' },
       }),
+      this.prisma.otherIncome.findMany({
+        where: { deletedAt: null, incomeDate: dateYear },
+        include: { categoryRef: true, project: true, client: true },
+        orderBy: { incomeDate: 'asc' },
+      }),
     ]);
 
     const sign = (p: { type: string; amountUzs: Prisma.Decimal }) =>
@@ -145,13 +152,18 @@ export class AccountantPackageService {
       sales: ZERO,
       admin: ZERO,
       payroll: ZERO,
+      income: ZERO,
     }));
+    for (const r of incomes) {
+      const i = Number(r.incomeDate.toISOString().slice(5, 7)) - 1;
+      m[i]!.income = m[i]!.income.add(r.amountUzs);
+    }
     for (const c of contracts)
       m[month(c.signedAt!)]!.contracts = m[month(c.signedAt!)]!.contracts.add(c.amountUzs);
     for (const p of payments) m[month(p.paidAt!)]!.paid = m[month(p.paidAt!)]!.paid.add(sign(p));
     for (const e of expenses) {
       const i = Number(e.expenseDate.toISOString().slice(5, 7)) - 1;
-      const acc = expenseAccount(e.scope, e.category);
+      const acc = expenseAccount(e.scope, e.categoryRef.accountHint);
       const k = acc.startsWith('Себестоимость')
         ? 'cost'
         : acc.startsWith('Расходы по реализации')
@@ -171,8 +183,17 @@ export class AccountantPackageService {
         sales: a.sales.add(x.sales),
         admin: a.admin.add(x.admin),
         payroll: a.payroll.add(x.payroll),
+        income: a.income.add(x.income),
       }),
-      { contracts: ZERO, paid: ZERO, cost: ZERO, sales: ZERO, admin: ZERO, payroll: ZERO },
+      {
+        contracts: ZERO,
+        paid: ZERO,
+        cost: ZERO,
+        sales: ZERO,
+        admin: ZERO,
+        payroll: ZERO,
+        income: ZERO,
+      },
     );
     const gross = t.paid.sub(t.cost);
     const periodExp = t.sales.add(t.admin).add(t.payroll);
@@ -300,6 +321,7 @@ export class AccountantPackageService {
         ['Расходы на проекты (себестоимость), UZS', d(t.cost)],
         ['Расходы компании, UZS', d(t.sales.add(t.admin))],
         ['Зарплата начислена (CRM), UZS', d(t.payroll)],
+        ['Прочие поступления, UZS', d(t.income)],
         ['Дебиторская задолженность клиентов на 31.12, UZS', d(receivable)],
         ['Авансы полученные от клиентов на 31.12, UZS', d(advances)],
         ['Зарплата начислена, но не выплачена на 31.12, UZS', d(payrollDebt)],
@@ -323,10 +345,11 @@ export class AccountantPackageService {
           ['050', '  расходы по реализации (реклама компании)', (x) => x.sales],
           ['060', '  административные (прочие расходы компании)', (x) => x.admin],
           ['060', '  зарплата (без НДФЛ и соцналога)', (x) => x.payroll],
+          ['090', 'Прочие доходы (прочие поступления)', (x) => x.income],
           [
             '100',
             'Прибыль от основной деятельности',
-            (x) => x.paid.sub(x.cost).sub(x.sales).sub(x.admin).sub(x.payroll),
+            (x) => x.paid.sub(x.cost).sub(x.sales).sub(x.admin).sub(x.payroll).add(x.income),
           ],
           ['—', 'Справочно: подписано договоров', (x) => x.contracts],
         ] as [string, string, (x: (typeof m)[number]) => Prisma.Decimal][]
@@ -395,6 +418,34 @@ export class AccountantPackageService {
     });
 
     sheets.push({
+      title: 'Прочие поступления',
+      columns: [
+        { header: 'Номер' },
+        { header: 'Дата', date: true },
+        { header: 'Категория', width: 24 },
+        { header: 'Подсказка счёта' },
+        { header: 'Клиент', width: 24 },
+        { header: 'Проект', width: 28 },
+        { header: 'Описание', width: 30 },
+        { header: 'Сумма', money: true },
+        { header: 'Валюта' },
+        { header: 'Сумма, UZS', money: true },
+      ],
+      rows: incomes.map((r) => [
+        formatNumber('INC', r.number),
+        day(r.incomeDate),
+        r.categoryRef.name,
+        r.categoryRef.accountHint,
+        r.client?.name ?? null,
+        r.project ? `${formatNumber('P', r.project.number)} ${r.project.name}` : null,
+        r.description,
+        num(r.amount),
+        r.currency,
+        num(r.amountUzs),
+      ]),
+    });
+
+    sheets.push({
       title: 'Расчёты с клиентами 31.12',
       columns: [
         { header: 'Клиент', width: 28 },
@@ -437,8 +488,8 @@ export class AccountantPackageService {
         formatNumber('EXP', e.number),
         day(e.expenseDate),
         lbl(L.expenseScope, e.scope),
-        lbl(L.category, e.category),
-        expenseAccount(e.scope, e.category),
+        e.categoryRef.name,
+        expenseAccount(e.scope, e.categoryRef.accountHint),
         e.project ? `${formatNumber('P', e.project.number)} ${e.project.name}` : null,
         e.description,
         e.payee?.fullName ?? null,

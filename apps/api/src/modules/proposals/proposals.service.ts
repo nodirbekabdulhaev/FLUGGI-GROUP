@@ -109,6 +109,22 @@ export class ProposalsService {
   }
 
   private async compute(input: Upsert) {
+    // Тариф определяет услугу позиции; архивный тариф в новое КП не добавить
+    const tariffIds = [
+      ...new Set(input.items.map((i) => i.tariffId).filter((x): x is string => Boolean(x))),
+    ];
+    if (tariffIds.length) {
+      const tariffs = await this.prisma.tariff.findMany({ where: { id: { in: tariffIds } } });
+      for (const [idx, item] of input.items.entries()) {
+        if (!item.tariffId) continue;
+        const t = tariffs.find((x) => x.id === item.tariffId);
+        if (!t || !t.isActive)
+          throw businessRule('Тариф не найден или отключён', [
+            { path: `items.${idx}.tariffId`, message: 'Выберите действующий тариф' },
+          ]);
+        item.serviceId = t.serviceId;
+      }
+    }
     const totals = proposalTotals(input.items);
     const rate = await this.rates.rateFor(input.currency);
     return {
@@ -173,6 +189,7 @@ export class ProposalsService {
           items: {
             create: input.items.map((i, idx) => ({
               serviceId: i.serviceId ?? null,
+              tariffId: i.tariffId ?? null,
               description: i.description,
               quantity: i.quantity,
               unitPrice: i.unitPrice,
@@ -237,6 +254,7 @@ export class ProposalsService {
           items: {
             create: input.items.map((i, idx) => ({
               serviceId: i.serviceId ?? null,
+              tariffId: i.tariffId ?? null,
               description: i.description,
               quantity: i.quantity,
               unitPrice: i.unitPrice,

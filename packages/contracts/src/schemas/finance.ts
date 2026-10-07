@@ -1,7 +1,6 @@
 import { z } from 'zod';
 import {
   CURRENCIES,
-  EXPENSE_CATEGORIES,
   EXPENSE_SCOPES,
   type Currency,
   type ExpenseCategory,
@@ -44,7 +43,8 @@ export function resolvePeriodQuery(
 // ─────────────────────────── Расходы (ТЗ §26) ───────────────────────────
 
 const expenseFields = {
-  category: z.enum(EXPENSE_CATEGORIES),
+  /** Код категории из справочника «Категории доходов и расходов» */
+  category: z.string().trim().min(1, 'Выберите категорию').max(40),
   amount: moneySchema.refine((v) => Number(v) > 0, 'Сумма должна быть больше нуля'),
   currency: z.enum(CURRENCIES).default('UZS'),
   expenseDate: dateOnly,
@@ -77,7 +77,7 @@ export type UpdateExpenseInput = z.input<typeof updateExpenseSchema>;
 export const expenseListQuerySchema = paginationQuerySchema.extend({
   scope: z.enum(EXPENSE_SCOPES).optional(),
   projectId: z.uuid().optional(),
-  category: z.enum(EXPENSE_CATEGORIES).optional(),
+  category: z.string().trim().max(40).optional(),
   dateFrom: dateOnly.optional(),
   dateTo: dateOnly.optional(),
 });
@@ -89,6 +89,7 @@ export interface ExpenseDto {
   scope: ExpenseScope;
   project: NumberedRef | null;
   category: ExpenseCategory;
+  categoryName: string;
   amount: string;
   currency: Currency;
   exchangeRate: string;
@@ -106,6 +107,7 @@ export interface ExpenseDto {
 
 export interface CategoryAmountDto {
   category: ExpenseCategory;
+  name: string;
   amountUzs: string;
 }
 
@@ -123,6 +125,12 @@ export interface ProjectFinanceDto {
   /** Маржинальность, % (null — нет выручки). */
   marginPct: string | null;
   commissionsUzs: string;
+  /** Доля накладных (аренда, офис) за месяцы работы проекта, UZS */
+  overheadUzs: string;
+  /** Прибыль после накладных = валовая − накладные */
+  netProfitUzs: string;
+  /** Плановые, ещё не начисленные расходы по тарифу, UZS */
+  plannedCostUzs: string;
 }
 
 // ─────────────────────────── Финансовый дашборд (ТЗ §27) ───────────────────────────
@@ -141,6 +149,8 @@ export interface FinanceSummaryDto {
   /** null — нет права видеть расходы компании. */
   companyExpensesUzs: string | null;
   commissionsUzs: string;
+  /** Прочие поступления (не от клиентов) за период; null — без права на финансы компании. */
+  otherIncomeUzs: string | null;
   /** Получено − возвраты − проектные расходы. */
   grossProfitUzs: string;
   /** Валовая − расходы компании − комиссии; null — без права на финансы компании. */
@@ -162,4 +172,6 @@ export interface ProjectProfitDto {
   expensesUzs: string;
   grossProfitUzs: string;
   marginPct: string | null;
+  overheadUzs: string;
+  netProfitUzs: string;
 }

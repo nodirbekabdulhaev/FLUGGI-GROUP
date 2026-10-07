@@ -17,6 +17,8 @@ export const EXECUTOR_SPECIALTIES = [
   'DEVELOPER',
   'PHOTOGRAPHER',
   'COPYWRITER',
+  'MOBILOGRAPHER',
+  'BRANDFACE',
 ] as const;
 export type ExecutorSpecialty = (typeof EXECUTOR_SPECIALTIES)[number];
 
@@ -200,20 +202,8 @@ export type PayrollStatus = (typeof PAYROLL_STATUSES)[number];
 export const EXPENSE_SCOPES = ['PROJECT', 'COMPANY'] as const;
 export type ExpenseScope = (typeof EXPENSE_SCOPES)[number];
 
-export const EXPENSE_CATEGORIES = [
-  'EXECUTOR',
-  'ADS',
-  'PRODUCTION',
-  'PHOTO',
-  'VIDEO',
-  'DESIGN',
-  'DEVELOPMENT',
-  'TRANSPORT',
-  'MATERIALS',
-  'SERVICES',
-  'OTHER',
-] as const;
-export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+/** Код категории из справочника finance_categories (редактирует CEO). */
+export type ExpenseCategory = string;
 
 export const COMMISSION_STATUSES = ['ACCRUED', 'APPROVED', 'PAID', 'CANCELLED'] as const;
 export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];

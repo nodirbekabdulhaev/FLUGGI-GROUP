@@ -332,7 +332,7 @@ export class ExportService {
           : undefined;
         const rows = await this.prisma.expense.findMany({
           where: { AND: [this.expenses.where(auth), dateRange ? { expenseDate: dateRange } : {}] },
-          include: { project: true, payee: true, createdBy: true },
+          include: { project: true, payee: true, createdBy: true, categoryRef: true },
           orderBy: { expenseDate: 'asc' },
           take,
         });
@@ -355,7 +355,7 @@ export class ExportService {
             formatNumber('EXP', e.number),
             day(e.expenseDate),
             lbl(L.expenseScope, e.scope),
-            lbl(L.category, e.category),
+            e.categoryRef.name,
             e.project ? `${formatNumber('P', e.project.number)} ${e.project.name}` : null,
             e.description,
             e.payee?.fullName ?? null,

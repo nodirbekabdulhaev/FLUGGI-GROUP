@@ -29,3 +29,13 @@ describe('финансы', () => {
     ).toEqual({ grossProfit: '6000000.00', operatingProfit: '3100000.00', marginPct: '66.67' });
   });
 });
+
+describe('накладные на проект', () => {
+  it('делятся на число проектов месяца или на заданный делитель', async () => {
+    const { overheadShare } = await import('./finance');
+    expect(overheadShare(10_000_000, 4)).toBe('2500000.00');
+    expect(overheadShare(10_000_000, 4, 5)).toBe('2000000.00');
+    expect(overheadShare(10_000_000, 0)).toBe('10000000.00');
+    expect(overheadShare(0, 3)).toBe('0.00');
+  });
+});

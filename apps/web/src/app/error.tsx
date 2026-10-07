@@ -31,6 +31,14 @@ export default function AppError({
       {error.digest ? (
         <p className="text-xs text-muted-foreground/70">Код: {error.digest}</p>
       ) : null}
+      {!apiDown && error.message ? (
+        <details className="max-w-xl text-left text-xs text-muted-foreground">
+          <summary className="cursor-pointer text-center">Подробности (для администратора)</summary>
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap rounded-md bg-muted p-3">
+            {`${error.name}: ${error.message}\n${(error.stack ?? '').split('\n').slice(1, 6).join('\n')}`}
+          </pre>
+        </details>
+      ) : null}
       <Button onClick={reset}>Повторить</Button>
     </main>
   );

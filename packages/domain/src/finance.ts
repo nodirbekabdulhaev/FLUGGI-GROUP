@@ -23,7 +23,7 @@ export function projectFinance(revenueUzs: string | number, expensesUzs: string 
 /**
  * Финансы компании за период.
  *  Gross Profit     = Collected − Refunds − проектные расходы
- *  Operating Profit = Gross Profit − расходы компании − комиссии
+ *  Operating Profit = Gross Profit − расходы компании − комиссии + прочие поступления
  *  Margin %         = Gross Profit / (Collected − Refunds)
  */
 export function companyFinance(x: {
@@ -32,13 +32,31 @@ export function companyFinance(x: {
   projectExpenses: string | number;
   companyExpenses: string | number;
   commissions: string | number;
+  /** Прочие поступления (не от клиентов) */
+  otherIncome?: string | number;
 }) {
   const net = d(x.collected).minus(d(x.refunds));
   const gross = net.minus(d(x.projectExpenses));
-  const operating = gross.minus(d(x.companyExpenses)).minus(d(x.commissions));
+  const operating = gross
+    .minus(d(x.companyExpenses))
+    .minus(d(x.commissions))
+    .plus(d(x.otherIncome ?? 0));
   return {
     grossProfit: gross.toFixed(2),
     operatingProfit: operating.toFixed(2),
     marginPct: marginPct(gross.toString(), net.toString()),
   };
+}
+
+/**
+ * Доля накладных (аренда, офис) на один проект за месяц:
+ * накладные месяца ÷ (заданный делитель или число проектов, бывших в работе в этом месяце).
+ */
+export function overheadShare(
+  monthOverheadUzs: string | number,
+  activeProjects: number,
+  divisor?: number | null,
+): string {
+  const n = divisor && divisor > 0 ? divisor : Math.max(1, activeProjects);
+  return d(monthOverheadUzs).div(n).toFixed(2);
 }

@@ -51,13 +51,9 @@ export function CategoryBars({ items }: { items: CategoryAmountDto[] }) {
       {items.map((i) => {
         const pct = (Number(i.amountUzs) / max) * 100;
         return (
-          <li
-            key={i.category}
-            className="grid gap-1"
-            title={`${t(`category.${i.category}`)}: ${money(i.amountUzs)}`}
-          >
+          <li key={i.category} className="grid gap-1" title={`${i.name}: ${money(i.amountUzs)}`}>
             <div className="flex items-baseline justify-between gap-3 text-sm">
-              <span>{t(`category.${i.category}`)}</span>
+              <span>{i.name}</span>
               <span className="tabular-nums text-muted-foreground">{money(i.amountUzs)}</span>
             </div>
             <div className="h-2 rounded-full bg-muted">

@@ -41,6 +41,8 @@ export interface FileDto {
 
 export const proposalItemSchema = z.object({
   serviceId: z.uuid().nullish(),
+  /** Тариф услуги: цена и состав работ подставляются из тарифа */
+  tariffId: z.uuid().nullish(),
   description: z.string().trim().min(1, 'Опишите позицию').max(500),
   quantity: z.coerce.number().positive('Количество > 0').max(1_000_000),
   unitPrice: moneySchema,
@@ -75,6 +77,7 @@ export type ProposalListQuery = Partial<z.output<typeof proposalListQuerySchema>
 export interface ProposalItemDto {
   id: string;
   service: NamedRef | null;
+  tariff: NamedRef | null;
   description: string;
   quantity: string;
   unitPrice: string;

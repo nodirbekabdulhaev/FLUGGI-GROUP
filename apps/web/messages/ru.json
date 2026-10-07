@@ -124,7 +124,9 @@
     "TARGETOLOGIST": "Таргетолог",
     "DEVELOPER": "Разработчик",
     "PHOTOGRAPHER": "Фотограф",
-    "COPYWRITER": "Копирайтер"
+    "COPYWRITER": "Копирайтер",
+    "MOBILOGRAPHER": "Мобилограф",
+    "BRANDFACE": "Брендфейс"
   },
   "userStatus": {
     "ACTIVE": "Активен",

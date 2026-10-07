@@ -54,3 +54,15 @@ export function useCommissionRules() {
     queryFn: () => api<CommissionRuleDto[]>('/commission-rules'),
   });
 }
+
+/** Категории доходов и расходов (справочник, редактирует CEO). */
+export function useFinanceCategories(kind?: 'EXPENSE' | 'INCOME') {
+  return useQuery({
+    queryKey: ['finance-categories', kind ?? 'all'],
+    queryFn: () =>
+      api<import('@fluggi/contracts').FinanceCategoryDto[]>('/finance-categories', {
+        query: kind ? { kind } : undefined,
+      }),
+    staleTime: 60_000,
+  });
+}

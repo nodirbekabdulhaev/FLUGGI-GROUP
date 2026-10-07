@@ -22,6 +22,7 @@ const include = {
   project: { select: { id: true, number: true, name: true } },
   payee: { select: { id: true, fullName: true } },
   createdBy: { select: { id: true, fullName: true } },
+  categoryRef: { select: { name: true } },
 } satisfies Prisma.ExpenseInclude;
 
 type Row = Prisma.ExpenseGetPayload<{ include: typeof include }>;
@@ -53,6 +54,15 @@ export class ExpensesService {
     return { deletedAt: null, OR: or } satisfies Prisma.ExpenseWhereInput;
   }
 
+  /** Категория расхода — действующая категория из справочника. */
+  private async assertCategory(code: string) {
+    const c = await this.prisma.financeCategory.findUnique({ where: { code } });
+    if (!c || c.kind !== 'EXPENSE' || !c.isActive)
+      throw businessRule('Выберите категорию расхода из справочника', [
+        { path: 'category', message: 'Нет такой категории расходов' },
+      ]);
+  }
+
   private async editableIds(auth: AuthContext, rows: Expense[]) {
     if (!auth.permissions['expense.update'] || rows.length === 0) return new Set<string>();
     const ok = await this.prisma.expense.findMany({
@@ -71,6 +81,7 @@ export class ExpensesService {
         ? { id: e.project.id, name: e.project.name, number: formatNumber('P', e.project.number) }
         : null,
       category: e.category,
+      categoryName: e.categoryRef.name,
       amount: decReq(e.amount),
       currency: e.currency,
       exchangeRate: e.exchangeRate.toString(),
@@ -133,6 +144,7 @@ export class ExpensesService {
       await this.projects.project(auth, input.projectId!, 'expense.create');
     }
     await this.assertPayee(input.payeeUserId);
+    await this.assertCategory(input.category);
     const { rate, amountUzs } = await this.rates.convert(input.amount, input.currency);
     return this.prisma.$transaction(async (tx) => {
       const e = await tx.expense.create({
@@ -191,6 +203,8 @@ export class ExpensesService {
   ): Promise<ExpenseDto> {
     const before = await this.findEditable(auth, id);
     if (input.payeeUserId) await this.assertPayee(input.payeeUserId);
+    if (input.category && input.category !== before.category)
+      await this.assertCategory(input.category);
     const amount = input.amount ?? before.amount.toFixed(2);
     const currency = input.currency ?? before.currency;
     const money =

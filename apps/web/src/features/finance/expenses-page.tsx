@@ -1,12 +1,7 @@
 'use client';
 
 import { ExportMenu } from '@/features/analytics/export-menu';
-import {
-  EXPENSE_CATEGORIES,
-  type ExpenseCategory,
-  type ExpenseDto,
-  type ExpenseScope,
-} from '@fluggi/contracts';
+import { type ExpenseCategory, type ExpenseDto, type ExpenseScope } from '@fluggi/contracts';
 import { Pencil, Plus, Receipt, Trash2 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
@@ -23,7 +18,7 @@ import { useCrmMutation } from '@/features/crm/api';
 import { api, errorMessage } from '@/lib/api-client';
 import { date, money } from '@/lib/format';
 import { useCan } from '@/lib/me-context';
-import { useExpenses } from './api';
+import { useExpenses, useFinanceCategories } from './api';
 import { ExpenseDialog } from './expense-dialog';
 
 /** Таблица расходов — на странице «Расходы» и во вкладке «Финансы» проекта. */
@@ -70,7 +65,7 @@ export function ExpensesTable({
                 </TD>
               ) : null}
               <TD>
-                {t(`category.${e.category}`)}
+                {e.categoryName}
                 {e.description ? (
                   <span className="block max-w-72 truncate text-xs text-muted-foreground">
                     {e.description}
@@ -131,6 +126,7 @@ export function ExpensesPage() {
   const can = useCan();
   const [scope, setScope] = useState<ExpenseScope | ''>('');
   const [category, setCategory] = useState<ExpenseCategory | ''>('');
+  const categories = useFinanceCategories('EXPENSE');
   const [page, setPage] = useState(1);
   const [editing, setEditing] = useState<ExpenseDto | null | 'new'>(null);
   const list = useExpenses({
@@ -177,9 +173,9 @@ export function ExpensesPage() {
               onChange={(e) => (setCategory(e.target.value as ExpenseCategory | ''), setPage(1))}
             >
               <option value="">{t('expenses.allCategories')}</option>
-              {EXPENSE_CATEGORIES.map((c) => (
-                <option key={c} value={c}>
-                  {t(`category.${c}`)}
+              {(categories.data ?? []).map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
                 </option>
               ))}
             </NativeSelect>
