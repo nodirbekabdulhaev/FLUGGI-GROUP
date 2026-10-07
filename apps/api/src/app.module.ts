@@ -28,6 +28,7 @@ import { CommissionsModule } from './modules/commissions/commissions.module';
 import { ContractsModule } from './modules/contracts/contracts.module';
 import { FilesModule } from './modules/files/files.module';
 import { PaymentsModule } from './modules/payments/payments.module';
+import { FinanceModule } from './modules/finance/finance.module';
 import { OverdueModule } from './modules/projects/overdue.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { ProposalsModule } from './modules/proposals/proposals.module';
@@ -86,6 +87,7 @@ const env = loadEnv();
     PaymentsModule,
     ProjectsModule,
     OverdueModule,
+    FinanceModule,
   ],
   controllers: [HealthController],
   providers: [

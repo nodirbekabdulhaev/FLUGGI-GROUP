@@ -78,10 +78,10 @@ export const NAVIGATION: NavSection[] = [
     href: '/finance',
     icon: Wallet,
     children: [
-      { key: 'revenue', href: '/finance/revenue', anyOf: ['finance.read'], plannedPhase: 5 },
+      { key: 'revenue', href: '/finance/revenue', anyOf: ['finance.read'] },
       { key: 'payments', href: '/finance/payments', anyOf: ['payment.read'] },
-      { key: 'expenses', href: '/finance/expenses', anyOf: ['finance.read'], plannedPhase: 5 },
-      { key: 'profit', href: '/finance/profit', anyOf: ['finance.read'], plannedPhase: 5 },
+      { key: 'expenses', href: '/finance/expenses', anyOf: ['finance.read'] },
+      { key: 'profit', href: '/finance/profit', anyOf: ['finance.read'] },
       { key: 'commissions', href: '/finance/commissions', anyOf: ['commission.read'] },
     ],
   },
@@ -105,7 +105,14 @@ export const NAVIGATION: NavSection[] = [
     key: 'settings',
     href: '/settings',
     icon: Settings,
-    anyOf: ['settings.manage', 'role.manage', 'employee.manage', 'audit.read', 'reference.manage'],
+    anyOf: [
+      'settings.manage',
+      'role.manage',
+      'employee.manage',
+      'audit.read',
+      'reference.manage',
+      'commission_rule.manage',
+    ],
   },
 ];
 

@@ -26,10 +26,11 @@ export function useProjects(p: ProjectListQuery) {
   });
 }
 
-export function useProject(id: string) {
+export function useProject(id: string, enabled = true) {
   return useQuery({
     queryKey: ['project', id],
     queryFn: () => api<ProjectDetailDto>(`/projects/${id}`),
+    enabled,
   });
 }
 

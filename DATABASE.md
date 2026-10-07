@@ -3,7 +3,7 @@
 > Статус: **согласовано**. Реализованные таблицы — в `packages/db/prisma/schema.prisma`;
 > каждая следующая фаза добавляет свои таблицы новой миграцией. Поля могут уточняться.
 >
-> ✅ Реализовано: Phase 1 (пользователи, роли, отделы, сессии, аудит, outbox), Phase 2 (CRM), Phase 3 (proposals, proposal_items, proposal_versions, contracts, payments, projects, commission_rules, commissions, stored_files), Phase 4 (project_members, tasks, task_status_history — append-only, task_comments, project_templates, task_templates; `project_id`/`task_id` в activities и files). Отличия от плана ниже: у `tasks` нет колонки `is_overdue` — просрочка считается из `deadline` и статуса, а `overdue_notified_at` фиксирует последнее напоминание; `templateRole` хранит роль задачи из шаблона.
+> ✅ Реализовано: Phase 1 (пользователи, роли, отделы, сессии, аудит, outbox), Phase 2 (CRM), Phase 3 (proposals, proposal_items, proposal_versions, contracts, payments, projects, commission_rules, commissions, stored_files), Phase 4 (project_members, tasks, task_status_history — append-only, task_comments, project_templates, task_templates; `project_id`/`task_id` в activities и files). Отличия от плана ниже: у `tasks` нет колонки `is_overdue` — просрочка считается из `deadline` и статуса, а `overdue_notified_at` фиксирует последнее напоминание; `templateRole` хранит роль задачи из шаблона. Phase 5: `expenses` (номер `EXP-00001`, CHECK: проектный расход — с проектом, расход компании — без; сумма > 0; мягкое удаление), в `commissions` — `approved_by_id/approved_at/paid_by_id/paid_at`.
 
 ## 1. Соглашения
 

@@ -51,6 +51,7 @@ R — чтение, C — создание, U — изменение, D — уд
 | Финансы компании, расходы компании | A | — | — | — | — |
 | Комиссии R | A | T | O | — | — |
 | Правила комиссий | A | — | — | — | — |
+| Утверждение и выплата комиссий (`commission.approve`) | A | — | — | — | — |
 | KPI R | A | T | O | O | A |
 | KPI цели (установка) | A | T (менеджеры отдела) | — | — | A |
 | Посещаемость R / U | A | T (R) | O (R) | O (R) | A |
@@ -82,7 +83,7 @@ payment.read payment.create payment.confirm payment.refund
 project.read project.create project.update project.assign
 task.read task.create task.update
 finance.read finance.company.read expense.create expense.update
-commission.read commission_rule.manage
+commission.read commission.approve commission_rule.manage
 kpi.read kpi.target.manage
 attendance.read attendance.manage schedule.manage
 payroll.read payroll.manage

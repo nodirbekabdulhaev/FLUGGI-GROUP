@@ -273,10 +273,14 @@ export interface CommissionDto {
   rate: string;
   amountUzs: string;
   status: CommissionStatus;
+  approvedBy: NamedRef | null;
+  approvedAt: string | null;
+  paidAt: string | null;
   createdAt: string;
 }
 
 export const commissionListQuerySchema = paginationQuerySchema.extend({
+  status: z.enum(['ACCRUED', 'APPROVED', 'PAID', 'CANCELLED']).optional(),
   period: z
     .string()
     .regex(/^\d{4}-\d{2}$/)
@@ -284,6 +288,10 @@ export const commissionListQuerySchema = paginationQuerySchema.extend({
   userId: z.uuid().optional(),
 });
 export type CommissionListQuery = Partial<z.output<typeof commissionListQuerySchema>>;
+
+export const commissionIdsSchema = z.object({
+  ids: z.array(z.uuid()).min(1, 'Выберите комиссии').max(500),
+});
 
 const conditionLeaf = z.object({
   metric: z.enum(['avg_check_usd', 'avg_check_uzs', 'orders_count', 'revenue_uzs', 'revenue_usd']),

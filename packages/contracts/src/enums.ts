@@ -181,6 +181,24 @@ export const OPEN_TASK_STATUSES: readonly TaskStatus[] = [
 export const PROJECT_MEMBER_STATUSES = ['ACTIVE', 'DONE', 'REMOVED'] as const;
 export type ProjectMemberStatus = (typeof PROJECT_MEMBER_STATUSES)[number];
 
+export const EXPENSE_SCOPES = ['PROJECT', 'COMPANY'] as const;
+export type ExpenseScope = (typeof EXPENSE_SCOPES)[number];
+
+export const EXPENSE_CATEGORIES = [
+  'EXECUTOR',
+  'ADS',
+  'PRODUCTION',
+  'PHOTO',
+  'VIDEO',
+  'DESIGN',
+  'DEVELOPMENT',
+  'TRANSPORT',
+  'MATERIALS',
+  'SERVICES',
+  'OTHER',
+] as const;
+export type ExpenseCategory = (typeof EXPENSE_CATEGORIES)[number];
+
 export const COMMISSION_STATUSES = ['ACCRUED', 'APPROVED', 'PAID', 'CANCELLED'] as const;
 export type CommissionStatus = (typeof COMMISSION_STATUSES)[number];
 

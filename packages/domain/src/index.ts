@@ -4,3 +4,4 @@ export * from './forecast';
 export * from './proposal';
 export * from './commission';
 export * from './tasks';
+export * from './finance';

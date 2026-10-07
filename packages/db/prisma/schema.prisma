@@ -98,7 +98,7 @@ model User {
   paymentsConfirmed Payment[]         @relation("PaymentConfirmer")
   projectsAsRop     Project[]         @relation("ProjectRop")
   projectsAsManager Project[]         @relation("ProjectManager")
-  commissions       Commission[]
+  commissions       Commission[]      @relation("CommissionUser")
   filesUploaded     StoredFile[]
 
   projectMemberships ProjectMember[]     @relation("ProjectMemberUser")
@@ -107,6 +107,11 @@ model User {
   tasksCreated       Task[]              @relation("TaskCreator")
   taskStatusChanges  TaskStatusHistory[]
   taskComments       TaskComment[]
+
+  expensesCreated     Expense[]    @relation("ExpenseCreator")
+  expensesPaid        Expense[]    @relation("ExpensePayee")
+  commissionsApproved Commission[] @relation("CommissionApprover")
+  commissionsPaidOut  Commission[] @relation("CommissionPayer")
 
   @@index([roleId])
   @@index([teamId])
@@ -835,6 +840,25 @@ enum ProjectMemberStatus {
   REMOVED
 }
 
+enum ExpenseScope {
+  PROJECT
+  COMPANY
+}
+
+enum ExpenseCategory {
+  EXECUTOR
+  ADS
+  PRODUCTION
+  PHOTO
+  VIDEO
+  DESIGN
+  DEVELOPMENT
+  TRANSPORT
+  MATERIALS
+  SERVICES
+  OTHER
+}
+
 enum CommissionRoleTarget {
   MANAGER
   ROP
@@ -1051,6 +1075,7 @@ model Project {
   tasks      Task[]
   activities Activity[]
   files      StoredFile[]
+  expenses   Expense[]
 
   @@index([ropId])
   @@index([managerId])
@@ -1186,6 +1211,34 @@ model TaskTemplate {
   @@map("task_templates")
 }
 
+/// Расход (ТЗ §26): проектный уменьшает прибыль проекта, расход компании — операционную прибыль.
+model Expense {
+  id           String          @id @default(uuid()) @db.Uuid
+  number       Int             @unique @default(autoincrement())
+  scope        ExpenseScope
+  projectId    String?         @map("project_id") @db.Uuid
+  category     ExpenseCategory
+  amount       Decimal         @db.Decimal(18, 2)
+  currency     Currency        @default(UZS)
+  exchangeRate Decimal         @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs    Decimal         @map("amount_uzs") @db.Decimal(18, 2)
+  expenseDate  DateTime        @map("expense_date") @db.Date
+  payeeUserId  String?         @map("payee_user_id") @db.Uuid
+  description  String?
+  createdById  String          @map("created_by_id") @db.Uuid
+  createdAt    DateTime        @default(now()) @map("created_at")
+  updatedAt    DateTime        @updatedAt @map("updated_at")
+  deletedAt    DateTime?       @map("deleted_at")
+
+  project   Project? @relation(fields: [projectId], references: [id])
+  payee     User?    @relation("ExpensePayee", fields: [payeeUserId], references: [id])
+  createdBy User     @relation("ExpenseCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([scope, expenseDate])
+  @@map("expenses")
+}
+
 /// Правила комиссий (ТЗ §33–34) — данные, а не код.
 model CommissionRule {
   id         String               @id @default(uuid()) @db.Uuid
@@ -1221,13 +1274,19 @@ model Commission {
   amountUzs     Decimal              @map("amount_uzs") @db.Decimal(18, 2)
   status        CommissionStatus     @default(ACCRUED)
   calcSnapshot  Json                 @map("calc_snapshot")
+  approvedById  String?              @map("approved_by_id") @db.Uuid
+  approvedAt    DateTime?            @map("approved_at")
+  paidById      String?              @map("paid_by_id") @db.Uuid
+  paidAt        DateTime?            @map("paid_at")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
 
-  user    User           @relation(fields: [userId], references: [id])
-  payment Payment        @relation(fields: [paymentId], references: [id])
-  deal    Deal           @relation(fields: [dealId], references: [id])
-  rule    CommissionRule @relation(fields: [ruleId], references: [id])
+  user       User           @relation("CommissionUser", fields: [userId], references: [id])
+  approvedBy User?          @relation("CommissionApprover", fields: [approvedById], references: [id])
+  paidBy     User?          @relation("CommissionPayer", fields: [paidById], references: [id])
+  payment    Payment        @relation(fields: [paymentId], references: [id])
+  deal       Deal           @relation(fields: [dealId], references: [id])
+  rule       CommissionRule @relation(fields: [ruleId], references: [id])
 
   @@unique([paymentId, userId, role])
   @@index([userId, period])

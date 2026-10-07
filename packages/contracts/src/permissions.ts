@@ -55,6 +55,7 @@ export const PERMISSIONS = {
   'expense.update': 'Редактирование расходов',
 
   'commission.read': 'Просмотр комиссий',
+  'commission.approve': 'Утверждение и выплата комиссий',
   'commission_rule.manage': 'Правила комиссий',
 
   'kpi.read': 'Просмотр KPI',

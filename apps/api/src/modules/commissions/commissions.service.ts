@@ -20,6 +20,7 @@ export const commissionInclude = {
   payment: { select: { id: true, number: true } },
   deal: { select: { id: true, number: true, title: true } },
   rule: { select: { id: true, name: true } },
+  approvedBy: { select: { id: true, fullName: true } },
 } satisfies Prisma.CommissionInclude;
 
 export const toCommissionDto = (
@@ -40,6 +41,9 @@ export const toCommissionDto = (
   rate: c.rate.toString(),
   amountUzs: c.amountUzs.toFixed(2),
   status: c.status,
+  approvedBy: c.approvedBy ? { id: c.approvedBy.id, name: c.approvedBy.fullName } : null,
+  approvedAt: c.approvedAt?.toISOString() ?? null,
+  paidAt: c.paidAt?.toISOString() ?? null,
   createdAt: c.createdAt.toISOString(),
 });
 
@@ -63,6 +67,7 @@ export class CommissionsService {
         }),
         q.period ? { period: q.period } : {},
         q.userId ? { userId: q.userId } : {},
+        q.status ? { status: q.status } : {},
       ],
     };
     const [items, total, agg] = await Promise.all([
@@ -86,6 +91,51 @@ export class CommissionsService {
       pageSize: q.pageSize,
       totalUzs: (agg._sum.amountUzs ?? 0).toString(),
     };
+  }
+
+  /**
+   * Утверждение и выплата (ТЗ §32–33): начислена → утверждена → выплачена.
+   * Только CEO (право commission.approve); каждое действие — в журнале аудита.
+   */
+  async transition(
+    auth: AuthContext,
+    ids: string[],
+    to: 'APPROVED' | 'PAID',
+    meta: RequestMeta,
+  ): Promise<{ updated: number }> {
+    const from = to === 'APPROVED' ? 'ACCRUED' : 'APPROVED';
+    return this.prisma.$transaction(async (tx) => {
+      const rows = await tx.commission.findMany({ where: { id: { in: ids } } });
+      if (rows.length !== ids.length) throw notFound('Комиссия');
+      const wrong = rows.find((r) => r.status !== from);
+      if (wrong)
+        throw businessRule(
+          to === 'APPROVED'
+            ? 'Утвердить можно только начисленные комиссии'
+            : 'Выплатить можно только утверждённые комиссии',
+        );
+      const now = new Date();
+      await tx.commission.updateMany({
+        where: { id: { in: ids }, status: from },
+        data:
+          to === 'APPROVED'
+            ? { status: to, approvedById: auth.userId, approvedAt: now }
+            : { status: to, paidById: auth.userId, paidAt: now },
+      });
+      for (const r of rows)
+        await this.audit.log(tx, {
+          actorId: auth.userId,
+          action: to === 'APPROVED' ? 'commission.approve' : 'commission.pay',
+          entityType: 'commission',
+          entityId: r.id,
+          changes: {
+            status: { old: from, new: to },
+            amountUzs: { old: null, new: r.amountUzs.toFixed(2) },
+          },
+          meta,
+        });
+      return { updated: rows.length };
+    });
   }
 
   async rules(): Promise<CommissionRuleDto[]> {
@@ -122,11 +172,6 @@ export class CommissionsService {
     input: z.output<typeof upsertCommissionRuleSchema>,
     meta: RequestMeta,
   ) {
-    if (input.calcType === 'PERCENT_OF_PROFIT') {
-      throw businessRule(
-        'Комиссия от прибыли станет доступна в Phase 5 вместе с учётом расходов проекта',
-      );
-    }
     if (input.calcType !== 'FIXED_PER_DEAL' && input.value > 100)
       throw businessRule('Процент не может быть больше 100');
     const data = {

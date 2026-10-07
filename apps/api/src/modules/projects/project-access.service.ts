@@ -6,7 +6,10 @@ import { notFound } from '../../core/http/app.exception';
 import { PrismaService, type Tx } from '../../core/prisma/prisma.service';
 import { scopeOf } from '../../core/rbac/scope';
 
-type ProjectCode = Extract<PermissionCode, `project.${string}` | `task.${string}`>;
+type ProjectCode = Extract<
+  PermissionCode,
+  `project.${string}` | `task.${string}` | 'finance.read' | `expense.${string}`
+>;
 
 /**
  * Видимость проектов и задач (docs/PERMISSIONS.md, ТЗ §65).

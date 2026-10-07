@@ -10,7 +10,7 @@ import {
   type refundPaymentSchema,
   type updatePaymentSchema,
 } from '@fluggi/contracts';
-import { companyDate, sum } from '@fluggi/domain';
+import { companyDate, projectFinance, sum } from '@fluggi/domain';
 import { Prisma, type Deal } from '@fluggi/db';
 import type { z } from 'zod';
 import type { AuthContext, RequestMeta } from '../../core/auth/auth-context';
@@ -268,7 +268,22 @@ export class PaymentsService {
 
         const { project, created } = await this.ensureProject(tx, deal, auth);
         await tx.payment.update({ where: { id }, data: { projectId: project.id } });
-        const commissions = await this.commissions.accrue(tx, payment, deal, firstPayment);
+        // Маржа проекта сейчас (стоимость − уже внесённые расходы) — для правил «% от прибыли».
+        const spent = await tx.expense.aggregate({
+          where: { projectId: project.id, deletedAt: null },
+          _sum: { amountUzs: true },
+        });
+        const margin = projectFinance(
+          project.priceUzs.toString(),
+          (spent._sum.amountUzs ?? 0).toString(),
+        ).marginPct;
+        const commissions = await this.commissions.accrue(
+          tx,
+          payment,
+          deal,
+          firstPayment,
+          margin === null ? null : Number(margin),
+        );
 
         await this.activity.log(tx, {
           type: 'payment.paid',

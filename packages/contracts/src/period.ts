@@ -2,7 +2,7 @@
  * Периоды для глобального фильтра CEO (Сегодня / Месяц / Квартал / Год / Свой).
  * Границы считаются в часовом поясе компании (Asia/Tashkent, UTC+5, без DST).
  */
-export const PERIOD_PRESETS = ['today', 'month', 'quarter', 'year', 'custom'] as const;
+export const PERIOD_PRESETS = ['today', 'week', 'month', 'quarter', 'year', 'custom'] as const;
 export type PeriodPreset = (typeof PERIOD_PRESETS)[number];
 
 export interface DateRange {
@@ -29,6 +29,14 @@ export function resolvePeriod(
   switch (preset) {
     case 'today':
       return { from: tashkentMidnight(y, m, d), to: tashkentMidnight(y, m, d + 1) };
+    case 'week': {
+      // Неделя с понедельника (ISO).
+      const weekday = (local.getUTCDay() + 6) % 7;
+      return {
+        from: tashkentMidnight(y, m, d - weekday),
+        to: tashkentMidnight(y, m, d - weekday + 7),
+      };
+    }
     case 'month':
       return { from: tashkentMidnight(y, m, 1), to: tashkentMidnight(y, m + 1, 1) };
     case 'quarter': {

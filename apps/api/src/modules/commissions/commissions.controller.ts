@@ -1,5 +1,6 @@
-import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, Param, Post, Put, Query } from '@nestjs/common';
 import {
+  commissionIdsSchema,
   commissionListQuerySchema,
   upsertCommissionRuleSchema,
   type CommissionRuleDto,
@@ -22,6 +23,28 @@ export class CommissionsController {
     @Query(zod(commissionListQuerySchema)) q: z.output<typeof commissionListQuerySchema>,
   ) {
     return this.commissions.list(auth, q);
+  }
+
+  @Post('commissions/approve')
+  @HttpCode(200)
+  @RequirePermission('commission.approve', 'ALL')
+  approve(
+    @CurrentUser() auth: AuthContext,
+    @Body(zod(commissionIdsSchema)) body: z.output<typeof commissionIdsSchema>,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.commissions.transition(auth, body.ids, 'APPROVED', meta);
+  }
+
+  @Post('commissions/pay')
+  @HttpCode(200)
+  @RequirePermission('commission.approve', 'ALL')
+  pay(
+    @CurrentUser() auth: AuthContext,
+    @Body(zod(commissionIdsSchema)) body: z.output<typeof commissionIdsSchema>,
+    @ReqMeta() meta: RequestMeta,
+  ) {
+    return this.commissions.transition(auth, body.ids, 'PAID', meta);
   }
 
   @Get('commission-rules')

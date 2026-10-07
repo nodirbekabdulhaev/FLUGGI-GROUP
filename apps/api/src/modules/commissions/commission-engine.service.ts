@@ -62,7 +62,14 @@ export class CommissionEngine {
    * Создаёт комиссии по платежу. Для возврата (REFUND) сторнирует комиссии исходного платежа
    * тем же правилом и ставкой (отрицательная сумма).
    */
-  async accrue(tx: Tx, payment: Payment, deal: Deal, firstPaymentOfDeal: boolean) {
+  async accrue(
+    tx: Tx,
+    payment: Payment,
+    deal: Deal,
+    firstPaymentOfDeal: boolean,
+    /** Маржа проекта на момент оплаты, % — для правил «% от прибыли» (ТЗ §33). */
+    marginPct: number | null = null,
+  ) {
     const signedUzs = payment.type === 'REFUND' ? payment.amountUzs.neg() : payment.amountUzs;
     const period = periodOf(payment.paidAt ?? new Date());
 
@@ -128,10 +135,7 @@ export class CommissionEngine {
         r.userId,
       );
       if (!rule) continue;
-      const calc = calcCommission(rule, signedUzs.toString(), {
-        firstPaymentOfDeal,
-        marginPct: null,
-      });
+      const calc = calcCommission(rule, signedUzs.toString(), { firstPaymentOfDeal, marginPct });
       if (calc.amount.isZero()) continue;
       created.push(
         await tx.commission.create({
@@ -149,6 +153,7 @@ export class CommissionEngine {
               metrics,
               rule: rule.name,
               conditions: rule.conditions,
+              ...(rule.calcType === 'PERCENT_OF_PROFIT' ? { marginPct } : {}),
             } as unknown as Prisma.InputJsonValue,
           },
         }),

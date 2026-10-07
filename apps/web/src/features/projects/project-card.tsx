@@ -43,6 +43,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { useCrmMutation } from '@/features/crm/api';
 import { ApiError, api, errorMessage } from '@/lib/api-client';
 import { date, dateTime, money } from '@/lib/format';
+import { useCan } from '@/lib/me-context';
+import { ProjectFinancePanel } from '@/features/finance/project-finance';
 import { useEntityFiles, useProject, useProjectTimeline, useTemplates } from './api';
 import { KanbanBoard } from './kanban';
 import { OverdueBadge, ProjectStatusBadge, TaskProgress, TaskStatusBadge } from './status';
@@ -432,7 +434,8 @@ export function ProjectCard({ id }: { id: string }) {
   const pathname = usePathname();
   const params = useSearchParams();
   const project = useProject(id);
-  const [tab, setTab] = useState('tasks');
+  const [tab, setTab] = useState(params.get('tab') ?? 'tasks');
+  const can = useCan();
   const [dialog, setDialog] = useState<'edit' | 'status' | 'template' | null>(null);
   const taskId = params.get('task');
   const openTask = (tid: string | null) =>
@@ -520,6 +523,7 @@ export function ProjectCard({ id }: { id: string }) {
             label: t('tabs.team'),
             count: p.members.filter((m) => m.status !== 'REMOVED').length,
           },
+          ...(can('finance.read') ? [{ key: 'finance', label: t('tabs.finance') }] : []),
           { key: 'files', label: t('tabs.files') },
           { key: 'info', label: t('tabs.info') },
           { key: 'history', label: t('tabs.history') },
@@ -533,6 +537,13 @@ export function ProjectCard({ id }: { id: string }) {
         <Card>
           <CardContent className="pt-5">
             <TeamPanel project={p} />
+          </CardContent>
+        </Card>
+      ) : null}
+      {tab === 'finance' ? (
+        <Card>
+          <CardContent className="pt-5">
+            <ProjectFinancePanel project={p} />
           </CardContent>
         </Card>
       ) : null}

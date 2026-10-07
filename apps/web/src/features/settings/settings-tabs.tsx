@@ -11,6 +11,11 @@ export const SETTINGS_TABS: { href: string; key: string; permission: PermissionC
   { href: '/settings/teams', key: 'tabTeams', permission: 'employee.manage' },
   { href: '/settings/references', key: 'tabReferences', permission: 'reference.manage' },
   { href: '/settings/templates', key: 'tabTemplates', permission: 'reference.manage' },
+  {
+    href: '/settings/commission-rules',
+    key: 'tabCommissionRules',
+    permission: 'commission_rule.manage',
+  },
   { href: '/settings/roles', key: 'tabRoles', permission: 'role.manage' },
   { href: '/settings/audit', key: 'tabAudit', permission: 'audit.read' },
 ];

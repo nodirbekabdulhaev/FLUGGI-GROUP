@@ -1,6 +1,11 @@
 'use client';
 
-import { CONTRACT_STATUSES, PAYMENT_STATUSES, PROPOSAL_STATUSES } from '@fluggi/contracts';
+import {
+  COMMISSION_STATUSES,
+  CONTRACT_STATUSES,
+  PAYMENT_STATUSES,
+  PROPOSAL_STATUSES,
+} from '@fluggi/contracts';
 import { useTranslations } from 'next-intl';
 import Link from 'next/link';
 import { useState } from 'react';
@@ -10,7 +15,12 @@ import { EmptyState, ErrorState, TableSkeleton } from '@/components/shared/state
 import { Card } from '@/components/ui/card';
 import { Input, NativeSelect } from '@/components/ui/input';
 import { TBody, TD, TH, THead, TR, Table } from '@/components/ui/table';
+import { useCrmMutation } from '@/features/crm/api';
 import { useCommissions, useContracts, usePayments, useProposals } from '@/features/crm/sales-api';
+import { api, errorMessage } from '@/lib/api-client';
+import { useCan } from '@/lib/me-context';
+import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
 import { date, dateTime, money } from '@/lib/format';
 import { SalesBadge } from './status';
 
@@ -343,25 +353,74 @@ export function PaymentsPage() {
 
 export function CommissionsPage() {
   const t = useTranslations('sales.commissions');
+  const ts = useTranslations('sales');
+  const can = useCan();
+  const approver = can('commission.approve', 'ALL');
   const [period, setPeriod] = useState(
     new Date(Date.now() + 5 * 3600_000).toISOString().slice(0, 7),
   );
+  const [status, setStatus] = useState<(typeof COMMISSION_STATUSES)[number] | ''>('');
   const [page, setPage] = useState(1);
-  const list = useCommissions({ period: period || undefined, page, pageSize: 25 });
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const list = useCommissions({
+    period: period || undefined,
+    status: status || undefined,
+    page,
+    pageSize: 25,
+  });
+  const act = useCrmMutation(({ to, ids }: { to: 'approve' | 'pay'; ids: string[] }) =>
+    api<{ updated: number }>(`/commissions/${to}`, { method: 'POST', body: { ids } }),
+  );
+  const items = list.data?.items ?? [];
+  const chosen = items.filter((c) => selected.has(c.id));
+  const allAccrued = chosen.length > 0 && chosen.every((c) => c.status === 'ACCRUED');
+  const allApproved = chosen.length > 0 && chosen.every((c) => c.status === 'APPROVED');
+  const reset = () => (setSelected(new Set()), setPage(1));
+  const run = async (to: 'approve' | 'pay') => {
+    try {
+      const r = await act.mutateAsync({ to, ids: chosen.map((c) => c.id) });
+      toast.success(t(to === 'approve' ? 'approved' : 'paid', { count: r.updated }));
+      setSelected(new Set());
+    } catch (err) {
+      toast.error(errorMessage(err));
+    }
+  };
+  const toggle = (id: string) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
   return (
     <>
       <PageHeader title={t('title')} description={t('subtitle')} />
       <Card>
         <div className="flex flex-wrap items-end justify-between gap-3 border-b p-4">
-          <label className="grid gap-1 text-sm">
-            <span className="text-muted-foreground">{t('period')}</span>
-            <Input
-              type="month"
-              value={period}
-              onChange={(e) => (setPeriod(e.target.value), setPage(1))}
-              className="w-44"
-            />
-          </label>
+          <div className="flex flex-wrap items-end gap-3">
+            <label className="grid gap-1 text-sm">
+              <span className="text-muted-foreground">{t('period')}</span>
+              <Input
+                type="month"
+                value={period}
+                onChange={(e) => (setPeriod(e.target.value), reset())}
+                className="w-44"
+              />
+            </label>
+            <NativeSelect
+              aria-label="Статус"
+              className="w-48"
+              value={status}
+              onChange={(e) => (setStatus(e.target.value as never), reset())}
+            >
+              <option value="">{t('allStatuses')}</option>
+              {COMMISSION_STATUSES.map((x) => (
+                <option key={x} value={x}>
+                  {ts(`commissionStatus.${x}`)}
+                </option>
+              ))}
+            </NativeSelect>
+          </div>
           {list.data ? (
             <p className="text-right">
               <span className="block text-xs text-muted-foreground">{t('total')}</span>
@@ -369,72 +428,137 @@ export function CommissionsPage() {
             </p>
           ) : null}
         </div>
+        {approver && chosen.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-3 border-b bg-muted/40 px-4 py-2 text-sm">
+            <span>
+              {t('selected', {
+                count: chosen.length,
+                amount: money(
+                  chosen.reduce((s, c) => s + Number(c.amountUzs), 0),
+                  'UZS',
+                ),
+              })}
+            </span>
+            <Button
+              size="sm"
+              disabled={!allAccrued}
+              loading={act.isPending}
+              onClick={() => run('approve')}
+            >
+              {t('approve')}
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={!allApproved}
+              loading={act.isPending}
+              onClick={() => run('pay')}
+            >
+              {t('pay')}
+            </Button>
+          </div>
+        ) : null}
         {list.isPending ? (
           <TableSkeleton />
         ) : list.isError ? (
           <ErrorState error={list.error} onRetry={() => list.refetch()} />
-        ) : list.data.items.length === 0 ? (
+        ) : items.length === 0 ? (
           <EmptyState title={t('empty')} text={t('emptyText')} />
         ) : (
           <>
-            <Table>
-              <THead>
-                <tr>
-                  <TH>Сотрудник</TH>
-                  <TH>Сделка / оплата</TH>
-                  <TH>{t('rule')}</TH>
-                  <TH className="text-right">{t('base')}</TH>
-                  <TH className="text-right">{t('rate')}</TH>
-                  <TH className="text-right">Сумма</TH>
-                  <TH>Статус</TH>
-                </tr>
-              </THead>
-              <TBody>
-                {list.data.items.map((c) => (
-                  <TR key={c.id}>
-                    <TD>
-                      {c.user.name}
-                      <span className="block text-xs text-muted-foreground">
-                        {t(`role.${c.role}`)}
-                      </span>
-                    </TD>
-                    <TD>
-                      <Link href={`/sales/deals/${c.deal.id}`} className="hover:underline">
-                        {c.deal.number}
-                      </Link>
-                      <span className="block text-xs text-muted-foreground">
-                        {c.payment.number}
-                      </span>
-                    </TD>
-                    <TD className="max-w-64 text-muted-foreground">{c.rule.name}</TD>
-                    <TD className="whitespace-nowrap text-right">
-                      {money(c.baseAmountUzs, 'UZS')}
-                    </TD>
-                    <TD className="text-right">{Number(c.rate)}%</TD>
-                    <TD
-                      className={`whitespace-nowrap text-right font-semibold ${Number(c.amountUzs) < 0 ? 'text-danger' : ''}`}
-                    >
-                      {money(c.amountUzs, 'UZS')}
-                    </TD>
-                    <TD>
-                      <SalesBadge kind="commissionStatus" status={c.status} />
-                    </TD>
-                  </TR>
-                ))}
-              </TBody>
-            </Table>
+            <div className="overflow-x-auto">
+              <Table>
+                <THead>
+                  <tr>
+                    {approver ? (
+                      <TH className="w-10">
+                        <input
+                          type="checkbox"
+                          aria-label="Выбрать все"
+                          checked={chosen.length === items.length}
+                          onChange={(e) =>
+                            setSelected(
+                              e.target.checked ? new Set(items.map((c) => c.id)) : new Set(),
+                            )
+                          }
+                        />
+                      </TH>
+                    ) : null}
+                    <TH>Сотрудник</TH>
+                    <TH>Сделка / оплата</TH>
+                    <TH>{t('rule')}</TH>
+                    <TH className="text-right">{t('base')}</TH>
+                    <TH className="text-right">{t('rate')}</TH>
+                    <TH className="text-right">Сумма</TH>
+                    <TH>Статус</TH>
+                  </tr>
+                </THead>
+                <TBody>
+                  {items.map((c) => (
+                    <TR key={c.id}>
+                      {approver ? (
+                        <TD>
+                          <input
+                            type="checkbox"
+                            aria-label={`Выбрать ${c.user.name} ${c.payment.number}`}
+                            checked={selected.has(c.id)}
+                            onChange={() => toggle(c.id)}
+                          />
+                        </TD>
+                      ) : null}
+                      <TD>
+                        {c.user.name}
+                        <span className="block text-xs text-muted-foreground">
+                          {t(`role.${c.role}`)}
+                        </span>
+                      </TD>
+                      <TD>
+                        <Link href={`/sales/deals/${c.deal.id}`} className="hover:underline">
+                          {c.deal.number}
+                        </Link>
+                        <span className="block text-xs text-muted-foreground">
+                          {c.payment.number}
+                        </span>
+                      </TD>
+                      <TD className="max-w-64 text-muted-foreground">{c.rule.name}</TD>
+                      <TD className="whitespace-nowrap text-right">
+                        {money(c.baseAmountUzs, 'UZS')}
+                      </TD>
+                      <TD className="text-right">{Number(c.rate)}%</TD>
+                      <TD
+                        className={`whitespace-nowrap text-right font-semibold ${Number(c.amountUzs) < 0 ? 'text-danger' : ''}`}
+                      >
+                        {money(c.amountUzs, 'UZS')}
+                      </TD>
+                      <TD>
+                        <SalesBadge kind="commissionStatus" status={c.status} />
+                        {c.approvedBy ? (
+                          <span className="block text-xs text-muted-foreground">
+                            {c.approvedBy.name}
+                          </span>
+                        ) : null}
+                      </TD>
+                    </TR>
+                  ))}
+                </TBody>
+              </Table>
+            </div>
             <Pagination
               page={list.data.page}
               pageSize={list.data.pageSize}
               total={list.data.total}
-              onPage={setPage}
+              onPage={(p) => (setPage(p), setSelected(new Set()))}
             />
           </>
         )}
       </Card>
       <p className="mt-3 text-xs text-muted-foreground">
-        По умолчанию: менеджер 10%, РОП 10% (15% при среднем чеке &gt; 3000 USD или &gt; 15 заказов
-        за месяц). Экран редактирования правил — Phase 5.
+        {t('rulesHint')}{' '}
+        {can('commission_rule.manage', 'ALL') ? (
+          <Link href="/settings/commission-rules" className="text-accent hover:underline">
+            {t('rulesLink')}
+          </Link>
+        ) : null}
       </p>
     </>
   );
