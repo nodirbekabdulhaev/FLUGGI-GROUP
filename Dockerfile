@@ -11,8 +11,11 @@ COPY apps/api/package.json apps/api/
 COPY apps/web/package.json apps/web/
 COPY packages/contracts/package.json packages/contracts/
 COPY packages/db/package.json packages/db/
+COPY packages/domain/package.json packages/domain/
 RUN pnpm install --frozen-lockfile
 COPY . .
+# Адрес API внутри docker-сети: Next.js запоминает его в rewrites при сборке
+ENV API_INTERNAL_URL=http://api:4000
 RUN pnpm build
 
 FROM base AS runtime

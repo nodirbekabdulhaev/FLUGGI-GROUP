@@ -4,8 +4,34 @@
 > работающие Node.js-процессы и PostgreSQL. Нужен **Beget VPS** (или Beget Cloud) с Ubuntu 22.04/24.04.
 > Рекомендуемый минимум: 2 vCPU, 4 ГБ RAM, 40 ГБ SSD.
 >
-> Статус: `Dockerfile` и `docker-compose.prod.yml` написаны, но сборка образа ещё не проверялась
-> (в среде разработки нет доступа к репозиториям Debian). Проверить при первом развёртывании.
+> Статус: production-образ собран и проверен (миграции, создание CEO, API, worker, web, вход).
+
+## Быстрая установка (рекомендуется)
+
+Подходит для любого VPS с Ubuntu 22.04/24.04: Oracle Cloud Always Free (ARM), Hetzner, Beget VPS.
+
+1. DNS: A-запись домена CRM (например `crm.fluggi.uz`) → публичный IP сервера.
+2. В облачном файрволе открыть входящие TCP 80 и 443 (в Oracle: Subnet → Security List → Ingress).
+3. Скопировать архив на сервер и запустить установку:
+
+```bash
+# на Mac
+scp fluggi-phaseN.zip ubuntu@IP:~
+ssh ubuntu@IP
+# на сервере
+sudo apt-get install -y unzip && unzip -o fluggi-phaseN.zip && cd fluggi
+sudo bash deploy/install.sh
+```
+
+Скрипт спросит домен, email и имя CEO; сам поставит Docker, Caddy (HTTPS), создаст `.env` со
+случайными секретами (`/opt/fluggi/.env`, права 600), соберёт и запустит CRM, настроит ежедневный
+бэкап `/var/backups/fluggi`. В конце покажет пароль CEO — один раз.
+
+Обновление новой версией: распаковать архив и выполнить `sudo bash deploy/update.sh`
+(сначала делает бэкап базы). Telegram-бот: вписать `TELEGRAM_BOT_TOKEN` в `/opt/fluggi/.env` и
+выполнить `sudo bash deploy/telegram-webhook.sh`.
+
+Ниже — ручная установка через Nginx (тот же результат).
 
 ## Схема
 
