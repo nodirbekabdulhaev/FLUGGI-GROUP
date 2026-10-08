@@ -23,6 +23,11 @@ class User extends Authenticatable
 
     protected ?array $permissionCache = null;
 
+    public function setEmailAttribute(?string $value): void
+    {
+        $this->attributes['email'] = $value ? mb_strtolower(trim($value)) : null;
+    }
+
     public function roles()
     {
         return $this->belongsToMany(Role::class);

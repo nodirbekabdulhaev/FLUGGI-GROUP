@@ -128,43 +128,51 @@ class ReportService
         ];
     }
 
-    /** Sales analytics: sources, managers, dynamics. Cohort = leads created in the period. */
+    /**
+     * Sales analytics: sources, managers, dynamics. Cohort = leads created in the period.
+     * Pure SQL aggregates (no models loaded) so it stays fast with 100k+ leads.
+     */
     public function sales(Carbon $from, Carbon $to, ?User $user = null): array
     {
-        $leads = Lead::with('source:id,name', 'manager:id,name')->whereBetween('created_at', [$from, $to]);
-        if ($user) {
-            $leads->visibleTo($user);
-        }
-        $leads = $leads->get(['id', 'source_id', 'manager_id', 'max_stage', 'converted_student_id', 'created_at']);
+        $org = \App\Support\Tenant::id();
+        $cohort = fn () => ($user ? Lead::visibleTo($user) : Lead::query())->whereBetween('leads.created_at', [$from, $to]);
+        $cols = 'COUNT(*) leads, SUM(CASE WHEN leads.max_stage >= 2 THEN 1 ELSE 0 END) processed, SUM(CASE WHEN leads.max_stage >= 5 THEN 1 ELSE 0 END) sales';
 
-        $studentIds = $leads->whereNotNull('converted_student_id')->pluck('converted_student_id');
-        $revenueByStudent = Payment::whereIn('student_id', $studentIds)
-            ->selectRaw('student_id, SUM('.Payment::SIGNED_SQL.') s')->groupBy('student_id')->pluck('s', 'student_id');
+        // revenue of the students converted from the cohort's leads, grouped by a leads column
+        $revenueBy = fn (string $col) => (clone $cohort())->join('students', fn ($j) => $j->on('students.lead_id', '=', 'leads.id')->whereNull('students.deleted_at'))
+            ->join('payments', fn ($j) => $j->on('payments.student_id', '=', 'students.id')->whereNull('payments.deleted_at'))
+            ->selectRaw("leads.$col k, SUM(".Payment::SIGNED_SQL.') revenue')->groupBy("leads.$col")->pluck('revenue', 'k');
 
-        $agg = function (Collection $group) use ($revenueByStudent) {
-            $sold = $group->where('max_stage', '>=', 5);
-            $revenue = (float) $group->whereNotNull('converted_student_id')->sum(fn ($l) => $revenueByStudent[$l->converted_student_id] ?? 0);
+        $shape = function ($r, $revenue) {
+            $sales = (int) $r->sales;
+            $rev = (float) $revenue;
 
             return [
-                'leads' => $group->count(),
-                'processed' => $group->where('max_stage', '>=', 2)->count(),
-                'sales' => $sold->count(),
-                'conversion' => static::pct($sold->count(), $group->count()),
-                'revenue' => $revenue,
-                'avg_check' => $sold->count() ? round($revenue / $sold->count()) : 0,
+                'leads' => (int) $r->leads, 'processed' => (int) $r->processed, 'sales' => $sales,
+                'conversion' => static::pct($sales, (int) $r->leads), 'revenue' => $rev, 'avg_check' => $sales ? round($rev / $sales) : 0,
             ];
         };
 
-        $sources = $leads->groupBy(fn ($l) => $l->source?->name ?? 'Без источника')
-            ->map(fn ($g, $name) => ['name' => $name] + $agg($g))->sortByDesc('leads')->values();
-        $managers = $leads->groupBy(fn ($l) => $l->manager?->name ?? 'Не назначен')
-            ->map(fn ($g, $name) => ['name' => $name] + $agg($g))->sortByDesc('sales')->values();
+        $srcRevenue = $revenueBy('source_id');
+        $sources = (clone $cohort())->leftJoin('lead_sources', 'lead_sources.id', '=', 'leads.source_id')
+            ->selectRaw("leads.source_id sid, COALESCE(lead_sources.name, 'Без источника') name, $cols")->groupBy('leads.source_id', 'name')->get()
+            ->map(fn ($r) => ['name' => $r->name] + $shape($r, $srcRevenue[$r->sid] ?? 0))->sortByDesc('leads')->values();
 
-        $daily = $leads->groupBy(fn ($l) => $l->created_at->format('Y-m-d'))
-            ->map(fn ($g, $d) => ['date' => $d, 'leads' => $g->count(), 'sales' => $g->where('max_stage', '>=', 5)->count()])
-            ->sortKeys()->values();
+        $mgrRevenue = $revenueBy('manager_id');
+        $managers = (clone $cohort())->leftJoin('users', 'users.id', '=', 'leads.manager_id')
+            ->selectRaw("leads.manager_id mid, COALESCE(users.name, 'Не назначен') name, $cols")->groupBy('leads.manager_id', 'name')->get()
+            ->map(fn ($r) => ['name' => $r->name] + $shape($r, $mgrRevenue[$r->mid] ?? 0))->sortByDesc('sales')->values();
 
-        return ['total' => $agg($leads), 'funnel' => $this->funnel($from, $to, $user), 'sources' => $sources, 'managers' => $managers, 'daily' => $daily];
+        $total = (clone $cohort())->selectRaw($cols)->first();
+        $totalRevenue = (clone $cohort())->join('students', fn ($j) => $j->on('students.lead_id', '=', 'leads.id')->whereNull('students.deleted_at'))
+            ->join('payments', fn ($j) => $j->on('payments.student_id', '=', 'students.id')->whereNull('payments.deleted_at'))
+            ->selectRaw('COALESCE(SUM('.Payment::SIGNED_SQL.'),0) r')->value('r');
+
+        $daily = (clone $cohort())->selectRaw('DATE(leads.created_at) d, COUNT(*) leads, SUM(CASE WHEN leads.max_stage >= 5 THEN 1 ELSE 0 END) sales')
+            ->groupBy('d')->orderBy('d')->get()
+            ->map(fn ($r) => ['date' => $r->d, 'leads' => (int) $r->leads, 'sales' => (int) $r->sales])->values();
+
+        return ['total' => $shape($total, $totalRevenue), 'funnel' => $this->funnel($from, $to, $user), 'sources' => $sources, 'managers' => $managers, 'daily' => $daily];
     }
 
     public function finance(Carbon $from, Carbon $to): array
@@ -223,7 +231,7 @@ class ReportService
     }
 
     /** Attendance by group / teacher / student for lessons in the period. */
-    public function attendance(Carbon $from, Carbon $to): array
+    public function attendance(Carbon $from, Carbon $to, bool $withStudents = true): array
     {
         $base = fn () => Attendance::join('lessons', 'lessons.id', '=', 'attendance.lesson_id')
             ->whereBetween('lessons.lesson_date', [$from->toDateString(), $to->toDateString()]);
@@ -242,18 +250,25 @@ class ReportService
             ->selectRaw("groups.id, groups.name, COUNT(DISTINCT lessons.id) lessons, $cols")->groupBy('groups.id', 'groups.name')->orderBy('groups.name')->get());
         $teachers = $decorate($base()->join('teachers', 'teachers.id', '=', 'lessons.teacher_id')
             ->selectRaw("teachers.id, teachers.full_name name, COUNT(DISTINCT lessons.id) lessons, $cols")->groupBy('teachers.id', 'teachers.full_name')->orderBy('name')->get());
-        $students = $decorate($base()->join('students', 'students.id', '=', 'attendance.student_id')
-            ->selectRaw("students.id, students.first_name, students.last_name, $cols")->groupBy('students.id', 'students.first_name', 'students.last_name')
-            ->orderBy('students.first_name')->limit(300)->get());
+        // per-student rows are only needed by the attendance report page, not by teacher KPIs
+        $students = $withStudents
+            ? $decorate($base()->join('students', 'students.id', '=', 'attendance.student_id')
+                ->selectRaw("students.id, students.first_name, students.last_name, $cols")->groupBy('students.id', 'students.first_name', 'students.last_name')
+                ->orderBy('students.first_name')->limit(300)->get())
+            : collect();
 
-        return ['percent' => $this->attendancePercent($from, $to), 'groups' => $groups, 'teachers' => $teachers, 'students' => $students];
+        // overall figure derived from the group rows: no extra scan of the attendance table
+        $total = (int) $groups->sum('total');
+        $ok = (int) ($groups->sum('present') + $groups->sum('late'));
+
+        return ['percent' => static::pct($ok, $total), 'groups' => $groups, 'teachers' => $teachers, 'students' => $students];
     }
 
     /** Teacher KPI (spec §43). */
     public function teachers(Carbon $from, Carbon $to): Collection
     {
         $range = [$from->toDateString(), $to->toDateString()];
-        $att = $this->attendance($from, $to);
+        $att = $this->attendance($from, $to, false);
 
         return Teacher::where('status', '!=', 'inactive')->orderBy('full_name')->get()->map(function (Teacher $t) use ($range, $from, $to, $att) {
             $groupIds = $t->groups()->pluck('id');

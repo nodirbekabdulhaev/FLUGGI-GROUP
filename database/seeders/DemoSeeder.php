@@ -133,7 +133,7 @@ class DemoSeeder extends Seeder
             $course = $courses[$i];
             $group = Group::create([
                 'branch_id' => $branch->id, 'course_id' => $course->id, 'teacher_id' => $teachers[$i]->id, 'room_id' => $branchRooms[intdiv($i, 2) % 3]->id,
-                'name' => strtoupper(substr(str_replace(' ', '', $course->name), 0, 4)).'-'.(10 + $i), 'max_students' => 15,
+                'name' => mb_strtoupper(mb_substr(str_replace(' ', '', $course->name), 0, 4)).'-'.(10 + $i), 'max_students' => 15,
                 'start_date' => $start->toDateString(), 'end_date' => $start->copy()->addMonths($course->duration_months)->toDateString(),
                 'status' => $i === 9 ? 'enrolling' : 'active',
             ]);

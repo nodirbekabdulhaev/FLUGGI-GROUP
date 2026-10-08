@@ -13,3 +13,4 @@ Schedule::command('report:daily')->dailyAt('21:00');
 Schedule::command('lessons:extend')->dailyAt('02:00');
 Schedule::command('backup:run')->dailyAt('03:00');
 Schedule::command('salary:accrue')->monthlyOn(1, '06:00');
+Schedule::command('housekeeping:run')->weeklyOn(0, '04:00');

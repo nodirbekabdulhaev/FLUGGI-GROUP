@@ -5,6 +5,7 @@ namespace App\Services;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 
 /**
  * Pure-PHP database dump/restore (works on shared hosting without mysqldump / exec()).
@@ -87,7 +88,8 @@ class BackupService
                 ? array_values((array) DB::select("SHOW CREATE TABLE $q")[0])[1]
                 : DB::selectOne("SELECT sql FROM sqlite_master WHERE name = ?", [$table])->sql;
 
-            $rows = DB::table($table)->orderBy(DB::raw('1'))->lazy(500);
+            // keyset pagination on id (fast on millions of rows); pivot tables without id fall back to offset paging
+            $rows = Schema::hasColumn($table, 'id') ? DB::table($table)->lazyById(1000) : DB::table($table)->orderBy(DB::raw('1'))->lazy(1000);
             $buf = [];
             $cols = null;
             foreach ($rows as $row) {

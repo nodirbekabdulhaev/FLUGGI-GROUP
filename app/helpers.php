@@ -14,7 +14,7 @@ if (! function_exists('money')) {
 if (! function_exists('fdate')) {
     function fdate(mixed $d, string $fmt = 'd.m.Y'): string
     {
-        return $d ? Carbon::parse($d)->format($fmt) : '—';
+        return $d ? Carbon::parse($d)->translatedFormat($fmt) : '—';
     }
 }
 

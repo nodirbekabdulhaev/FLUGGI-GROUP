@@ -2,8 +2,9 @@
 @section('title', __('Группы'))
 @section('actions')@can('groups.manage')<a href="{{ route('groups.create') }}" class="btn-primary"><x-icon name="plus" class="h-4 w-4" /> {{ __('Добавить группу') }}</a>@endcan @endsection
 @section('content')
-<div class="card">
-    <form method="GET" class="grid gap-2 border-b p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-5">
+<div class="card" x-data="{ f: window.innerWidth >= 768 }">
+    <button type="button" @click="f = !f" class="flex w-full items-center justify-between border-b px-4 py-3 text-sm font-medium md:hidden dark:border-slate-800">{{ __('Фильтры') }} <span x-text="f ? '▲' : '▼'"></span></button>
+    <form method="GET" x-show="f" class="grid gap-2 border-b p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-5">
         <input type="search" name="q" value="{{ request('q') }}" class="input" placeholder="{{ __('Название группы…') }}">
         <select name="status" class="input"><option value="">{{ __('Все (кроме архива)') }}</option>@foreach(\App\Models\Group::STATUSES as $k => $v)<option value="{{ $k }}" @selected(request('status') === $k)>{{ __($v) }}</option>@endforeach</select>
         <select name="course_id" class="input"><option value="">{{ __('Все курсы') }}</option>@foreach(\App\Support\Lookup::courses() as $id => $n)<option value="{{ $id }}" @selected(request('course_id') == $id)>{{ $n }}</option>@endforeach</select>

@@ -68,6 +68,8 @@ class Lead extends Model
             return $q;
         }
 
-        return $q->where(fn ($w) => $w->where('manager_id', $user->id)->orWhereNull('manager_id'));
+        $col = $this->qualifyColumn('manager_id');
+
+        return $q->where(fn ($w) => $w->where($col, $user->id)->orWhereNull($col));
     }
 }

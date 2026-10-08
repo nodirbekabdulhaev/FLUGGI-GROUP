@@ -143,7 +143,7 @@ class TelegramTest extends TestCase
     public function test_cron_commands_run_cleanly(): void
     {
         $this->makeOrg();
-        foreach (['notifications:process', 'reminders:lessons', 'debts:check', 'lessons:extend', 'salary:accrue'] as $cmd) {
+        foreach (['notifications:process', 'reminders:lessons', 'debts:check', 'lessons:extend', 'salary:accrue', 'housekeeping:run'] as $cmd) {
             $this->artisan($cmd)->assertSuccessful();
         }
     }

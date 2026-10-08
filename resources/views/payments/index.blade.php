@@ -8,8 +8,9 @@
 @section('content')
 @php $typeColor = ['payment' => 'emerald', 'refund' => 'rose', 'correction' => 'amber']; @endphp
 <div class="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4"><x-stat :label="__('Итого за период')" :value="money($total)" tone="good" :hint="$payments->total().' '.__('операций')" /></div>
-<div class="card">
-    <form method="GET" class="grid gap-2 border-b p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-6" x-data="{ k: '{{ $key }}' }">
+<div class="card" x-data="{ f: window.innerWidth >= 768 }">
+    <button type="button" @click="f = !f" class="flex w-full items-center justify-between border-b px-4 py-3 text-sm font-medium md:hidden dark:border-slate-800">{{ __('Фильтры') }} <span x-text="f ? '▲' : '▼'"></span></button>
+    <form method="GET" x-show="f" class="grid gap-2 border-b p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-6" x-data="{ k: '{{ $key }}' }">
         <input type="search" name="q" value="{{ request('q') }}" class="input sm:col-span-2" placeholder="{{ __('Ученик: имя, телефон, ID') }}">
         <select name="period" x-model="k" class="input">@foreach(\App\Support\Period::LABELS as $pk => $pl)<option value="{{ $pk }}">{{ __($pl) }}</option>@endforeach</select>
         <input x-show="k === 'custom'" x-cloak type="date" name="from" value="{{ $from->toDateString() }}" class="input"><input x-show="k === 'custom'" x-cloak type="date" name="to" value="{{ $to->toDateString() }}" class="input">

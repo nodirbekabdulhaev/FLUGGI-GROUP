@@ -36,7 +36,7 @@ class LessonController extends Controller
         }
 
         return view('lessons.index', [
-            'lessons' => $q->orderBy('lesson_date')->orderBy('start_time')->get(),
+            'lessons' => $q->orderBy('lesson_date')->orderBy('start_time')->limit(400)->get(),
             'date' => $date, 'to' => $to,
             'groups' => Group::visibleTo($request->user())->orderBy('name')->pluck('name', 'id'),
             'teachers' => Lookup::teachers(), 'rooms' => Lookup::rooms(),

@@ -1,0 +1,14 @@
+{
+    "name": "FLUGGI EDU ERP",
+    "short_name": "EDU ERP",
+    "description": "ERP для учебного центра: CRM, ученики, группы, посещаемость, финансы",
+    "start_url": "/",
+    "scope": "/",
+    "display": "standalone",
+    "background_color": "#f8fafc",
+    "theme_color": "#4f46e5",
+    "lang": "ru",
+    "icons": [
+        { "src": "/icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+    ]
+}

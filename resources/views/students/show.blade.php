@@ -56,6 +56,7 @@
                     @if($canManage)<form method="POST" action="{{ route('students.guardians.detach', [$student, $g->id]) }}" onsubmit="return confirm('{{ __('Отвязать?') }}')">@csrf @method('DELETE')<button class="text-xs text-rose-600">✕</button></form>@endif</li>
             @empty<li class="py-2 text-slate-400">—</li>@endforelse
         </ul>
+        @include('partials.tg-link', ['type' => 'student', 'entity' => $student])
         @if($canManage)
         <details class="mt-2"><summary class="cursor-pointer text-sm font-medium text-brand-600">+ {{ __('Добавить родителя') }}</summary>
             <form method="POST" action="{{ route('students.guardians.attach', $student) }}" class="mt-2 space-y-2">@csrf
@@ -83,13 +84,12 @@
     <div class="card">
         <div class="flex items-center justify-between border-b p-4 dark:border-slate-800"><h2 class="text-sm font-semibold">{{ __('Обучение') }}</h2></div>
         <div class="overflow-x-auto"><table class="min-w-full text-sm">
-            <thead class="bg-slate-50 dark:bg-slate-800/50"><tr><th class="th">{{ __('Группа') }}</th><th class="th">{{ __('Курс') }}</th><th class="th">{{ __('Преподаватель') }}</th><th class="th">{{ __('Период') }}</th>
+            <thead class="bg-slate-50 dark:bg-slate-800/50"><tr><th class="th">{{ __('Группа') }}</th><th class="th">{{ __('Период') }}</th>
                 @if($canFinance)<th class="th text-right">{{ __('Стоимость') }}</th><th class="th text-right">{{ __('Долг') }}</th><th class="th">{{ __('След. оплата') }}</th>@endif<th class="th">{{ __('Статус') }}</th>@if($canManage)<th class="th"></th>@endif</tr></thead>
             <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
             @forelse($enrollments as $e)
                 <tr>
-                    <td class="td"><a class="link font-medium" href="{{ route('groups.show', $e->group_id) }}">{{ $e->group?->name }}</a>@if($e->transferred_from_id)<div class="text-[11px] text-slate-400">↩ {{ __('переведён') }}</div>@endif</td>
-                    <td class="td">{{ $e->group?->course?->name }}</td><td class="td">{{ $e->group?->teacher?->full_name }}</td>
+                    <td class="td"><a class="link font-medium" href="{{ route('groups.show', $e->group_id) }}">{{ $e->group?->name }}</a><div class="text-[11px] text-slate-500">{{ $e->group?->course?->name }}@if($e->group?->teacher) · {{ $e->group->teacher->full_name }}@endif</div>@if($e->transferred_from_id)<div class="text-[11px] text-slate-400">↩ {{ __('переведён') }}</div>@endif</td>
                     <td class="td whitespace-nowrap">{{ fdate($e->joined_at) }} — {{ $e->left_at ? fdate($e->left_at) : '…' }}</td>
                     @if($canFinance)
                     <td class="td text-right whitespace-nowrap">{{ money($e->charge(), false) }}@if($e->discount > 0)<div class="text-[11px] text-slate-400">−{{ money($e->discount, false) }}</div>@endif</td>
@@ -120,7 +120,7 @@
                     </td>
                     @endif
                 </tr>
-            @empty<tr><td colspan="9" class="px-3 py-6 text-center text-slate-400">{{ __('Не записан в группы') }}</td></tr>@endforelse
+            @empty<tr><td colspan="8" class="px-3 py-6 text-center text-slate-400">{{ __('Не записан в группы') }}</td></tr>@endforelse
             </tbody></table></div>
         @if($canManage && ! in_array($student->status, ['expelled', 'archived']))
         <form method="POST" action="{{ route('enrollments.store') }}" class="grid gap-2 border-t p-4 dark:border-slate-800 sm:grid-cols-5">@csrf

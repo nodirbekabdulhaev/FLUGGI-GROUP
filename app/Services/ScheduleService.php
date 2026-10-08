@@ -239,4 +239,38 @@ class ScheduleService
 
         return $n;
     }
+
+    /**
+     * Planned lessons in the next N days that overlap on teacher, room or group
+     * (can appear after a teacher/room change or manual edits). Used by cron + the notification centre.
+     *
+     * @return \Illuminate\Support\Collection<int,array{date:string,type:string,a:Lesson,b:Lesson}>
+     */
+    public function conflictsAhead(int $days = 14): \Illuminate\Support\Collection
+    {
+        $from = today()->toDateString();
+        $to = today()->addDays($days)->toDateString();
+        $lessons = Lesson::with(['group:id,name', 'teacher:id,full_name', 'room:id,name'])->where('status', 'planned')
+            ->whereBetween('lesson_date', [$from, $to])->orderBy('lesson_date')->orderBy('start_time')->get();
+
+        $out = collect();
+        foreach ($lessons->groupBy(fn ($l) => $l->lesson_date->toDateString()) as $date => $day) {
+            $day = $day->values();
+            foreach ($day as $i => $a) {
+                for ($j = $i + 1; $j < $day->count(); $j++) {
+                    $b = $day[$j];
+                    if (! static::overlap($a->start_time, $a->end_time, $b->start_time, $b->end_time)) {
+                        continue;
+                    }
+                    foreach (['teacher_id' => 'teacher', 'room_id' => 'room', 'group_id' => 'group'] as $col => $type) {
+                        if ($a->{$col} && $a->{$col} === $b->{$col}) {
+                            $out->push(['date' => $date, 'type' => $type, 'a' => $a, 'b' => $b]);
+                        }
+                    }
+                }
+            }
+        }
+
+        return $out;
+    }
 }

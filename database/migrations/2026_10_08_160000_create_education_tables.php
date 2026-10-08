@@ -301,6 +301,8 @@ return new class extends Migration
             $t->timestamps();
             $t->unique(['lesson_id', 'student_id']);
             $t->index(['student_id', 'status']);
+            // covering index: attendance aggregates by lesson/status/student are answered from the index alone
+            $t->index(['lesson_id', 'status', 'student_id'], 'attendance_report_idx');
         });
     }
 

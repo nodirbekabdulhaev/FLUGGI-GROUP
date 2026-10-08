@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'FLUGGI EDU ERP')</title>
+    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
     <link rel="stylesheet" href="{{ asset_v('css/app.css') }}">
 </head>
 <body class="min-h-screen">

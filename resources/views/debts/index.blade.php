@@ -7,8 +7,9 @@
 @section('content')
 @php $sortLink = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'dir' => ($sort === $col && $dir === 'desc') ? 'asc' : 'desc']); @endphp
 <div class="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4"><x-stat :label="__('Общий долг')" :value="money($total)" tone="bad" /><x-stat :label="__('Должников')" :value="$count" /></div>
-<div class="card">
-    <form method="GET" class="grid gap-2 border-b p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-6">
+<div class="card" x-data="{ f: window.innerWidth >= 768 }">
+    <button type="button" @click="f = !f" class="flex w-full items-center justify-between border-b px-4 py-3 text-sm font-medium md:hidden dark:border-slate-800">{{ __('Фильтры') }} <span x-text="f ? '▲' : '▼'"></span></button>
+    <form method="GET" x-show="f" class="grid gap-2 border-b p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-6">
         <input type="search" name="q" value="{{ request('q') }}" class="input" placeholder="{{ __('Ученик / телефон') }}">
         <select name="course_id" class="input"><option value="">{{ __('Все курсы') }}</option>@foreach($courses as $id => $n)<option value="{{ $id }}" @selected(request('course_id') == $id)>{{ $n }}</option>@endforeach</select>
         <select name="group_id" class="input"><option value="">{{ __('Все группы') }}</option>@foreach($groups as $id => $n)<option value="{{ $id }}" @selected(request('group_id') == $id)>{{ $n }}</option>@endforeach</select>

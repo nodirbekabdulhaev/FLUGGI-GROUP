@@ -42,6 +42,8 @@ return new class extends Migration
             $t->softDeletes();
             $t->index(['organization_id', 'paid_at']);
             $t->index(['student_id', 'paid_at']);
+            // covering index for revenue aggregates over a date range (dashboard / reports)
+            $t->index(['organization_id', 'paid_at', 'type', 'amount', 'deleted_at'], 'payments_report_idx');
         });
 
         Schema::create('debts', function (Blueprint $t) {

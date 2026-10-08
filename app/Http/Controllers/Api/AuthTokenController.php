@@ -33,6 +33,11 @@ class AuthTokenController extends Controller
         return response()->json(['token' => $user->createToken($d['device_name'] ?? 'api')->plainTextToken, 'user' => ['id' => $user->id, 'name' => $user->name]]);
     }
 
+    public function ping()
+    {
+        return response()->json(['ok' => true, 'time' => now()->toIso8601String()]);
+    }
+
     public function destroy(Request $request)
     {
         $request->user()->currentAccessToken()->delete();

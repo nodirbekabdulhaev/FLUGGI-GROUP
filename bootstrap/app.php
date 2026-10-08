@@ -17,8 +17,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->web(append: [SetTenant::class, \App\Http\Middleware\SecurityHeaders::class]);
-        $middleware->api(append: [\App\Http\Middleware\SecurityHeaders::class]);
+        $middleware->append(\App\Http\Middleware\SecurityHeaders::class);     // global: also covers error pages
+        $middleware->web(append: [SetTenant::class]);
         // tenant must be bound before route-model binding, otherwise global scopes are not applied
         $middleware->prependToPriorityList(before: \Illuminate\Routing\Middleware\SubstituteBindings::class, prepend: SetTenant::class);
         $middleware->alias(['tenant' => SetTenant::class, 'webhook' => WebhookAuth::class, 'canany' => \App\Http\Middleware\CanAny::class]);

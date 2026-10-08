@@ -58,12 +58,9 @@ class StudentController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
-        $q = Student::visibleTo($user)->withFinance()
-            ->addSelect([
-                'att_total' => Attendance::selectRaw('COUNT(*)')->whereColumn('attendance.student_id', 'students.id'),
-                'att_ok' => Attendance::selectRaw('COUNT(*)')->whereColumn('attendance.student_id', 'students.id')->whereIn('status', ['present', 'late']),
-            ])
-            ->with(['guardians:id,full_name,phone', 'activeEnrollment.group:id,name,course_id', 'activeEnrollment.group.course:id,name', 'branch:id,name']);
+        // Two-phase listing: filter/sort/paginate a light query first, then compute balance and
+        // attendance for the 25 visible rows only (correlated sub-selects on 10k+ rows are slow).
+        $q = Student::visibleTo($user);
 
         if ($term = trim((string) $request->query('q'))) {
             $digits = preg_replace('/\D+/', '', $term);
@@ -92,7 +89,7 @@ class StudentController extends Controller
             $q->whereHas('enrollments.group', fn ($g) => $g->where('course_id', $request->query('course_id')));
         }
         if ($request->boolean('debtors')) {
-            $q->whereRaw('(SELECT COALESCE(SUM(charged),0) FROM debts WHERE debts.student_id = students.id) - (SELECT COALESCE(SUM(CASE WHEN payments.type = \'refund\' THEN -payments.amount ELSE payments.amount END),0) FROM payments WHERE payments.student_id = students.id AND payments.deleted_at IS NULL) > 0');
+            $q->whereIn('students.id', Debt::where('balance', '>', 0)->select('student_id'));
         }
         if ($request->filled('from')) {
             $q->whereDate('registered_at', '>=', $request->query('from'));
@@ -106,18 +103,24 @@ class StudentController extends Controller
         $dir = $request->query('dir') === 'asc' ? 'asc' : 'desc';
         $q->orderBy($sort, $dir);
 
+        $detail = fn ($ids) => Student::withFinance()->addSelect([
+            'att_total' => Attendance::selectRaw('COUNT(*)')->whereColumn('attendance.student_id', 'students.id'),
+            'att_ok' => Attendance::selectRaw('COUNT(*)')->whereColumn('attendance.student_id', 'students.id')->whereIn('status', ['present', 'late']),
+        ])->with(['guardians:id,full_name,phone', 'activeEnrollment.group:id,name,course_id', 'activeEnrollment.group.course:id,name', 'branch:id,name'])
+            ->whereIn('students.id', $ids)->orderBy($sort, $dir)->get();
+
         if ($request->query('export') === 'csv') {
             Gate::authorize('students.view');
 
             return app(ExportService::class)->csv('students', ['ID', 'ФИО', 'Телефон', 'Родитель', 'Курс', 'Группа', 'Филиал', 'Баланс', 'Статус'],
-                $q->get()->map(fn ($s) => [$s->id, $s->full_name, $s->phone, $s->guardians->first()?->full_name, $s->activeEnrollment?->group?->course?->name,
+                $detail((clone $q)->pluck('students.id'))->map(fn ($s) => [$s->id, $s->full_name, $s->phone, $s->guardians->first()?->full_name, $s->activeEnrollment?->group?->course?->name,
                     $s->activeEnrollment?->group?->name, $s->branch?->name, -$s->balance, Student::STATUSES[$s->status] ?? $s->status]));
         }
 
-        return view('students.index', [
-            'students' => $q->paginate(25)->withQueryString(),
-            'sort' => $sort, 'dir' => $dir,
-        ]);
+        $page = $q->select('students.id')->paginate(25)->withQueryString();
+        $page->setCollection($detail($page->pluck('id')));
+
+        return view('students.index', ['students' => $page, 'sort' => $sort, 'dir' => $dir]);
     }
 
     public function create()
@@ -185,7 +188,7 @@ class StudentController extends Controller
         $user = $request->user();
         abort_unless(Gate::allows('students.view') || ($user->restrictedToOwnGroups() && Student::visibleTo($user)->whereKey($student->id)->exists()), 403);
 
-        $student->load(['guardians', 'source', 'manager', 'branch', 'expulsionReason', 'lead:id,first_name,last_name']);
+        $student->load(['guardians', 'source', 'manager', 'branch', 'expulsionReason', 'lead:id,first_name,last_name', 'telegramAccount']);
         $enrollments = $student->enrollments()->with(['group.course:id,name,duration_months', 'group.teacher:id,full_name', 'debt'])->orderByDesc('id')->get();
         $canFinance = Gate::any(['payments.view', 'debts.view']);
 

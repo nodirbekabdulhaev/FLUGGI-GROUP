@@ -10,8 +10,9 @@
  $statuses = \App\Support\Lookup::statuses(); $sources = \App\Support\Lookup::sources(); $courses = \App\Support\Lookup::courses();
  $sortLink = fn($col) => request()->fullUrlWithQuery(['sort' => $col, 'dir' => ($sort === $col && $dir === 'desc') ? 'asc' : 'desc']);
 @endphp
-<div class="card">
-    <form method="GET" class="grid gap-2 border-b border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-6">
+<div class="card" x-data="{ f: window.innerWidth >= 768 }">
+    <button type="button" @click="f = !f" class="flex w-full items-center justify-between border-b px-4 py-3 text-sm font-medium md:hidden dark:border-slate-800">{{ __('Фильтры') }} <span x-text="f ? '▲' : '▼'"></span></button>
+    <form method="GET" x-show="f" class="grid gap-2 border-b border-slate-200 p-3 dark:border-slate-800 sm:grid-cols-3 lg:grid-cols-6">
         <input type="search" name="q" value="{{ request('q') }}" class="input sm:col-span-3 lg:col-span-2" placeholder="{{ __('Имя, телефон, ID, Telegram…') }}">
         <select name="status_id" class="input"><option value="">{{ __('Все статусы') }}</option>@foreach($statuses as $id => $n)<option value="{{ $id }}" @selected(request('status_id') == $id)>{{ $n }}</option>@endforeach</select>
         <select name="source_id" class="input"><option value="">{{ __('Все источники') }}</option>@foreach($sources as $id => $n)<option value="{{ $id }}" @selected(request('source_id') == $id)>{{ $n }}</option>@endforeach</select>

@@ -6,7 +6,8 @@
     <div class="card card-body"><dl class="grid grid-cols-3 gap-y-2 text-sm">
         <dt class="text-slate-500">{{ __('Телефон') }}</dt><dd class="col-span-2">{{ $guardian->phone ?? '—' }}</dd>
         <dt class="text-slate-500">Telegram</dt><dd class="col-span-2">{{ $guardian->telegram ?? '—' }} @if($guardian->telegramAccount?->isLinked())<x-badge color="emerald">✓ bot</x-badge>@endif</dd>
-        <dt class="text-slate-500">{{ __('Адрес') }}</dt><dd class="col-span-2">{{ $guardian->address ?? '—' }}</dd></dl></div>
+        <dt class="text-slate-500">{{ __('Адрес') }}</dt><dd class="col-span-2">{{ $guardian->address ?? '—' }}</dd></dl>
+        @include('partials.tg-link', ['type' => 'guardian', 'entity' => $guardian])</div>
     <div class="card lg:col-span-2"><div class="border-b p-4 text-sm font-semibold dark:border-slate-800">{{ __('Дети') }}</div>
         <ul class="divide-y dark:divide-slate-800">
         @forelse($guardian->children as $c)

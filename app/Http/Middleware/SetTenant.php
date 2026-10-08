@@ -51,7 +51,9 @@ class SetTenant
             }
         }
 
-        App::setLocale(in_array($locale, self::LOCALES, true) ? $locale : 'ru');
+        $locale = in_array($locale, self::LOCALES, true) ? $locale : 'ru';
+        App::setLocale($locale);
+        \Carbon\Carbon::setLocale($locale === 'uz' ? 'uz_Latn' : 'ru');      // weekday / month names
 
         return $next($request);
     }

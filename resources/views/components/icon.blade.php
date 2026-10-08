@@ -1,4 +1,4 @@
-@props(['name' => 'home', 'class' => 'h-5 w-5'])
+@props(['name' => 'home'])
 @php
 $paths = [
  'home' => 'M3 11l9-8 9 8M5 10v10h14V10',
@@ -38,4 +38,4 @@ $paths = [
  'trash' => 'M5 7h14M10 7V4h4v3M7 7l1 13h8l1-13',
 ];
 @endphp
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" {{ $attributes->merge(['class' => $class]) }} aria-hidden="true"><path d="{{ $paths[$name] ?? $paths['list'] }}"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" {{ $attributes->merge(['class' => preg_match('/(^|\s)h-\S+/', (string) $attributes->get('class')) ? '' : 'h-5 w-5']) }} aria-hidden="true"><path d="{{ $paths[$name] ?? $paths['list'] }}"/></svg>

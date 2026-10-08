@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 
 /* Prefix /api/v1 is applied in bootstrap/app.php */
 
-Route::get('ping', fn () => response()->json(['ok' => true, 'time' => now()->toIso8601String()]));
+Route::get('ping', [A\AuthTokenController::class, 'ping']);
 
 Route::post('auth/token', [A\AuthTokenController::class, 'store'])->middleware('throttle:10,1');
 

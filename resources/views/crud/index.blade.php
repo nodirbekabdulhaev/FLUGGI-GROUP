@@ -6,8 +6,9 @@
 @endsection
 @section('content')
 @isset($summary)<div class="mb-3 grid grid-cols-2 gap-3 md:grid-cols-4">@foreach($summary as $label => $val)<x-stat :label="__($label)" :value="$val" />@endforeach</div>@endisset
-<div class="card">
-    <form method="GET" class="flex flex-wrap items-end gap-2 border-b border-slate-200 p-3 dark:border-slate-800">
+<div class="card" x-data="{ f: window.innerWidth >= 768 }">
+    <button type="button" @click="f = !f" class="flex w-full items-center justify-between border-b px-4 py-3 text-sm font-medium md:hidden dark:border-slate-800">{{ __('Фильтры') }} <span x-text="f ? '▲' : '▼'"></span></button>
+    <form method="GET" x-show="f" class="flex flex-wrap items-end gap-2 border-b border-slate-200 p-3 dark:border-slate-800">
         @if(! empty($cfg['search']))
         <div class="min-w-48 flex-1"><label class="label">{{ __('Поиск') }}</label><input type="search" name="q" value="{{ request('q') }}" class="input" placeholder="{{ __('Поиск…') }}"></div>
         @endif

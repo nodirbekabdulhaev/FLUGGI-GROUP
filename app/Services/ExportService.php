@@ -17,11 +17,23 @@ class ExportService
             fwrite($out, "\xEF\xBB\xBF");
             fputcsv($out, $headers, ';');
             foreach ($rows as $row) {
-                // neutralise spreadsheet formula injection
-                fputcsv($out, array_map(fn ($v) => is_string($v) && preg_match('/^[=+\-@\t\r]/', $v) ? "'".$v : $v, (array) $row), ';');
+                fputcsv($out, array_map(fn ($v) => $this->safeCell($v), (array) $row), ';');
             }
             fclose($out);
         }, $file, ['Content-Type' => 'text/csv; charset=UTF-8']);
+    }
+
+    /** Neutralise spreadsheet formula injection while keeping phone numbers / negative numbers intact. */
+    protected function safeCell(mixed $v): mixed
+    {
+        if (! is_string($v) || $v === '') {
+            return $v;
+        }
+        if (preg_match('/^[=@\t\r]/', $v) || preg_match('/^[+\-](?![\d\s().\-]+$)/', $v)) {
+            return "'".$v;
+        }
+
+        return $v;
     }
 
     public function pdf(string $name, string $title, array $headers, iterable|Collection $rows, array $summary = [])
