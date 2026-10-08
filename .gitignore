@@ -12,4 +12,5 @@ playwright-report/
 test-results/
 next-env.d.ts
 *.tsbuildinfo
-storage/
+/storage/
+apps/api/storage/
