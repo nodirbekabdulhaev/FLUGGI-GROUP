@@ -107,6 +107,7 @@
         </div>
     </header>
 
+    @if(config('app.demo'))<div class="border-b border-amber-300 bg-amber-50 px-4 py-1.5 text-center text-xs text-amber-900">Демо-версия · данные вымышленные и сбрасываются каждую ночь · <a class="underline" href="{{ route('logout') }}" onclick="event.preventDefault(); document.getElementById('demo-out').submit()">сменить роль</a><form id="demo-out" method="POST" action="{{ route('logout') }}" class="hidden">@csrf</form></div>@endif
     <main class="mx-auto max-w-[1500px] px-3 pb-28 pt-4 sm:px-5 lg:pb-10">
         @if(session('ok'))<div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800" role="status">{{ session('ok') }}</div>@endif
         @if(session('warn'))<div class="mb-4 rounded-lg border border-amber-200 bg-amber-50 px-4 py-2.5 text-sm text-amber-800">{{ session('warn') }}</div>@endif

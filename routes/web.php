@@ -11,6 +11,10 @@ use Illuminate\Support\Facades\Route;
 Route::get('locale/{locale}', [W\HomeController::class, 'locale'])->name('locale');
 Route::post('telegram/webhook/{secret}', [W\TelegramController::class, 'webhook'])->name('telegram.webhook');
 
+if (config('app.demo')) {
+    Route::get('demo/{role}', [W\DemoController::class, 'login'])->name('demo.login');
+}
+
 Route::middleware('guest')->group(function () {
     Route::get('login', [W\AuthController::class, 'showLogin'])->name('login');
     Route::post('login', [W\AuthController::class, 'login'])->name('login.attempt');

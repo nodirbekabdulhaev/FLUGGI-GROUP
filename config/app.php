@@ -65,6 +65,9 @@ return [
     |
     */
 
+    /** Public demo mode: one-click role login, banner, destructive actions blocked, nightly data reset. */
+    'demo' => (bool) env('DEMO_MODE', false),
+
     'timezone' => env('APP_TIMEZONE', 'Asia/Tashkent'),
 
     /*

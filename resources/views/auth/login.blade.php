@@ -19,4 +19,14 @@
     </div>
     <button class="btn-primary w-full">{{ __('Войти') }}</button>
 </form>
+@if(config('app.demo'))
+<div class="mt-5 border-t pt-4 dark:border-slate-700">
+    <div class="mb-2 text-center text-xs font-medium uppercase tracking-wide text-slate-400">Демо — войти одним нажатием</div>
+    <div class="grid gap-2">
+        @foreach(\App\Http\Controllers\Web\DemoController::ROLES as $key => [$email, $name, $desc])
+            <a href="{{ route('demo.login', $key) }}" class="rounded-lg border border-slate-200 px-3 py-2 text-sm transition hover:border-brand-500 dark:border-slate-700"><b>{{ $name }}</b><span class="block text-xs text-slate-500">{{ $desc }}</span></a>
+        @endforeach
+    </div>
+</div>
+@endif
 @endsection

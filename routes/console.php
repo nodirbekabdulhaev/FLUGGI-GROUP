@@ -14,3 +14,7 @@ Schedule::command('lessons:extend')->dailyAt('02:00');
 Schedule::command('backup:run')->dailyAt('03:00');
 Schedule::command('salary:accrue')->monthlyOn(1, '06:00');
 Schedule::command('housekeeping:run')->weeklyOn(0, '04:00');
+
+if (config('app.demo')) {
+    Schedule::command('demo:reset')->dailyAt('04:30');
+}
