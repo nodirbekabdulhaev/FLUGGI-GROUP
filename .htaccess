@@ -1,0 +1,12 @@
+# Fallback for hosting where the document root cannot point to /public (Beget shared hosting):
+# everything is routed into public/, and application files are never served directly.
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # never expose framework internals, secrets, backups or VCS data
+    RewriteRule ^(\.env|\.git|artisan|composer\.(json|lock)|package(-lock)?\.json|phpunit\.xml|app|bootstrap|config|database|lang|node_modules|resources|routes|storage|tests|vendor)(/|$) - [F,L,NC]
+    RewriteRule (^|/)\.(?!well-known) - [F,L]
+
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>

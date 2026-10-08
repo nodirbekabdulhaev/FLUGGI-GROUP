@@ -1,0 +1,16 @@
+{
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "build": "npm run build:css && npm run build:vendor",
+        "build:css": "tailwindcss -c tailwind.config.js -i resources/css/app.css -o public/css/app.css --minify",
+        "build:vendor": "mkdir -p public/vendor && cp node_modules/alpinejs/dist/cdn.min.js public/vendor/alpine.min.js && cp node_modules/chart.js/dist/chart.umd.js public/vendor/chart.umd.min.js",
+        "watch:css": "tailwindcss -c tailwind.config.js -i resources/css/app.css -o public/css/app.css --watch"
+    },
+    "devDependencies": {
+        "@tailwindcss/forms": "^0.5.10",
+        "alpinejs": "^3.14.8",
+        "chart.js": "^4.4.7",
+        "tailwindcss": "^3.4.17"
+    }
+}
