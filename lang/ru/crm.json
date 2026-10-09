@@ -1,0 +1,237 @@
+{
+  "score": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "HOT": "Hot"
+  },
+  "priority": {
+    "LOW": "Низкий",
+    "MEDIUM": "Средний",
+    "HIGH": "Высокий",
+    "URGENT": "Срочный"
+  },
+  "companySize": {
+    "SOLO": "Частное лицо / ИП",
+    "SMALL": "Малая компания",
+    "MEDIUM": "Средняя компания",
+    "LARGE": "Крупная компания"
+  },
+  "status": {
+    "lead": {
+      "OPEN": "В работе",
+      "CONVERTED": "Сделка",
+      "LOST": "Потеряно",
+      "REJECTED": "Отказ",
+      "PAUSED": "Пауза",
+      "NO_RESPONSE": "Не отвечает"
+    },
+    "deal": {
+      "OPEN": "В работе",
+      "WON": "Оплачено",
+      "LOST": "Потеряно",
+      "REJECTED": "Отказ",
+      "PAUSED": "Пауза",
+      "NO_RESPONSE": "Не отвечает"
+    }
+  },
+  "closeStatus": {
+    "LOST": "Потеряно",
+    "REJECTED": "Отказ",
+    "PAUSED": "Пауза",
+    "NO_RESPONSE": "Не отвечает"
+  },
+  "clientType": {
+    "COMPANY": "Компания",
+    "PERSON": "Частное лицо"
+  },
+  "health": {
+    "HEALTHY": "Здоров",
+    "ATTENTION": "Внимание",
+    "RISK": "Риск",
+    "LOST": "Потерян"
+  },
+  "meetingType": {
+    "ONLINE": "Онлайн",
+    "OFFLINE": "Офлайн",
+    "PHONE": "Телефон",
+    "TELEGRAM": "Telegram",
+    "GOOGLE_MEET": "Google Meet",
+    "ZOOM": "Zoom"
+  },
+  "meetingStatus": {
+    "SCHEDULED": "Запланирована",
+    "CONFIRMED": "Подтверждена",
+    "DONE": "Проведена",
+    "RESCHEDULED": "Перенесена",
+    "CANCELLED": "Отменена",
+    "NO_SHOW": "Не состоялась"
+  },
+  "activity": {
+    "lead": {
+      "created": "Создан лид",
+      "updated": "Изменены данные лида",
+      "assigned": "Назначен ответственный",
+      "stage_changed": "Смена этапа",
+      "closed": "Лид закрыт",
+      "reopened": "Лид возвращён в работу",
+      "converted": "Лид квалифицирован → сделка"
+    },
+    "deal": {
+      "created": "Создана сделка",
+      "updated": "Изменены данные сделки",
+      "amount_changed": "Изменена сумма",
+      "assigned": "Назначен ответственный",
+      "stage_changed": "Смена этапа",
+      "closed": "Сделка закрыта",
+      "reopened": "Сделка возвращена в работу"
+    },
+    "meeting": {
+      "created": "Назначена встреча",
+      "updated": "Встреча изменена",
+      "completed": "Встреча проведена"
+    },
+    "comment": {
+      "added": "Комментарий"
+    },
+    "client": {
+      "created": "Создан клиент",
+      "updated": "Изменены данные клиента"
+    },
+    "proposal": {
+      "created": "Создано КП",
+      "updated": "КП изменено",
+      "approval_requested": "КП на согласовании",
+      "approved": "КП утверждено",
+      "sent": "КП отправлено",
+      "viewed": "КП просмотрено",
+      "accepted": "КП принято",
+      "rejected": "КП отклонено"
+    },
+    "contract": {
+      "created": "Создан договор",
+      "sent": "Договор отправлен",
+      "in_approval": "Договор на согласовании",
+      "signed": "Договор подписан",
+      "cancelled": "Договор отменён"
+    },
+    "payment": {
+      "created": "Добавлена оплата",
+      "paid": "Получена оплата",
+      "refunded": "Возврат средств",
+      "updated": "Изменена оплата"
+    },
+    "project": {
+      "created": "Создан проект",
+      "updated": "Изменён проект",
+      "status_changed": "Статус проекта",
+      "template_applied": "Применён шаблон",
+      "member_added": "Добавлен в команду",
+      "member_removed": "Исключён из команды"
+    },
+    "task": {
+      "created": "Создана задача",
+      "updated": "Изменена задача",
+      "status_changed": "Статус задачи",
+      "deleted": "Удалена задача",
+      "commented": "Комментарий к задаче"
+    },
+    "expense": {
+      "created": "Добавлен расход"
+    }
+  },
+  "fields": {
+    "title": "Название",
+    "contactName": "Имя контакта",
+    "companyName": "Компания",
+    "phone": "Телефон",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "email": "Email",
+    "website": "Сайт",
+    "city": "Город",
+    "country": "Страна",
+    "source": "Источник",
+    "owner": "Ответственный",
+    "rop": "РОП",
+    "team": "Отдел",
+    "service": "Услуга",
+    "budget": "Бюджет",
+    "currency": "Валюта",
+    "desiredDate": "Желаемый срок",
+    "priority": "Приоритет",
+    "companySize": "Размер компании",
+    "interest": "Интерес (1–5)",
+    "stage": "Этап",
+    "status": "Статус",
+    "score": "Оценка",
+    "nextContactAt": "Следующий контакт",
+    "lastContactAt": "Последний контакт",
+    "comment": "Комментарий",
+    "createdAt": "Создан",
+    "amount": "Сумма",
+    "probability": "Вероятность",
+    "expectedCloseDate": "Ожидаемая дата закрытия",
+    "client": "Клиент",
+    "contact": "Контакт",
+    "type": "Тип",
+    "industry": "Отрасль",
+    "position": "Должность",
+    "startsAt": "Дата и время",
+    "durationMin": "Длительность, мин",
+    "link": "Ссылка или адрес",
+    "result": "Результат",
+    "manager": "Менеджер",
+    "lossReason": "Причина",
+    "number": "№",
+    "ownerAuto": "Автоматически — менеджер с наименьшей нагрузкой"
+  },
+  "common": {
+    "more": "Ещё поля",
+    "less": "Скрыть",
+    "select": "Выберите",
+    "none": "Не выбрано",
+    "all": "Все",
+    "close": "Закрыть",
+    "reopen": "Вернуть в работу",
+    "assign": "Сменить ответственного",
+    "changeStage": "Сменить этап",
+    "edit": "Редактировать",
+    "delete": "Удалить",
+    "deleteConfirm": "Удалить «{name}»? Запись будет скрыта, история сохранится.",
+    "deleted": "Удалено",
+    "saved": "Сохранено",
+    "created": "Создано",
+    "stageChanged": "Этап изменён",
+    "closed": "Запись закрыта",
+    "reopened": "Возвращено в работу",
+    "assigned": "Ответственный изменён",
+    "newMeeting": "Назначить встречу",
+    "completeMeeting": "Отметить проведённой",
+    "meetingCreated": "Встреча назначена",
+    "meetingDone": "Встреча проведена",
+    "meetingUpdated": "Встреча обновлена",
+    "addComment": "Добавить комментарий",
+    "commentPlaceholder": "Напишите комментарий…",
+    "send": "Отправить",
+    "sending": "Отправка...",
+    "noComments": "Комментариев пока нет",
+    "noActivity": "Событий пока нет",
+    "noHistory": "Переходов пока не было",
+    "noMeetings": "Встреч пока нет",
+    "durationOnStage": "на прошлом этапе: {d}",
+    "auto": "автоматически",
+    "planned": "Phase {phase}",
+    "plannedTab": "Раздел появится в Phase {phase}",
+    "closeTitle": "Закрыть запись",
+    "closeHint": "Для «Потеряно» и «Отказ» укажите причину — она попадёт в аналитику потерь.",
+    "byPhone": "Позвонить",
+    "openInTelegram": "Открыть Telegram"
+  },
+  "errors": {
+    "ownerRole": "Ответственным может быть только менеджер или РОП",
+    "ownerRoleField": "Выберите менеджера или РОП",
+    "noOwners": "Нет менеджеров и РОП — добавьте сотрудника, чтобы назначать лиды"
+  }
+}

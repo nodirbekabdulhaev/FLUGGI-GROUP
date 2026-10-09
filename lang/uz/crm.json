@@ -1,0 +1,237 @@
+{
+  "score": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "HOT": "Hot"
+  },
+  "priority": {
+    "LOW": "Past",
+    "MEDIUM": "Oʻrta",
+    "HIGH": "Yuqori",
+    "URGENT": "Shoshilinch"
+  },
+  "companySize": {
+    "SOLO": "Jismoniy shaxs / YaTT",
+    "SMALL": "Kichik kompaniya",
+    "MEDIUM": "Oʻrta kompaniya",
+    "LARGE": "Yirik kompaniya"
+  },
+  "status": {
+    "lead": {
+      "OPEN": "Jarayonda",
+      "CONVERTED": "Bitim",
+      "LOST": "Yoʻqotilgan",
+      "REJECTED": "Rad etildi",
+      "PAUSED": "Pauza",
+      "NO_RESPONSE": "Javob bermayapti"
+    },
+    "deal": {
+      "OPEN": "Jarayonda",
+      "WON": "Toʻlangan",
+      "LOST": "Yoʻqotilgan",
+      "REJECTED": "Rad etildi",
+      "PAUSED": "Pauza",
+      "NO_RESPONSE": "Javob bermayapti"
+    }
+  },
+  "closeStatus": {
+    "LOST": "Yoʻqotilgan",
+    "REJECTED": "Rad etildi",
+    "PAUSED": "Pauza",
+    "NO_RESPONSE": "Javob bermayapti"
+  },
+  "clientType": {
+    "COMPANY": "Kompaniya",
+    "PERSON": "Jismoniy shaxs"
+  },
+  "health": {
+    "HEALTHY": "Yaxshi",
+    "ATTENTION": "Eʼtibor",
+    "RISK": "Xavf",
+    "LOST": "Yoʻqotilgan"
+  },
+  "meetingType": {
+    "ONLINE": "Onlayn",
+    "OFFLINE": "Oflayn",
+    "PHONE": "Telefon",
+    "TELEGRAM": "Telegram",
+    "GOOGLE_MEET": "Google Meet",
+    "ZOOM": "Zoom"
+  },
+  "meetingStatus": {
+    "SCHEDULED": "Rejalashtirilgan",
+    "CONFIRMED": "Tasdiqlangan",
+    "DONE": "Oʻtkazilgan",
+    "RESCHEDULED": "Koʻchirilgan",
+    "CANCELLED": "Bekor qilingan",
+    "NO_SHOW": "Boʻlib oʻtmadi"
+  },
+  "activity": {
+    "lead": {
+      "created": "Lid yaratildi",
+      "updated": "Lid maʼlumotlari oʻzgartirildi",
+      "assigned": "Masʼul tayinlandi",
+      "stage_changed": "Bosqich oʻzgardi",
+      "closed": "Lid yopildi",
+      "reopened": "Lid ishga qaytarildi",
+      "converted": "Lid kvalifikatsiya qilindi → bitim"
+    },
+    "deal": {
+      "created": "Bitim yaratildi",
+      "updated": "Bitim maʼlumotlari oʻzgartirildi",
+      "amount_changed": "Summa oʻzgartirildi",
+      "assigned": "Masʼul tayinlandi",
+      "stage_changed": "Bosqich oʻzgardi",
+      "closed": "Bitim yopildi",
+      "reopened": "Bitim ishga qaytarildi"
+    },
+    "meeting": {
+      "created": "Uchrashuv belgilandi",
+      "updated": "Uchrashuv oʻzgartirildi",
+      "completed": "Uchrashuv oʻtkazildi"
+    },
+    "comment": {
+      "added": "Izoh"
+    },
+    "client": {
+      "created": "Mijoz yaratildi",
+      "updated": "Mijoz maʼlumotlari oʻzgartirildi"
+    },
+    "proposal": {
+      "created": "TT yaratildi",
+      "updated": "TT oʻzgartirildi",
+      "approval_requested": "TT kelishuvda",
+      "approved": "TT tasdiqlandi",
+      "sent": "TT yuborildi",
+      "viewed": "TT koʻrildi",
+      "accepted": "TT qabul qilindi",
+      "rejected": "TT rad etildi"
+    },
+    "contract": {
+      "created": "Shartnoma yaratildi",
+      "sent": "Shartnoma yuborildi",
+      "in_approval": "Shartnoma kelishuvda",
+      "signed": "Shartnoma imzolandi",
+      "cancelled": "Shartnoma bekor qilindi"
+    },
+    "payment": {
+      "created": "Toʻlov qoʻshildi",
+      "paid": "Toʻlov olindi",
+      "refunded": "Mablagʻ qaytarildi",
+      "updated": "Toʻlov oʻzgartirildi"
+    },
+    "project": {
+      "created": "Loyiha yaratildi",
+      "updated": "Loyiha oʻzgartirildi",
+      "status_changed": "Loyiha holati",
+      "template_applied": "Shablon qoʻllandi",
+      "member_added": "Jamoaga qoʻshildi",
+      "member_removed": "Jamoadan chiqarildi"
+    },
+    "task": {
+      "created": "Vazifa yaratildi",
+      "updated": "Vazifa oʻzgartirildi",
+      "status_changed": "Vazifa holati",
+      "deleted": "Vazifa oʻchirildi",
+      "commented": "Vazifaga izoh"
+    },
+    "expense": {
+      "created": "Xarajat qoʻshildi"
+    }
+  },
+  "fields": {
+    "title": "Nomi",
+    "contactName": "Kontakt ismi",
+    "companyName": "Kompaniya",
+    "phone": "Telefon",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "email": "Email",
+    "website": "Sayt",
+    "city": "Shahar",
+    "country": "Mamlakat",
+    "source": "Manba",
+    "owner": "Masʼul",
+    "rop": "ROP",
+    "team": "Boʻlim",
+    "service": "Xizmat",
+    "budget": "Byudjet",
+    "currency": "Valyuta",
+    "desiredDate": "Istalgan muddat",
+    "priority": "Ustuvorlik",
+    "companySize": "Kompaniya hajmi",
+    "interest": "Qiziqish (1–5)",
+    "stage": "Bosqich",
+    "status": "Holat",
+    "score": "Baho",
+    "nextContactAt": "Keyingi aloqa",
+    "lastContactAt": "Oxirgi aloqa",
+    "comment": "Izoh",
+    "createdAt": "Yaratilgan",
+    "amount": "Summa",
+    "probability": "Ehtimollik",
+    "expectedCloseDate": "Kutilayotgan yopilish sanasi",
+    "client": "Mijoz",
+    "contact": "Kontakt",
+    "type": "Turi",
+    "industry": "Soha",
+    "position": "Lavozim",
+    "startsAt": "Sana va vaqt",
+    "durationMin": "Davomiyligi, daq",
+    "link": "Havola yoki manzil",
+    "result": "Natija",
+    "manager": "Menejer",
+    "lossReason": "Sabab",
+    "number": "№",
+    "ownerAuto": "Avtomatik — yuklamasi eng kam menejer"
+  },
+  "common": {
+    "more": "Yana maydonlar",
+    "less": "Yashirish",
+    "select": "Tanlang",
+    "none": "Tanlanmagan",
+    "all": "Barchasi",
+    "close": "Yopish",
+    "reopen": "Ishga qaytarish",
+    "assign": "Masʼulni almashtirish",
+    "changeStage": "Bosqichni oʻzgartirish",
+    "edit": "Tahrirlash",
+    "delete": "Oʻchirish",
+    "deleteConfirm": "«{name}» oʻchirilsinmi? Yozuv yashiriladi, tarix saqlanib qoladi.",
+    "deleted": "Oʻchirildi",
+    "saved": "Saqlandi",
+    "created": "Yaratildi",
+    "stageChanged": "Bosqich oʻzgartirildi",
+    "closed": "Yozuv yopildi",
+    "reopened": "Ishga qaytarildi",
+    "assigned": "Masʼul oʻzgartirildi",
+    "newMeeting": "Uchrashuv belgilash",
+    "completeMeeting": "Oʻtkazilgan deb belgilash",
+    "meetingCreated": "Uchrashuv belgilandi",
+    "meetingDone": "Uchrashuv oʻtkazildi",
+    "meetingUpdated": "Uchrashuv yangilandi",
+    "addComment": "Izoh qoʻshish",
+    "commentPlaceholder": "Izoh yozing…",
+    "send": "Yuborish",
+    "sending": "Yuborilmoqda...",
+    "noComments": "Hozircha izohlar yoʻq",
+    "noActivity": "Hozircha voqealar yoʻq",
+    "noHistory": "Hozircha oʻtishlar boʻlmagan",
+    "noMeetings": "Hozircha uchrashuvlar yoʻq",
+    "durationOnStage": "oldingi bosqichda: {d}",
+    "auto": "avtomatik",
+    "planned": "Phase {phase}",
+    "plannedTab": "Boʻlim Phase {phase} da paydo boʻladi",
+    "closeTitle": "Yozuvni yopish",
+    "closeHint": "«Yoʻqotilgan» va «Rad etildi» uchun sababni koʻrsating — u yoʻqotishlar analitikasiga tushadi.",
+    "byPhone": "Qoʻngʻiroq qilish",
+    "openInTelegram": "Telegram ni ochish"
+  },
+  "errors": {
+    "ownerRole": "Masʼul faqat menejer yoki ROP boʻlishi mumkin",
+    "ownerRoleField": "Menejer yoki ROPni tanlang",
+    "noOwners": "Menejer va ROP yoʻq — lidlarni biriktirish uchun xodim qoʻshing"
+  }
+}

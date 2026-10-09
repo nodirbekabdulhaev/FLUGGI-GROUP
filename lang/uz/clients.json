@@ -1,0 +1,19 @@
+{
+  "title": "Mijozlar",
+  "subtitle": "Bitimlar mavjud boʻlgan kompaniyalar va shaxslar",
+  "add": "Mijoz qoʻshish",
+  "emptyTitle": "Hozircha mijozlar yoʻq",
+  "emptyText": "Mijozlar lid kvalifikatsiyasida yoki qoʻlda yaratiladi.",
+  "emptyFiltered": "Mijozlar topilmadi",
+  "search": "Nomi, telefon, kontakt",
+  "createTitle": "Yangi mijoz",
+  "editTitle": "Mijozni tahrirlash",
+  "deals": "Mijoz bitimlari",
+  "contacts": "Kontaktlar",
+  "addContact": "Kontakt qoʻshish",
+  "primary": "Asosiy",
+  "dealsCount": "{count} ta bitim · {open} tasi jarayonda",
+  "newDeal": "Yangi bitim",
+  "noDeals": "Hozircha bitimlar yoʻq",
+  "noContacts": "Hozircha kontaktlar yoʻq"
+}

@@ -1,0 +1,23 @@
+{
+  "title": "Boshqa tushumlar",
+  "subtitle": "Mijozlardan boʻlmagan daromadlar: hamkorlik, yetkazib beruvchilardan qaytimlar, bank foizlari, kurs farqi. Kompaniya foydasida va buxgalter uchun paketda hisobga olinadi.",
+  "new": "Tushum qoʻshish",
+  "edit": "Tushumni oʻzgartirish",
+  "saved": "Tushum saqlandi",
+  "deleted": "Tushum oʻchirildi",
+  "delete": "Oʻchirish",
+  "deleteConfirm": "{number} tushum oʻchirilsinmi?",
+  "category": "Toifa",
+  "allCategories": "Barcha toifalar",
+  "amount": "Summa",
+  "currency": "Valyuta",
+  "date": "Sana",
+  "project": "Loyiha",
+  "projectHint": "Ixtiyoriy: agar daromad loyiha bilan bogʻliq boʻlsa",
+  "noProject": "Loyihasiz",
+  "description": "Izoh",
+  "cancel": "Bekor qilish",
+  "save": "Saqlash",
+  "empty": "Hozircha boshqa tushumlar yoʻq",
+  "emptyText": "Tushum toifalari Sozlamalar → Moliya boʻlimida sozlanadi."
+}

@@ -1,0 +1,18 @@
+{
+  "open": "Global qidiruv",
+  "placeholder": "Qidiruv…",
+  "title": "CRM boʻyicha qidiruv",
+  "hint": "Mijoz, lid, bitim, loyiha, raqam (D-00012) yoki telefon",
+  "minLength": "Kamida 2 ta belgi kiriting",
+  "searching": "Qidirilmoqda…",
+  "nothing": "«{q}» soʻrovi boʻyicha hech narsa topilmadi",
+  "kinds": {
+    "client": "Mijozlar",
+    "lead": "Lidlar",
+    "deal": "Bitimlar",
+    "project": "Loyihalar",
+    "contract": "Shartnomalar",
+    "task": "Vazifalar",
+    "user": "Xodimlar"
+  }
+}

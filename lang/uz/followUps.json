@@ -1,0 +1,37 @@
+{
+  "title": "Takroriy sotuvlar",
+  "subtitle": "Loyihalar yakunlangandan keyin mijozlar bilan aloqalar",
+  "views": {
+    "due": "Bugunga",
+    "pending": "Barcha ochiqlari",
+    "closed": "Yopilgan"
+  },
+  "kinds": {
+    "CONTACT": "Mijoz bilan bogʻlanish",
+    "NEW_PROJECT": "Yangi loyiha taklif qilish",
+    "REPEAT_SALE": "Takroriy sotuv"
+  },
+  "statuses": {
+    "PENDING": "Kutilmoqda",
+    "DONE": "Bajarildi",
+    "SKIPPED": "Oʻtkazib yuborildi"
+  },
+  "client": "Mijoz",
+  "kind": "Harakat",
+  "project": "Loyiha",
+  "due": "Muddat",
+  "owner": "Menejer",
+  "status": "Holat",
+  "overdue": "{days, plural, other {# kun}}",
+  "complete": "Yopish",
+  "completeTitle": "Aloqa natijasi",
+  "result": "Natija",
+  "resultPlaceholder": "Nima haqida kelishildi",
+  "createDeal": "«Takroriy sotuv» bitimini yaratish",
+  "skip": "Oʻtkazib yuborish",
+  "done": "Bajarildi",
+  "closed": "Follow-up yopildi",
+  "dealCreated": "{number} bitim yaratildi",
+  "emptyTitle": "Takroriy aloqalar yoʻq",
+  "emptyText": "Ular loyihalar yakunlangandan soʻng avtomatik paydo boʻladi."
+}

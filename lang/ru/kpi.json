@@ -1,0 +1,53 @@
+{
+  "title": "KPI",
+  "subtitle": "Показатели сотрудников за месяц и выполнение целей",
+  "groups": {
+    "MANAGER": "Менеджеры",
+    "ROP": "РОП",
+    "EXECUTOR": "Исполнители"
+  },
+  "period": "Месяц",
+  "empty": "Нет данных",
+  "emptyText": "Показатели появятся, когда у сотрудников будут лиды, оплаты или задачи.",
+  "employee": "Сотрудник",
+  "kpi": "KPI",
+  "noTargets": "Цели не заданы",
+  "setTargets": "Цели",
+  "targetsTitle": "Цели на {period}: {name}",
+  "targetsSaved": "Цели сохранены",
+  "targetsHint": "Пустое поле — цели нет. Выполнение KPI — среднее по заданным целям.",
+  "metric": {
+    "REVENUE": "Выручка",
+    "ORDERS": "Заказы",
+    "LEADS": "Лиды",
+    "MEETINGS": "Встречи",
+    "TASKS": "Выполненные задачи"
+  },
+  "m": {
+    "leads": "Лиды",
+    "processedLeads": "Обработано",
+    "meetings": "Встречи",
+    "proposals": "КП",
+    "contracts": "Договоры",
+    "payments": "Оплаты",
+    "orders": "Заказы",
+    "revenue": "Выручка",
+    "avgCheck": "Средний чек",
+    "conversion": "Конверсия",
+    "teamRevenue": "Продажи отдела",
+    "managers": "Менеджеров",
+    "plan": "План",
+    "planPct": "Выполнение плана",
+    "margin": "Маржа",
+    "projects": "Проекты",
+    "overdue": "Просрочки",
+    "overdueTasks": "просрочено задач",
+    "overdueProjects": "просрочено проектов",
+    "tasks": "Задачи",
+    "done": "Выполнено",
+    "overdueCount": "Просрочено",
+    "avgHours": "Ср. время, ч",
+    "completion": "% выполнения",
+    "reworks": "Переделки"
+  }
+}

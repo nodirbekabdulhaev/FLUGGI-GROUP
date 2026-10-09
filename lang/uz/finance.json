@@ -1,0 +1,89 @@
+{
+  "dashboard": {
+    "title": "Moliyaviy sharh",
+    "subtitle": "Davr uchun tushum, toʻlovlar, xarajatlar va foyda",
+    "companyHint": "Kompaniyaning operatsion foydasi va xarajatlarini faqat CEO koʻradi."
+  },
+  "kpi": {
+    "revenue": "Tushum",
+    "revenueHint": "Davr ichida imzolangan shartnomalar",
+    "collected": "Olingan",
+    "collectedHint": "Tasdiqlangan toʻlovlar",
+    "receivables": "Debitorlik qarzi",
+    "receivablesHint": "Imzolangan, lekin hali toʻlanmagan — bugungi holatga",
+    "expenses": "Xarajatlar",
+    "expensesHint": "Loyiha {project} · kompaniya {company}",
+    "projectExpensesHint": "Loyiha xarajatlari",
+    "grossProfit": "Yalpi foyda",
+    "grossProfitHint": "Olingan − qaytarishlar − loyiha xarajatlari",
+    "margin": "Marjinallik",
+    "refunds": "Qaytarishlar",
+    "commissions": "Komissiyalar",
+    "operatingProfit": "Operatsion foyda",
+    "operatingProfitHint": "Yalpi + boshqa tushumlar − kompaniya xarajatlari − komissiyalar",
+    "otherIncome": "Boshqa tushumlar",
+    "otherIncomeHint": "Mijozlardan emas, operatsion foydaga kiradi"
+  },
+  "byCategory": "Toifalar boʻyicha xarajatlar",
+  "noExpenses": "Davr ichida xarajatlar yoʻq",
+  "category": {
+    "EXECUTOR": "Ijrochi",
+    "ADS": "Reklama",
+    "PRODUCTION": "Ishlab chiqarish",
+    "PHOTO": "Foto",
+    "VIDEO": "Video",
+    "DESIGN": "Dizayn",
+    "DEVELOPMENT": "Dasturlash",
+    "TRANSPORT": "Transport",
+    "MATERIALS": "Materiallar",
+    "SERVICES": "Servislar",
+    "OTHER": "Boshqa"
+  },
+  "scope": {
+    "PROJECT": "Loyiha",
+    "COMPANY": "Kompaniya"
+  },
+  "expenses": {
+    "title": "Xarajatlar",
+    "subtitle": "Loyiha xarajatlari va kompaniya xarajatlari",
+    "new": "Yangi xarajat",
+    "edit": "Xarajatni oʻzgartirish",
+    "created": "Xarajat qoʻshildi",
+    "saved": "Xarajat saqlandi",
+    "deleted": "Xarajat oʻchirildi",
+    "deleteConfirm": "{number} xarajat oʻchirilsinmi?",
+    "empty": "Xarajatlar yoʻq",
+    "emptyText": "Loyiha yoki kompaniya xarajatini qoʻshing.",
+    "total": "Jami",
+    "scope": "Turi",
+    "project": "Loyiha",
+    "category": "Toifa",
+    "amount": "Summa",
+    "date": "Sana",
+    "payee": "Kimga",
+    "noPayee": "—",
+    "description": "Tavsif",
+    "allScopes": "Barcha xarajatlar",
+    "allCategories": "Barcha toifalar",
+    "companyOnlyCeo": "Kompaniya xarajatlarini CEO kiritadi"
+  },
+  "project": {
+    "title": "Loyiha moliyasi",
+    "revenue": "Loyiha qiymati",
+    "collected": "Olingan",
+    "receivable": "Olinishi qolgan",
+    "expenses": "Xarajatlar",
+    "grossProfit": "Yalpi foyda",
+    "margin": "Marjinallik",
+    "commissions": "Bitim boʻyicha komissiyalar",
+    "expensesList": "Loyiha xarajatlari",
+    "overhead": "Ustama xarajatlar (ijara, ofis)",
+    "netProfit": "Sof foyda",
+    "plannedCost": "Ijrochilar boʻyicha reja (hisoblanmagan)"
+  },
+  "profit": {
+    "title": "Loyihalar boʻyicha foyda",
+    "subtitle": "Har bir loyihaning qiymati, olingan toʻlovlar, xarajatlari va marjasi",
+    "empty": "Hozircha loyihalar yoʻq"
+  }
+}
