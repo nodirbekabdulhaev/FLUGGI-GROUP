@@ -8,6 +8,8 @@
 # Создаёт .env со случайными секретами, применяет миграции, создаёт первого CEO,
 # пишет .htaccess для Passenger и печатает команду для cron.
 # Повторный запуск безопасен: .env не перезаписывается.
+# Если проект лежит внутри корня сайта (Docker-окружение Beget), папка проекта закрывается
+# для веб-доступа (.htaccess с запретом), заглушка index.php переименовывается.
 set -euo pipefail
 
 APP="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
@@ -94,15 +96,54 @@ echo "▸ Роли, права, справочники, первый CEO"
 "$NODE" node_modules/tsx/dist/cli.mjs packages/db/prisma/seed.ts
 if [ -n "$CEO_PASSWORD" ]; then sed -i 's/^SEED_CEO_PASSWORD=.*/SEED_CEO_PASSWORD=/' .env; fi
 
-echo "▸ Passenger: $SITE/public_html/.htaccess"
-mkdir -p "$SITE/public_html" tmp storage
-cat >"$SITE/public_html/.htaccess" <<EOF
+# Корень сайта: ~/ДОМЕН/public_html рядом с проектом, либо (Docker-окружение Beget, где домашняя
+# папка — это и есть корень сайта) папка, в которой лежит проект. Можно задать: DOCROOT=…
+if [ -z "${DOCROOT:-}" ]; then
+  if [ -d "$SITE/public_html" ]; then DOCROOT="$SITE/public_html"; else DOCROOT="$SITE"; fi
+fi
+echo "▸ Passenger: $DOCROOT/.htaccess"
+mkdir -p tmp storage
+# Закрыть доступ из интернета к папке (файлы приложению по-прежнему доступны)
+deny_web() {
+  cat >"$1/.htaccess" <<'EOF'
+# Fluggi CRM: папка закрыта для веб-доступа
+<IfModule mod_authz_core.c>
+  Require all denied
+</IfModule>
+<IfModule !mod_authz_core.c>
+  Order allow,deny
+  Deny from all
+</IfModule>
+EOF
+}
+case "$APP/" in
+  "$DOCROOT"/*)
+    # Проект внутри корня сайта — без этого .env и код были бы доступны по ссылке
+    deny_web "$APP"
+    [ -d "$DOCROOT/.local" ] && deny_web "$DOCROOT/.local"
+    # Заглушка хостинга перехватила бы главную страницу вместо CRM
+    for f in index.php index.html; do
+      [ -f "$DOCROOT/$f" ] && mv "$DOCROOT/$f" "$DOCROOT/$f.beget-bak" && echo "  $f → $f.beget-bak"
+    done
+    ;;
+esac
+cat >"$DOCROOT/.htaccess" <<EOF
 PassengerEnabled on
 PassengerAppType node
 PassengerNodejs $NODE
 PassengerAppRoot $APP
 PassengerStartupFile deploy/beget/server.js
 PassengerFriendlyErrorPages off
+# Скрытые файлы (.env, .git, .local …) не отдаются никогда
+<FilesMatch "^\.">
+  <IfModule mod_authz_core.c>
+    Require all denied
+  </IfModule>
+  <IfModule !mod_authz_core.c>
+    Order allow,deny
+    Deny from all
+  </IfModule>
+</FilesMatch>
 EOF
 touch tmp/restart.txt
 
