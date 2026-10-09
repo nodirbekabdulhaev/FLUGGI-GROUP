@@ -1,4 +1,5 @@
-import type { NextConfig } from 'next';
+// Обычный JavaScript, а не TypeScript: для чтения next.config.ts Next.js нужен нативный
+// компилятор SWC, а он не запускается на старых серверах (Ubuntu 18.04 у Beget)
 import createNextIntlPlugin from 'next-intl/plugin';
 
 const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
@@ -19,7 +20,8 @@ const csp = [
 // Форма заявки /f/* встраивается на сайт компании (iframe) — только её разрешено показывать в рамке
 const formCsp = csp.replace("frame-ancestors 'none'", 'frame-ancestors *');
 
-const config: NextConfig = {
+/** @type {import('next').NextConfig} */
+const config = {
   poweredByHeader: false,
   reactStrictMode: true,
   // Браузер ходит только на свой домен: /api/* проксируется в NestJS (cookie first-party, без CORS).
