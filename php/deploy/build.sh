@@ -17,6 +17,7 @@ cd "$OUT"
 composer install --no-dev --optimize-autoloader --no-interaction --no-progress --prefer-dist
 npm ci --no-audit --no-fund
 npm run build
+find vendor -name .git -type d -prune -exec rm -rf {} +
 rm -rf node_modules tests phpunit.xml .github vite.config.js tailwind.config.js postcss.config.js \
   package.json package-lock.json resources/css resources/js CONVENTIONS.md
 mkdir -p storage/app/private storage/framework/{cache/data,sessions,views} storage/logs bootstrap/cache
