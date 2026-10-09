@@ -1,0 +1,13 @@
+{
+  "title": "Bildirishnomalar",
+  "subtitle": "Lidlaringiz, bitimlaringiz va uchrashuvlaringiz boʻyicha voqealar",
+  "readAll": "Barchasini oʻqilgan deb belgilash",
+  "empty": "Bildirishnomalar yoʻq",
+  "emptyText": "Bu yerda yangi lidlar, uchrashuvlar va boshqa voqealar paydo boʻladi.",
+  "open": "Ochish",
+  "tgOn": "✓ Bildirishnomalar Telegram {username} ga ham yuboriladi. Qaysilari — profildagi «Bildirishnoma sozlamalari» boʻlimida.",
+  "tgOff": "Telegram ulanmagan — bildirishnomalar faqat shu yerga keladi.",
+  "tgProblem": "Telegram-bot ishlamayapti: {problem}",
+  "tgNotConfigured": "Telegram-bot serverda sozlanmagan (.env dagi TELEGRAM_BOT_TOKEN).",
+  "tgSetup": "Profilda ulash →"
+}

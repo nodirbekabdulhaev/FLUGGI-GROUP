@@ -1,0 +1,44 @@
+{
+  "title": "Komissiya qoidalari",
+  "subtitle": "Har bir tasdiqlangan toʻlovda hisoblanadi. Agar bir nechta qoida mos kelsa — eng yuqori ustuvorlikka ega qoida olinadi.",
+  "new": "Yangi qoida",
+  "edit": "Qoidani oʻzgartirish",
+  "saved": "Qoida saqlandi",
+  "name": "Nomi",
+  "appliesTo": "Kimga",
+  "calcType": "Hisoblash",
+  "value": "Qiymat",
+  "valuePct": "Foiz, %",
+  "valueFixed": "Summa, UZS",
+  "priority": "Ustuvorlik",
+  "active": "Faol",
+  "inactive": "Oʻchirilgan",
+  "conditions": "Shartlar",
+  "noConditions": "Shartsiz — doim amal qiladi",
+  "addCondition": "Shart qoʻshish",
+  "match": "Bajariladi, agar",
+  "all": "barcha shartlar",
+  "any": "shartlardan istalgani",
+  "role": {
+    "MANAGER": "Menejer",
+    "ROP": "ROP"
+  },
+  "calc": {
+    "PERCENT_OF_PAYMENT": "Toʻlovdan %",
+    "PERCENT_OF_PROFIT": "Foydadan %",
+    "FIXED_PER_DEAL": "Bitim uchun qatʼiy summa"
+  },
+  "calcHint": {
+    "PERCENT_OF_PAYMENT": "Har bir tasdiqlangan toʻlovdan foiz",
+    "PERCENT_OF_PROFIT": "Toʻlovdan foiz × toʻlov paytidagi loyiha marjasi",
+    "FIXED_PER_DEAL": "Bir marta — bitimning birinchi toʻlovida"
+  },
+  "metric": {
+    "avg_check_usd": "Oylik oʻrtacha chek, USD",
+    "avg_check_uzs": "Oylik oʻrtacha chek, UZS",
+    "orders_count": "Oylik buyurtmalar soni",
+    "revenue_uzs": "Oylik tushum, UZS",
+    "revenue_usd": "Oylik tushum, USD"
+  },
+  "empty": "Qoidalar yoʻq"
+}

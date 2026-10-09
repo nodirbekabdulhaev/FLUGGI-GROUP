@@ -1,0 +1,37 @@
+{
+  "title": "Lidlar",
+  "subtitle": "Kvalifikatsiyagacha boʻlgan kiruvchi soʻrovlar",
+  "add": "Lid qoʻshish",
+  "emptyTitle": "Hozircha lidlar yoʻq",
+  "emptyText": "Sotuvlar bilan ishlashni boshlash uchun birinchi lidni yarating.",
+  "emptyFiltered": "Filtrlar boʻyicha lidlar topilmadi",
+  "search": "Ism, kompaniya, telefon, Telegram",
+  "createTitle": "Yangi lid",
+  "createHint": "Kontakt, manba va xizmat kifoya — qolganini keyinroq toʻldirish mumkin.",
+  "editTitle": "Lidni tahrirlash",
+  "convert": "Kvalifikatsiya qilish",
+  "convertTitle": "Lid kvalifikatsiyasi",
+  "convertHint": "Mijoz va bitim yaratiladi. Lid «Bitim» holatiga oʻtadi.",
+  "existingClient": "Mavjud mijoz",
+  "newClient": "Yangi mijoz",
+  "clientName": "Mijoz nomi",
+  "converted": "Lid kvalifikatsiya qilindi: mijoz va bitim yaratildi",
+  "openDeal": "Bitimni ochish",
+  "tabs": {
+    "overview": "Umumiy",
+    "activity": "Faollik",
+    "tasks": "Vazifalar",
+    "meetings": "Uchrashuvlar",
+    "proposals": "TT",
+    "contracts": "Shartnomalar",
+    "payments": "Toʻlovlar",
+    "projects": "Loyihalar",
+    "files": "Fayllar",
+    "comments": "Izohlar",
+    "history": "Tarix"
+  },
+  "filters": {
+    "onlyOpen": "Jarayonda",
+    "allStatuses": "Barcha holatlar"
+  }
+}

@@ -1,0 +1,28 @@
+{
+  "title": "Входящие",
+  "subtitle": "Директ и комментарии Instagram и Facebook. Ответы уходят клиенту из CRM.",
+  "channel": "Канал",
+  "allChannels": "Все каналы",
+  "channels": {
+    "INSTAGRAM_DM": "Директ Instagram",
+    "INSTAGRAM_COMMENT": "Комментарии Instagram",
+    "FACEBOOK_COMMENT": "Комментарии Facebook"
+  },
+  "empty": "Сообщений пока нет",
+  "emptyText": "После подключения Instagram (Настройки → Интеграции) сюда придут Директ и комментарии.",
+  "pick": "Выберите переписку слева",
+  "you": "Вы",
+  "lead": "лид",
+  "back": "Назад",
+  "createLead": "Создать лид",
+  "leadCreated": "Лид создан",
+  "replyTo": "Ответ на выбранный комментарий:",
+  "replyMode": "Как ответить",
+  "modePublic": "Публично под постом",
+  "modePrivate": "В Директ",
+  "pickComment": "нажмите на комментарий",
+  "message": "Ответ",
+  "placeholder": "Напишите ответ…",
+  "send": "Отправить",
+  "windowHint": "Instagram разрешает отвечать в Директ в течение 24 часов после последнего сообщения клиента."
+}

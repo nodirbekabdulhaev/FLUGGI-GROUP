@@ -1,0 +1,40 @@
+{
+  "tab": "Maʼlumotnomalar",
+  "title": "CRM maʼlumotnomalari",
+  "services": "Xizmatlar",
+  "sources": "Lid manbalari",
+  "lossReasons": "Yoʻqotish sabablari",
+  "stages": "Voronka bosqichlari",
+  "usdRate": "USD kursi",
+  "rateHint": "USD dagi yangi summalar oxirgi kurs boʻyicha UZS ga qayta hisoblanadi. Avval saqlangan summalar oʻz kursini saqlab qoladi.",
+  "rateSet": "Kurs saqlandi",
+  "rate": "1 USD = UZS",
+  "rateMissing": "USD kursi belgilanmagan — USD dagi summalarni saqlab boʻlmaydi.",
+  "add": "Qoʻshish",
+  "code": "Kod",
+  "name": "Nomi",
+  "active": "Faol",
+  "inactive": "Yashirilgan",
+  "basePrice": "Bazaviy narx",
+  "minPrice": "Min. narx",
+  "pricingType": "Hisob-kitob turi",
+  "probability": "Ehtimollik, %",
+  "requiresComment": "Izoh talab qilinadi",
+  "pricing": {
+    "FIXED": "Qatʼiy",
+    "MONTHLY": "Oylik",
+    "HOURLY": "Soatbay",
+    "CUSTOM": "Individual"
+  },
+  "lastSetBy": "Belgilangan: {date}{by, select, none {} other {, {by}}}",
+  "direction": "Yoʻnalish",
+  "directionHint": "Xizmat loyihalarini shu yoʻnalishning loyiha menejeri koʻradi",
+  "noDirection": "Yoʻnalishsiz",
+  "directions": "Biznes yoʻnalishlari",
+  "directionsText": "Har bir xizmat biror yoʻnalishga tegishli; yoʻnalish loyiha menejeri uning loyihalarini koʻradi va yuritadi.",
+  "newDirection": "Yangi yoʻnalish",
+  "errors": {
+    "noRate": "{currency} kursi kiritilmagan. CEO uni «Sozlamalar → Maʼlumotnomalar» boʻlimida kiritishi mumkin",
+    "noRateField": "{currency} kursi kiritilmagan"
+  }
+}

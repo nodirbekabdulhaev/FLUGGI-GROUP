@@ -1,0 +1,13 @@
+{
+  "title": "Voronka",
+  "subtitle": "Bosqichni oʻzgartirish uchun kartochkani sudrang",
+  "leadsPart": "Lidlar",
+  "dealsPart": "Bitimlar",
+  "total": "Pipeline",
+  "weighted": "Vaznli prognoz",
+  "empty": "Boʻsh",
+  "convertFirst": "Lid bitimga aylanishi uchun uni kvalifikatsiya qilish kerak — lid kartochkasini oching.",
+  "wrongBoard": "Bitimni lid bosqichlariga qaytarib boʻlmaydi",
+  "moveTo": "Bosqichga oʻtkazish",
+  "more": "yana {count}"
+}

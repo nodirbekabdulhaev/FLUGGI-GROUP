@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "sales": "Sales",
+    "leads": "Leads",
+    "deals": "Deals",
+    "clients": "Clients",
+    "projects": "Projects",
+    "tasks": "Tasks",
+    "team": "Team",
+    "employees": "Employees",
+    "finance": "Finance",
+    "settings": "Settings",
+    "profile": "Profile",
+    "logout": "Log out"
+  },
+  "auth": {
+    "title": "Sign in to Fluggi",
+    "email": "Email",
+    "password": "Password",
+    "submit": "Sign in"
+  }
+}

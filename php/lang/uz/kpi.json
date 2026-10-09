@@ -1,0 +1,53 @@
+{
+  "title": "KPI",
+  "subtitle": "Xodimlarning oylik koʻrsatkichlari va maqsadlar bajarilishi",
+  "groups": {
+    "MANAGER": "Menejerlar",
+    "ROP": "ROP",
+    "EXECUTOR": "Ijrochilar"
+  },
+  "period": "Oy",
+  "empty": "Maʼlumot yoʻq",
+  "emptyText": "Xodimlarda lidlar, toʻlovlar yoki vazifalar boʻlganda koʻrsatkichlar paydo boʻladi.",
+  "employee": "Xodim",
+  "kpi": "KPI",
+  "noTargets": "Maqsadlar belgilanmagan",
+  "setTargets": "Maqsadlar",
+  "targetsTitle": "{period} uchun maqsadlar: {name}",
+  "targetsSaved": "Maqsadlar saqlandi",
+  "targetsHint": "Boʻsh maydon — maqsad yoʻq. KPI bajarilishi — belgilangan maqsadlar boʻyicha oʻrtacha.",
+  "metric": {
+    "REVENUE": "Tushum",
+    "ORDERS": "Buyurtmalar",
+    "LEADS": "Lidlar",
+    "MEETINGS": "Uchrashuvlar",
+    "TASKS": "Bajarilgan vazifalar"
+  },
+  "m": {
+    "leads": "Lidlar",
+    "processedLeads": "Ishlov berilgan",
+    "meetings": "Uchrashuvlar",
+    "proposals": "TT",
+    "contracts": "Shartnomalar",
+    "payments": "Toʻlovlar",
+    "orders": "Buyurtmalar",
+    "revenue": "Tushum",
+    "avgCheck": "Oʻrtacha chek",
+    "conversion": "Konversiya",
+    "teamRevenue": "Boʻlim sotuvlari",
+    "managers": "Menejerlar",
+    "plan": "Reja",
+    "planPct": "Reja bajarilishi",
+    "margin": "Marja",
+    "projects": "Loyihalar",
+    "overdue": "Kechiktirilganlar",
+    "overdueTasks": "muddati oʻtgan vazifa",
+    "overdueProjects": "muddati oʻtgan loyiha",
+    "tasks": "Vazifalar",
+    "done": "Bajarilgan",
+    "overdueCount": "Muddati oʻtgan",
+    "avgHours": "Oʻrt. vaqt, soat",
+    "completion": "Bajarilish %",
+    "reworks": "Qayta ishlashlar"
+  }
+}
