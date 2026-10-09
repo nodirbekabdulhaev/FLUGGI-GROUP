@@ -27,4 +27,10 @@ class LeadSource extends Model
     {
         return $this->hasMany(Client::class, 'source_id');
     }
+
+    /** Название для интерфейса: узбекское при узбекском языке (если задано), иначе русское. */
+    public function label(): string
+    {
+        return app()->getLocale() === 'uz' && filled($this->name_uz) ? $this->name_uz : $this->name_ru;
+    }
 }
