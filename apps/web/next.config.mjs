@@ -1,6 +1,6 @@
-// Обычный JavaScript, а не TypeScript: для чтения next.config.ts Next.js нужен нативный
-// компилятор SWC, а он не запускается на старых серверах (Ubuntu 18.04 у Beget)
-import createNextIntlPlugin from 'next-intl/plugin';
+// Обычный JavaScript, а не TypeScript, и плагин next-intl только при сборке: и чтение
+// next.config.ts, и плагин (он подключает @swc/core) требуют нативных модулей, которые не
+// запускаются на старых серверах (Ubuntu 18.04 у Beget). Для работы сайта они не нужны.
 
 const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
 const isDev = process.env.NODE_ENV !== 'production';
@@ -52,4 +52,10 @@ const config = {
   },
 };
 
-export default createNextIntlPlugin('./src/i18n/request.ts')(config);
+/** @param {string} phase */
+export default async function nextConfig(phase) {
+  if (phase === 'phase-production-server') return config;
+  // Плагин добавляет только настройку сборки (webpack alias для next-intl/config)
+  const { default: createNextIntlPlugin } = await import('next-intl/plugin');
+  return createNextIntlPlugin('./src/i18n/request.ts')(config);
+}
