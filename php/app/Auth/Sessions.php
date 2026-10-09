@@ -18,7 +18,7 @@ final class Sessions
 
     public static function ttlDays(): int
     {
-        return max(1, (int) env('SESSION_TTL_DAYS', 7));
+        return max(1, (int) config('fluggi.session_ttl_days', 7));
     }
 
     public static function hash(string $token): string
