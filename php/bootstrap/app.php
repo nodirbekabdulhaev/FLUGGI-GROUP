@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\BusinessRule;
 use App\Http\Middleware\Authenticate;
 use App\Http\Middleware\AuthenticatedOnly;
 use App\Http\Middleware\GuestLocale;
@@ -45,5 +46,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('login'));
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        //
+        $exceptions->render(function (BusinessRule $e, Request $request) {
+            if ($request->expectsJson()) {
+                return response()->json(['message' => $e->getMessage(), 'errors' => array_map(fn ($m) => [$m], $e->fields)], 422);
+            }
+
+            return back()->withInput()->withErrors($e->fields)->with('error', $e->getMessage());
+        });
     })->create();

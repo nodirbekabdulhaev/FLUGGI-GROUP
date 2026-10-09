@@ -52,6 +52,7 @@
 <main class="mx-auto w-full max-w-7xl px-4 pb-28 pt-6 sm:px-6 lg:pt-8">
     @yield('content')
 </main>
+@includeIf('partials.dock')
 @stack('dock')
 @include('partials.toasts')
 @stack('scripts')
