@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Первая настройка Fluggi CRM на виртуальном хостинге Beget (в Docker-окружении по SSH).
 # База — MySQL хостинга (панель Beget → «MySQL»). Пользователь базы на Beget = имя базы;
-# другой хост или пользователь: DB_HOST=… DB_USER=… bash deploy/beget/setup.sh
+# другой хост, порт или пользователь: DB_HOST=… DB_PORT=… DB_USER=… bash deploy/beget/setup.sh
 #
 #   cd ~/crm.fluggi.uz/fluggi && bash deploy/beget/setup.sh
 #
@@ -37,9 +37,10 @@ if [ ! -f .env ]; then
     DB_USER="${DB_USER:-$DB_NAME}"
     ask DB_PASSWORD "Пароль базы MySQL"
     DB_HOST="${DB_HOST:-localhost}"
+    DB_PORT="${DB_PORT:-3306}"
     # Пароль может содержать спецсимволы — кодируем для строки подключения
     ENC_PASSWORD="$("$NODE" -p 'encodeURIComponent(process.argv[1])' "$DB_PASSWORD")"
-    DATABASE_URL="mysql://$DB_USER:$ENC_PASSWORD@$DB_HOST:3306/$DB_NAME"
+    DATABASE_URL="mysql://$DB_USER:$ENC_PASSWORD@$DB_HOST:$DB_PORT/$DB_NAME"
   fi
   ask CEO_EMAIL "Email первого CEO (логин)"
   ask CEO_NAME "Имя CEO"
