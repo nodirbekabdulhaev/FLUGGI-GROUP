@@ -40,6 +40,16 @@ async function main() {
   // процесса: на виртуальном хостинге нет своего TCP-порта для внутренних запросов
   const sockDir = path.join(ROOT, 'tmp');
   fs.mkdirSync(sockDir, { recursive: true });
+  // Сокеты завершившихся процессов (Passenger может держать несколько процессов)
+  for (const name of fs.readdirSync(sockDir)) {
+    const pid = Number(/^api-(\d+)\.sock$/.exec(name)?.[1]);
+    if (!pid) continue;
+    try {
+      process.kill(pid, 0);
+    } catch {
+      fs.rmSync(path.join(sockDir, name), { force: true });
+    }
+  }
   const socket = path.join(sockDir, `api-${process.pid}.sock`);
   fs.rmSync(socket, { force: true });
   const internal = http.createServer(handleApi);

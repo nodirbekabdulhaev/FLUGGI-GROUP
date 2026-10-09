@@ -1,7 +1,8 @@
 # Развёртывание (Beget)
 
-> **Важно.** Виртуальный (shared) хостинг Beget не подходит: на нём нельзя держать постоянно
-> работающие Node.js-процессы и PostgreSQL. Нужен **Beget VPS** (или Beget Cloud) с Ubuntu 22.04/24.04.
+> **Виртуальный хостинг Beget (без Docker)** — см. [`deploy/beget/README.md`](deploy/beget/README.md):
+> один Node.js-процесс под Passenger, облачная PostgreSQL Beget, фоновые задачи по cron.
+> Ниже — установка на **VPS** (Beget VPS, Oracle Cloud, Hetzner) с Ubuntu 22.04/24.04.
 > Рекомендуемый минимум: 2 vCPU, 4 ГБ RAM, 40 ГБ SSD.
 >
 > Статус: production-образ собран и проверен (миграции, создание CEO, API, worker, web, вход).

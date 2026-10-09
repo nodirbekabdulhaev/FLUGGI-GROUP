@@ -36,3 +36,4 @@ API проверяет переменные при старте и не запу
 | `STORAGE_LOCAL_DIR` | api | — | папка для `local`; по умолчанию `apps/api/storage`. В Docker — `/data/storage` (volume) |
 | `STORAGE_ENDPOINT`, `STORAGE_REGION`, `STORAGE_ACCESS_KEY`, `STORAGE_SECRET_KEY`, `STORAGE_BUCKET` | api | для `s3` | Beget S3: endpoint `https://s3.ru1.storage.beget.cloud`, ключи и бакет — из панели Beget |
 | `OUTBOX_IN_API` | api | — | `false` — события, отправку в Telegram и планировщик выполняет только worker. По умолчанию всё это работает и в API, чтобы при разработке не запускать worker |
+| `CRON_SECRET` | api | — | Секрет (16+ символов) для `POST /api/v1/internal/cron`: фоновые задачи по cron на виртуальном хостинге без worker (deploy/beget/README.md). Пусто — эндпоинт выключен (404) |

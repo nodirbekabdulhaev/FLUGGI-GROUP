@@ -222,5 +222,7 @@ PATCH /payroll/:id    + kpiBonusTarget — «KPI-бонус при 100%» в к�
 ### Внешние
 ```
 POST /telegram/webhook   (проверка X-Telegram-Bot-Api-Secret-Token)
+POST /internal/cron      (заголовок X-Cron-Secret = CRON_SECRET; иначе 404) → { events, telegram, ms }
+                         outbox, очередь Telegram, планировщик — для хостинга без worker
 GET  /health             GET /ready
 ```
