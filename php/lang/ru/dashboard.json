@@ -1,0 +1,15 @@
+{
+  "greeting": "Здравствуйте, {name}",
+  "subtitle": "{role}{team, select, none {} other { · {team}}}",
+  "metricsTitle": "Показатели",
+  "metricsPending": "Выручка, прибыль, оплаты, лиды и проекты появятся здесь, когда будут реализованы соответствующие модули (Phase 2–5). Мы не показываем вымышленные цифры.",
+  "periodSelected": "Выбран период: {period}",
+  "teamTitle": "Отделы продаж",
+  "teamEmpty": "Отделов пока нет",
+  "members": "{count, plural, one {# сотрудник} few {# сотрудника} many {# сотрудников} other {# сотрудника}}",
+  "noHead": "РОП не назначен",
+  "accessTitle": "Мои разделы",
+  "accessText": "Разделы, доступные вашей роли",
+  "available": "Работает",
+  "plannedPhase": "Phase {phase}"
+}
