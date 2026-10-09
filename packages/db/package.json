@@ -11,7 +11,8 @@
     "migrate:dev": "dotenv -e ../../.env -c -- prisma migrate dev",
     "migrate:deploy": "dotenv -e ../../.env -c -- prisma migrate deploy",
     "migrate:reset": "dotenv -e ../../.env -c -- prisma migrate reset",
-    "seed": "dotenv -e ../../.env -c -- tsx prisma/seed.ts"
+    "seed": "dotenv -e ../../.env -c -- tsx prisma/seed.ts",
+    "protect": "dotenv -e ../../.env -c -- prisma db execute --schema prisma/schema.prisma --file prisma/protect.sql"
   },
   "dependencies": {
     "@fluggi/contracts": "workspace:*",

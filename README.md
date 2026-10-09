@@ -47,7 +47,7 @@ e2e                 Playwright
 
 ## 1. Установка
 
-Нужны **Node.js 22+**, **pnpm 10** (`corepack enable`), **PostgreSQL 16** (или Docker).
+Нужны **Node.js 22+**, **pnpm 10** (`corepack enable`), **MySQL 8.0** (или 5.7; или Docker).
 
 ```bash
 pnpm install
@@ -61,10 +61,11 @@ cp .env.example .env      # заполните AUTH_SECRET: openssl rand -base64
 Через Docker:
 
 ```bash
-docker compose up -d postgres
+docker compose up -d mysql
 ```
 
-Или своя PostgreSQL: создайте пользователя и БД и укажите `DATABASE_URL` в `.env`.
+Или свой MySQL: создайте пользователя и БД (utf8mb4) и укажите `DATABASE_URL` в `.env`.
+После миграций — `pnpm db:deploy` (миграции + триггеры защиты данных).
 
 ```sql
 CREATE USER fluggi WITH PASSWORD 'fluggi' CREATEDB;
@@ -116,7 +117,7 @@ pnpm --filter @fluggi/web dev           # Web → http://localhost:3000
 pnpm lint                 # prettier --check
 pnpm typecheck
 pnpm test                 # unit-тесты
-pnpm test:integration     # API + реальная PostgreSQL (TEST_DATABASE_URL, БД очищается!)
+pnpm test:integration     # API + реальный MySQL (TEST_DATABASE_URL, БД очищается!)
 pnpm test:e2e             # Playwright; api и web должны быть запущены, БД — после seed
 ```
 

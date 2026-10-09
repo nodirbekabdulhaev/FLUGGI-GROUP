@@ -81,16 +81,13 @@ export class ClientsService {
     if (q.q) {
       and.push({
         OR: [
-          { name: { contains: q.q, mode: 'insensitive' } },
+          { name: { contains: q.q } },
           { phone: { contains: q.q } },
-          { telegram: { contains: q.q, mode: 'insensitive' } },
+          { telegram: { contains: q.q } },
           {
             contacts: {
               some: {
-                OR: [
-                  { fullName: { contains: q.q, mode: 'insensitive' } },
-                  { phone: { contains: q.q } },
-                ],
+                OR: [{ fullName: { contains: q.q } }, { phone: { contains: q.q } }],
               },
             },
           },

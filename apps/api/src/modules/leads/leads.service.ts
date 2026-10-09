@@ -69,7 +69,7 @@ export class LeadsService {
     if (q.q) {
       and.push({
         OR: ['title', 'contactName', 'companyName', 'phone', 'telegram', 'email'].map((f) => ({
-          [f]: { contains: q.q, mode: 'insensitive' },
+          [f]: { contains: q.q },
         })),
       });
     }

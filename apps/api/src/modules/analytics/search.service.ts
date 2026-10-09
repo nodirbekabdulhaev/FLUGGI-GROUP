@@ -8,7 +8,8 @@ import { CrmAccessService } from '../crm/crm-access.service';
 import { ProjectAccessService } from '../projects/project-access.service';
 
 const LIMIT = 5;
-const ci = (q: string) => ({ contains: q, mode: 'insensitive' as const });
+// В MySQL сравнение строк без учёта регистра (collation utf8mb4_unicode_ci)
+const ci = (q: string) => ({ contains: q });
 
 /** «D-00012», «ДГ-12», «12» → 12; иначе null. */
 export function parseNumber(q: string): number | null {

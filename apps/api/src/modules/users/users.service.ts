@@ -53,8 +53,8 @@ export class UsersService {
     if (query.q) {
       filters.push({
         OR: [
-          { fullName: { contains: query.q, mode: 'insensitive' } },
-          { email: { contains: query.q, mode: 'insensitive' } },
+          { fullName: { contains: query.q } },
+          { email: { contains: query.q } },
           { phone: { contains: query.q } },
         ],
       });

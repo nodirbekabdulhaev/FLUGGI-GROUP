@@ -172,7 +172,7 @@ export class PeopleService {
       roleCode: s.roleCode,
       startTime: s.startTime,
       endTime: s.endTime,
-      workDays: s.workDays,
+      workDays: s.workDays as number[],
       graceMinutes: s.graceMinutes,
       isActive: s.isActive,
       users: s.employees.map((e) => named(e.user)!),
@@ -266,10 +266,10 @@ export class PeopleService {
             name: schedule.name,
             startTime: schedule.startTime,
             endTime: schedule.endTime,
-            workDays: schedule.workDays,
+            workDays: schedule.workDays as number[],
           }
         : null,
-      workday: schedule ? schedule.workDays.includes(isoWeekday(date)) : true,
+      workday: schedule ? (schedule.workDays as number[]).includes(isoWeekday(date)) : true,
       record: record ? toAttendance(record) : null,
     };
   }
@@ -290,7 +290,7 @@ export class PeopleService {
       throw businessRule('На сегодня оформлен отпуск, больничный или выходной');
     const schedule = await this.scheduleOf(auth.userId);
     const late =
-      schedule && schedule.workDays.includes(isoWeekday(date))
+      schedule && (schedule.workDays as number[]).includes(isoWeekday(date))
         ? lateMinutes(now, date, schedule.startTime, schedule.graceMinutes)
         : 0;
     const data = {
@@ -409,7 +409,7 @@ export class PeopleService {
     let late = 0;
     if (present && checkIn) {
       const schedule = await this.scheduleOf(input.userId);
-      if (schedule && schedule.workDays.includes(isoWeekday(input.date)))
+      if (schedule && (schedule.workDays as number[]).includes(isoWeekday(input.date)))
         late = lateMinutes(checkIn, input.date, schedule.startTime, schedule.graceMinutes);
       status = late > 0 ? 'LATE' : 'PRESENT';
     }

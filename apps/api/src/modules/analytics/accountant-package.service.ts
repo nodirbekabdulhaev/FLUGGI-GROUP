@@ -95,7 +95,7 @@ export class AccountantPackageService {
       this.prisma.expense.findMany({
         where: { deletedAt: null, expenseDate: dateYear },
         include: { project: true, payee: true, createdBy: true, categoryRef: true },
-        orderBy: { expenseDate: 'asc' },
+        orderBy: [{ expenseDate: 'asc' }, { createdAt: 'asc' }],
       }),
       this.prisma.payrollEntry.findMany({
         where: { period: { in: periods } },

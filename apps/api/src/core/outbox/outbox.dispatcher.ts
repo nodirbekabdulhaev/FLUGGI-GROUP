@@ -44,10 +44,10 @@ export class OutboxDispatcher {
         >`
           SELECT id, type, payload, actor_id, created_at, attempts
           FROM outbox_events
-          WHERE processed_at IS NULL AND available_at <= now() AND attempts < ${MAX_ATTEMPTS}
+          WHERE processed_at IS NULL AND available_at <= UTC_TIMESTAMP(3) AND attempts < ${MAX_ATTEMPTS}
           ORDER BY created_at
           LIMIT ${BATCH_SIZE}
-          FOR UPDATE SKIP LOCKED`;
+          ${this.prisma.lockRows}`;
 
         for (const row of rows) {
           const handlers = this.handlers.get(row.type) ?? [];

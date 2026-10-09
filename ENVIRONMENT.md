@@ -7,7 +7,7 @@ API проверяет переменные при старте и не запу
 |---|---|---|---|
 | `NODE_ENV` | все | — | `development` / `test` / `production`. В production cookie получают флаг `Secure` |
 | `TZ` | все | — | `Asia/Tashkent` |
-| `DATABASE_URL` | api, db | ✅ | PostgreSQL: `postgresql://user:pass@host:5432/fluggi?schema=public` |
+| `DATABASE_URL` | api, db | ✅ | MySQL 5.7+ / 8.0: `mysql://user:pass@host:3306/fluggi` (спецсимволы пароля — в URL-кодировке) |
 | `TEST_DATABASE_URL` | тесты | для тестов | отдельная БД; интеграционные тесты её **очищают**. Должна отличаться от `DATABASE_URL` |
 | `AUTH_SECRET` | api | ✅ | не короче 32 символов: `openssl rand -base64 48` |
 | `APP_URL` | api | ✅ | публичный адрес интерфейса, напр. `https://crm.fluggi.uz`. Запросы с другим `Origin` отклоняются (CSRF) |
@@ -20,7 +20,7 @@ API проверяет переменные при старте и не запу
 | `SEED_DEMO` | seed | — | создавать демо-данные; по умолчанию `true` вне production |
 | `SEED_DEMO_PASSWORD` | seed | — | общий пароль демо-аккаунтов; пусто — сгенерировать и показать в консоли |
 | `SEED_CEO_EMAIL`, `SEED_CEO_PASSWORD`, `SEED_CEO_NAME` | seed | для первого запуска prod | создаёт первого CEO |
-| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | docker-compose.prod | prod | параметры контейнера PostgreSQL |
+| `MYSQL_DATABASE`, `MYSQL_USER`, `MYSQL_PASSWORD`, `MYSQL_ROOT_PASSWORD` | docker-compose.prod | prod | параметры контейнера MySQL |
 | `TELEGRAM_BOT_TOKEN` | api, worker | — | токен бота от @BotFather. Пусто — Telegram выключен, уведомления только в CRM |
 | `TELEGRAM_BOT_USERNAME` | api | — | имя бота без `@`; если не задано — берётся через `getMe` |
 | `TELEGRAM_MODE` | api, worker | `polling` | `polling` — бот сам забирает сообщения (локально, без домена); `webhook` — Telegram присылает их на `/api/v1/telegram/webhook` (production) |

@@ -30,8 +30,8 @@ export class TelegramSender {
       async (tx) => {
         const rows = await tx.$queryRaw<{ id: string }[]>`
           SELECT id FROM notification_deliveries
-          WHERE status = 'PENDING' AND next_attempt_at <= now()
-          ORDER BY created_at LIMIT ${limit} FOR UPDATE SKIP LOCKED`;
+          WHERE status = 'PENDING' AND next_attempt_at <= UTC_TIMESTAMP(3)
+          ORDER BY created_at LIMIT ${limit} ${this.prisma.lockRows}`;
         for (const { id } of rows) {
           const d = await tx.notificationDelivery.findUniqueOrThrow({
             where: { id },

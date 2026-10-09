@@ -17,7 +17,7 @@ COMPOSE="docker compose -f $APP_DIR/docker-compose.prod.yml"
 cd "$APP_DIR"
 mkdir -p "$BACKUP_DIR"
 echo "▸ Бэкап базы перед обновлением"
-$COMPOSE exec -T postgres pg_dump -U fluggi fluggi | gzip >"$BACKUP_DIR/fluggi-before-update-$(date +%F-%H%M).sql.gz"
+$COMPOSE exec -T mysql sh -c 'exec mysqldump --single-transaction --triggers -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' | gzip >"$BACKUP_DIR/fluggi-before-update-$(date +%F-%H%M).sql.gz"
 
 if [ "$SRC_DIR" != "$APP_DIR" ]; then
   echo "▸ Копирую новый код"

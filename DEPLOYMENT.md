@@ -1,7 +1,7 @@
 # Развёртывание (Beget)
 
 > **Виртуальный хостинг Beget (без Docker)** — см. [`deploy/beget/README.md`](deploy/beget/README.md):
-> один Node.js-процесс под Passenger, облачная PostgreSQL Beget, фоновые задачи по cron.
+> один Node.js-процесс под Passenger, MySQL хостинга, фоновые задачи по cron.
 > Ниже — установка на **VPS** (Beget VPS, Oracle Cloud, Hetzner) с Ubuntu 22.04/24.04.
 > Рекомендуемый минимум: 2 vCPU, 4 ГБ RAM, 40 ГБ SSD.
 >
@@ -41,7 +41,7 @@ sudo bash deploy/install.sh
               ├─ /api/*  → api:4000   (NestJS)
               └─ /       → web:3000   (Next.js)
            worker  — фоновые задачи: outbox, планировщик, отправка в Telegram
-           postgres — данные (volume pgdata)
+           mysql — данные (volume mysqldata)
 ```
 
 ## 1. Подготовка сервера
@@ -68,8 +68,9 @@ cp .env.example .env
 NODE_ENV=production
 APP_URL=https://crm.fluggi.uz
 AUTH_SECRET=<openssl rand -base64 48>
-POSTGRES_PASSWORD=<надёжный пароль>
-DATABASE_URL=postgresql://fluggi:<тот же пароль>@postgres:5432/fluggi?schema=public
+MYSQL_PASSWORD=<надёжный пароль>
+MYSQL_ROOT_PASSWORD=<другой надёжный пароль>
+DATABASE_URL=mysql://fluggi:<тот же пароль>@mysql:3306/fluggi
 API_INTERNAL_URL=http://api:4000
 SEED_DEMO=false
 SEED_CEO_EMAIL=you@fluggi.uz
@@ -148,8 +149,9 @@ STORAGE_SECRET_KEY=<секрет>
 Ежедневный дамп (cron на хосте):
 
 ```bash
-0 3 * * * docker compose -f /opt/fluggi/docker-compose.prod.yml exec -T postgres \
-  pg_dump -U fluggi fluggi | gzip > /var/backups/fluggi-$(date +\%F).sql.gz
+0 3 * * * docker compose -f /opt/fluggi/docker-compose.prod.yml exec -T mysql \
+  sh -c 'exec mysqldump --single-transaction --triggers -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE"' \
+  | gzip > /var/backups/fluggi-$(date +\%F).sql.gz
 ```
 
 Копируйте дампы за пределы VPS (например в Beget S3).

@@ -260,10 +260,7 @@ export class FinanceService {
         this.projects.projectWhere(auth, 'finance.read'),
         q.q
           ? {
-              OR: [
-                { name: { contains: q.q, mode: 'insensitive' } },
-                { client: { name: { contains: q.q, mode: 'insensitive' } } },
-              ],
+              OR: [{ name: { contains: q.q } }, { client: { name: { contains: q.q } } }],
             }
           : {},
       ],

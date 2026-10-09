@@ -51,8 +51,8 @@ export class DealsService {
     if (q.q) {
       and.push({
         OR: [
-          { title: { contains: q.q, mode: 'insensitive' } },
-          { client: { name: { contains: q.q, mode: 'insensitive' } } },
+          { title: { contains: q.q } },
+          { client: { name: { contains: q.q } } },
           ...(/^\d+$/.test(q.q.replace(/^D-/i, ''))
             ? [{ number: Number(q.q.replace(/^D-/i, '')) }]
             : []),

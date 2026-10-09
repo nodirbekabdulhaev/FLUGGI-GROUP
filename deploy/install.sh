@@ -87,7 +87,7 @@ fi
 CEO_PASSWORD=""
 if [ ! -f "$ENV_FILE" ]; then
   say "Создаю .env со случайными секретами"
-  PG_PASSWORD=$(openssl rand -hex 24)
+  DB_PASSWORD=$(openssl rand -hex 24)
   CEO_PASSWORD=$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)
   umask 077
   cat >"$ENV_FILE" <<EOF
@@ -99,10 +99,11 @@ SESSION_TTL_DAYS=7
 LOG_LEVEL=info
 TRUST_PROXY=loopback, linklocal, uniquelocal
 
-POSTGRES_USER=fluggi
-POSTGRES_PASSWORD=$PG_PASSWORD
-POSTGRES_DB=fluggi
-DATABASE_URL=postgresql://fluggi:$PG_PASSWORD@postgres:5432/fluggi?schema=public
+MYSQL_DATABASE=fluggi
+MYSQL_USER=fluggi
+MYSQL_PASSWORD=$DB_PASSWORD
+MYSQL_ROOT_PASSWORD=$(openssl rand -hex 24)
+DATABASE_URL=mysql://fluggi:$DB_PASSWORD@mysql:3306/fluggi
 
 SEED_DEMO=false
 SEED_CEO_EMAIL=$CEO_EMAIL
@@ -163,7 +164,7 @@ systemctl enable caddy >/dev/null && systemctl reload-or-restart caddy
 say "Ежедневный бэкап базы в $BACKUP_DIR (03:00, хранится 14 дней)"
 mkdir -p "$BACKUP_DIR" && chmod 700 "$BACKUP_DIR"
 cat >/etc/cron.d/fluggi-backup <<EOF
-0 3 * * * root cd $APP_DIR && $COMPOSE exec -T postgres pg_dump -U fluggi fluggi | gzip > $BACKUP_DIR/fluggi-\$(date +\%F).sql.gz && find $BACKUP_DIR -name '*.sql.gz' -mtime +14 -delete
+0 3 * * * root cd $APP_DIR && $COMPOSE exec -T mysql sh -c 'exec mysqldump --single-transaction --triggers -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE"' | gzip > $BACKUP_DIR/fluggi-\$(date +\%F).sql.gz && find $BACKUP_DIR -name '*.sql.gz' -mtime +14 -delete
 EOF
 
 docker image prune -f >/dev/null

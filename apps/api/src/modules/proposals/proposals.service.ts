@@ -52,10 +52,7 @@ export class ProposalsService {
     if (q.managerId) and.push({ managerId: q.managerId });
     if (q.q)
       and.push({
-        OR: [
-          { title: { contains: q.q, mode: 'insensitive' } },
-          { client: { name: { contains: q.q, mode: 'insensitive' } } },
-        ],
+        OR: [{ title: { contains: q.q } }, { client: { name: { contains: q.q } } }],
       });
     const where = { AND: and };
     const [items, total] = await Promise.all([

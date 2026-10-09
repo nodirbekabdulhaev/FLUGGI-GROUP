@@ -78,8 +78,8 @@ export class ChatService {
     const rows = await this.prisma.$queryRaw<{ conversation_id: string; n: bigint }[]>`
       SELECT m.conversation_id, count(*) AS n
       FROM chat_messages m
-      JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ${auth.userId}::uuid
-      WHERE m.created_at > cm.last_read_at AND m.author_id <> ${auth.userId}::uuid
+      JOIN conversation_members cm ON cm.conversation_id = m.conversation_id AND cm.user_id = ${auth.userId}
+      WHERE m.created_at > cm.last_read_at AND m.author_id <> ${auth.userId}
       GROUP BY m.conversation_id`;
     return new Map(rows.map((r) => [r.conversation_id, Number(r.n)]));
   }

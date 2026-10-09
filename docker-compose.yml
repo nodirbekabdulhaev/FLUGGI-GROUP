@@ -1,20 +1,28 @@
-# Локальная инфраструктура для разработки: PostgreSQL + MinIO (S3).
+# Локальная инфраструктура для разработки: MySQL 8 + MinIO (S3).
 services:
-  postgres:
-    image: postgres:16-alpine
+  mysql:
+    image: mysql:8.0
+    command:
+      [
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci',
+        '--log-bin-trust-function-creators=1',
+      ]
     environment:
-      POSTGRES_USER: fluggi
-      POSTGRES_PASSWORD: fluggi
-      POSTGRES_DB: fluggi
-      TZ: Asia/Tashkent
+      MYSQL_ROOT_PASSWORD: fluggi-root
+      MYSQL_DATABASE: fluggi
+      MYSQL_USER: fluggi
+      MYSQL_PASSWORD: fluggi
     ports:
-      - '5432:5432'
+      - '3306:3306'
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
+      # Тестовая БД для интеграционных тестов
+      - ./deploy/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U fluggi']
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -ufluggi -pfluggi']
       interval: 5s
-      retries: 10
+      retries: 20
 
   minio:
     image: minio/minio:latest
@@ -29,5 +37,5 @@ services:
       - miniodata:/data
 
 volumes:
-  pgdata:
+  mysqldata:
   miniodata:

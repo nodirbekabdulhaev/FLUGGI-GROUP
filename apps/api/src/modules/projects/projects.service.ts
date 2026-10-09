@@ -145,10 +145,7 @@ export class ProjectsService {
     if (q.directionId) and.push({ directionId: q.directionId });
     if (q.q)
       and.push({
-        OR: [
-          { name: { contains: q.q, mode: 'insensitive' } },
-          { client: { name: { contains: q.q, mode: 'insensitive' } } },
-        ],
+        OR: [{ name: { contains: q.q } }, { client: { name: { contains: q.q } } }],
       });
     const where = { AND: and };
     const [rows, total] = await Promise.all([

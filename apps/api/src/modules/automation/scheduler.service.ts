@@ -294,7 +294,7 @@ export class SchedulerService implements OnApplicationBootstrap, OnApplicationSh
       if (marked.has(u.id)) continue;
       const own = u.employee?.schedule?.isActive ? u.employee.schedule : null;
       const schedule = own ?? schedules.find((s) => s.roleCode === u.role.code);
-      if (!schedule || !schedule.workDays.includes(weekday)) continue;
+      if (!schedule || !(schedule.workDays as number[]).includes(weekday)) continue;
       await this.prisma.attendance.create({
         data: {
           userId: u.id,

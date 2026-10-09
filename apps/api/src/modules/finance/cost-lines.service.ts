@@ -118,7 +118,12 @@ export class CostLinesService implements OnModuleInit {
           });
       }
     }
-    if (data.length) await tx.projectCostLine.createMany({ data });
+    // Порядок строк = порядок в тарифе: у пакетной вставки одинаковое время создания
+    const base = Date.now();
+    if (data.length)
+      await tx.projectCostLine.createMany({
+        data: data.map((d, i) => ({ ...d, createdAt: new Date(base + i) })),
+      });
     // Исполнители, уже назначенные в команду
     const members = await tx.projectMember.findMany({ where: { projectId, status: 'ACTIVE' } });
     for (const m of members) await this.assign(tx, projectId, m.userId);

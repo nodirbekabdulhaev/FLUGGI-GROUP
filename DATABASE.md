@@ -9,10 +9,10 @@
 
 | Правило | Значение |
 |---|---|
-| СУБД | PostgreSQL 16 |
-| Первичный ключ | `id uuid` (UUIDv7 — сортируемые по времени) |
-| Человекочитаемые номера | `number` из Postgres-последовательностей: `L-00001`, `D-00001`, `P-00001`, `KP-2026-0001`, `C-2026-0001`, `PAY-00001` |
-| Метки времени | `created_at`, `updated_at` (timestamptz) — во всех изменяемых таблицах |
+| СУБД | MySQL 8.0 / 5.7 (utf8mb4). До октября 2026 — PostgreSQL; переведено для виртуального хостинга Beget |
+| Первичный ключ | `id CHAR(36)` — UUID, генерирует приложение |
+| Человекочитаемые номера | `number` — AUTO_INCREMENT: `L-00001`, `D-00001`, `P-00001`, `KP-2026-0001`, `C-2026-0001`, `PAY-00001` |
+| Метки времени | `created_at`, `updated_at` (DATETIME(3), UTC) — во всех изменяемых таблицах |
 | Soft delete | `deleted_at` у leads, clients, deals, contracts, projects, tasks, expenses, files. Для `payments`, `commissions`, `kpi_results`, `audit_logs`, `activities` удаление запрещено вовсе (только смена статуса / сторно) |
 | Деньги | `amount numeric(18,2)`, `currency` (`UZS`/`USD`), `exchange_rate numeric(18,6)`, `amount_uzs numeric(18,2)` |
 | Полиморфные связи | явные nullable FK (`lead_id`, `deal_id`, `client_id`, `project_id`, `task_id`…), а не пара `entity_type/entity_id` — чтобы сохранить ссылочную целостность |
@@ -95,7 +95,9 @@ erDiagram
 
 **settings** — `key (PK), value jsonb, updated_by, updated_at` — веса lead scoring, пороги «крупного» лида/сделки, интервалы follow-up (30/60/90), план месяца компании и т.д.
 
-**number_sequences** — используем нативные Postgres SEQUENCE; таблица не нужна.
+**number_sequences** — не нужна: номера — AUTO_INCREMENT-колонки.
+
+**Особенности MySQL.** Свободный текст — `TEXT`, ключи и индексируемые строки — `VARCHAR(191)`. Поиск без учёта регистра обеспечивает collation `utf8mb4_unicode_ci`. Время в запросах — `UTC_TIMESTAMP(3)` (часовой пояс сервера не важен). Очереди (outbox, Telegram) берут строки `FOR UPDATE SKIP LOCKED` на MySQL 8 и `FOR UPDATE` на 5.7. Неизменяемость журналов, истории и запрет удаления оплат/договоров/комиссий/зарплаты — триггеры `packages/db/prisma/protect.sql` (отдельно от миграций: на хостинге без права их создавать CRM работает и без них).
 
 ### 3.3 CRM
 

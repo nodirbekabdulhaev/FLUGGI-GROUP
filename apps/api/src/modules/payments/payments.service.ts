@@ -228,7 +228,7 @@ export class PaymentsService {
 
     return this.prisma.$transaction(
       async (tx) => {
-        await tx.$queryRaw`SELECT id FROM deals WHERE id = ${p0.dealId}::uuid FOR UPDATE`;
+        await tx.$queryRaw`SELECT id FROM deals WHERE id = ${p0.dealId} FOR UPDATE`;
         const current = await tx.payment.findUniqueOrThrow({ where: { id } });
         if (current.status !== 'PENDING') throw businessRule('Оплата уже обработана');
         const deal = await tx.deal.findUniqueOrThrow({ where: { id: p0.dealId } });
@@ -422,7 +422,7 @@ export class PaymentsService {
     if (original.status !== 'PAID' || original.type === 'REFUND')
       throw businessRule('Вернуть можно только подтверждённую оплату');
     return this.prisma.$transaction(async (tx) => {
-      await tx.$queryRaw`SELECT id FROM deals WHERE id = ${original.dealId}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM deals WHERE id = ${original.dealId} FOR UPDATE`;
       const refunded = await tx.payment.aggregate({
         where: { refundOfId: id, status: 'PAID' },
         _sum: { amountUzs: true },
@@ -518,7 +518,7 @@ export class PaymentsService {
         : null;
     return this.prisma.$transaction(async (tx) => {
       // Та же блокировка, что при подтверждении: правка и подтверждение не пересекутся.
-      await tx.$queryRaw`SELECT id FROM deals WHERE id = ${before.dealId}::uuid FOR UPDATE`;
+      await tx.$queryRaw`SELECT id FROM deals WHERE id = ${before.dealId} FOR UPDATE`;
       const current = await tx.payment.findUniqueOrThrow({ where: { id } });
       if (current.status !== 'PENDING') throw businessRule('Оплата уже подтверждена или отменена');
       const data = {

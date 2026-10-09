@@ -25,11 +25,15 @@ let cachedHash: string | undefined;
 
 /** Полная очистка и базовые данные: роли, права, отделы, по пользователю на роль. */
 export async function resetDatabase(prisma: PrismaService) {
-  const tables = await prisma.$queryRaw<{ tablename: string }[]>`
-    SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename <> '_prisma_migrations'`;
-  await prisma.$executeRawUnsafe(
-    `TRUNCATE ${tables.map((t) => `"${t.tablename}"`).join(', ')} RESTART IDENTITY CASCADE`,
-  );
+  const tables = await prisma.$queryRaw<{ name: string }[]>`
+    SELECT table_name AS name FROM information_schema.tables
+    WHERE table_schema = DATABASE() AND table_name <> '_prisma_migrations'`;
+  // Проверка внешних ключей отключается на время очистки — в одном соединении (транзакции)
+  await prisma.$transaction(async (tx) => {
+    await tx.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 0');
+    for (const t of tables) await tx.$executeRawUnsafe(`TRUNCATE TABLE \`${t.name}\``);
+    await tx.$executeRawUnsafe('SET FOREIGN_KEY_CHECKS = 1');
+  });
   await seedReferences(prisma);
   await prisma.exchangeRate.create({
     data: { currency: 'USD', rateToUzs: 12650, date: new Date('2020-01-01') },

@@ -19,6 +19,10 @@ set +a
 bash deploy/beget/install-deps.sh
 echo "▸ Миграции базы"
 "$NODE" node_modules/prisma/build/index.js migrate deploy --schema packages/db/prisma/schema.prisma
+echo "▸ Защита данных (триггеры)"
+"$NODE" node_modules/prisma/build/index.js db execute --schema packages/db/prisma/schema.prisma \
+  --file packages/db/prisma/protect.sql >/dev/null 2>&1 ||
+  echo "  ⚠ хостинг не разрешает триггеры — CRM работает и без них (записи защищает приложение)"
 echo "▸ Справочники и права"
 "$NODE" node_modules/tsx/dist/cli.mjs packages/db/prisma/seed.ts
 mkdir -p tmp && touch tmp/restart.txt

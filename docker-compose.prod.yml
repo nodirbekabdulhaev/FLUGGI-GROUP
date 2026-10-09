@@ -1,20 +1,27 @@
-# Production на Beget VPS. Запуск: docker compose -f docker-compose.prod.yml up -d --build
+# Production на VPS (Beget VPS, Oracle Cloud, Hetzner). Запуск: docker compose -f docker-compose.prod.yml up -d --build
 # Переменные — из .env рядом с этим файлом (см. ENVIRONMENT.md).
 services:
-  postgres:
-    image: postgres:16-alpine
+  mysql:
+    image: mysql:8.0
     restart: unless-stopped
+    command:
+      [
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci',
+        '--log-bin-trust-function-creators=1',
+      ]
     environment:
-      POSTGRES_USER: ${POSTGRES_USER:-fluggi}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD обязателен}
-      POSTGRES_DB: ${POSTGRES_DB:-fluggi}
-      TZ: Asia/Tashkent
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD обязателен}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-fluggi}
+      MYSQL_USER: ${MYSQL_USER:-fluggi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD обязателен}
+      TZ: UTC
     volumes:
-      - pgdata:/var/lib/postgresql/data
+      - mysqldata:/var/lib/mysql
     healthcheck:
-      test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-fluggi}']
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD']
       interval: 5s
-      retries: 20
+      retries: 30
 
   migrate:
     build: .
@@ -22,13 +29,13 @@ services:
       [
         'sh',
         '-c',
-        'cd packages/db && node_modules/.bin/prisma migrate deploy && node_modules/.bin/tsx prisma/seed.ts',
+        'cd packages/db && node_modules/.bin/prisma migrate deploy && (node_modules/.bin/prisma db execute --schema prisma/schema.prisma --file prisma/protect.sql || echo "⚠ триггеры защиты не созданы") && node_modules/.bin/tsx prisma/seed.ts',
       ]
     env_file: .env
     environment:
       SEED_DEMO: ${SEED_DEMO:-false}
     depends_on:
-      postgres:
+      mysql:
         condition: service_healthy
     restart: 'no'
 
@@ -80,5 +87,5 @@ services:
       - '127.0.0.1:3000:3000'
 
 volumes:
-  pgdata:
+  mysqldata:
   storage:

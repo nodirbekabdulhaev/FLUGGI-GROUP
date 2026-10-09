@@ -88,10 +88,7 @@ export class ContractsService {
     if (q.dealId) and.push({ dealId: q.dealId });
     if (q.q)
       and.push({
-        OR: [
-          { client: { name: { contains: q.q, mode: 'insensitive' } } },
-          { deal: { title: { contains: q.q, mode: 'insensitive' } } },
-        ],
+        OR: [{ client: { name: { contains: q.q } } }, { deal: { title: { contains: q.q } } }],
       });
     const where = { AND: and };
     const [items, total] = await Promise.all([

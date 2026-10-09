@@ -71,7 +71,7 @@ export class ClientInsightsService {
             UNION ALL
             SELECT client_id, paid_at FROM payments WHERE status = 'PAID'
           ) x
-          WHERE client_id = ANY(${clientIds}::uuid[])
+          WHERE client_id IN (${Prisma.join(clientIds)})
           GROUP BY client_id`,
         this.prisma.payment.groupBy({
           by: ['clientId'],

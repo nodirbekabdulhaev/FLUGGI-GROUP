@@ -9,7 +9,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -57,17 +57,17 @@ enum ExecutorSpecialty {
 // ──────────────────────── Пользователи и доступ ────────────────────────
 
 model User {
-  id               String     @id @default(uuid()) @db.Uuid
+  id               String     @id @default(uuid()) @db.Char(36)
   email            String     @unique
-  phone            String?
-  passwordHash     String     @map("password_hash")
-  fullName         String     @map("full_name")
-  roleId           String     @map("role_id") @db.Uuid
-  teamId           String?    @map("team_id") @db.Uuid
+  phone            String?    @db.Text
+  passwordHash     String     @map("password_hash") @db.Text
+  fullName         String     @map("full_name") @db.Text
+  roleId           String     @map("role_id") @db.Char(36)
+  teamId           String?    @map("team_id") @db.Char(36)
   status           UserStatus @default(ACTIVE)
   locale           Locale     @default(ru)
   telegramChatId   String?    @unique @map("telegram_chat_id")
-  telegramUsername String?    @map("telegram_username")
+  telegramUsername String?    @map("telegram_username") @db.Text
   failedLoginCount Int        @default(0) @map("failed_login_count")
   lockedUntil      DateTime?  @map("locked_until")
   lastLoginAt      DateTime?  @map("last_login_at")
@@ -152,9 +152,9 @@ model User {
 }
 
 model Role {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid()) @db.Char(36)
   code      RoleCode @unique
-  name      String
+  name      String   @db.Text
   isSystem  Boolean  @default(true) @map("is_system")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -166,10 +166,10 @@ model Role {
 }
 
 model Permission {
-  id          String @id @default(uuid()) @db.Uuid
+  id          String @id @default(uuid()) @db.Char(36)
   code        String @unique
-  module      String
-  description String
+  module      String @db.Text
+  description String @db.Text
 
   roles RolePermission[]
 
@@ -177,8 +177,8 @@ model Permission {
 }
 
 model RolePermission {
-  roleId       String          @map("role_id") @db.Uuid
-  permissionId String          @map("permission_id") @db.Uuid
+  roleId       String          @map("role_id") @db.Char(36)
+  permissionId String          @map("permission_id") @db.Char(36)
   scope        PermissionScope
 
   role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
@@ -190,9 +190,9 @@ model RolePermission {
 
 /// Отдел продаж. Отделов может быть несколько, у каждого свой РОП (head).
 model Team {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid()) @db.Char(36)
   name      String    @unique
-  headId    String?   @map("head_id") @db.Uuid
+  headId    String?   @map("head_id") @db.Char(36)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
@@ -211,16 +211,16 @@ model Team {
 
 /// HR-данные сотрудника. Отделены от users, чтобы не попадать в CRM-выборки.
 model Employee {
-  id             String             @id @default(uuid()) @db.Uuid
-  userId         String             @unique @map("user_id") @db.Uuid
-  position       String?
+  id             String             @id @default(uuid()) @db.Char(36)
+  userId         String             @unique @map("user_id") @db.Char(36)
+  position       String?            @db.Text
   specialty      ExecutorSpecialty?
   /// Оклад (ТЗ §32). Виден только CEO и самому сотруднику — через модуль зарплаты.
   baseSalary     Decimal?           @map("base_salary") @db.Decimal(18, 2)
   /// KPI-бонус при выполнении KPI на 100% (сум); за месяц начисляется пропорционально, до 120%.
   kpiBonusTarget Decimal?           @map("kpi_bonus_target") @db.Decimal(18, 2)
   /// Индивидуальный график; иначе — график роли.
-  scheduleId     String?            @map("schedule_id") @db.Uuid
+  scheduleId     String?            @map("schedule_id") @db.Char(36)
   hiredAt        DateTime?          @map("hired_at") @db.Date
   firedAt        DateTime?          @map("fired_at") @db.Date
   createdAt      DateTime           @default(now()) @map("created_at")
@@ -233,12 +233,12 @@ model Employee {
 }
 
 model Session {
-  id         String    @id @default(uuid()) @db.Uuid
-  userId     String    @map("user_id") @db.Uuid
+  id         String    @id @default(uuid()) @db.Char(36)
+  userId     String    @map("user_id") @db.Char(36)
   /// SHA-256 от токена из cookie. Сам токен в БД не хранится.
   tokenHash  String    @unique @map("token_hash")
-  ip         String?
-  userAgent  String?   @map("user_agent")
+  ip         String?   @db.Text
+  userAgent  String?   @map("user_agent") @db.Text
   createdAt  DateTime  @default(now()) @map("created_at")
   lastSeenAt DateTime  @default(now()) @map("last_seen_at")
   expiresAt  DateTime  @map("expires_at")
@@ -255,16 +255,16 @@ model Session {
 
 /// Append-only: UPDATE и DELETE запрещены триггером в БД (см. миграцию init).
 model AuditLog {
-  id         String   @id @default(uuid()) @db.Uuid
-  actorId    String?  @map("actor_id") @db.Uuid
-  action     String
+  id         String   @id @default(uuid()) @db.Char(36)
+  actorId    String?  @map("actor_id") @db.Char(36)
+  action     String   @db.Text
   entityType String   @map("entity_type")
-  entityId   String?  @map("entity_id") @db.Uuid
+  entityId   String?  @map("entity_id") @db.Char(36)
   /// { field: { old, new } }
   changes    Json?
-  ip         String?
-  userAgent  String?  @map("user_agent")
-  sessionId  String?  @map("session_id") @db.Uuid
+  ip         String?  @db.Text
+  userAgent  String?  @map("user_agent") @db.Text
+  sessionId  String?  @map("session_id") @db.Char(36)
   createdAt  DateTime @default(now()) @map("created_at")
 
   actor User? @relation(fields: [actorId], references: [id])
@@ -278,15 +278,15 @@ model AuditLog {
 /// Transactional outbox: событие пишется в той же транзакции, что и изменение данных,
 /// worker доставляет его подписчикам (уведомления, Telegram, пересчёты).
 model OutboxEvent {
-  id          String    @id @default(uuid()) @db.Uuid
-  type        String
+  id          String    @id @default(uuid()) @db.Char(36)
+  type        String    @db.Text
   payload     Json
-  actorId     String?   @map("actor_id") @db.Uuid
+  actorId     String?   @map("actor_id") @db.Char(36)
   createdAt   DateTime  @default(now()) @map("created_at")
   availableAt DateTime  @default(now()) @map("available_at")
   processedAt DateTime? @map("processed_at")
   attempts    Int       @default(0)
-  lastError   String?   @map("last_error")
+  lastError   String?   @map("last_error") @db.Text
 
   @@index([processedAt, availableAt])
   @@map("outbox_events")
@@ -385,18 +385,18 @@ enum PricingType {
 
 /// Каталог услуг (ТЗ §61).
 model Service {
-  id          String      @id @default(uuid()) @db.Uuid
+  id          String      @id @default(uuid()) @db.Char(36)
   code        String      @unique
-  nameRu      String      @map("name_ru")
-  nameUz      String?     @map("name_uz")
-  nameEn      String?     @map("name_en")
-  description String?
+  nameRu      String      @map("name_ru") @db.Text
+  nameUz      String?     @map("name_uz") @db.Text
+  nameEn      String?     @map("name_en") @db.Text
+  description String?     @db.Text
   basePrice   Decimal?    @map("base_price") @db.Decimal(18, 2)
   minPrice    Decimal?    @map("min_price") @db.Decimal(18, 2)
   currency    Currency    @default(UZS)
   pricingType PricingType @default(FIXED) @map("pricing_type")
   /// Направление бизнеса (IT, Медиа, Маркетинг) — для разграничения проектов
-  directionId String?     @map("direction_id") @db.Uuid
+  directionId String?     @map("direction_id") @db.Char(36)
   isActive    Boolean     @default(true) @map("is_active")
   sort        Int         @default(0)
   createdAt   DateTime    @default(now()) @map("created_at")
@@ -413,11 +413,11 @@ model Service {
 }
 
 model LeadSource {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid()) @db.Char(36)
   code      String   @unique
-  nameRu    String   @map("name_ru")
-  nameUz    String?  @map("name_uz")
-  nameEn    String?  @map("name_en")
+  nameRu    String   @map("name_ru") @db.Text
+  nameUz    String?  @map("name_uz") @db.Text
+  nameEn    String?  @map("name_en") @db.Text
   isActive  Boolean  @default(true) @map("is_active")
   sort      Int      @default(0)
   createdAt DateTime @default(now()) @map("created_at")
@@ -430,11 +430,11 @@ model LeadSource {
 }
 
 model LossReason {
-  id              String   @id @default(uuid()) @db.Uuid
+  id              String   @id @default(uuid()) @db.Char(36)
   code            String   @unique
-  nameRu          String   @map("name_ru")
-  nameUz          String?  @map("name_uz")
-  nameEn          String?  @map("name_en")
+  nameRu          String   @map("name_ru") @db.Text
+  nameUz          String?  @map("name_uz") @db.Text
+  nameEn          String?  @map("name_en") @db.Text
   /// «Другая причина» — комментарий обязателен.
   requiresComment Boolean  @default(false) @map("requires_comment")
   isActive        Boolean  @default(true) @map("is_active")
@@ -451,12 +451,12 @@ model LossReason {
 /// Этапы воронки (ТЗ §7). code фиксирован и используется бизнес-правилами;
 /// название, порядок, вероятность и цвет редактируются.
 model DealStage {
-  id          String      @id @default(uuid()) @db.Uuid
+  id          String      @id @default(uuid()) @db.Char(36)
   code        String      @unique
   entity      StageEntity
-  nameRu      String      @map("name_ru")
-  nameUz      String?     @map("name_uz")
-  nameEn      String?     @map("name_en")
+  nameRu      String      @map("name_ru") @db.Text
+  nameUz      String?     @map("name_uz") @db.Text
+  nameEn      String?     @map("name_en") @db.Text
   sort        Int
   /// Вероятность закрытия, % — для взвешенного прогноза (ТЗ §40).
   probability Int         @default(0)
@@ -474,11 +474,11 @@ model DealStage {
 
 /// Курс валюты к UZS на дату. Суммы фиксируют курс в момент сохранения.
 model ExchangeRate {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid()) @db.Char(36)
   date      DateTime @db.Date
   currency  Currency
   rateToUzs Decimal  @map("rate_to_uzs") @db.Decimal(18, 6)
-  setById   String?  @map("set_by_id") @db.Uuid
+  setById   String?  @map("set_by_id") @db.Char(36)
   createdAt DateTime @default(now()) @map("created_at")
 
   setBy User? @relation(fields: [setById], references: [id])
@@ -492,23 +492,23 @@ model ExchangeRate {
 /// Лид (ТЗ §8): входящий запрос до квалификации. После квалификации
 /// конвертируется в клиента + сделку (docs/BUSINESS_RULES.md §2).
 model Lead {
-  id            String       @id @default(uuid()) @db.Uuid
+  id            String       @id @default(uuid()) @db.Char(36)
   number        Int          @unique @default(autoincrement())
-  title         String
-  contactName   String?      @map("contact_name")
-  companyName   String?      @map("company_name")
-  phone         String?
-  telegram      String?
-  whatsapp      String?
-  instagram     String?
-  email         String?
-  website       String?
-  city          String?
-  country       String?
-  sourceId      String       @map("source_id") @db.Uuid
-  ownerId       String       @map("owner_id") @db.Uuid
-  teamId        String?      @map("team_id") @db.Uuid
-  serviceId     String?      @map("service_id") @db.Uuid
+  title         String       @db.Text
+  contactName   String?      @map("contact_name") @db.Text
+  companyName   String?      @map("company_name") @db.Text
+  phone         String?      @db.Text
+  telegram      String?      @db.Text
+  whatsapp      String?      @db.Text
+  instagram     String?      @db.Text
+  email         String?      @db.Text
+  website       String?      @db.Text
+  city          String?      @db.Text
+  country       String?      @db.Text
+  sourceId      String       @map("source_id") @db.Char(36)
+  ownerId       String       @map("owner_id") @db.Char(36)
+  teamId        String?      @map("team_id") @db.Char(36)
+  serviceId     String?      @map("service_id") @db.Char(36)
   budget        Decimal?     @db.Decimal(18, 2)
   currency      Currency     @default(UZS)
   budgetUzs     Decimal?     @map("budget_uzs") @db.Decimal(18, 2)
@@ -517,20 +517,20 @@ model Lead {
   companySize   CompanySize? @map("company_size")
   /// Интерес клиента 1–5 (оценка менеджера).
   interest      Int?
-  stageId       String       @map("stage_id") @db.Uuid
+  stageId       String       @map("stage_id") @db.Char(36)
   status        LeadStatus   @default(OPEN)
   score         Int          @default(0)
   scoreLevel    ScoreLevel   @default(LOW) @map("score_level")
   nextContactAt DateTime?    @map("next_contact_at")
   lastContactAt DateTime?    @map("last_contact_at")
-  comment       String?
-  clientId      String?      @map("client_id") @db.Uuid
-  dealId        String?      @unique @map("deal_id") @db.Uuid
+  comment       String?      @db.Text
+  clientId      String?      @map("client_id") @db.Char(36)
+  dealId        String?      @unique @map("deal_id") @db.Char(36)
   convertedAt   DateTime?    @map("converted_at")
-  lossReasonId  String?      @map("loss_reason_id") @db.Uuid
-  lossComment   String?      @map("loss_comment")
+  lossReasonId  String?      @map("loss_reason_id") @db.Char(36)
+  lossComment   String?      @map("loss_comment") @db.Text
   closedAt      DateTime?    @map("closed_at")
-  createdById   String       @map("created_by_id") @db.Uuid
+  createdById   String       @map("created_by_id") @db.Char(36)
   createdAt     DateTime     @default(now()) @map("created_at")
   updatedAt     DateTime     @updatedAt @map("updated_at")
   deletedAt     DateTime?    @map("deleted_at")
@@ -562,22 +562,22 @@ model Lead {
 }
 
 model Client {
-  id         String       @id @default(uuid()) @db.Uuid
+  id         String       @id @default(uuid()) @db.Char(36)
   number     Int          @unique @default(autoincrement())
-  name       String
+  name       String       @db.Text
   type       ClientType   @default(COMPANY)
-  industry   String?
-  phone      String?
-  email      String?
-  telegram   String?
-  website    String?
-  city       String?
-  country    String?
-  ownerId    String       @map("owner_id") @db.Uuid
-  teamId     String?      @map("team_id") @db.Uuid
-  sourceId   String?      @map("source_id") @db.Uuid
+  industry   String?      @db.Text
+  phone      String?      @db.Text
+  email      String?      @db.Text
+  telegram   String?      @db.Text
+  website    String?      @db.Text
+  city       String?      @db.Text
+  country    String?      @db.Text
+  ownerId    String       @map("owner_id") @db.Char(36)
+  teamId     String?      @map("team_id") @db.Char(36)
+  sourceId   String?      @map("source_id") @db.Char(36)
   health     ClientHealth @default(HEALTHY)
-  comment    String?
+  comment    String?      @db.Text
   /// Реквизиты для договора (юр. название, ИНН, банк, МФО, р/с, подписант)
   requisites Json?
   createdAt  DateTime     @default(now()) @map("created_at")
@@ -609,15 +609,15 @@ model Client {
 }
 
 model Contact {
-  id        String   @id @default(uuid()) @db.Uuid
-  clientId  String   @map("client_id") @db.Uuid
-  fullName  String   @map("full_name")
-  position  String?
-  phone     String?
-  telegram  String?
-  whatsapp  String?
-  instagram String?
-  email     String?
+  id        String   @id @default(uuid()) @db.Char(36)
+  clientId  String   @map("client_id") @db.Char(36)
+  fullName  String   @map("full_name") @db.Text
+  position  String?  @db.Text
+  phone     String?  @db.Text
+  telegram  String?  @db.Text
+  whatsapp  String?  @db.Text
+  instagram String?  @db.Text
+  email     String?  @db.Text
   isPrimary Boolean  @default(false) @map("is_primary")
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
@@ -630,28 +630,28 @@ model Contact {
 }
 
 model Deal {
-  id                  String     @id @default(uuid()) @db.Uuid
+  id                  String     @id @default(uuid()) @db.Char(36)
   number              Int        @unique @default(autoincrement())
-  title               String
-  clientId            String     @map("client_id") @db.Uuid
-  contactId           String?    @map("contact_id") @db.Uuid
-  ownerId             String     @map("owner_id") @db.Uuid
-  teamId              String?    @map("team_id") @db.Uuid
-  serviceId           String?    @map("service_id") @db.Uuid
+  title               String     @db.Text
+  clientId            String     @map("client_id") @db.Char(36)
+  contactId           String?    @map("contact_id") @db.Char(36)
+  ownerId             String     @map("owner_id") @db.Char(36)
+  teamId              String?    @map("team_id") @db.Char(36)
+  serviceId           String?    @map("service_id") @db.Char(36)
   amount              Decimal    @db.Decimal(18, 2)
   currency            Currency   @default(UZS)
   exchangeRate        Decimal    @default(1) @map("exchange_rate") @db.Decimal(18, 6)
   amountUzs           Decimal    @map("amount_uzs") @db.Decimal(18, 2)
-  stageId             String     @map("stage_id") @db.Uuid
+  stageId             String     @map("stage_id") @db.Char(36)
   status              DealStatus @default(OPEN)
   probabilityOverride Int?       @map("probability_override")
   expectedCloseDate   DateTime?  @map("expected_close_date") @db.Date
   isRepeat            Boolean    @default(false) @map("is_repeat")
-  lossReasonId        String?    @map("loss_reason_id") @db.Uuid
-  lossComment         String?    @map("loss_comment")
+  lossReasonId        String?    @map("loss_reason_id") @db.Char(36)
+  lossComment         String?    @map("loss_comment") @db.Text
   wonAt               DateTime?  @map("won_at")
   closedAt            DateTime?  @map("closed_at")
-  createdById         String     @map("created_by_id") @db.Uuid
+  createdById         String     @map("created_by_id") @db.Char(36)
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt @map("updated_at")
   deletedAt           DateTime?  @map("deleted_at")
@@ -689,12 +689,12 @@ model Deal {
 
 /// История переходов по воронке (ТЗ §7). Append-only.
 model StageHistory {
-  id          String   @id @default(uuid()) @db.Uuid
-  leadId      String?  @map("lead_id") @db.Uuid
-  dealId      String?  @map("deal_id") @db.Uuid
-  fromStageId String?  @map("from_stage_id") @db.Uuid
-  toStageId   String   @map("to_stage_id") @db.Uuid
-  changedById String   @map("changed_by_id") @db.Uuid
+  id          String   @id @default(uuid()) @db.Char(36)
+  leadId      String?  @map("lead_id") @db.Char(36)
+  dealId      String?  @map("deal_id") @db.Char(36)
+  fromStageId String?  @map("from_stage_id") @db.Char(36)
+  toStageId   String   @map("to_stage_id") @db.Char(36)
+  changedById String   @map("changed_by_id") @db.Char(36)
   /// Сколько секунд запись провела на предыдущем этапе.
   durationSec Int?     @map("duration_sec")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -712,15 +712,15 @@ model StageHistory {
 
 /// Бизнес-таймлайн (ТЗ §12). Append-only: изменение и удаление запрещены триггером.
 model Activity {
-  id        String   @id @default(uuid()) @db.Uuid
-  type      String
-  actorId   String?  @map("actor_id") @db.Uuid
-  leadId    String?  @map("lead_id") @db.Uuid
-  dealId    String?  @map("deal_id") @db.Uuid
-  clientId  String?  @map("client_id") @db.Uuid
-  meetingId String?  @map("meeting_id") @db.Uuid
-  projectId String?  @map("project_id") @db.Uuid
-  taskId    String?  @map("task_id") @db.Uuid
+  id        String   @id @default(uuid()) @db.Char(36)
+  type      String   @db.Text
+  actorId   String?  @map("actor_id") @db.Char(36)
+  leadId    String?  @map("lead_id") @db.Char(36)
+  dealId    String?  @map("deal_id") @db.Char(36)
+  clientId  String?  @map("client_id") @db.Char(36)
+  meetingId String?  @map("meeting_id") @db.Char(36)
+  projectId String?  @map("project_id") @db.Char(36)
+  taskId    String?  @map("task_id") @db.Char(36)
   payload   Json?
   createdAt DateTime @default(now()) @map("created_at")
 
@@ -741,12 +741,12 @@ model Activity {
 }
 
 model Comment {
-  id        String    @id @default(uuid()) @db.Uuid
-  authorId  String    @map("author_id") @db.Uuid
-  body      String
-  leadId    String?   @map("lead_id") @db.Uuid
-  dealId    String?   @map("deal_id") @db.Uuid
-  clientId  String?   @map("client_id") @db.Uuid
+  id        String    @id @default(uuid()) @db.Char(36)
+  authorId  String    @map("author_id") @db.Char(36)
+  body      String    @db.Text
+  leadId    String?   @map("lead_id") @db.Char(36)
+  dealId    String?   @map("deal_id") @db.Char(36)
+  clientId  String?   @map("client_id") @db.Char(36)
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
@@ -764,21 +764,21 @@ model Comment {
 
 /// Встреча (ТЗ §13).
 model Meeting {
-  id          String        @id @default(uuid()) @db.Uuid
-  leadId      String?       @map("lead_id") @db.Uuid
-  dealId      String?       @map("deal_id") @db.Uuid
-  clientId    String?       @map("client_id") @db.Uuid
-  managerId   String        @map("manager_id") @db.Uuid
-  ropId       String?       @map("rop_id") @db.Uuid
-  teamId      String?       @map("team_id") @db.Uuid
+  id          String        @id @default(uuid()) @db.Char(36)
+  leadId      String?       @map("lead_id") @db.Char(36)
+  dealId      String?       @map("deal_id") @db.Char(36)
+  clientId    String?       @map("client_id") @db.Char(36)
+  managerId   String        @map("manager_id") @db.Char(36)
+  ropId       String?       @map("rop_id") @db.Char(36)
+  teamId      String?       @map("team_id") @db.Char(36)
   startsAt    DateTime      @map("starts_at")
   durationMin Int           @default(60) @map("duration_min")
   type        MeetingType
-  link        String?
+  link        String?       @db.Text
   status      MeetingStatus @default(SCHEDULED)
-  comment     String?
-  result      String?
-  createdById String        @map("created_by_id") @db.Uuid
+  comment     String?       @db.Text
+  result      String?       @db.Text
+  createdById String        @map("created_by_id") @db.Char(36)
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
 
@@ -799,12 +799,12 @@ model Meeting {
 
 /// In-app уведомления. Telegram-доставка — Phase 7.
 model Notification {
-  id        String    @id @default(uuid()) @db.Uuid
-  userId    String    @map("user_id") @db.Uuid
-  type      String
-  title     String
-  body      String?
-  link      String?
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    String    @map("user_id") @db.Char(36)
+  type      String    @db.Text
+  title     String    @db.Text
+  body      String?   @db.Text
+  link      String?   @db.Text
   readAt    DateTime? @map("read_at")
   createdAt DateTime  @default(now()) @map("created_at")
 
@@ -817,8 +817,8 @@ model Notification {
 /// Ключи идемпотентности: повторный POST с тем же ключом не создаёт дубль.
 model IdempotencyKey {
   key        String   @id
-  userId     String   @map("user_id") @db.Uuid
-  route      String
+  userId     String   @map("user_id") @db.Char(36)
+  route      String   @db.Text
   statusCode Int      @map("status_code")
   response   Json
   createdAt  DateTime @default(now()) @map("created_at")
@@ -977,13 +977,13 @@ enum FileCategory {
 
 /// Коммерческое предложение (ТЗ §15). Каждое сохранение создаёт версию (§16).
 model Proposal {
-  id                 String         @id @default(uuid()) @db.Uuid
+  id                 String         @id @default(uuid()) @db.Char(36)
   number             Int            @unique @default(autoincrement())
-  dealId             String         @map("deal_id") @db.Uuid
-  clientId           String         @map("client_id") @db.Uuid
-  managerId          String         @map("manager_id") @db.Uuid
-  title              String
-  description        String?
+  dealId             String         @map("deal_id") @db.Char(36)
+  clientId           String         @map("client_id") @db.Char(36)
+  managerId          String         @map("manager_id") @db.Char(36)
+  title              String         @db.Text
+  description        String?        @db.Text
   status             ProposalStatus @default(DRAFT)
   currency           Currency       @default(UZS)
   subtotal           Decimal        @default(0) @db.Decimal(18, 2)
@@ -991,11 +991,11 @@ model Proposal {
   total              Decimal        @default(0) @db.Decimal(18, 2)
   exchangeRate       Decimal        @default(1) @map("exchange_rate") @db.Decimal(18, 6)
   totalUzs           Decimal        @default(0) @map("total_uzs") @db.Decimal(18, 2)
-  implementationTerm String?        @map("implementation_term")
-  paymentTerms       String?        @map("payment_terms")
+  implementationTerm String?        @map("implementation_term") @db.Text
+  paymentTerms       String?        @map("payment_terms") @db.Text
   validUntil         DateTime?      @map("valid_until") @db.Date
   currentVersion     Int            @default(1) @map("current_version")
-  approvedById       String?        @map("approved_by_id") @db.Uuid
+  approvedById       String?        @map("approved_by_id") @db.Char(36)
   approvedAt         DateTime?      @map("approved_at")
   sentAt             DateTime?      @map("sent_at")
   viewedAt           DateTime?      @map("viewed_at")
@@ -1019,12 +1019,12 @@ model Proposal {
 }
 
 model ProposalItem {
-  id          String  @id @default(uuid()) @db.Uuid
-  proposalId  String  @map("proposal_id") @db.Uuid
-  serviceId   String? @map("service_id") @db.Uuid
+  id          String  @id @default(uuid()) @db.Char(36)
+  proposalId  String  @map("proposal_id") @db.Char(36)
+  serviceId   String? @map("service_id") @db.Char(36)
   /// Тариф услуги (эконом / стандарт / премиум): цена и состав работ
-  tariffId    String? @map("tariff_id") @db.Uuid
-  description String
+  tariffId    String? @map("tariff_id") @db.Char(36)
+  description String  @db.Text
   quantity    Decimal @db.Decimal(12, 2)
   unitPrice   Decimal @map("unit_price") @db.Decimal(18, 2)
   discountPct Decimal @default(0) @map("discount_pct") @db.Decimal(5, 2)
@@ -1041,14 +1041,14 @@ model ProposalItem {
 
 /// Неизменяемый снимок КП на момент сохранения.
 model ProposalVersion {
-  id         String   @id @default(uuid()) @db.Uuid
-  proposalId String   @map("proposal_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Char(36)
+  proposalId String   @map("proposal_id") @db.Char(36)
   version    Int
   snapshot   Json
   total      Decimal  @db.Decimal(18, 2)
   currency   Currency
-  authorId   String   @map("author_id") @db.Uuid
-  comment    String?
+  authorId   String   @map("author_id") @db.Char(36)
+  comment    String?  @db.Text
   createdAt  DateTime @default(now()) @map("created_at")
 
   proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
@@ -1060,11 +1060,11 @@ model ProposalVersion {
 
 /// Договор (ТЗ §17). Не удаляется — только отменяется.
 model Contract {
-  id           String         @id @default(uuid()) @db.Uuid
+  id           String         @id @default(uuid()) @db.Char(36)
   number       Int            @unique @default(autoincrement())
-  dealId       String         @map("deal_id") @db.Uuid
-  clientId     String         @map("client_id") @db.Uuid
-  proposalId   String?        @map("proposal_id") @db.Uuid
+  dealId       String         @map("deal_id") @db.Char(36)
+  clientId     String         @map("client_id") @db.Char(36)
+  proposalId   String?        @map("proposal_id") @db.Char(36)
   contractDate DateTime       @map("contract_date") @db.Date
   amount       Decimal        @db.Decimal(18, 2)
   currency     Currency       @default(UZS)
@@ -1072,8 +1072,8 @@ model Contract {
   amountUzs    Decimal        @map("amount_uzs") @db.Decimal(18, 2)
   status       ContractStatus @default(DRAFT)
   signedAt     DateTime?      @map("signed_at")
-  comment      String?
-  createdById  String         @map("created_by_id") @db.Uuid
+  comment      String?        @db.Text
+  createdById  String         @map("created_by_id") @db.Char(36)
   createdAt    DateTime       @default(now()) @map("created_at")
   updatedAt    DateTime       @updatedAt @map("updated_at")
 
@@ -1091,13 +1091,13 @@ model Contract {
 
 /// Оплата (ТЗ §18). Не удаляется: ошибочная — CANCELLED, возврат — отдельная запись REFUND.
 model Payment {
-  id            String        @id @default(uuid()) @db.Uuid
+  id            String        @id @default(uuid()) @db.Char(36)
   number        Int           @unique @default(autoincrement())
-  dealId        String        @map("deal_id") @db.Uuid
-  clientId      String        @map("client_id") @db.Uuid
-  contractId    String?       @map("contract_id") @db.Uuid
-  projectId     String?       @map("project_id") @db.Uuid
-  refundOfId    String?       @map("refund_of_id") @db.Uuid
+  dealId        String        @map("deal_id") @db.Char(36)
+  clientId      String        @map("client_id") @db.Char(36)
+  contractId    String?       @map("contract_id") @db.Char(36)
+  projectId     String?       @map("project_id") @db.Char(36)
+  refundOfId    String?       @map("refund_of_id") @db.Char(36)
   amount        Decimal       @db.Decimal(18, 2)
   currency      Currency      @default(UZS)
   exchangeRate  Decimal       @default(1) @map("exchange_rate") @db.Decimal(18, 6)
@@ -1107,10 +1107,10 @@ model Payment {
   status        PaymentStatus @default(PENDING)
   dueDate       DateTime?     @map("due_date") @db.Date
   paidAt        DateTime?     @map("paid_at")
-  comment       String?
-  confirmedById String?       @map("confirmed_by_id") @db.Uuid
+  comment       String?       @db.Text
+  confirmedById String?       @map("confirmed_by_id") @db.Char(36)
   confirmedAt   DateTime?     @map("confirmed_at")
-  createdById   String        @map("created_by_id") @db.Uuid
+  createdById   String        @map("created_by_id") @db.Char(36)
   createdAt     DateTime      @default(now()) @map("created_at")
   updatedAt     DateTime      @updatedAt @map("updated_at")
 
@@ -1133,25 +1133,25 @@ model Payment {
 /// Проект (ТЗ §20). Создаётся автоматически при первой подтверждённой оплате сделки (Rule 3).
 /// Управление проектом (команда, задачи, Kanban) — Phase 4.
 model Project {
-  id          String        @id @default(uuid()) @db.Uuid
+  id          String        @id @default(uuid()) @db.Char(36)
   number      Int           @unique @default(autoincrement())
-  name        String
-  clientId    String        @map("client_id") @db.Uuid
-  dealId      String        @unique @map("deal_id") @db.Uuid
+  name        String        @db.Text
+  clientId    String        @map("client_id") @db.Char(36)
+  dealId      String        @unique @map("deal_id") @db.Char(36)
   price       Decimal       @db.Decimal(18, 2)
   currency    Currency      @default(UZS)
   priceUzs    Decimal       @map("price_uzs") @db.Decimal(18, 2)
-  ropId       String        @map("rop_id") @db.Uuid
-  managerId   String        @map("manager_id") @db.Uuid
-  teamId      String?       @map("team_id") @db.Uuid
+  ropId       String        @map("rop_id") @db.Char(36)
+  managerId   String        @map("manager_id") @db.Char(36)
+  teamId      String?       @map("team_id") @db.Char(36)
   status      ProjectStatus @default(NEW)
   priority    Priority      @default(MEDIUM)
   startDate   DateTime?     @map("start_date") @db.Date
   deadline    DateTime?     @db.Date
-  description String?
-  templateId  String?       @map("template_id") @db.Uuid
+  description String?       @db.Text
+  templateId  String?       @map("template_id") @db.Char(36)
   /// Направление бизнеса — из услуги сделки; проект-менеджер видит проекты своих направлений
-  directionId String?       @map("direction_id") @db.Uuid
+  directionId String?       @map("direction_id") @db.Char(36)
   completedAt DateTime?     @map("completed_at")
   createdAt   DateTime      @default(now()) @map("created_at")
   updatedAt   DateTime      @updatedAt @map("updated_at")
@@ -1182,14 +1182,14 @@ model Project {
 
 /// Команда проекта (ТЗ §21). РОП и менеджер проекта хранятся в самом проекте.
 model ProjectMember {
-  id           String              @id @default(uuid()) @db.Uuid
-  projectId    String              @map("project_id") @db.Uuid
-  userId       String              @map("user_id") @db.Uuid
+  id           String              @id @default(uuid()) @db.Char(36)
+  projectId    String              @map("project_id") @db.Char(36)
+  userId       String              @map("user_id") @db.Char(36)
   role         ExecutorSpecialty?
   workloadPct  Int?                @map("workload_pct")
   deadline     DateTime?           @db.Date
   status       ProjectMemberStatus @default(ACTIVE)
-  assignedById String              @map("assigned_by_id") @db.Uuid
+  assignedById String              @map("assigned_by_id") @db.Char(36)
   assignedAt   DateTime            @default(now()) @map("assigned_at")
   updatedAt    DateTime            @updatedAt @map("updated_at")
 
@@ -1205,13 +1205,13 @@ model ProjectMember {
 /// Задача проекта (ТЗ §22). Исполнитель назначается всегда (ТЗ §77, Rule 5): задача из шаблона,
 /// для роли которой в команде ещё нет исполнителя, назначается на РОП проекта до появления исполнителя.
 model Task {
-  id                String             @id @default(uuid()) @db.Uuid
+  id                String             @id @default(uuid()) @db.Char(36)
   number            Int                @unique @default(autoincrement())
-  projectId         String             @map("project_id") @db.Uuid
-  title             String
-  description       String?
-  assigneeId        String             @map("assignee_id") @db.Uuid
-  creatorId         String             @map("creator_id") @db.Uuid
+  projectId         String             @map("project_id") @db.Char(36)
+  title             String             @db.Text
+  description       String?            @db.Text
+  assigneeId        String             @map("assignee_id") @db.Char(36)
+  creatorId         String             @map("creator_id") @db.Char(36)
   templateRole      ExecutorSpecialty? @map("template_role")
   priority          Priority           @default(MEDIUM)
   status            TaskStatus         @default(TODO)
@@ -1243,11 +1243,11 @@ model Task {
 
 /// История статусов задачи — только добавление (триггер в БД).
 model TaskStatusHistory {
-  id          String      @id @default(uuid()) @db.Uuid
-  taskId      String      @map("task_id") @db.Uuid
+  id          String      @id @default(uuid()) @db.Char(36)
+  taskId      String      @map("task_id") @db.Char(36)
   fromStatus  TaskStatus? @map("from_status")
   toStatus    TaskStatus  @map("to_status")
-  changedById String      @map("changed_by_id") @db.Uuid
+  changedById String      @map("changed_by_id") @db.Char(36)
   createdAt   DateTime    @default(now()) @map("created_at")
 
   task      Task @relation(fields: [taskId], references: [id])
@@ -1258,10 +1258,10 @@ model TaskStatusHistory {
 }
 
 model TaskComment {
-  id        String    @id @default(uuid()) @db.Uuid
-  taskId    String    @map("task_id") @db.Uuid
-  authorId  String    @map("author_id") @db.Uuid
-  body      String
+  id        String    @id @default(uuid()) @db.Char(36)
+  taskId    String    @map("task_id") @db.Char(36)
+  authorId  String    @map("author_id") @db.Char(36)
+  body      String    @db.Text
   createdAt DateTime  @default(now()) @map("created_at")
   updatedAt DateTime  @updatedAt @map("updated_at")
   deletedAt DateTime? @map("deleted_at")
@@ -1275,10 +1275,10 @@ model TaskComment {
 
 /// Шаблон проекта (ТЗ §62): набор задач, создаваемых по услуге сделки.
 model ProjectTemplate {
-  id          String   @id @default(uuid()) @db.Uuid
-  name        String
-  serviceId   String?  @map("service_id") @db.Uuid
-  description String?
+  id          String   @id @default(uuid()) @db.Char(36)
+  name        String   @db.Text
+  serviceId   String?  @map("service_id") @db.Char(36)
+  description String?  @db.Text
   isActive    Boolean  @default(true) @map("is_active")
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
@@ -1292,10 +1292,10 @@ model ProjectTemplate {
 }
 
 model TaskTemplate {
-  id                String             @id @default(uuid()) @db.Uuid
-  projectTemplateId String             @map("project_template_id") @db.Uuid
-  title             String
-  description       String?
+  id                String             @id @default(uuid()) @db.Char(36)
+  projectTemplateId String             @map("project_template_id") @db.Char(36)
+  title             String             @db.Text
+  description       String?            @db.Text
   role              ExecutorSpecialty?
   startOffsetDays   Int                @default(0) @map("start_offset_days")
   durationDays      Int                @default(1) @map("duration_days")
@@ -1310,10 +1310,10 @@ model TaskTemplate {
 
 /// Расход (ТЗ §26): проектный уменьшает прибыль проекта, расход компании — операционную прибыль.
 model Expense {
-  id           String       @id @default(uuid()) @db.Uuid
+  id           String       @id @default(uuid()) @db.Char(36)
   number       Int          @unique @default(autoincrement())
   scope        ExpenseScope
-  projectId    String?      @map("project_id") @db.Uuid
+  projectId    String?      @map("project_id") @db.Char(36)
   /// Код категории из справочника finance_categories
   category     String
   amount       Decimal      @db.Decimal(18, 2)
@@ -1321,9 +1321,9 @@ model Expense {
   exchangeRate Decimal      @map("exchange_rate") @db.Decimal(18, 6)
   amountUzs    Decimal      @map("amount_uzs") @db.Decimal(18, 2)
   expenseDate  DateTime     @map("expense_date") @db.Date
-  payeeUserId  String?      @map("payee_user_id") @db.Uuid
-  description  String?
-  createdById  String       @map("created_by_id") @db.Uuid
+  payeeUserId  String?      @map("payee_user_id") @db.Char(36)
+  description  String?      @db.Text
+  createdById  String       @map("created_by_id") @db.Char(36)
   createdAt    DateTime     @default(now()) @map("created_at")
   updatedAt    DateTime     @updatedAt @map("updated_at")
   deletedAt    DateTime?    @map("deleted_at")
@@ -1341,15 +1341,15 @@ model Expense {
 
 /// Цель сотрудника на месяц (ТЗ §31).
 model KpiTarget {
-  id          String    @id @default(uuid()) @db.Uuid
-  userId      String    @map("user_id") @db.Uuid
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @map("user_id") @db.Char(36)
   /// YYYY-MM
   period      String
   metric      KpiMetric
   targetValue Decimal   @map("target_value") @db.Decimal(18, 2)
   /// Валюта цели по выручке; для штучных метрик — UZS (не используется).
   currency    Currency  @default(UZS)
-  setById     String    @map("set_by_id") @db.Uuid
+  setById     String    @map("set_by_id") @db.Char(36)
   createdAt   DateTime  @default(now()) @map("created_at")
   updatedAt   DateTime  @updatedAt @map("updated_at")
 
@@ -1363,15 +1363,15 @@ model KpiTarget {
 
 /// Рабочий график (ТЗ §36): для роли или для отдельных сотрудников.
 model WorkSchedule {
-  id           String    @id @default(uuid()) @db.Uuid
-  name         String
+  id           String    @id @default(uuid()) @db.Char(36)
+  name         String    @db.Text
   /// График роли по умолчанию; null — назначается сотрудникам вручную.
   roleCode     RoleCode? @map("role_code")
   /// HH:MM по Ташкенту
-  startTime    String    @map("start_time")
-  endTime      String    @map("end_time")
+  startTime    String    @map("start_time") @db.Text
+  endTime      String    @map("end_time") @db.Text
   /// Рабочие дни ISO: 1 — понедельник … 7 — воскресенье
-  workDays     Int[]     @map("work_days")
+  workDays     Json      @map("work_days")
   /// Сколько минут опоздания не считается опозданием
   graceMinutes Int       @default(0) @map("grace_minutes")
   isActive     Boolean   @default(true) @map("is_active")
@@ -1385,17 +1385,17 @@ model WorkSchedule {
 
 /// Посещаемость (ТЗ §35): одна запись на сотрудника в день.
 model Attendance {
-  id          String           @id @default(uuid()) @db.Uuid
-  userId      String           @map("user_id") @db.Uuid
+  id          String           @id @default(uuid()) @db.Char(36)
+  userId      String           @map("user_id") @db.Char(36)
   date        DateTime         @db.Date
   checkIn     DateTime?        @map("check_in")
   checkOut    DateTime?        @map("check_out")
   status      AttendanceStatus
   lateMinutes Int              @default(0) @map("late_minutes")
   workMinutes Int              @default(0) @map("work_minutes")
-  comment     String?
+  comment     String?          @db.Text
   /// Кто внёс/исправил вручную (null — отметка самого сотрудника)
-  editedById  String?          @map("edited_by_id") @db.Uuid
+  editedById  String?          @map("edited_by_id") @db.Char(36)
   createdAt   DateTime         @default(now()) @map("created_at")
   updatedAt   DateTime         @updatedAt @map("updated_at")
 
@@ -1409,8 +1409,8 @@ model Attendance {
 
 /// Зарплата за месяц (ТЗ §32). Комиссия хранится отдельно и только суммируется сюда.
 model PayrollEntry {
-  id           String        @id @default(uuid()) @db.Uuid
-  userId       String        @map("user_id") @db.Uuid
+  id           String        @id @default(uuid()) @db.Char(36)
+  userId       String        @map("user_id") @db.Char(36)
   /// YYYY-MM
   period       String
   baseSalary   Decimal       @default(0) @map("base_salary") @db.Decimal(18, 2)
@@ -1424,8 +1424,8 @@ model PayrollEntry {
   /// Выполнение KPI на момент расчёта, % (справочно для KPI-бонуса)
   kpiPct       Decimal?      @map("kpi_pct") @db.Decimal(8, 2)
   status       PayrollStatus @default(DRAFT)
-  comment      String?
-  approvedById String?       @map("approved_by_id") @db.Uuid
+  comment      String?       @db.Text
+  approvedById String?       @map("approved_by_id") @db.Char(36)
   approvedAt   DateTime?     @map("approved_at")
   paidAt       DateTime?     @map("paid_at")
   createdAt    DateTime      @default(now()) @map("created_at")
@@ -1441,9 +1441,9 @@ model PayrollEntry {
 
 /// Одноразовый код привязки Telegram (ТЗ §53): /start <код> в боте связывает чат с аккаунтом.
 model TelegramLinkToken {
-  id        String    @id @default(uuid()) @db.Uuid
+  id        String    @id @default(uuid()) @db.Char(36)
   tokenHash String    @unique @map("token_hash")
-  userId    String    @map("user_id") @db.Uuid
+  userId    String    @map("user_id") @db.Char(36)
   expiresAt DateTime  @map("expires_at")
   usedAt    DateTime? @map("used_at")
   createdAt DateTime  @default(now()) @map("created_at")
@@ -1456,7 +1456,7 @@ model TelegramLinkToken {
 
 /// Индивидуальные настройки уведомлений (ТЗ §14). Нет строки — уведомление включено.
 model NotificationSetting {
-  userId    String              @map("user_id") @db.Uuid
+  userId    String              @map("user_id") @db.Char(36)
   eventType String              @map("event_type")
   channel   NotificationChannel
   enabled   Boolean
@@ -1469,16 +1469,16 @@ model NotificationSetting {
 
 /// Доставка во внешний канал (Telegram) с повторами и журналом (ТЗ §53).
 model NotificationDelivery {
-  id            String              @id @default(uuid()) @db.Uuid
-  userId        String              @map("user_id") @db.Uuid
+  id            String              @id @default(uuid()) @db.Char(36)
+  userId        String              @map("user_id") @db.Char(36)
   channel       NotificationChannel
-  type          String
-  title         String
-  body          String?
-  link          String?
+  type          String              @db.Text
+  title         String              @db.Text
+  body          String?             @db.Text
+  link          String?             @db.Text
   status        DeliveryStatus      @default(PENDING)
   attempts      Int                 @default(0)
-  lastError     String?             @map("last_error")
+  lastError     String?             @map("last_error") @db.Text
   nextAttemptAt DateTime            @default(now()) @map("next_attempt_at")
   sentAt        DateTime?           @map("sent_at")
   createdAt     DateTime            @default(now()) @map("created_at")
@@ -1491,7 +1491,7 @@ model NotificationDelivery {
 
 /// Журнал умных напоминаний (ТЗ §41): ключ не даёт напомнить дважды об одном и том же.
 model ReminderLog {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid()) @db.Char(36)
   kind      String
   dedupeKey String   @unique @map("dedupe_key")
   createdAt DateTime @default(now()) @map("created_at")
@@ -1502,18 +1502,18 @@ model ReminderLog {
 
 /// Повторный контакт после завершения проекта (ТЗ §38).
 model FollowUp {
-  id            String         @id @default(uuid()) @db.Uuid
-  clientId      String         @map("client_id") @db.Uuid
-  projectId     String?        @map("project_id") @db.Uuid
-  ownerId       String         @map("owner_id") @db.Uuid
+  id            String         @id @default(uuid()) @db.Char(36)
+  clientId      String         @map("client_id") @db.Char(36)
+  projectId     String?        @map("project_id") @db.Char(36)
+  ownerId       String         @map("owner_id") @db.Char(36)
   kind          FollowUpKind
   dueDate       DateTime       @map("due_date") @db.Date
   status        FollowUpStatus @default(PENDING)
-  result        String?
-  resultDealId  String?        @map("result_deal_id") @db.Uuid
+  result        String?        @db.Text
+  resultDealId  String?        @map("result_deal_id") @db.Char(36)
   notifiedAt    DateTime?      @map("notified_at")
   completedAt   DateTime?      @map("completed_at")
-  completedById String?        @map("completed_by_id") @db.Uuid
+  completedById String?        @map("completed_by_id") @db.Char(36)
   createdAt     DateTime       @default(now()) @map("created_at")
   updatedAt     DateTime       @updatedAt @map("updated_at")
 
@@ -1532,7 +1532,7 @@ model FollowUp {
 model Setting {
   key         String   @id
   value       Json
-  updatedById String?  @map("updated_by_id") @db.Uuid
+  updatedById String?  @map("updated_by_id") @db.Char(36)
   updatedAt   DateTime @updatedAt @map("updated_at")
 
   @@map("settings")
@@ -1540,12 +1540,12 @@ model Setting {
 
 /// Запуски планировщика (ТЗ §55): уникальный слот — задача выполняется один раз даже при нескольких worker'ах.
 model JobRun {
-  id         String    @id @default(uuid()) @db.Uuid
+  id         String    @id @default(uuid()) @db.Char(36)
   job        String
   slot       String
   startedAt  DateTime  @default(now()) @map("started_at")
   finishedAt DateTime? @map("finished_at")
-  error      String?
+  error      String?   @db.Text
   result     Json?
 
   @@unique([job, slot])
@@ -1555,10 +1555,10 @@ model JobRun {
 
 /// Правила комиссий (ТЗ §33–34) — данные, а не код.
 model CommissionRule {
-  id         String               @id @default(uuid()) @db.Uuid
-  name       String
+  id         String               @id @default(uuid()) @db.Char(36)
+  name       String               @db.Text
   appliesTo  CommissionRoleTarget @map("applies_to")
-  userId     String?              @map("user_id") @db.Uuid
+  userId     String?              @map("user_id") @db.Char(36)
   calcType   CommissionCalcType   @map("calc_type")
   value      Decimal              @db.Decimal(18, 4)
   /// { all|any: [{ metric, op, value }] } — см. @fluggi/domain commission
@@ -1575,11 +1575,11 @@ model CommissionRule {
 }
 
 model Commission {
-  id            String               @id @default(uuid()) @db.Uuid
-  userId        String               @map("user_id") @db.Uuid
-  paymentId     String               @map("payment_id") @db.Uuid
-  dealId        String               @map("deal_id") @db.Uuid
-  ruleId        String               @map("rule_id") @db.Uuid
+  id            String               @id @default(uuid()) @db.Char(36)
+  userId        String               @map("user_id") @db.Char(36)
+  paymentId     String               @map("payment_id") @db.Char(36)
+  dealId        String               @map("deal_id") @db.Char(36)
+  ruleId        String               @map("rule_id") @db.Char(36)
   role          CommissionRoleTarget
   /// YYYY-MM по дате оплаты (Ташкент)
   period        String
@@ -1588,9 +1588,9 @@ model Commission {
   amountUzs     Decimal              @map("amount_uzs") @db.Decimal(18, 2)
   status        CommissionStatus     @default(ACCRUED)
   calcSnapshot  Json                 @map("calc_snapshot")
-  approvedById  String?              @map("approved_by_id") @db.Uuid
+  approvedById  String?              @map("approved_by_id") @db.Char(36)
   approvedAt    DateTime?            @map("approved_at")
-  paidById      String?              @map("paid_by_id") @db.Uuid
+  paidById      String?              @map("paid_by_id") @db.Char(36)
   paidAt        DateTime?            @map("paid_at")
   createdAt     DateTime             @default(now()) @map("created_at")
   updatedAt     DateTime             @updatedAt @map("updated_at")
@@ -1609,20 +1609,20 @@ model Commission {
 
 /// Метаданные файлов. Содержимое — в хранилище (локальная папка или S3), не в БД (ТЗ §52).
 model StoredFile {
-  id           String       @id @default(uuid()) @db.Uuid
+  id           String       @id @default(uuid()) @db.Char(36)
   storageKey   String       @unique @map("storage_key")
-  originalName String       @map("original_name")
-  mimeType     String       @map("mime_type")
+  originalName String       @map("original_name") @db.Text
+  mimeType     String       @map("mime_type") @db.Text
   sizeBytes    Int          @map("size_bytes")
-  checksum     String
+  checksum     String       @db.Text
   category     FileCategory @default(DOCUMENT)
-  uploadedById String       @map("uploaded_by_id") @db.Uuid
-  dealId       String?      @map("deal_id") @db.Uuid
-  proposalId   String?      @map("proposal_id") @db.Uuid
-  contractId   String?      @map("contract_id") @db.Uuid
-  paymentId    String?      @map("payment_id") @db.Uuid
-  projectId    String?      @map("project_id") @db.Uuid
-  taskId       String?      @map("task_id") @db.Uuid
+  uploadedById String       @map("uploaded_by_id") @db.Char(36)
+  dealId       String?      @map("deal_id") @db.Char(36)
+  proposalId   String?      @map("proposal_id") @db.Char(36)
+  contractId   String?      @map("contract_id") @db.Char(36)
+  paymentId    String?      @map("payment_id") @db.Char(36)
+  projectId    String?      @map("project_id") @db.Char(36)
+  taskId       String?      @map("task_id") @db.Char(36)
   createdAt    DateTime     @default(now()) @map("created_at")
   deletedAt    DateTime?    @map("deleted_at")
 
@@ -1666,20 +1666,20 @@ enum RecurrenceFrequency {
 
 /// Личное дело сотрудника (не проектная задача): звонок, письмо, отчёт, платёж.
 model Todo {
-  id           String     @id @default(uuid()) @db.Uuid
+  id           String     @id @default(uuid()) @db.Char(36)
   number       Int        @unique @default(autoincrement())
-  title        String
-  description  String?
+  title        String     @db.Text
+  description  String?    @db.Text
   kind         TodoKind   @default(TASK)
   priority     Priority   @default(MEDIUM)
   status       TodoStatus @default(OPEN)
-  ownerId      String     @map("owner_id") @db.Uuid
-  creatorId    String     @map("creator_id") @db.Uuid
+  ownerId      String     @map("owner_id") @db.Char(36)
+  creatorId    String     @map("creator_id") @db.Char(36)
   dueAt        DateTime?  @map("due_at")
-  clientId     String?    @map("client_id") @db.Uuid
-  dealId       String?    @map("deal_id") @db.Uuid
-  leadId       String?    @map("lead_id") @db.Uuid
-  recurringId  String?    @map("recurring_id") @db.Uuid
+  clientId     String?    @map("client_id") @db.Char(36)
+  dealId       String?    @map("deal_id") @db.Char(36)
+  leadId       String?    @map("lead_id") @db.Char(36)
+  recurringId  String?    @map("recurring_id") @db.Char(36)
   /// Срок по правилу (дата) — защита от повторного создания
   recurringDue DateTime?  @map("recurring_due") @db.Date
   completedAt  DateTime?  @map("completed_at")
@@ -1701,13 +1701,13 @@ model Todo {
 
 /// Правило регулярного дела: ежемесячно / ежеквартально / ежегодно в заданный день.
 model RecurringTodo {
-  id               String              @id @default(uuid()) @db.Uuid
-  title            String
-  description      String?
+  id               String              @id @default(uuid()) @db.Char(36)
+  title            String              @db.Text
+  description      String?             @db.Text
   kind             TodoKind            @default(REPORT)
   priority         Priority            @default(HIGH)
-  ownerId          String              @map("owner_id") @db.Uuid
-  createdById      String              @map("created_by_id") @db.Uuid
+  ownerId          String              @map("owner_id") @db.Char(36)
+  createdById      String              @map("created_by_id") @db.Char(36)
   frequency        RecurrenceFrequency
   dayOfMonth       Int                 @map("day_of_month")
   /// Для ежегодных — месяц 1–12; для ежеквартальных — месяц квартала 1–3 (1 = январь/апрель/июль/октябрь)
@@ -1730,7 +1730,7 @@ model RecurringTodo {
 // ─────────────────────────── Чат сотрудников ───────────────────────────
 
 model Conversation {
-  id            String   @id @default(uuid()) @db.Uuid
+  id            String   @id @default(uuid()) @db.Char(36)
   /// Личная переписка двух сотрудников: «меньший_id:больший_id»
   directKey     String?  @unique @map("direct_key")
   lastMessageAt DateTime @default(now()) @map("last_message_at")
@@ -1744,8 +1744,8 @@ model Conversation {
 }
 
 model ConversationMember {
-  conversationId String    @map("conversation_id") @db.Uuid
-  userId         String    @map("user_id") @db.Uuid
+  conversationId String    @map("conversation_id") @db.Char(36)
+  userId         String    @map("user_id") @db.Char(36)
   lastReadAt     DateTime  @default(now()) @map("last_read_at")
   /// Когда отправили уведомление в Telegram о непрочитанных — не чаще одного до прочтения
   notifiedAt     DateTime? @map("notified_at")
@@ -1760,10 +1760,10 @@ model ConversationMember {
 }
 
 model ChatMessage {
-  id             String   @id @default(uuid()) @db.Uuid
-  conversationId String   @map("conversation_id") @db.Uuid
-  authorId       String   @map("author_id") @db.Uuid
-  body           String
+  id             String   @id @default(uuid()) @db.Char(36)
+  conversationId String   @map("conversation_id") @db.Char(36)
+  authorId       String   @map("author_id") @db.Char(36)
+  body           String   @db.Text
   createdAt      DateTime @default(now()) @map("created_at")
 
   conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
@@ -1782,12 +1782,12 @@ enum FinanceCategoryKind {
 
 /// Редактируемый справочник категорий (CEO). Код не меняется — на него ссылаются записи.
 model FinanceCategory {
-  id          String              @id @default(uuid()) @db.Uuid
+  id          String              @id @default(uuid()) @db.Char(36)
   code        String              @unique
   kind        FinanceCategoryKind
-  name        String
+  name        String              @db.Text
   /// Подсказка бухгалтеру: счёт НСБУ №21 (9130, 9410, 9420…)
-  accountHint String?             @map("account_hint")
+  accountHint String?             @map("account_hint") @db.Text
   /// Накладные (аренда, офис): делятся на проекты месяца
   isOverhead  Boolean             @default(false) @map("is_overhead")
   isActive    Boolean             @default(true) @map("is_active")
@@ -1802,7 +1802,7 @@ model FinanceCategory {
 
 /// Прочие поступления (не оплаты клиентов): возврат от поставщика, партнёрские, проценты банка…
 model OtherIncome {
-  id           String    @id @default(uuid()) @db.Uuid
+  id           String    @id @default(uuid()) @db.Char(36)
   number       Int       @unique @default(autoincrement())
   category     String
   amount       Decimal   @db.Decimal(18, 2)
@@ -1810,10 +1810,10 @@ model OtherIncome {
   exchangeRate Decimal   @map("exchange_rate") @db.Decimal(18, 6)
   amountUzs    Decimal   @map("amount_uzs") @db.Decimal(18, 2)
   incomeDate   DateTime  @map("income_date") @db.Date
-  projectId    String?   @map("project_id") @db.Uuid
-  clientId     String?   @map("client_id") @db.Uuid
-  description  String?
-  createdById  String    @map("created_by_id") @db.Uuid
+  projectId    String?   @map("project_id") @db.Char(36)
+  clientId     String?   @map("client_id") @db.Char(36)
+  description  String?   @db.Text
+  createdById  String    @map("created_by_id") @db.Char(36)
   createdAt    DateTime  @default(now()) @map("created_at")
   updatedAt    DateTime  @updatedAt @map("updated_at")
   deletedAt    DateTime? @map("deleted_at")
@@ -1831,9 +1831,9 @@ model OtherIncome {
 
 /// Единица работы исполнителя (рилс, обложка, карусель, сторис…) с базовой ставкой.
 model WorkItem {
-  id          String             @id @default(uuid()) @db.Uuid
+  id          String             @id @default(uuid()) @db.Char(36)
   code        String             @unique
-  name        String
+  name        String             @db.Text
   unit        String             @default("шт")
   specialty   ExecutorSpecialty?
   defaultRate Decimal            @default(0) @map("default_rate") @db.Decimal(18, 2)
@@ -1852,8 +1852,8 @@ model WorkItem {
 
 /// Личная ставка сотрудника за единицу работы («договор сдельный» в карточке сотрудника).
 model EmployeeRate {
-  userId     String   @map("user_id") @db.Uuid
-  workItemId String   @map("work_item_id") @db.Uuid
+  userId     String   @map("user_id") @db.Char(36)
+  workItemId String   @map("work_item_id") @db.Char(36)
   rate       Decimal  @db.Decimal(18, 2)
   currency   Currency @default(UZS)
   updatedAt  DateTime @updatedAt @map("updated_at")
@@ -1867,10 +1867,10 @@ model EmployeeRate {
 
 /// Тариф услуги: эконом / стандарт / премиум — цена продажи и состав работ.
 model Tariff {
-  id          String   @id @default(uuid()) @db.Uuid
-  serviceId   String   @map("service_id") @db.Uuid
-  name        String
-  description String?
+  id          String   @id @default(uuid()) @db.Char(36)
+  serviceId   String   @map("service_id") @db.Char(36)
+  name        String   @db.Text
+  description String?  @db.Text
   price       Decimal  @db.Decimal(18, 2)
   currency    Currency @default(UZS)
   isActive    Boolean  @default(true) @map("is_active")
@@ -1895,16 +1895,16 @@ enum TariffItemKind {
 }
 
 model TariffItem {
-  id         String             @id @default(uuid()) @db.Uuid
-  tariffId   String             @map("tariff_id") @db.Uuid
+  id         String             @id @default(uuid()) @db.Char(36)
+  tariffId   String             @map("tariff_id") @db.Char(36)
   kind       TariffItemKind
-  workItemId String?            @map("work_item_id") @db.Uuid
+  workItemId String?            @map("work_item_id") @db.Char(36)
   quantity   Decimal            @default(1) @db.Decimal(12, 2)
   /// FIXED: кто получает и сколько
   specialty  ExecutorSpecialty?
   amount     Decimal?           @db.Decimal(18, 2)
   currency   Currency           @default(UZS)
-  label      String?
+  label      String?            @db.Text
   sort       Int                @default(0)
 
   tariff    Tariff            @relation(fields: [tariffId], references: [id], onDelete: Cascade)
@@ -1923,20 +1923,20 @@ enum CostLineStatus {
 
 /// Плановая себестоимость проекта по тарифу: что и кому заплатить. «Начислить» → расход проекта.
 model ProjectCostLine {
-  id           String             @id @default(uuid()) @db.Uuid
-  projectId    String             @map("project_id") @db.Uuid
-  tariffId     String?            @map("tariff_id") @db.Uuid
-  tariffItemId String?            @map("tariff_item_id") @db.Uuid
+  id           String             @id @default(uuid()) @db.Char(36)
+  projectId    String             @map("project_id") @db.Char(36)
+  tariffId     String?            @map("tariff_id") @db.Char(36)
+  tariffItemId String?            @map("tariff_item_id") @db.Char(36)
   kind         TariffItemKind
-  workItemId   String?            @map("work_item_id") @db.Uuid
+  workItemId   String?            @map("work_item_id") @db.Char(36)
   specialty    ExecutorSpecialty?
-  label        String
+  label        String             @db.Text
   quantity     Decimal            @db.Decimal(12, 2)
   rate         Decimal            @db.Decimal(18, 2)
   currency     Currency           @default(UZS)
-  assigneeId   String?            @map("assignee_id") @db.Uuid
+  assigneeId   String?            @map("assignee_id") @db.Char(36)
   status       CostLineStatus     @default(PLANNED)
-  expenseId    String?            @unique @map("expense_id") @db.Uuid
+  expenseId    String?            @unique @map("expense_id") @db.Char(36)
   createdAt    DateTime           @default(now()) @map("created_at")
   updatedAt    DateTime           @updatedAt @map("updated_at")
 
@@ -1953,9 +1953,9 @@ model ProjectCostLine {
 
 /// Направление бизнеса группы: IT, Медиа (SMM, брендинг, продакшн), Маркетинг.
 model Direction {
-  id        String   @id @default(uuid()) @db.Uuid
+  id        String   @id @default(uuid()) @db.Char(36)
   code      String   @unique
-  name      String
+  name      String   @db.Text
   sort      Int      @default(0)
   isActive  Boolean  @default(true) @map("is_active")
   createdAt DateTime @default(now()) @map("created_at")
@@ -1970,8 +1970,8 @@ model Direction {
 
 /// Зона ответственности сотрудника (проект-менеджер): видит и ведёт проекты этих направлений.
 model UserDirection {
-  userId      String @map("user_id") @db.Uuid
-  directionId String @map("direction_id") @db.Uuid
+  userId      String @map("user_id") @db.Char(36)
+  directionId String @map("direction_id") @db.Char(36)
 
   user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   direction Direction @relation(fields: [directionId], references: [id], onDelete: Cascade)
@@ -1984,21 +1984,21 @@ model UserDirection {
 
 /// Форма заявки для сайта (WordPress и др.): встраивается кодом, заявки становятся лидами.
 model LeadForm {
-  id             String    @id @default(uuid()) @db.Uuid
+  id             String    @id @default(uuid()) @db.Char(36)
   /// Публичный ключ в ссылке и коде встраивания
   key            String    @unique
-  name           String
-  title          String
-  description    String?
+  name           String    @db.Text
+  title          String    @db.Text
+  description    String?   @db.Text
   buttonText     String    @default("Отправить") @map("button_text")
   successMessage String    @default("Спасибо! Мы свяжемся с вами в ближайшее время.") @map("success_message")
   /// [{ key, label, type: text|phone|email|textarea|select, required, options? }]
   fields         Json
-  serviceId      String?   @map("service_id") @db.Uuid
-  sourceId       String?   @map("source_id") @db.Uuid
+  serviceId      String?   @map("service_id") @db.Char(36)
+  sourceId       String?   @map("source_id") @db.Char(36)
   /// Ответственный за заявки; иначе — менеджер отдела с наименьшей нагрузкой
-  ownerId        String?   @map("owner_id") @db.Uuid
-  teamId         String?   @map("team_id") @db.Uuid
+  ownerId        String?   @map("owner_id") @db.Char(36)
+  teamId         String?   @map("team_id") @db.Char(36)
   isActive       Boolean   @default(true) @map("is_active")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -2018,13 +2018,13 @@ enum IntakeResult {
 
 /// Заявка с формы (журнал): данные, UTM, страница; ссылка на созданный или найденный лид.
 model FormSubmission {
-  id        String       @id @default(uuid()) @db.Uuid
-  formId    String       @map("form_id") @db.Uuid
-  leadId    String?      @map("lead_id") @db.Uuid
+  id        String       @id @default(uuid()) @db.Char(36)
+  formId    String       @map("form_id") @db.Char(36)
+  leadId    String?      @map("lead_id") @db.Char(36)
   data      Json
   utm       Json?
-  page      String?
-  ip        String?
+  page      String?      @db.Text
+  ip        String?      @db.Text
   result    IntakeResult
   createdAt DateTime     @default(now()) @map("created_at")
 
@@ -2043,15 +2043,15 @@ enum SocialChannel {
 
 /// Переписка из соцсетей: Директ Instagram или комментарии одного человека.
 model SocialThread {
-  id            String        @id @default(uuid()) @db.Uuid
+  id            String        @id @default(uuid()) @db.Char(36)
   channel       SocialChannel
   /// ID собеседника в Instagram/Facebook (IGSID / user id)
   peerId        String        @map("peer_id")
-  peerName      String?       @map("peer_name")
-  peerUsername  String?       @map("peer_username")
-  leadId        String?       @map("lead_id") @db.Uuid
-  ownerId       String?       @map("owner_id") @db.Uuid
-  teamId        String?       @map("team_id") @db.Uuid
+  peerName      String?       @map("peer_name") @db.Text
+  peerUsername  String?       @map("peer_username") @db.Text
+  leadId        String?       @map("lead_id") @db.Char(36)
+  ownerId       String?       @map("owner_id") @db.Char(36)
+  teamId        String?       @map("team_id") @db.Char(36)
   unread        Int           @default(0)
   lastMessageAt DateTime      @default(now()) @map("last_message_at")
   createdAt     DateTime      @default(now()) @map("created_at")
@@ -2066,16 +2066,16 @@ model SocialThread {
 }
 
 model SocialMessage {
-  id         String   @id @default(uuid()) @db.Uuid
-  threadId   String   @map("thread_id") @db.Uuid
+  id         String   @id @default(uuid()) @db.Char(36)
+  threadId   String   @map("thread_id") @db.Char(36)
   /// IN — от клиента, OUT — ответ из CRM или из приложения Instagram
-  direction  String
+  direction  String   @db.Text
   /// mid сообщения или id комментария в Meta (защита от дублей)
   externalId String?  @unique @map("external_id")
-  text       String
+  text       String   @db.Text
   /// Пост/реклама, к которой оставлен комментарий
-  mediaId    String?  @map("media_id")
-  authorId   String?  @map("author_id") @db.Uuid
+  mediaId    String?  @map("media_id") @db.Text
+  authorId   String?  @map("author_id") @db.Char(36)
   createdAt  DateTime @default(now()) @map("created_at")
 
   thread SocialThread @relation(fields: [threadId], references: [id], onDelete: Cascade)

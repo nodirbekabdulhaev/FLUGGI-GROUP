@@ -113,7 +113,7 @@ export class TasksService {
     if (q.assigneeId) and.push({ assigneeId: q.assigneeId });
     if (q.mine) and.push({ assigneeId: auth.userId });
     if (q.status) and.push({ status: q.status });
-    if (q.q) and.push({ title: { contains: q.q, mode: 'insensitive' } });
+    if (q.q) and.push({ title: { contains: q.q } });
     switch (q.view) {
       case 'today': {
         // Сегодня: дедлайн до конца дня (включая просроченные) или задача начинается сегодня.

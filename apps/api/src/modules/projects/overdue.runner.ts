@@ -47,7 +47,7 @@ export class OverdueScanner {
       if (!this.due(c.deadline, c.overdueNotifiedAt, now)) continue;
       const done = await this.prisma.$transaction(async (tx) => {
         const locked = await tx.$queryRaw<{ id: string }[]>`
-          SELECT id FROM tasks WHERE id = ${c.id}::uuid FOR UPDATE SKIP LOCKED`;
+          SELECT id FROM tasks WHERE id = ${c.id} ${this.prisma.lockRows}`;
         if (locked.length === 0) return false;
         // Перечитываем под блокировкой: другой экземпляр мог уже отправить уведомление.
         const fresh = await tx.task.findUniqueOrThrow({ where: { id: c.id } });

@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Первая настройка Fluggi CRM на виртуальном хостинге Beget (в Docker-окружении по SSH):
+# Первая настройка Fluggi CRM на виртуальном хостинге Beget (в Docker-окружении по SSH).
+# База — MySQL хостинга (панель Beget → «MySQL»). Пользователь базы на Beget = имя базы;
+# другой хост или пользователь: DB_HOST=… DB_USER=… bash deploy/beget/setup.sh
 #
 #   cd ~/crm.fluggi.uz/fluggi && bash deploy/beget/setup.sh
 #
@@ -28,9 +30,17 @@ MAJOR="$("$NODE" -p 'process.versions.node.split(".")[0]')"
 
 CEO_PASSWORD=""
 if [ ! -f .env ]; then
-  echo "Ответьте на 4 вопроса."
+  echo "Ответьте на вопросы (данные MySQL — панель Beget → «MySQL»)."
   ask DOMAIN "Домен CRM (например crm.fluggi.uz)"
-  ask DATABASE_URL "Строка подключения к облачной PostgreSQL Beget (postgresql://…)"
+  if [ -z "${DATABASE_URL:-}" ]; then
+    ask DB_NAME "Имя базы MySQL (например логин_crm)"
+    DB_USER="${DB_USER:-$DB_NAME}"
+    ask DB_PASSWORD "Пароль базы MySQL"
+    DB_HOST="${DB_HOST:-localhost}"
+    # Пароль может содержать спецсимволы — кодируем для строки подключения
+    ENC_PASSWORD="$("$NODE" -p 'encodeURIComponent(process.argv[1])' "$DB_PASSWORD")"
+    DATABASE_URL="mysql://$DB_USER:$ENC_PASSWORD@$DB_HOST:3306/$DB_NAME"
+  fi
   ask CEO_EMAIL "Email первого CEO (логин)"
   ask CEO_NAME "Имя CEO"
   CEO_PASSWORD="$(openssl rand -base64 18 | tr -d '/+=' | cut -c1-16)"
@@ -75,6 +85,10 @@ set +a
 bash deploy/beget/install-deps.sh
 echo "▸ Миграции базы"
 "$NODE" node_modules/prisma/build/index.js migrate deploy --schema packages/db/prisma/schema.prisma
+echo "▸ Защита данных (триггеры)"
+"$NODE" node_modules/prisma/build/index.js db execute --schema packages/db/prisma/schema.prisma \
+  --file packages/db/prisma/protect.sql >/dev/null 2>&1 ||
+  echo "  ⚠ хостинг не разрешает триггеры — CRM работает и без них (записи защищает приложение)"
 echo "▸ Роли, права, справочники, первый CEO"
 "$NODE" node_modules/tsx/dist/cli.mjs packages/db/prisma/seed.ts
 if [ -n "$CEO_PASSWORD" ]; then sed -i 's/^SEED_CEO_PASSWORD=.*/SEED_CEO_PASSWORD=/' .env; fi

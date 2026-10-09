@@ -115,13 +115,15 @@ export class IntakeService {
     const ig = igKey(instagram);
     if (!p && !ig) return null;
     // Сравнение в БД по цифрам: «+998 90 123-45-67» и «901234567» — один номер
+    // Цифры номера: убираем типичные разделители (+, пробел, дефис, скобки, точка)
     const ids = await this.prisma.$queryRaw<{ id: string }[]>`
-      SELECT "id" FROM "leads"
-      WHERE "status" = 'OPEN' AND "deleted_at" IS NULL AND (
-        (${p}::text IS NOT NULL AND right(regexp_replace(coalesce("phone", ''), '[^0-9]', '', 'g'), 9) = ${p})
-        OR (${ig}::text IS NOT NULL AND lower(regexp_replace(coalesce("instagram", ''), '^@', '')) = ${ig})
+      SELECT id FROM leads
+      WHERE status = 'OPEN' AND deleted_at IS NULL AND (
+        (${p} IS NOT NULL AND RIGHT(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+          COALESCE(phone, ''), '+', ''), ' ', ''), '-', ''), '(', ''), ')', ''), '.', ''), 9) = ${p})
+        OR (${ig} IS NOT NULL AND LOWER(TRIM(LEADING '@' FROM COALESCE(instagram, ''))) = ${ig})
       )
-      ORDER BY "created_at" DESC
+      ORDER BY created_at DESC
       LIMIT 20`;
     if (!ids.length) return null;
     const candidates = await this.prisma.lead.findMany({

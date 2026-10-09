@@ -161,7 +161,7 @@ pg-boss cron в worker-процессе (часовой пояс `Asia/Tashkent`
 | i18n | next-intl (ru — основной, uz/en — каркас) | ТЗ §2 |
 | Backend | NestJS 11 | модули, DI, guards — естественно ложится на RBAC и домены |
 | ORM | Prisma + миграции `prisma migrate` | ТЗ §51, §67 |
-| БД | PostgreSQL 16 | ТЗ §47 |
+| БД | MySQL 8.0 / 5.7 (до 10.2026 — PostgreSQL 16) | ТЗ §47 |
 | Очереди/cron | pg-boss | очередь в той же БД, без Redis |
 | Auth | собственные серверные сессии: argon2id, httpOnly cookie, таблица `sessions` | Auth.js рассчитан на Next.js-backend; с отдельным NestJS проще и прозрачнее свои сессии (мгновенный отзыв, IP/UA в аудите) |
 | Деньги | `Decimal(18,2)` в БД, `decimal.js` в коде | никаких float |
