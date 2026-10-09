@@ -1,0 +1,24 @@
+{
+  "title": "Bitimlar",
+  "subtitle": "Kvalifikatsiyadan oʻtgan sotuvlar",
+  "add": "Yangi bitim",
+  "emptyTitle": "Hozircha bitimlar yoʻq",
+  "emptyText": "Bitimlar lid kvalifikatsiyasidan soʻng paydo boʻladi yoki mavjud mijoz uchun yaratiladi.",
+  "emptyFiltered": "Filtrlar boʻyicha bitimlar topilmadi",
+  "search": "Nomi, mijoz, D-raqam",
+  "createTitle": "Yangi bitim",
+  "createHint": "Mavjud mijozga takroriy sotuv uchun.",
+  "editTitle": "Bitimni tahrirlash",
+  "fromLead": "Liddan",
+  "repeat": "Takroriy sotuv",
+  "weighted": "Vaznli",
+  "errors": {
+    "closed": "Bitim yopilgan. Avval uni ishga qaytaring",
+    "paidIsAuto": "«Toʻlangan» bosqichi toʻlov tasdiqlanganda avtomatik oʻrnatiladi",
+    "amountRequired": "Bitim summasini kiriting",
+    "amountPositive": "Summa noldan katta boʻlishi kerak",
+    "sendProposalFirst": "Avval mijozga TT yuboring",
+    "createContractFirst": "Avval shartnoma yarating",
+    "contractNotSigned": "Shartnoma hali imzolanmagan"
+  }
+}

@@ -1,0 +1,89 @@
+{
+  "views": {
+    "all": "Barcha loyihalar",
+    "active": "Jarayondagi loyihalar",
+    "overdue": "Muddati oʻtgan loyihalar",
+    "completed": "Yakunlangan loyihalar"
+  },
+  "viewsHint": {
+    "all": "Loyihalar birinchi tasdiqlangan toʻlovdan soʻng avtomatik yaratiladi",
+    "active": "Yangi, rejalashtirilayotgan, jarayonda, tekshiruvda, mijozni kutayotgan va pauzadagi",
+    "overdue": "Loyiha dedlayni oʻtgan yoki muddati oʻtgan vazifalar bor",
+    "completed": "Yopilgan loyihalar"
+  },
+  "empty": "Hozircha loyihalar yoʻq",
+  "emptyText": "Loyiha bitim boʻyicha birinchi toʻlov tasdiqlangandan soʻng paydo boʻladi.",
+  "search": "Loyiha yoki mijoz boʻyicha qidiruv",
+  "col": {
+    "project": "Loyiha",
+    "client": "Mijoz",
+    "rop": "ROP",
+    "status": "Holat",
+    "deadline": "Dedlayn",
+    "tasks": "Vazifalar",
+    "price": "Qiymati"
+  },
+  "fields": {
+    "name": "Nomi",
+    "client": "Mijoz",
+    "deal": "Bitim",
+    "price": "Qiymati",
+    "rop": "ROP",
+    "manager": "Menejer",
+    "startDate": "Boshlanish sanasi",
+    "deadline": "Dedlayn",
+    "status": "Holat",
+    "priority": "Ustuvorlik",
+    "description": "Tavsif",
+    "template": "Shablon",
+    "completedAt": "Yakunlangan"
+  },
+  "tabs": {
+    "tasks": "Vazifalar",
+    "team": "Jamoa",
+    "files": "Fayllar",
+    "info": "Loyiha haqida",
+    "history": "Tarix",
+    "finance": "Moliya"
+  },
+  "back": "Loyihalar",
+  "edit": "Tahrirlash",
+  "editTitle": "Loyihani tahrirlash",
+  "saved": "Loyiha saqlandi",
+  "changeStatus": "Holatni oʻzgartirish",
+  "statusChanged": "Loyiha holati oʻzgartirildi",
+  "cancelReason": "Bekor qilish sababi",
+  "applyTemplate": "Shablonni qoʻllash",
+  "templateApplied": "Shablondagi vazifalar yaratildi",
+  "templateHint": "Vazifalar muddatlari loyiha boshlanish sanasidan hisoblanadi va mos rolga ega ishtirokchilarga tayinlanadi (bunday ishtirokchi boʻlmasa — loyiha ROP iga).",
+  "progress": "{done} / {total}",
+  "overdueTasks": "muddati oʻtgan: {count}",
+  "overdue": "{count, plural, other {# kun kechikkan}}",
+  "noMoney": "Qiymat rahbarlar va sotuv boʻlimiga koʻrinadi",
+  "team": {
+    "add": "Ijrochi qoʻshish",
+    "added": "Ijrochi loyihaga qoʻshildi",
+    "user": "Xodim",
+    "role": "Loyihadagi roli",
+    "noRole": "Rolsiz",
+    "workload": "Bandlik, %",
+    "deadline": "Ishtirokchi dedlayni",
+    "assignedAt": "Tayinlangan",
+    "tasks": "Vazifalar",
+    "remove": "Loyihadan chiqarish",
+    "removeConfirm": "{name} loyihadan chiqarilsinmi? Uning ochiq vazifalari loyiha ROP iga oʻtadi.",
+    "removed": "Ishtirokchi chiqarildi",
+    "return": "Jamoaga qaytarish",
+    "empty": "Ijrochilar tayinlanmagan",
+    "emptyText": "Ijrochilarni qoʻshing — ularning roliga mos shablon vazifalari ROP dan ularga avtomatik oʻtadi.",
+    "status": {
+      "ACTIVE": "Jamoada",
+      "DONE": "Ishni yakunlagan",
+      "REMOVED": "Chiqarilgan"
+    },
+    "leads": "Loyiha rahbariyati"
+  },
+  "direction": "Yoʻnalish",
+  "allDirections": "Barcha yoʻnalishlar",
+  "noDirection": "Yoʻnalishsiz"
+}

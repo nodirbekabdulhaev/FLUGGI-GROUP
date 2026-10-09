@@ -1,0 +1,16 @@
+{
+  "title": "Uchrashuvlar",
+  "subtitle": "Lidlar va bitimlar boʻyicha mijozlar bilan uchrashuvlar",
+  "upcoming": "Rejadagi",
+  "done": "Oʻtkazilgan",
+  "all": "Barchasi",
+  "emptyTitle": "Uchrashuvlar yoʻq",
+  "emptyText": "Lid yoki bitim kartochkasidan uchrashuv belgilang.",
+  "createTitle": "Yangi uchrashuv",
+  "completeTitle": "Uchrashuv oʻtkazildi",
+  "resultHint": "Nima qaror qilindi, keyingi qadamlar",
+  "cancel": "Uchrashuvni bekor qilish",
+  "confirm": "Tasdiqlash",
+  "cancelled": "Uchrashuv bekor qilindi",
+  "noShow": "Boʻlib oʻtmadi"
+}

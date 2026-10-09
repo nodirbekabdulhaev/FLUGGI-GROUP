@@ -1,0 +1,13 @@
+{
+  "title": "Ishbay stavkalar: {name}",
+  "text": "Ushbu xodim uchun ish birligining shaxsiy narxi. Maydon boʻsh boʻlsa — bazaviy stavka amal qiladi (Sozlamalar → Moliya). Xodim ijrochi etib tayinlanganda stavka loyiha xarajatlari rejasiga qoʻyiladi.",
+  "textReadonly": "Loyihalardagi ishbay toʻlovlaringiz hisoblanadigan ish birligi narxi. Boʻsh — kompaniyaning bazaviy stavkasi amal qiladi.",
+  "work": "Ish",
+  "base": "Bazaviy",
+  "personal": "Shaxsiy stavka",
+  "asBase": "bazaviy kabi",
+  "currency": "Valyuta",
+  "saved": "Stavkalar saqlandi",
+  "cancel": "Bekor qilish",
+  "save": "Saqlash"
+}

@@ -1,0 +1,111 @@
+{
+  "auth": {
+    "login": "Tizimga kirish",
+    "logout": "Chiqish",
+    "login_failed": "Muvaffaqiyatsiz kirish urinishi",
+    "locked": "Kirish vaqtincha bloklandi",
+    "password_changed": "Parol oʻzgartirildi",
+    "session_revoked": "Sessiya yakunlandi"
+  },
+  "user": {
+    "create": "Xodim yaratildi",
+    "update": "Xodim oʻzgartirildi",
+    "block": "Xodim bloklandi",
+    "unblock": "Xodim blokdan chiqarildi",
+    "reset_password": "Parol tiklandi"
+  },
+  "team": {
+    "create": "Boʻlim yaratildi",
+    "update": "Boʻlim oʻzgartirildi",
+    "delete": "Boʻlim oʻchirildi"
+  },
+  "role": {
+    "permissions_update": "Rol huquqlari oʻzgartirildi"
+  },
+  "lead": {
+    "create": "Lid yaratildi",
+    "update": "Lid oʻzgartirildi",
+    "assign": "Lid masʼuli almashtirildi",
+    "stage_change": "Lid bosqichi oʻzgardi",
+    "close": "Lid yopildi",
+    "reopen": "Lid qaytarildi",
+    "convert": "Lid kvalifikatsiya qilindi",
+    "delete": "Lid oʻchirildi"
+  },
+  "deal": {
+    "create": "Bitim yaratildi",
+    "update": "Bitim oʻzgartirildi",
+    "assign": "Bitim masʼuli almashtirildi",
+    "stage_change": "Bitim bosqichi oʻzgardi",
+    "close": "Bitim yopildi",
+    "reopen": "Bitim qaytarildi",
+    "delete": "Bitim oʻchirildi"
+  },
+  "client": {
+    "create": "Mijoz yaratildi",
+    "update": "Mijoz oʻzgartirildi"
+  },
+  "contact": {
+    "create": "Kontakt qoʻshildi",
+    "update": "Kontakt oʻzgartirildi",
+    "delete": "Kontakt oʻchirildi"
+  },
+  "meeting": {
+    "create": "Uchrashuv belgilandi",
+    "update": "Uchrashuv oʻzgartirildi",
+    "complete": "Uchrashuv oʻtkazildi"
+  },
+  "comment": {
+    "delete": "Izoh oʻchirildi"
+  },
+  "service": {
+    "create": "Xizmat qoʻshildi",
+    "update": "Xizmat oʻzgartirildi"
+  },
+  "sources": {
+    "create": "Manba qoʻshildi",
+    "update": "Manba oʻzgartirildi"
+  },
+  "loss-reasons": {
+    "create": "Yoʻqotish sababi qoʻshildi",
+    "update": "Yoʻqotish sababi oʻzgartirildi"
+  },
+  "stage": {
+    "update": "Voronka bosqichi oʻzgartirildi"
+  },
+  "exchange_rate": {
+    "set": "Valyuta kursi belgilandi"
+  },
+  "proposal": {
+    "create": "TT yaratildi",
+    "update": "TT oʻzgartirildi (yangi versiya)",
+    "approval_requested": "TT kelishishga yuborildi",
+    "approved": "TT tasdiqlandi",
+    "sent": "TT yuborildi",
+    "viewed": "TT koʻrildi",
+    "accepted": "TT qabul qilindi",
+    "rejected": "TT rad etildi"
+  },
+  "contract": {
+    "create": "Shartnoma yaratildi",
+    "update": "Shartnoma oʻzgartirildi",
+    "send": "Shartnoma yuborildi",
+    "submit-approval": "Shartnoma kelishuvda",
+    "sign": "Shartnoma imzolandi",
+    "cancel": "Shartnoma bekor qilindi"
+  },
+  "payment": {
+    "create": "Toʻlov qoʻshildi",
+    "confirm": "Toʻlov tasdiqlandi",
+    "refund": "Qaytarish",
+    "cancel": "Toʻlov bekor qilindi"
+  },
+  "file": {
+    "upload": "Fayl yuklandi",
+    "delete": "Fayl oʻchirildi"
+  },
+  "commission_rule": {
+    "create": "Komissiya qoidasi yaratildi",
+    "update": "Komissiya qoidasi oʻzgartirildi"
+  }
+}

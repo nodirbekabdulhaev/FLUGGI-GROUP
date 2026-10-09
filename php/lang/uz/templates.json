@@ -1,0 +1,26 @@
+{
+  "title": "Loyiha shablonlari",
+  "subtitle": "Bitim xizmati boʻyicha loyihada yaratiladigan vazifalar toʻplami (TZ §62)",
+  "new": "Yangi shablon",
+  "edit": "Shablonni tahrirlash",
+  "saved": "Shablon saqlandi",
+  "empty": "Shablonlar yoʻq",
+  "name": "Nomi",
+  "service": "Xizmat",
+  "noService": "Xizmatsiz (faqat qoʻlda)",
+  "description": "Tavsif",
+  "active": "Faol",
+  "inactive": "Oʻchirilgan",
+  "tasks": "Shablon vazifalari",
+  "addTask": "Vazifa qoʻshish",
+  "taskTitle": "Vazifa",
+  "role": "Rol",
+  "anyRole": "Istalgan",
+  "offset": "Start, kun",
+  "duration": "Davom., kun",
+  "count": "{count, plural, other {# ta vazifa}}",
+  "hint": "Start — vazifa loyiha boshlanganidan necha kun keyin boshlanadi; davomiyligi — unga necha kun ajratiladi.",
+  "errors": {
+    "noTasks": "Shablonda vazifalar yoʻq"
+  }
+}

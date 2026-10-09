@@ -1,0 +1,27 @@
+{
+  "title": "Ish jadvallari",
+  "subtitle": "Rol jadvali shu roldagi barcha xodimlarga amal qiladi; individual jadval — tanlangan xodimlarga.",
+  "new": "Yangi jadval",
+  "edit": "Jadvalni oʻzgartirish",
+  "saved": "Jadval saqlandi",
+  "name": "Nomi",
+  "role": "Rol uchun",
+  "noRole": "Rolga bogʻlanmagan (tanlangan xodimlarga)",
+  "start": "Boshlanishi",
+  "end": "Tugashi",
+  "days": "Ish kunlari",
+  "grace": "Kechikishsiz, daq",
+  "active": "Faol",
+  "inactive": "Oʻchirilgan",
+  "users": "Shu jadvaldagi xodimlar",
+  "usersHint": "Individual jadval rol jadvalidan ustun turadi.",
+  "weekdays": {
+    "1": "Du",
+    "2": "Se",
+    "3": "Ch",
+    "4": "Pa",
+    "5": "Ju",
+    "6": "Sh",
+    "7": "Ya"
+  }
+}

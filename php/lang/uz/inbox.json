@@ -1,0 +1,28 @@
+{
+  "title": "Kiruvchilar",
+  "subtitle": "Instagram va Facebook direkti hamda izohlari. Javoblar mijozga CRM dan yuboriladi.",
+  "channel": "Kanal",
+  "allChannels": "Barcha kanallar",
+  "channels": {
+    "INSTAGRAM_DM": "Instagram direkti",
+    "INSTAGRAM_COMMENT": "Instagram izohlari",
+    "FACEBOOK_COMMENT": "Facebook izohlari"
+  },
+  "empty": "Hozircha xabarlar yoʻq",
+  "emptyText": "Instagram ulangandan soʻng (Sozlamalar → Integratsiyalar) bu yerga direkt xabarlari va izohlar keladi.",
+  "pick": "Chapdan yozishmani tanlang",
+  "you": "Siz",
+  "lead": "lid",
+  "back": "Orqaga",
+  "createLead": "Lid yaratish",
+  "leadCreated": "Lid yaratildi",
+  "replyTo": "Tanlangan izohga javob:",
+  "replyMode": "Qanday javob berish",
+  "modePublic": "Post ostida ochiq",
+  "modePrivate": "Direktga",
+  "pickComment": "izohni bosing",
+  "message": "Javob",
+  "placeholder": "Javob yozing…",
+  "send": "Yuborish",
+  "windowHint": "Instagram mijozning oxirgi xabaridan keyin 24 soat ichida direktga javob berishga ruxsat beradi."
+}
