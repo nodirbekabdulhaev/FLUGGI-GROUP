@@ -4,6 +4,8 @@
 generator client {
   provider        = "prisma-client-js"
   previewFeatures = []
+  // native — машина сборки; debian-openssl-* — Linux-серверы (VPS, Docker, виртуальный хостинг Beget)
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x"]
 }
 
 datasource db {

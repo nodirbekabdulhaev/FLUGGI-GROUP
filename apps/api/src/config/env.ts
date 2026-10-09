@@ -26,6 +26,12 @@ const envSchema = z.object({
     .transform((v) => v || undefined),
   /** polling — бот сам забирает сообщения (локально, без домена); webhook — Telegram присылает их на /api/v1/telegram/webhook */
   TELEGRAM_MODE: z.enum(['polling', 'webhook']).default('polling'),
+  /** Секрет для POST /api/v1/internal/cron (виртуальный хостинг: фоновые задачи по cron). Пусто — эндпоинт выключен. */
+  CRON_SECRET: z
+    .string()
+    .optional()
+    .transform((v) => v || undefined)
+    .pipe(z.string().min(16, 'CRON_SECRET должен быть не короче 16 символов').optional()),
   TELEGRAM_API_BASE: z.url().default('https://api.telegram.org'),
   /** Прокси для запросов к Telegram, если сервер не видит api.telegram.org напрямую: http://, https:// или socks5:// */
   TELEGRAM_PROXY_URL: z

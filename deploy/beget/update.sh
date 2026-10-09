@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Обновление на виртуальном хостинге Beget после распаковки нового fluggi-beget.zip:
+#
+#   cd ~/crm.fluggi.uz && unzip -o fluggi-beget.zip && cd fluggi && bash deploy/beget/update.sh
+#
+# .env, загруженные файлы (storage/) и tmp/ архив не затрагивает.
+set -euo pipefail
+
+APP="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+cd "$APP"
+[ -f .env ] || { echo "Сначала выполните bash deploy/beget/setup.sh"; exit 1; }
+NODE="$(command -v node)"
+
+set -a
+# shellcheck disable=SC1091
+. ./.env
+set +a
+
+echo "▸ Миграции базы"
+"$NODE" node_modules/prisma/build/index.js migrate deploy --schema packages/db/prisma/schema.prisma
+echo "▸ Справочники и права"
+"$NODE" node_modules/tsx/dist/cli.mjs packages/db/prisma/seed.ts
+mkdir -p tmp && touch tmp/restart.txt
+echo "✓ Обновлено. Приложение перезапустится при следующем запросе."

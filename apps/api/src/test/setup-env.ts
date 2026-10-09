@@ -11,3 +11,4 @@ process.env.STORAGE_LOCAL_DIR = require('node:path').join(
   'fluggi-test-storage',
 );
 process.env.SCHEDULER_ENABLED = 'false';
+process.env.CRON_SECRET = 'cron-secret-for-tests-0123456789';

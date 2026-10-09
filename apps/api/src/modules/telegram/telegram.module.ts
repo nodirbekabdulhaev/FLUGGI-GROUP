@@ -9,7 +9,7 @@ import { TelegramService } from './telegram.service';
   imports: [NotificationsModule],
   controllers: [TelegramController],
   providers: [TelegramClient, TelegramService, TelegramSender, TelegramRunner],
-  exports: [TelegramClient, TelegramSender, TelegramService],
+  exports: [TelegramClient, TelegramSender, TelegramService, TelegramRunner],
 })
 export class TelegramModule {}
 

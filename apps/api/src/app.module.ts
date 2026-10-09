@@ -39,6 +39,7 @@ import { IntegrationsModule } from './modules/integrations/integrations.module';
 import { ChatModule } from './modules/chat/chat.module';
 import { TodosModule } from './modules/todos/todos.module';
 import { TelegramModule } from './modules/telegram/telegram.module';
+import { CronModule } from './modules/cron/cron.controller';
 import { SettingsModule } from './core/settings/settings.service';
 import { OverdueModule } from './modules/projects/overdue.module';
 import { ProjectsModule } from './modules/projects/projects.module';
@@ -103,6 +104,7 @@ const env = loadEnv();
     SettingsModule,
     TelegramModule,
     AutomationModule,
+    CronModule,
     AnalyticsModule,
     TodosModule,
     ChatModule,
