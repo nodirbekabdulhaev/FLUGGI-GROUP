@@ -224,10 +224,6 @@ importers:
 
   packages/db:
     dependencies:
-      '@prisma/client':
-        specifier: 6.19.3
-        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
-    devDependencies:
       '@fluggi/contracts':
         specifier: workspace:*
         version: link:../contracts
@@ -237,18 +233,22 @@ importers:
       '@node-rs/argon2':
         specifier: ^2.2.2
         version: 2.2.2
-      '@types/node':
-        specifier: ^22.20.5
-        version: 22.20.5
-      dotenv-cli:
-        specifier: ^10.0.0
-        version: 10.0.0
+      '@prisma/client':
+        specifier: 6.19.3
+        version: 6.19.3(prisma@6.19.3(typescript@5.9.3))(typescript@5.9.3)
       prisma:
         specifier: 6.19.3
         version: 6.19.3(typescript@5.9.3)
       tsx:
         specifier: ^4.20.6
         version: 4.23.15
+    devDependencies:
+      '@types/node':
+        specifier: ^22.20.5
+        version: 22.20.5
+      dotenv-cli:
+        specifier: ^10.0.0
+        version: 10.0.0
       typescript:
         specifier: ~5.9.3
         version: 5.9.3

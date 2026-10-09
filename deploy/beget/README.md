@@ -4,8 +4,9 @@
 веб-интерфейс. База — облачная PostgreSQL Beget. Фоновые задачи (уведомления, Telegram, отчёты по
 расписанию) выполняет cron раз в минуту через `POST /api/v1/internal/cron`.
 
-Собирать на хостинге ничего не нужно: архив `fluggi-beget.zip` уже содержит собранный код и
-`node_modules` для Linux x64.
+Собирать на хостинге ничего не нужно: архив `fluggi-beget.zip` (~10 МБ) содержит уже собранный код.
+Зависимости (`node_modules`, ~300 МБ) скрипты ставят на хостинге сами — нужен доступ в интернет
+(npm и binaries.prisma.sh).
 
 ## 1. Облачная PostgreSQL
 
@@ -48,14 +49,14 @@ Beget «Установка и настройка Node.js на хостинг». 
 ## 4. Загрузка и установка
 
 1. Загрузите `fluggi-beget.zip` в папку сайта `~/crm.fluggi.uz/` (файловый менеджер или FTP).
-2. В SSH (Docker-окружение) — распаковывать именно через `unzip`, файловый менеджер портит ссылки:
+2. В SSH (Docker-окружение):
 
 ```bash
 cd ~/crm.fluggi.uz && unzip -q -o fluggi-beget.zip && cd fluggi
 bash deploy/beget/setup.sh
 ```
 
-Скрипт спросит домен, строку подключения к базе, email и имя CEO; применит миграции, создаст
+Скрипт спросит домен, строку подключения к базе, email и имя CEO; установит зависимости, применит миграции, создаст
 CEO, запишет `public_html/.htaccess` для Passenger и покажет **пароль CEO (один раз)** и команду для cron.
 
 ## 5. Cron
@@ -87,7 +88,7 @@ cd ~/crm.fluggi.uz && unzip -q -o fluggi-beget.zip && cd fluggi && bash deploy/b
 ## Сборка архива (для разработчика)
 
 ```bash
-bash deploy/beget/build-bundle.sh fluggi-beget.zip   # Linux x64; на Mac — через Docker, см. скрипт
+bash deploy/beget/build-bundle.sh fluggi-beget.zip   # Linux или macOS
 ```
 
 ## Если что-то не работает

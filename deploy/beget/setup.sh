@@ -72,6 +72,7 @@ set -a
 . ./.env
 set +a
 
+bash deploy/beget/install-deps.sh
 echo "▸ Миграции базы"
 "$NODE" node_modules/prisma/build/index.js migrate deploy --schema packages/db/prisma/schema.prisma
 echo "▸ Роли, права, справочники, первый CEO"
