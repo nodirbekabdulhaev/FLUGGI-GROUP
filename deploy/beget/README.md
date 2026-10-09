@@ -46,15 +46,22 @@ node -v                                  # v22.x
 Beget «Установка и настройка Node.js на хостинг». Там же — как **открыть общий доступ к `~/.local`**
 для веб-сервера (обязательно, иначе Passenger не увидит Node.js).
 
-## 4. Загрузка и установка
+## 4. Установка с GitHub
 
-1. Загрузите `fluggi-beget.zip` в папку сайта `~/crm.fluggi.uz/` (файловый менеджер или FTP).
-2. В SSH (Docker-окружение):
+После каждого изменения кода GitHub Actions собирает версию для хостинга и кладёт её в ветку
+**`beget`** репозитория (вкладка Actions → «Beget build»). На хостинге её нужно только скачать.
+
+В SSH (Docker-окружение):
 
 ```bash
-cd ~/crm.fluggi.uz && unzip -q -o fluggi-beget.zip && cd fluggi
-bash deploy/beget/setup.sh
+cd ~/crm.fluggi.uz
+git clone --depth 1 -b beget https://github.com/nodirbekabdulhaev/FLUGGI-GROUP.git fluggi
+cd fluggi && bash deploy/beget/setup.sh
 ```
+
+Без git: скачайте архив `fluggi-beget` из последней сборки (GitHub → Actions → «Beget build» →
+Artifacts), загрузите `fluggi-beget.zip` в `~/crm.fluggi.uz/` и выполните
+`unzip -q -o fluggi-beget.zip && cd fluggi && bash deploy/beget/setup.sh`.
 
 Скрипт спросит домен, строку подключения к базе, email и имя CEO; установит зависимости, применит миграции, создаст
 CEO, запишет `public_html/.htaccess` для Passenger и покажет **пароль CEO (один раз)** и команду для cron.
@@ -77,13 +84,24 @@ Cron заодно держит приложение «тёплым»: без з�
 
 ## Обновление
 
-Загрузите новый `fluggi-beget.zip` в `~/crm.fluggi.uz/` и в SSH:
+Одна команда в SSH (Docker-окружение) — скачает последнюю сборку с GitHub, обновит зависимости и
+базу, перезапустит приложение:
 
 ```bash
-cd ~/crm.fluggi.uz && unzip -q -o fluggi-beget.zip && cd fluggi && bash deploy/beget/update.sh
+cd ~/crm.fluggi.uz/fluggi && bash deploy/beget/pull-update.sh
 ```
 
-`.env`, загруженные файлы (`storage/`) и настройки не затрагиваются.
+`.env`, загруженные файлы (`storage/`) и `node_modules` не затрагиваются. Если ставили из архива —
+распакуйте новый архив поверх и выполните `bash deploy/beget/update.sh`.
+
+**Приватный репозиторий.** Если сделаете репозиторий приватным, хостингу нужен ключ только для
+чтения: в SSH `ssh-keygen -t ed25519 -f ~/.ssh/github -N ""`, содержимое `~/.ssh/github.pub` —
+в GitHub → Settings → Deploy keys → Add (без права записи). Затем:
+
+```bash
+printf 'Host github.com\n  Hostname ssh.github.com\n  Port 443\n  IdentityFile ~/.ssh/github\n' >> ~/.ssh/config
+cd ~/crm.fluggi.uz/fluggi && git remote set-url origin git@github.com:nodirbekabdulhaev/FLUGGI-GROUP.git
+```
 
 ## Сборка архива (для разработчика)
 

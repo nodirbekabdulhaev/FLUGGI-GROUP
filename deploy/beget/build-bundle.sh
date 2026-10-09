@@ -4,6 +4,7 @@
 # На хостинге ничего собирать не нужно: там мало памяти для сборки Next.js.
 #
 #   bash deploy/beget/build-bundle.sh [выходной.zip]
+#   BUNDLE_DIR=папка bash deploy/beget/build-bundle.sh   — в папку вместо архива (GitHub Actions)
 #
 # Работает на Linux и macOS (нативных модулей в архиве нет).
 set -euo pipefail
@@ -28,6 +29,15 @@ echo "▸ Чистка"
 find . -name node_modules -type d -prune -exec rm -rf {} +
 rm -rf apps/web/.next/cache .turbo apps/*/.turbo packages/*/.turbo e2e playwright.config.ts
 find . -name '*.tsbuildinfo' -delete
+# В сборке собранный код — часть содержимого (ветка beget), игнорируются только данные сервера
+printf '%s\n' 'node_modules/' '.env' '.env.*' '!.env.example' '/storage/' '/tmp/' \
+  'apps/web/.next/cache/' >.gitignore
+
+if [ -n "${BUNDLE_DIR:-}" ]; then
+  rm -rf "$BUNDLE_DIR" && mkdir -p "$BUNDLE_DIR" && cp -a . "$BUNDLE_DIR"
+  echo "✓ $BUNDLE_DIR"
+  exit 0
+fi
 
 echo "▸ Архив"
 rm -f "$OUT"
