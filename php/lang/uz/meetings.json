@@ -12,5 +12,17 @@
   "cancel": "Uchrashuvni bekor qilish",
   "confirm": "Tasdiqlash",
   "cancelled": "Uchrashuv bekor qilindi",
-  "noShow": "Boʻlib oʻtmadi"
+  "noShow": "Boʻlib oʻtmadi",
+  "cancelConfirm": "Uchrashuv bekor qilinsinmi?",
+  "edit": "Oʻzgartirish / koʻchirish",
+  "editTitle": "Uchrashuvni oʻzgartirish",
+  "rescheduleHint": "Holat oʻzgartirilmasdan yangi sana uchrashuvni koʻchirilgan deb belgilaydi.",
+  "errors": {
+    "alreadyDone": "Uchrashuv allaqachon oʻtkazilgan deb belgilangan",
+    "cancelled": "Uchrashuv bekor qilingan",
+    "closedRecord": "Yopilgan yozuv boʻyicha uchrashuv belgilab boʻlmaydi",
+    "doneImmutable": "Oʻtkazilgan uchrashuvni oʻzgartirib boʻlmaydi",
+    "resultRequired": "Uchrashuv natijasini yozing",
+    "target": "Uchrashuv lid yoki bitimga bogʻlanadi"
+  }
 }

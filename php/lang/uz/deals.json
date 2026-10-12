@@ -19,6 +19,24 @@
     "amountPositive": "Summa noldan katta boʻlishi kerak",
     "sendProposalFirst": "Avval mijozga TT yuboring",
     "createContractFirst": "Avval shartnoma yarating",
-    "contractNotSigned": "Shartnoma hali imzolanmagan"
-  }
+    "contractNotSigned": "Shartnoma hali imzolanmagan",
+    "alreadyClosed": "Bitim allaqachon yopilgan",
+    "contactNotOfClient": "Kontakt bu mijozga tegishli emas",
+    "selectClient": "Mijozni tanlang",
+    "selectClientContact": "Mijoz kontaktini tanlang",
+    "titleRequired": "Nomini kiriting",
+    "wonCannotDelete": "Toʻlangan bitimni oʻchirib boʻlmaydi",
+    "wonCannotReopen": "Toʻlangan bitimni ishga qaytarib boʻlmaydi"
+  },
+  "amountFrom": "Summa (dan), UZS",
+  "amountTo": "Summa (gacha), UZS",
+  "createSubmit": "Bitim yaratish",
+  "dealTitle": "Bitim nomi",
+  "dealTitleHint": "Boʻsh boʻlsa — «Xizmat — Mijoz»",
+  "gatesHint": "Oldinga — faqat hujjatlar bilan: TT yuborilgan, shartnoma yaratilgan, shartnoma imzolangan. «Toʻlandi» toʻlov tasdiqlanganda qoʻyiladi.",
+  "manual": "qoʻlda",
+  "openLead": "Lidni ochish",
+  "paidAutoHint": "Toʻlov tasdiqlanganda avtomatik qoʻyiladi",
+  "probabilityHint": "Boʻsh boʻlsa — voronka bosqichi boʻyicha",
+  "rate": "kurs {rate}"
 }

@@ -33,5 +33,28 @@
   "filters": {
     "onlyOpen": "В работе",
     "allStatuses": "Все статусы"
-  }
+  },
+  "createSubmit": "Создать лид",
+  "duplicates": {
+    "title": "Возможный дубль",
+    "hint": "Найдены записи с тем же телефоном, Instagram или email. Проверьте, прежде чем создавать."
+  },
+  "errors": {
+    "alreadyClosed": "Лид уже закрыт",
+    "alreadyConverted": "Лид уже переведён в сделку",
+    "cannotDeleteConverted": "Лид переведён в сделку — удалить нельзя",
+    "clientRequired": "Выберите клиента или укажите название нового",
+    "closed": "Лид закрыт. Сначала верните его в работу",
+    "convertOnlyOpen": "Конвертировать можно только лид в работе",
+    "meetingDoneFirst": "Отметьте встречу проведённой и укажите результат",
+    "meetingFirst": "Сначала назначьте встречу с клиентом",
+    "nameOrCompany": "Укажите имя контакта или компанию",
+    "noDealRight": "Нет права создавать сделки",
+    "phoneOrTelegram": "Укажите телефон или Telegram",
+    "selectService": "Выберите услугу",
+    "selectSource": "Выберите источник",
+    "serviceNotFound": "Услуга не найдена",
+    "sourceNotFound": "Источник не найден"
+  },
+  "noClientsFound": "Похожих клиентов не найдено — создайте нового."
 }

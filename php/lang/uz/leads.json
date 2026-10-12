@@ -33,5 +33,28 @@
   "filters": {
     "onlyOpen": "Jarayonda",
     "allStatuses": "Barcha holatlar"
-  }
+  },
+  "createSubmit": "Lid yaratish",
+  "duplicates": {
+    "title": "Ehtimoliy takror",
+    "hint": "Xuddi shu telefon, Instagram yoki email bilan yozuvlar topildi. Yaratishdan oldin tekshiring."
+  },
+  "errors": {
+    "alreadyClosed": "Lid allaqachon yopilgan",
+    "alreadyConverted": "Lid allaqachon bitimga oʻtkazilgan",
+    "cannotDeleteConverted": "Lid bitimga oʻtkazilgan — oʻchirib boʻlmaydi",
+    "clientRequired": "Mijozni tanlang yoki yangisining nomini kiriting",
+    "closed": "Lid yopilgan. Avval uni ishga qaytaring",
+    "convertOnlyOpen": "Faqat ishdagi lidni bitimga oʻtkazish mumkin",
+    "meetingDoneFirst": "Uchrashuvni oʻtkazilgan deb belgilang va natijani kiriting",
+    "meetingFirst": "Avval mijoz bilan uchrashuv belgilang",
+    "nameOrCompany": "Kontakt ismi yoki kompaniyani kiriting",
+    "noDealRight": "Bitim yaratish huquqi yoʻq",
+    "phoneOrTelegram": "Telefon yoki Telegramni kiriting",
+    "selectService": "Xizmatni tanlang",
+    "selectSource": "Manbani tanlang",
+    "serviceNotFound": "Xizmat topilmadi",
+    "sourceNotFound": "Manba topilmadi"
+  },
+  "noClientsFound": "Oʻxshash mijozlar topilmadi — yangisini yarating."
 }

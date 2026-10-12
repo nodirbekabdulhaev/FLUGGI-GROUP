@@ -227,11 +227,58 @@
     "closeTitle": "Yozuvni yopish",
     "closeHint": "«Yoʻqotilgan» va «Rad etildi» uchun sababni koʻrsating — u yoʻqotishlar analitikasiga tushadi.",
     "byPhone": "Qoʻngʻiroq qilish",
-    "openInTelegram": "Telegram ni ochish"
+    "openInTelegram": "Telegram ni ochish",
+    "commentAdded": "Izoh qoʻshildi",
+    "dateFrom": "Yaratilgan sanadan",
+    "dateTo": "sanagacha",
+    "days": "{n} kun",
+    "hours": "{n} soat",
+    "minutes": "{n} daq",
+    "deleteCommentConfirm": "Izoh oʻchirilsinmi?",
+    "formErrors": "Forma maydonlarini tekshiring",
+    "meetingAt": "{label}: {date}",
+    "system": "Tizim"
   },
   "errors": {
     "ownerRole": "Masʼul faqat menejer yoki ROP boʻlishi mumkin",
     "ownerRoleField": "Menejer yoki ROPni tanlang",
-    "noOwners": "Menejer va ROP yoʻq — lidlarni biriktirish uchun xodim qoʻshing"
+    "noOwners": "Menejer va ROP yoʻq — lidlarni biriktirish uchun xodim qoʻshing",
+    "commentRequired": "Izoh yozing",
+    "describeReason": "Sababni tavsiflang",
+    "ownCommentOnly": "Faqat oʻz izohingizni oʻchirish mumkin",
+    "reasonComment": "Bu sabab uchun izoh kerak",
+    "reasonNotFound": "Sabab topilmadi",
+    "reasonRequired": "Sababni koʻrsating",
+    "selectOwner": "Masʼul xodimni tanlang",
+    "selectReason": "Sababni tanlang"
+  },
+  "teams": {
+    "hasMembers": "Boʻlimda xodimlar bor. Avval ularni boshqa boʻlimga oʻtkazing",
+    "headRop": "Boʻlim rahbari faqat ROP roliga ega faol xodim boʻlishi mumkin",
+    "headRopField": "ROP roliga ega xodimni tanlang",
+    "nameRequired": "Nomini kiriting",
+    "nameTaken": "Bunday nomli boʻlim allaqachon mavjud",
+    "team": "Boʻlim"
+  },
+  "validation": {
+    "required": "Majburiy maydon",
+    "required_without": "Majburiy maydon",
+    "string": "Notoʻgʻri qiymat",
+    "max": "Qiymat juda uzun",
+    "min": "Qiymat juda qisqa yoki kichik",
+    "numeric": "Raqam kiriting",
+    "integer": "Butun son kiriting",
+    "in": "Roʻyxatdan qiymat tanlang",
+    "uuid": "Notoʻgʻri qiymat",
+    "email": "Email notoʻgʻri",
+    "date": "Sana va vaqt notoʻgʻri",
+    "date_format": "Sana notoʻgʻri",
+    "regex": "Format notoʻgʻri",
+    "boolean": "Notoʻgʻri qiymat",
+    "between": "Qiymat ruxsat etilgan oraliqdan tashqarida",
+    "array": "Notoʻgʻri qiymat",
+    "gt": "Qiymat noldan katta boʻlishi kerak",
+    "money": "Summa notoʻgʻri",
+    "phone": "Telefon notoʻgʻri"
   }
 }

@@ -35,6 +35,23 @@
   "newDirection": "Yangi yoʻnalish",
   "errors": {
     "noRate": "{currency} kursi kiritilmagan. CEO uni «Sozlamalar → Maʼlumotnomalar» boʻlimida kiritishi mumkin",
-    "noRateField": "{currency} kursi kiritilmagan"
-  }
+    "noRateField": "{currency} kursi kiritilmagan",
+    "code": "Faqat lotin bosh harflari, raqamlar va _",
+    "codeTaken": "Bunday kod allaqachon bor",
+    "nameRequired": "Nomini kiriting",
+    "ratePositive": "Kurs noldan katta boʻlishi kerak"
+  },
+  "color": "Rang",
+  "description": "Tavsif",
+  "item": "Maʼlumotnoma yozuvi",
+  "nameEn": "Nomi (EN)",
+  "nameUz": "Nomi (UZ)",
+  "rateDate": "Sana",
+  "service": "Xizmat",
+  "sort": "Tartib",
+  "stageDeal": "Bitim",
+  "stageLead": "Lid",
+  "stageName": "Bosqich nomi",
+  "stageSaved": "Bosqich saqlandi",
+  "stagesHint": "Ehtimollik vaznli prognozda ishlatiladi: summa × ehtimollik."
 }

@@ -15,5 +15,15 @@
   "dealsCount": "{count} ta bitim · {open} tasi jarayonda",
   "newDeal": "Yangi bitim",
   "noDeals": "Hozircha bitimlar yoʻq",
-  "noContacts": "Hozircha kontaktlar yoʻq"
+  "noContacts": "Hozircha kontaktlar yoʻq",
+  "contact": "Kontakt",
+  "createSubmit": "Mijoz yaratish",
+  "errors": {
+    "account": "Hisob raqami — 20 ta raqam",
+    "contactInDeal": "Kontakt bitimda koʻrsatilgan — avval uni u yerda almashtiring",
+    "contactName": "Ismni kiriting",
+    "inn": "STIR — 9 ta raqam, JShShIR — 14 ta raqam",
+    "mfo": "MFO — 5 ta raqam",
+    "nameRequired": "Nomini kiriting"
+  }
 }
