@@ -66,7 +66,7 @@ class UsersTest extends TestCase
             $this->ceo->update(['locale' => $locale]);
             $c = $this->actingAsUser($this->ceo);
             foreach (['/team/employees', '/team/managers', '/team/rop', '/team/executors', '/settings', '/settings/roles', '/settings/audit', '/settings/schedules', '/settings/templates', '/settings/finance',
-                "/team/employees?edit={$this->manager->id}", "/team/employees?delete={$this->manager->id}"] as $url) {
+                "/team/employees?edit={$this->manager->id}", "/team/employees?delete={$this->manager->id}", "/team/employees?rates={$this->executor->id}"] as $url) {
                 $c->get($url)->assertOk();
             }
         }

@@ -47,6 +47,11 @@ class EmployeesController extends Controller
             $data['transferTo'] = User::where('status', 'ACTIVE')->whereKeyNot($id)->with('role')->orderBy('full_name')->get();
         }
 
+        // Сдельные ставки (модуль тарифов): CEO — любого сотрудника, остальные — свои
+        if (($id = $request->query('rates')) && ($data['canRates'] || $id === $access->id())) {
+            $data['ratesFor'] = User::findOrFail($id);
+        }
+
         return view('people.employees', $data);
     }
 

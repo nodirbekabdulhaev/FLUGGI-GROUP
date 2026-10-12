@@ -175,8 +175,9 @@ final class ExportService
     {
         // Календарные даты расходов: [from; to) по Ташкенту
         $dates = $r ? [Tasks::companyDate(CarbonImmutable::parse($r[0], 'UTC')), Tasks::companyDate(CarbonImmutable::parse($r[1], 'UTC'))] : null;
+        $cats = DB::table('finance_categories')->pluck('name', 'code');
         $rows = self::expensesQuery($a)
-            ->with(['project' => fn ($q) => $q->withTrashed(), 'payee' => fn ($q) => $q->withTrashed(), 'createdBy' => fn ($q) => $q->withTrashed(), 'categoryRef'])
+            ->with(['project' => fn ($q) => $q->withTrashed(), 'payee' => fn ($q) => $q->withTrashed(), 'createdBy' => fn ($q) => $q->withTrashed()])
             ->when($dates, fn ($q) => $q->where('expense_date', '>=', $dates[0])->where('expense_date', '<', $dates[1]))
             ->orderBy('expense_date')->limit(self::LIMIT)->get();
 
@@ -185,7 +186,7 @@ final class ExportService
             self::col('description', ['width' => 30]), self::col('payee', ['width' => 20]), self::col('amount', ['money' => true]), self::col('currency'),
             self::col('amountUzs', ['money' => true]), self::col('createdBy', ['width' => 20]),
         ], $rows->map(fn ($e) => [
-            Format::code('EXP', $e->number), self::day($e->expense_date), self::label('export.expenseScope', $e->scope), $e->categoryRef?->name ?? $e->category,
+            Format::code('EXP', $e->number), self::day($e->expense_date), self::label('export.expenseScope', $e->scope), $cats[$e->category] ?? $e->category,
             $e->project ? Format::code('P', $e->project->number).' '.$e->project->name : null, $e->description, $e->payee?->full_name,
             self::num($e->amount), $e->currency, self::num($e->amount_uzs), $e->createdBy?->full_name,
         ])->all());

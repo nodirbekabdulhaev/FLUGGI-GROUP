@@ -71,6 +71,9 @@ final class AccountantPackage
         $dTo = ($year + 1).'-01-01';
         $periods = array_map(fn ($i) => $year.'-'.str_pad((string) $i, 2, '0', STR_PAD_LEFT), range(1, 12));
         $company = Settings::company();
+        // Категории расходов/доходов — по коду (expenses.category / other_incomes.category)
+        $cats = DB::table('finance_categories')->get(['code', 'name', 'account_hint'])->keyBy('code');
+        $cat = fn ($code) => $cats->get($code);
         $tr = fn ($q) => $q->withTrashed();
 
         $contracts = Contract::with(['client' => $tr, 'deal' => $tr])->where('status', 'SIGNED')->where('signed_at', '>=', $from)->where('signed_at', '<', $to)->orderBy('signed_at')->get();
@@ -78,14 +81,14 @@ final class AccountantPackage
         $allPaid = DB::table('payments')->where('status', 'PAID')->where('paid_at', '<', $to)->get(['client_id', 'type', 'amount_uzs']);
         $signedToDate = DB::table('contracts as c')->join('clients as cl', 'cl.id', '=', 'c.client_id')->where('c.status', 'SIGNED')->where('c.signed_at', '<', $to)
             ->get(['c.client_id', 'c.amount_uzs', 'cl.name', 'cl.number']);
-        $expenses = Expense::with(['project' => $tr, 'payee' => $tr, 'createdBy' => $tr, 'categoryRef'])->where('expense_date', '>=', $dFrom)->where('expense_date', '<', $dTo)
+        $expenses = Expense::with(['project' => $tr, 'payee' => $tr, 'createdBy' => $tr])->where('expense_date', '>=', $dFrom)->where('expense_date', '<', $dTo)
             ->orderBy('expense_date')->orderBy('created_at')->get();
         $payroll = PayrollEntry::with(['user' => $tr])->whereIn('period', $periods)->get()
             ->sortBy(fn ($p) => $p->period.'|'.mb_strtolower((string) $p->user?->full_name))->values();
         $commissions = Commission::with(['user' => $tr, 'deal' => $tr])->whereIn('period', $periods)->where('status', '<>', 'CANCELLED')->orderBy('period')->get();
         $projects = Project::with(['client' => $tr])->where('created_at', '<', $to)->where('status', '<>', 'CANCELLED')
             ->where(fn ($q) => $q->whereNull('completed_at')->orWhere('completed_at', '>=', $from))->orderBy('number')->get();
-        $incomes = OtherIncome::with(['categoryRef', 'project' => $tr, 'client' => $tr])->where('income_date', '>=', $dFrom)->where('income_date', '<', $dTo)->orderBy('income_date')->get();
+        $incomes = OtherIncome::with(['project' => $tr, 'client' => $tr])->where('income_date', '>=', $dFrom)->where('income_date', '<', $dTo)->orderBy('income_date')->get();
 
         $sign = fn ($p) => $p->type === 'REFUND' ? BigDecimal::of((string) $p->amount_uzs)->negated() : BigDecimal::of((string) $p->amount_uzs);
         $zero = BigDecimal::zero();
@@ -108,7 +111,7 @@ final class AccountantPackage
         }
         foreach ($expenses as $e) {
             $i = $dateMonth($e->expense_date);
-            $acc = self::expenseAccount($e->scope, $e->categoryRef?->account_hint);
+            $acc = self::expenseAccount($e->scope, $cat($e->category)?->account_hint);
             $k = str_starts_with($acc, 'Себестоимость') ? 'cost' : (str_starts_with($acc, 'Расходы по реализации') ? 'sales' : 'admin');
             $m[$i][$k] = $m[$i][$k]->plus((string) $e->amount_uzs);
         }
@@ -225,7 +228,7 @@ final class AccountantPackage
             ['header' => 'Номер'], ['header' => 'Дата', 'date' => true], ['header' => 'Категория', 'width' => 24], ['header' => 'Подсказка счёта'],
             ['header' => 'Клиент', 'width' => 24], ['header' => 'Проект', 'width' => 28], ['header' => 'Описание', 'width' => 30],
             ['header' => 'Сумма', 'money' => true], ['header' => 'Валюта'], ['header' => 'Сумма, UZS', 'money' => true],
-        ], $incomes->map(fn ($r) => [Format::code('INC', $r->number), $day($r->income_date), $r->categoryRef?->name, $r->categoryRef?->account_hint, $r->client?->name,
+        ], $incomes->map(fn ($r) => [Format::code('INC', $r->number), $day($r->income_date), $cat($r->category)?->name ?? $r->category, $cat($r->category)?->account_hint, $r->client?->name,
             $r->project ? Format::code('P', $r->project->number).' '.$r->project->name : null, $r->description, $num($r->amount), $r->currency, $num($r->amount_uzs)])->all());
         $sheets[] = new Sheet('Расчёты с клиентами 31.12', [
             ['header' => 'Клиент', 'width' => 28], ['header' => 'Номер'], ['header' => 'Подписано договоров, UZS', 'money' => true, 'width' => 20],
@@ -240,7 +243,7 @@ final class AccountantPackage
             ['header' => 'Получатель', 'width' => 20], ['header' => 'Сумма', 'money' => true], ['header' => 'Валюта'], ['header' => 'Сумма, UZS', 'money' => true],
             ['header' => 'Внёс', 'width' => 18],
         ], $expenses->map(fn ($e) => [Format::code('EXP', $e->number), $day($e->expense_date), $e->scope === 'PROJECT' ? 'Проект' : 'Компания',
-            $e->categoryRef?->name ?? $e->category, self::expenseAccount($e->scope, $e->categoryRef?->account_hint),
+            $cat($e->category)?->name ?? $e->category, self::expenseAccount($e->scope, $cat($e->category)?->account_hint),
             $e->project ? Format::code('P', $e->project->number).' '.$e->project->name : null, $e->description, $e->payee?->full_name,
             $num($e->amount), $e->currency, $num($e->amount_uzs), $e->createdBy?->full_name])->all());
         $sheets[] = new Sheet('Зарплата', [
