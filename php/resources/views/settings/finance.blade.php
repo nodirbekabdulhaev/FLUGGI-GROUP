@@ -4,6 +4,8 @@
     <x-page-header :title="t('settings.title')" />
     @include('settings.partials.tabs')
     @php($canEdit = access()->can('reference.manage', 'ALL'))
+    {{-- Работы исполнителей сохраняет модуль тарифов (маршруты sales.work-items.*) --}}
+    @php($canWork = $canEdit && \Illuminate\Support\Facades\Route::has('sales.work-items.store'))
     <div class="grid gap-6 lg:grid-cols-2">
         @include('settings.partials.category-card', ['kind' => 'EXPENSE', 'items' => $expenseCategories])
         <div class="grid content-start gap-6">
@@ -22,7 +24,9 @@
         </div>
         <div class="lg:col-span-2">
             <x-card :title="t('financeSettings.workItems')" :subtitle="t('financeSettings.workItemsText')" :padding="false">
-                @if ($canEdit)<x-slot:actions><button type="button" class="btn btn-primary btn-sm" @click="$dispatch('open-modal', 'wi-new')"><x-icon name="plus" /> {{ t('financeSettings.add') }}</button></x-slot:actions>@endif
+                @if ($canWork)
+                    <x-slot:actions><button type="button" class="btn btn-primary btn-sm" @click="$dispatch('open-modal', 'wi-new')"><x-icon name="plus" /> {{ t('financeSettings.add') }}</button></x-slot:actions>
+                @endif
                 <div class="overflow-x-auto">
                     <table class="table">
                         <thead><tr><th>{{ t('financeSettings.name') }}</th><th>{{ t('financeSettings.specialty') }}</th><th class="text-right">{{ t('financeSettings.defaultRate') }}</th><th></th></tr></thead>
@@ -32,7 +36,7 @@
                                 <td class="font-medium">{{ $w->name }}</td>
                                 <td class="text-muted-foreground">{{ $w->specialty ? t('specialties.'.$w->specialty) : '—' }}</td>
                                 <td class="whitespace-nowrap text-right tabular-nums">{{ money($w->default_rate, $w->currency) }} / {{ $w->unit }}</td>
-                                <td class="text-right">@if ($canEdit)<button type="button" class="btn btn-ghost btn-icon" aria-label="{{ t('financeSettings.workItemEdit') }}: {{ $w->name }}" @click="$dispatch('open-modal', 'wi-{{ $w->id }}')"><x-icon name="edit" /></button>@endif</td>
+                                <td class="text-right">@if ($canWork)<button type="button" class="btn btn-ghost btn-icon" aria-label="{{ t('financeSettings.workItemEdit') }}: {{ $w->name }}" @click="$dispatch('open-modal', 'wi-{{ $w->id }}')"><x-icon name="edit" /></button>@endif</td>
                             </tr>
                         @endforeach
                         </tbody>
@@ -41,11 +45,11 @@
             </x-card>
         </div>
     </div>
-    @if ($canEdit)
+    @if ($canWork)
         @foreach ([...$workItems->all(), null] as $w)
             @php($mid = $w ? 'wi-'.$w->id : 'wi-new')
             <x-modal :name="$mid" :title="$w ? t('financeSettings.workItemEdit') : t('financeSettings.workItemNew')">
-                <form method="POST" action="{{ $w ? '/settings/finance/work-items/'.$w->id : '/settings/finance/work-items' }}" class="space-y-4">
+                <form method="POST" action="{{ $w ? route('sales.work-items.update', $w->id) : route('sales.work-items.store') }}" class="space-y-4">
                     @csrf @if ($w) @method('PUT') @endif
                     <x-field name="name" :id="$mid.'-name'" :label="t('financeSettings.name')" :value="$w?->name" required />
                     <div class="grid gap-4 sm:grid-cols-2">

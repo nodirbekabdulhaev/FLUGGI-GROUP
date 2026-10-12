@@ -5,13 +5,11 @@ namespace App\Services\Finance;
 use App\Exceptions\BusinessRule;
 use App\Models\FinanceCategory;
 use App\Models\OtherIncome;
-use App\Models\User;
 use App\Models\WorkItem;
 use App\Services\References\ExchangeRates;
 use App\Support\Audit;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Str;
 
 /**
  * Справочники финансов (CEO): категории доходов и расходов, прочие поступления,
@@ -23,9 +21,12 @@ final class CatalogService
 
     public static function categories(?string $kind = null): Collection
     {
+        // Записи ссылаются на категорию по коду (учитываются и удалённые мягко — внешний ключ их держит)
         return FinanceCategory::query()->when($kind, fn ($q) => $q->where('kind', $kind))
-            ->withCount(['expenses', 'otherIncomes'])->orderBy('kind')->orderBy('sort')->orderBy('name')->get()
-            ->each(fn ($c) => $c->setAttribute('usage', $c->expenses_count + $c->other_incomes_count));
+            ->select('finance_categories.*')
+            ->selectRaw('(SELECT COUNT(*) FROM expenses e WHERE e.category = finance_categories.code) + (SELECT COUNT(*) FROM other_incomes i WHERE i.category = finance_categories.code) AS usage_count')
+            ->orderBy('kind')->orderBy('sort')->orderBy('name')->get()
+            ->each(fn ($c) => $c->setAttribute('usage', (int) $c->usage_count));
     }
 
     /** code → название; активные + текущая выбранная. */
@@ -134,62 +135,5 @@ final class CatalogService
     public static function workItems(bool $activeOnly = false): Collection
     {
         return WorkItem::when($activeOnly, fn ($q) => $q->where('is_active', true))->orderBy('sort')->orderBy('name')->get();
-    }
-
-    /** @param  array{name:string,unit:string,specialty:?string,default_rate:string,currency:string,is_active:bool}  $input */
-    public static function saveWorkItem(?string $id, array $input): WorkItem
-    {
-        return DB::transaction(function () use ($id, $input) {
-            if ($id) {
-                $w = WorkItem::findOrFail($id);
-                $old = (string) $w->default_rate;
-                $w->update($input);
-            } else {
-                $old = null;
-                $w = WorkItem::create($input + ['code' => 'W_'.strtoupper(bin2hex(random_bytes(4))), 'sort' => 100]);
-            }
-            Audit::log($id ? 'work_item.update' : 'work_item.create', 'work_item', $w->id, ['defaultRate' => ['old' => $old, 'new' => (string) $w->fresh()->default_rate]]);
-
-            return $w;
-        });
-    }
-
-    /** Ставки сотрудника: CEO (зарплаты) — любого, сотрудник — свои. */
-    public static function employeeRates(string $userId): Collection
-    {
-        if ($userId !== access()->id() && ! access()->can('payroll.manage', 'ALL')) {
-            abort(403);
-        }
-        $rates = DB::table('employee_rates')->where('user_id', $userId)->get()->keyBy('work_item_id');
-
-        return self::workItems(true)->each(function ($w) use ($rates) {
-            $r = $rates[$w->id] ?? null;
-            $w->setAttribute('personal_rate', $r?->rate);
-            $w->setAttribute('personal_currency', $r?->currency);
-        });
-    }
-
-    /** @param  list<array{work_item_id:string, rate:?string, currency:string}>  $rates */
-    public static function saveEmployeeRates(string $userId, array $rates): void
-    {
-        User::findOrFail($userId);
-        DB::transaction(function () use ($userId, $rates) {
-            foreach ($rates as $r) {
-                if ($r['rate'] === null) {
-                    DB::table('employee_rates')->where('user_id', $userId)->where('work_item_id', $r['work_item_id'])->delete();
-                } else {
-                    DB::table('employee_rates')->updateOrInsert(
-                        ['user_id' => $userId, 'work_item_id' => $r['work_item_id']],
-                        ['rate' => $r['rate'], 'currency' => $r['currency'], 'updated_at' => now()->format('Y-m-d H:i:s.v')],
-                    );
-                }
-            }
-            Audit::log('employee.rates', 'user', $userId, ['rates' => ['old' => null, 'new' => $rates]]);
-        });
-    }
-
-    public static function uuid(): string
-    {
-        return (string) Str::uuid();
     }
 }

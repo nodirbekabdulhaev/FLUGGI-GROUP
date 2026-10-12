@@ -90,6 +90,8 @@ final class CostLineService
     public static function list(string $projectId): Collection
     {
         ProjectAccess::project($projectId, 'finance.read');
+        // План строится по событию project.created; если событие ещё не обработано cron-ом — строим сейчас
+        DB::transaction(fn () => self::generate($projectId));
         $rows = ProjectCostLine::with(['assignee:id,full_name', 'expense' => fn ($q) => $q->withTrashed(), 'workItem:id,default_rate,currency'])
             ->where('project_id', $projectId)->where('status', '<>', 'CANCELLED')->orderBy('created_at')->get();
         foreach ($rows as $l) {

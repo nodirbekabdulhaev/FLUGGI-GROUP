@@ -100,5 +100,37 @@
   "scheduleQuarterly": "har chorakda, {month}-oy, {day}-sanada",
   "scheduleYearly": "har yili {day} ({month})",
   "remindBefore": "{days} kun oldin",
-  "placeholdersHint": "Nomda davrni koʻrsatish mumkin — u muddatdan kelib chiqib qoʻyiladi:"
+  "placeholdersHint": "Nomda davrni koʻrsatish mumkin — u muddatdan kelib chiqib qoʻyiladi:",
+  "delete": "Oʻchirish",
+  "deleted": "Ish oʻchirildi",
+  "deleteConfirm": "«{title}» ishini oʻchirasizmi?",
+  "ruleDeleted": "Qoida oʻchirildi",
+  "months": {
+    "1": "yanvar",
+    "2": "fevral",
+    "3": "mart",
+    "4": "aprel",
+    "5": "may",
+    "6": "iyun",
+    "7": "iyul",
+    "8": "avgust",
+    "9": "sentabr",
+    "10": "oktabr",
+    "11": "noyabr",
+    "12": "dekabr"
+  },
+  "errors": {
+    "assignTeam": "Ishlarni faqat oʻzingizga va oʻz boʻlimingizga topshirish mumkin",
+    "deleteOwn": "Ishni uni yaratgan kishi oʻchira oladi",
+    "sameStatus": "Holat allaqachon oʻrnatilgan",
+    "recurringOwn": "Muntazam ishlarni faqat oʻzingizga qoʻyish mumkin",
+    "taxCalendarCeo": "Soliq taqvimi faqat CEO uchun",
+    "quarterMonth": "Chorak uchun — chorak oyi 1–3"
+  },
+  "notify": {
+    "assigned": "{name} ish topshirdi",
+    "transferred": "Sizga ish oʻtkazildi",
+    "done": "{name} ishni bajardi",
+    "recurringBody": "Muddat: {date}"
+  }
 }

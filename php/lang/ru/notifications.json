@@ -9,5 +9,99 @@
   "tgOff": "Telegram не подключён — уведомления приходят только сюда.",
   "tgProblem": "Telegram-бот не работает: {problem}",
   "tgNotConfigured": "Telegram-бот не настроен на сервере (TELEGRAM_BOT_TOKEN в .env).",
-  "tgSetup": "Подключить в профиле →"
+  "tgSetup": "Подключить в профиле →",
+  "types": {
+    "lead": {
+      "created": "Новый лид",
+      "assigned": "Вам назначен лид",
+      "large": "Крупный лид",
+      "inbound_repeat": "Повторная заявка клиента"
+    },
+    "deal": {
+      "created": "Новая сделка",
+      "large": "Крупная сделка",
+      "large_lost": "Потеря крупного клиента"
+    },
+    "meeting": {
+      "created": "Новая встреча",
+      "reminder": "Встреча завтра / через 30 минут"
+    },
+    "client": {
+      "no_contact": "Клиенту не звонили 3 дня / клиент не отвечает",
+      "risk": "Клиент в зоне риска"
+    },
+    "proposal": {
+      "approval": "КП на согласовании",
+      "reminder": "КП отправлено 2 дня назад"
+    },
+    "contract": {
+      "reminder": "Договор не подписан",
+      "signed": "Договор подписан"
+    },
+    "payment": {
+      "paid": "Оплата получена",
+      "overdue": "Оплата просрочена"
+    },
+    "plan": {
+      "achieved": "Достижение месячного плана"
+    },
+    "project": {
+      "created": "Новый проект",
+      "member_added": "Вас добавили в проект",
+      "ending": "Проект заканчивается через 3 дня",
+      "overdue": "Просроченный проект",
+      "completed": "Проект завершён"
+    },
+    "task": {
+      "assigned": "Новая задача",
+      "deadline_changed": "Изменение дедлайна",
+      "review": "Задача на проверке",
+      "returned": "Задача возвращена / принята",
+      "overdue": "Просроченная задача"
+    },
+    "followup": {
+      "due": "Повторный контакт с клиентом"
+    },
+    "todo": {
+      "assigned": "Вам поручено дело",
+      "due": "Срок дела / регулярная задача"
+    },
+    "chat": {
+      "message": "Сообщение в чате"
+    },
+    "social": {
+      "message": "Instagram: Директ и комментарии"
+    },
+    "report": {
+      "daily": "Ежедневный отчёт",
+      "weekly": "Еженедельный отчёт"
+    },
+    "payroll": {
+      "calculated": "Предварительный расчёт зарплаты"
+    }
+  },
+  "events": {
+    "leadCreated": "Новый лид",
+    "leadLarge": "Крупный лид",
+    "leadAssigned": "Вам назначен лид",
+    "dealCreated": "Новая сделка",
+    "dealLarge": "Крупная сделка",
+    "dealLargeLost": "Потеря крупного клиента",
+    "proposalApproval": "КП на согласование",
+    "contractSigned": "Договор подписан",
+    "paymentPaid": "Оплата получена",
+    "projectCreated": "Новый проект",
+    "projectCreatedBody": "{project} — назначьте исполнителей",
+    "projectMemberAdded": "Вас добавили в проект",
+    "projectCompleted": "Проект завершён",
+    "projectCancelled": "Проект отменён",
+    "taskAssigned": "Новая задача",
+    "taskReview": "Задача на проверке",
+    "taskAccepted": "Задача принята",
+    "taskReturned": "Задача возвращена на доработку",
+    "taskDeadlineChanged": "Изменён дедлайн задачи",
+    "noDeadline": "без срока",
+    "taskOverdue": "Просрочено {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}",
+    "meetingCreated": "Новая встреча"
+  }
 }

@@ -4,7 +4,7 @@ namespace App\Services\Automation;
 
 use App\Domain\Tasks;
 use App\Models\OutboxEvent;
-use App\Support\Db;
+use App\Support\Db as DbSupport;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
@@ -52,7 +52,7 @@ final class OverdueScanner
             }
             $done = DB::transaction(function () use ($c, $now, $stamp) {
                 // Перечитываем под блокировкой: другой запуск мог уже отправить уведомление
-                $fresh = DB::selectOne('SELECT id, deadline, overdue_notified_at FROM tasks WHERE id = ? '.Db::lockRows(), [$c->id]);
+                $fresh = DB::selectOne('SELECT id, deadline, overdue_notified_at FROM tasks WHERE id = ? '.DbSupport::lockRows(), [$c->id]);
                 if (! $fresh || ! self::due($fresh->deadline, $fresh->overdue_notified_at, $now)) {
                     return false;
                 }

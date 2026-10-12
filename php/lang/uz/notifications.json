@@ -9,5 +9,99 @@
   "tgOff": "Telegram ulanmagan — bildirishnomalar faqat shu yerga keladi.",
   "tgProblem": "Telegram-bot ishlamayapti: {problem}",
   "tgNotConfigured": "Telegram-bot serverda sozlanmagan (.env dagi TELEGRAM_BOT_TOKEN).",
-  "tgSetup": "Profilda ulash →"
+  "tgSetup": "Profilda ulash →",
+  "types": {
+    "lead": {
+      "created": "Yangi lid",
+      "assigned": "Sizga lid biriktirildi",
+      "large": "Yirik lid",
+      "inbound_repeat": "Mijozning takroriy arizasi"
+    },
+    "deal": {
+      "created": "Yangi bitim",
+      "large": "Yirik bitim",
+      "large_lost": "Yirik mijozni yoʻqotish"
+    },
+    "meeting": {
+      "created": "Yangi uchrashuv",
+      "reminder": "Uchrashuv ertaga / 30 daqiqadan soʻng"
+    },
+    "client": {
+      "no_contact": "Mijozga 3 kun qoʻngʻiroq qilinmadi / mijoz javob bermayapti",
+      "risk": "Mijoz xavf zonasida"
+    },
+    "proposal": {
+      "approval": "TT kelishuvda",
+      "reminder": "TT 2 kun oldin yuborilgan"
+    },
+    "contract": {
+      "reminder": "Shartnoma imzolanmagan",
+      "signed": "Shartnoma imzolandi"
+    },
+    "payment": {
+      "paid": "Toʻlov qabul qilindi",
+      "overdue": "Toʻlov muddati oʻtdi"
+    },
+    "plan": {
+      "achieved": "Oylik rejaga erishish"
+    },
+    "project": {
+      "created": "Yangi loyiha",
+      "member_added": "Sizni loyihaga qoʻshishdi",
+      "ending": "Loyiha 3 kundan soʻng tugaydi",
+      "overdue": "Muddati oʻtgan loyiha",
+      "completed": "Loyiha yakunlandi"
+    },
+    "task": {
+      "assigned": "Yangi vazifa",
+      "deadline_changed": "Muddat oʻzgarishi",
+      "review": "Vazifa tekshiruvda",
+      "returned": "Vazifa qaytarildi / qabul qilindi",
+      "overdue": "Muddati oʻtgan vazifa"
+    },
+    "followup": {
+      "due": "Mijoz bilan takroriy aloqa"
+    },
+    "todo": {
+      "assigned": "Sizga ish topshirildi",
+      "due": "Ish muddati / muntazam vazifa"
+    },
+    "chat": {
+      "message": "Chatdagi xabar"
+    },
+    "social": {
+      "message": "Instagram: Direkt va izohlar"
+    },
+    "report": {
+      "daily": "Kunlik hisobot",
+      "weekly": "Haftalik hisobot"
+    },
+    "payroll": {
+      "calculated": "Ish haqining dastlabki hisobi"
+    }
+  },
+  "events": {
+    "leadCreated": "Yangi lid",
+    "leadLarge": "Yirik lid",
+    "leadAssigned": "Sizga lid biriktirildi",
+    "dealCreated": "Yangi bitim",
+    "dealLarge": "Yirik bitim",
+    "dealLargeLost": "Yirik mijozni yoʻqotish",
+    "proposalApproval": "TT kelishuvga",
+    "contractSigned": "Shartnoma imzolandi",
+    "paymentPaid": "Toʻlov qabul qilindi",
+    "projectCreated": "Yangi loyiha",
+    "projectCreatedBody": "{project} — ijrochilarni tayinlang",
+    "projectMemberAdded": "Sizni loyihaga qoʻshishdi",
+    "projectCompleted": "Loyiha yakunlandi",
+    "projectCancelled": "Loyiha bekor qilindi",
+    "taskAssigned": "Yangi vazifa",
+    "taskReview": "Vazifa tekshiruvda",
+    "taskAccepted": "Vazifa qabul qilindi",
+    "taskReturned": "Vazifa qayta ishlashga qaytarildi",
+    "taskDeadlineChanged": "Vazifa muddati oʻzgardi",
+    "noDeadline": "muddatsiz",
+    "taskOverdue": "Muddati {days} kunga oʻtdi",
+    "meetingCreated": "Yangi uchrashuv"
+  }
 }

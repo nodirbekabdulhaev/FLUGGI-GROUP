@@ -286,7 +286,7 @@ final class UserService
                 }
                 DB::table('tasks')->whereIn('id', $tasks->pluck('id'))->update(['assignee_id' => $target->id, 'updated_at' => $now]);
                 DB::table('todos')->where('owner_id', $id)->where('status', 'OPEN')->whereNull('deleted_at')->update(['owner_id' => $target->id, 'updated_at' => $now]);
-                DB::table('social_threads')->where('owner_id', $id)->update($to + ['updated_at' => $now]);
+                DB::table('social_threads')->where('owner_id', $id)->update($to);
             }
             DB::table('project_members')->where('user_id', $id)->where('status', 'ACTIVE')->update(['status' => 'REMOVED', 'updated_at' => $now]);
             DB::table('recurring_todos')->where('owner_id', $id)->whereNull('deleted_at')->update(['deleted_at' => $now, 'is_active' => false, 'updated_at' => $now]);

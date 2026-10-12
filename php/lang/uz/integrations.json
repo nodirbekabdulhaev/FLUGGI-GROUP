@@ -90,5 +90,35 @@
   "directAuto": "Direktdagi birinchi xabarda lid yaratish",
   "keywords": "Kalit soʻzlar",
   "keywordsHint": "Vergul bilan: narx, qancha, prays…",
-  "settingsSaved": "Sozlamalar saqlandi"
+  "settingsSaved": "Sozlamalar saqlandi",
+  "title": "Integratsiyalar",
+  "subtitle": "Sayt uchun formalar, Instagram, Facebook va target",
+  "formDeleted": "Forma oʻchirildi",
+  "copyFailed": "Nusxalab boʻlmadi — matnni qoʻlda belgilang",
+  "defaultTitle": "Ariza qoldiring",
+  "defaultButton": "Yuborish",
+  "defaultSuccess": "Rahmat! Tez orada siz bilan bogʻlanamiz.",
+  "errors": {
+    "duplicateKeys": "Maydon kalitlari takrorlanmoqda",
+    "needContact": "Mijoz bilan bogʻlanish uchun «Telefon» yoki «Email» maydoni kerak",
+    "keyFormat": "Kalit — lotin harflari, raqamlar va _",
+    "noPageToken": "Instagram ulanmagan: .env da META_PAGE_ACCESS_TOKEN yoʻq",
+    "metaNetwork": "Meta bilan aloqa yoʻq: {error}",
+    "signature": "Webhook imzosi notoʻgʻri"
+  },
+  "notify": {
+    "repeat": "Takroriy ariza"
+  },
+  "public": {
+    "fill": "«{label}» ni toʻldiring",
+    "badPhone": "Raqam xato koʻrsatilganga oʻxshaydi",
+    "badEmail": "Email xato koʻrsatilganga oʻxshaydi",
+    "pickOption": "Roʻyxatdan variantni tanlang",
+    "fixErrors": "Majburiy maydonlarni toʻldiring",
+    "sending": "Yuborilmoqda…",
+    "failed": "Yuborib boʻlmadi. Qaytadan urinib koʻring.",
+    "tooMany": "Arizalar juda koʻp. Bir daqiqadan soʻng urinib koʻring.",
+    "offline": "Aloqa yoʻq. Internetni tekshirib, qaytadan urinib koʻring.",
+    "backToSite": "Saytga qaytish"
+  }
 }

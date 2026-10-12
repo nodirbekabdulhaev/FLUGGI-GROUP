@@ -33,5 +33,10 @@
   "closed": "Follow-up yopildi",
   "dealCreated": "{number} bitim yaratildi",
   "emptyTitle": "Takroriy aloqalar yoʻq",
-  "emptyText": "Ular loyihalar yakunlangandan soʻng avtomatik paydo boʻladi."
+  "emptyText": "Ular loyihalar yakunlangandan soʻng avtomatik paydo boʻladi.",
+  "dealTitle": "Takroriy sotuv",
+  "errors": {
+    "closed": "Follow-up allaqachon yopilgan",
+    "dealOnlyDone": "Bitimni faqat bajarilganda yaratish mumkin"
+  }
 }

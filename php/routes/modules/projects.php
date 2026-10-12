@@ -54,5 +54,3 @@ Route::post('/settings/finance/categories', [FinanceSettingsController::class, '
 Route::put('/settings/finance/categories/{id}', [FinanceSettingsController::class, 'updateCategory'])->where('id', $uuid)->middleware('perm:reference.manage,ALL')->name('settings.finance.categories.update');
 Route::delete('/settings/finance/categories/{id}', [FinanceSettingsController::class, 'destroyCategory'])->where('id', $uuid)->middleware('perm:reference.manage,ALL')->name('settings.finance.categories.destroy');
 Route::put('/settings/finance/overhead', [FinanceSettingsController::class, 'overhead'])->middleware('perm:finance.company.read,ALL')->name('settings.finance.overhead');
-Route::post('/settings/finance/work-items', [FinanceSettingsController::class, 'storeWorkItem'])->middleware('perm:reference.manage,ALL')->name('settings.finance.work-items.store');
-Route::put('/settings/finance/work-items/{id}', [FinanceSettingsController::class, 'updateWorkItem'])->where('id', $uuid)->middleware('perm:reference.manage,ALL')->name('settings.finance.work-items.update');

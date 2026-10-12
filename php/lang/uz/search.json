@@ -14,5 +14,6 @@
     "contract": "Shartnomalar",
     "task": "Vazifalar",
     "user": "Xodimlar"
-  }
+  },
+  "contract": "Shartnoma {number}"
 }

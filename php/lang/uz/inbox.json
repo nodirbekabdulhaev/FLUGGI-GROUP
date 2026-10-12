@@ -24,5 +24,14 @@
   "message": "Javob",
   "placeholder": "Javob yozing…",
   "send": "Yuborish",
-  "windowHint": "Instagram mijozning oxirgi xabaridan keyin 24 soat ichida direktga javob berishga ruxsat beradi."
+  "windowHint": "Instagram mijozning oxirgi xabaridan keyin 24 soat ichida direktga javob berishga ruxsat beradi.",
+  "errors": {
+    "pickComment": "Javob beradigan izohni tanlang",
+    "foreignComment": "Izoh bu yozishmadan emas"
+  },
+  "notify": {
+    "direct": "💬 Instagram: {who}",
+    "comment": "💬 Izoh: {who}",
+    "message": "xabar"
+  }
 }

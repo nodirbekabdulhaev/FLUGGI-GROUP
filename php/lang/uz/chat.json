@@ -11,5 +11,8 @@
   "message": "Xabar",
   "placeholder": "Xabar…",
   "send": "Yuborish",
-  "you": "Siz"
+  "you": "Siz",
+  "errors": {
+    "self": "Oʻzingizga yozib boʻlmaydi"
+  }
 }

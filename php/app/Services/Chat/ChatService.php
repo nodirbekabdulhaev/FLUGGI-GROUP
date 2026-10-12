@@ -141,20 +141,22 @@ final class ChatService
     {
         self::member($me->id, $conversationId);
         $now = now();
-        $m = DB::transaction(function () use ($me, $conversationId, $body, $now) {
+        // Время с миллисекундами: «прочитано» сравнивается с моментом сообщения
+        $stamp = $now->format('Y-m-d H:i:s.v');
+        $m = DB::transaction(function () use ($me, $conversationId, $body, $now, $stamp) {
             $m = ChatMessage::create(['id' => (string) Str::uuid(), 'conversation_id' => $conversationId, 'author_id' => $me->id, 'body' => $body, 'created_at' => $now]);
-            Conversation::whereKey($conversationId)->update(['last_message_at' => $now]);
-            ConversationMember::where('conversation_id', $conversationId)->where('user_id', $me->id)->update(['last_read_at' => $now]);
+            Conversation::whereKey($conversationId)->update(['last_message_at' => $stamp]);
+            ConversationMember::where('conversation_id', $conversationId)->where('user_id', $me->id)->update(['last_read_at' => $stamp]);
 
             return $m;
         });
         // Telegram: один раз на «пачку» непрочитанных
         $others = ConversationMember::where('conversation_id', $conversationId)->where('user_id', '<>', $me->id)->get();
         foreach ($others as $o) {
-            if ($o->notified_at && $o->notified_at->gt($o->last_read_at)) {
+            if ($o->notified_at && $o->notified_at->gte($o->last_read_at)) {
                 continue;
             }
-            ConversationMember::where('conversation_id', $conversationId)->where('user_id', $o->user_id)->update(['notified_at' => $now]);
+            ConversationMember::where('conversation_id', $conversationId)->where('user_id', $o->user_id)->update(['notified_at' => $stamp]);
             Notifier::notify(
                 [$o->user_id],
                 'chat.message',
@@ -172,6 +174,6 @@ final class ChatService
     public static function read(string $meId, string $conversationId): void
     {
         self::member($meId, $conversationId);
-        ConversationMember::where('conversation_id', $conversationId)->where('user_id', $meId)->update(['last_read_at' => now()]);
+        ConversationMember::where('conversation_id', $conversationId)->where('user_id', $meId)->update(['last_read_at' => now()->format('Y-m-d H:i:s.v')]);
     }
 }

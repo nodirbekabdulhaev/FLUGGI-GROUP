@@ -20,5 +20,36 @@
   "settingsText": "Выберите, какие уведомления получать в CRM и в Telegram.",
   "event": "Событие",
   "inApp": "В CRM",
-  "problem": "Бот не работает"
+  "problem": "Бот не работает",
+  "openInCrm": "Открыть в CRM",
+  "settingsSaved": "Настройки уведомлений сохранены",
+  "testTitle": "Проверка связи",
+  "testBody": "Уведомления Fluggi CRM приходят в Telegram ✅",
+  "errors": {
+    "notConfigured": "Telegram-бот не настроен: CEO должен указать TELEGRAM_BOT_TOKEN на сервере",
+    "noUsername": "Не удалось получить имя бота. Укажите TELEGRAM_BOT_USERNAME",
+    "linkFirst": "Сначала подключите Telegram",
+    "notLinked": "Telegram не подключён",
+    "forbidden": "Недопустимый запрос"
+  },
+  "problems": {
+    "notConfigured": "Бот не настроен",
+    "badToken": "Токен бота недействителен (возможно, его заменили в @BotFather). Укажите актуальный TELEGRAM_BOT_TOKEN в .env",
+    "conflict": "Бот получает сообщения в другом месте: у него включён другой webhook или с этим токеном работает другой сервер",
+    "apiError": "Telegram ответил ошибкой: {error}",
+    "network": "Сервер не может подключиться к Telegram ({reason}). Проверьте доступ хостинга к api.telegram.org",
+    "usernameMismatch": "TELEGRAM_BOT_USERNAME (@{configured}) не совпадает с ботом, которому принадлежит токен (@{bot}). Исправьте .env или удалите TELEGRAM_BOT_USERNAME",
+    "noWebhook": "Webhook не установлен: выполните на сервере php artisan fluggi:telegram-webhook",
+    "otherWebhook": "Webhook бота указывает на другой адрес ({url}): выполните php artisan fluggi:telegram-webhook",
+    "webhookError": "Telegram не может доставить сообщения на сервер: {error}",
+    "stale": "Бот не проверялся больше 15 минут: фоновые задачи не запускаются. Настройте cron «php artisan schedule:run» каждую минуту (или POST /hooks/cron) и выполните php artisan fluggi:telegram-webhook"
+  },
+  "botReplies": {
+    "invalidCode": "Код недействителен или устарел. Получите новый в профиле CRM: «Подключить Telegram».",
+    "linked": "✅ Telegram подключён к Fluggi CRM.\n<b>{name}</b>, сюда будут приходить уведомления. Настроить их можно в профиле CRM.\n\nОтключить: /stop",
+    "stopped": "Уведомления отключены. Подключить снова можно в профиле CRM.",
+    "notLinked": "Этот чат не подключён к CRM.",
+    "whoami": "Вы подключены как <b>{name}</b>. Уведомления приходят автоматически.\nОтключить: /stop",
+    "hello": "Это бот Fluggi CRM. Чтобы подключиться, откройте в CRM «Профиль → Подключить Telegram»."
+  }
 }

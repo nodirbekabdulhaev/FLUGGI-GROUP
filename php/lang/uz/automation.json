@@ -29,5 +29,112 @@
   "previewTitle": "Hisobotni oldindan koʻrish",
   "previewText": "Telegram ga keladigan matnning aynan oʻzi.",
   "daily": "Bugun uchun",
-  "weekly": "Hafta uchun"
+  "weekly": "Hafta uchun",
+  "title": "Avtomatlashtirish",
+  "subtitle": "Bildirishnomalar, rejalashtiruvchi, hisobotlar va kompaniya rekvizitlari",
+  "absentComment": "Belgi yoʻq (avtomatik)",
+  "jobs": {
+    "overdue-tasks": {
+      "label": "Muddati oʻtgan vazifalarni tekshirish",
+      "schedule": "har soatda"
+    },
+    "smart-reminders": {
+      "label": "Aqlli eslatmalar",
+      "schedule": "har 15 daqiqada"
+    },
+    "follow-ups": {
+      "label": "Bugungi takroriy aloqalar",
+      "schedule": "har kuni 09:00"
+    },
+    "daily-report": {
+      "label": "Rahbarga kunlik hisobot",
+      "schedule": "har kuni 18:00"
+    },
+    "absences": {
+      "label": "Kelmaganlarni belgilash",
+      "schedule": "har kuni 20:00"
+    },
+    "weekly-report": {
+      "label": "CEO uchun haftalik hisobot",
+      "schedule": "dushanba 09:00"
+    },
+    "recurring-todos": {
+      "label": "Muntazam ishlar (soliq taqvimi)",
+      "schedule": "har kuni 07:00"
+    },
+    "client-health": {
+      "label": "Mijozlar salomatligi",
+      "schedule": "har kuni 06:00"
+    },
+    "payroll": {
+      "label": "Ish haqini dastlabki hisoblash",
+      "schedule": "oyning 1-sanasi 09:00"
+    }
+  },
+  "payroll": {
+    "title": "{period} uchun ish haqining dastlabki hisobi",
+    "body": "Hisoblashlar: {count}. Bonus va jarimalarni tekshirib, tasdiqlang."
+  },
+  "plan": {
+    "company": "🎉 Oylik reja bajarildi",
+    "team": "🎉 Boʻlim rejasi bajarildi",
+    "body": "{period}: {collected} / {plan}"
+  },
+  "remind": {
+    "meetingTomorrow": "Uchrashuv ertaga soat {time} da",
+    "meetingSoon": "Uchrashuv {min} daqiqadan soʻng",
+    "noContact": "Mijozga 3 kun qoʻngʻiroq qilinmadi",
+    "dealSilent": "Mijoz 7 kundan beri javob bermayapti",
+    "proposalWaiting": "TT 2 kun oldin yuborilgan — javob yoʻq",
+    "contractUnsigned": "Shartnoma imzolanmagan",
+    "paymentOverdue": "Toʻlov muddati oʻtdi",
+    "projectEnding": "Loyiha 3 kundan soʻng tugaydi",
+    "projectOverdue": "Muddati oʻtgan loyiha",
+    "todoOverdue": "⏰ Muddati oʻtdi: {title}",
+    "todoToday": "Bugun muddat: {title}",
+    "until": "{time} gacha"
+  },
+  "report": {
+    "dailyNotice": "Kunlik hisobot",
+    "dailyTeamNotice": "Boʻlimning kunlik hisoboti",
+    "weeklyNotice": "Haftalik hisobot",
+    "dailyTitle": "{date} UCHUN HISOBOT",
+    "weeklyTitle": "HAFTALIK HISOBOT",
+    "newLeads": "Yangi lidlar",
+    "qualified": "Saralangan",
+    "meetings": "Uchrashuvlar",
+    "proposals": "TT",
+    "contracts": "Shartnomalar",
+    "payments": "Toʻlovlar",
+    "newProjects": "Yangi loyihalar",
+    "overdueTasks": "Muddati oʻtgan vazifalar",
+    "overdueProjects": "Muddati oʻtgan loyihalar",
+    "bestManager": "Eng yaxshi menejer",
+    "planMonth": "Oylik reja",
+    "noPlan": "maqsad belgilanmagan",
+    "forecast": "Prognoz",
+    "leads": "Lidlar",
+    "conversion": "Konversiya",
+    "deals": "Bitimlar",
+    "revenue": "Tushum",
+    "avgCheck": "Oʻrtacha chek",
+    "profit": "Foyda",
+    "expenses": "Xarajatlar",
+    "projects": "Loyihalar",
+    "efficiency": "Xodimlar samaradorligi",
+    "months": {
+      "1": "yanvar",
+      "2": "fevral",
+      "3": "mart",
+      "4": "aprel",
+      "5": "may",
+      "6": "iyun",
+      "7": "iyul",
+      "8": "avgust",
+      "9": "sentabr",
+      "10": "oktabr",
+      "11": "noyabr",
+      "12": "dekabr"
+    }
+  }
 }

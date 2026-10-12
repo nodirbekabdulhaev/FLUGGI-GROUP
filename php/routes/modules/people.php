@@ -15,7 +15,6 @@ $uuid = '[0-9a-fA-F-]{36}';
 $manage = 'perm:employee.manage,ALL';
 
 Route::redirect('/team', '/team/employees')->middleware('perm:employee.read');
-Route::get('/team/my-rates', [EmployeesController::class, 'myRates'])->middleware('auth.only')->name('team.my-rates');
 Route::get('/team/{role}', [EmployeesController::class, 'index'])->whereIn('role', ['employees', 'managers', 'rop', 'executors'])->middleware('perm:employee.read')->name('team.index');
 Route::post('/team/employees', [EmployeesController::class, 'store'])->middleware($manage)->name('team.store');
 Route::patch('/team/employees/{id}', [EmployeesController::class, 'update'])->where('id', $uuid)->middleware($manage)->name('team.update');
@@ -23,7 +22,6 @@ Route::post('/team/employees/{id}/block', [EmployeesController::class, 'block'])
 Route::post('/team/employees/{id}/unblock', [EmployeesController::class, 'unblock'])->where('id', $uuid)->middleware($manage)->name('team.unblock');
 Route::post('/team/employees/{id}/reset-password', [EmployeesController::class, 'resetPassword'])->where('id', $uuid)->middleware($manage)->name('team.reset');
 Route::delete('/team/employees/{id}', [EmployeesController::class, 'destroy'])->where('id', $uuid)->middleware($manage)->name('team.destroy');
-Route::put('/team/employees/{id}/rates', [EmployeesController::class, 'saveRates'])->where('id', $uuid)->middleware('perm:payroll.manage,ALL')->name('team.rates');
 
 Route::get('/kpi', [KpiController::class, 'index'])->middleware('perm:kpi.read')->name('kpi');
 Route::put('/kpi/targets', [KpiController::class, 'targets'])->middleware('perm:kpi.target.manage')->name('kpi.targets');

@@ -1,5 +1,4 @@
 @extends('layouts.app')
-@php($titleKey = ['MANAGER' => 'titleManagers', 'ROP' => 'titleRops', 'EXECUTOR' => 'titleExecutors'][$fixedRole] ?? 'title')
 @section('title', t('employees.'.$titleKey))
 @section('content')
     @php
@@ -75,7 +74,7 @@
                                     <button type="button" class="btn btn-ghost btn-icon" @click="open = !open" aria-label="{{ t('common.actions') }}"><x-icon name="more" /></button>
                                     <div x-show="open" x-cloak class="absolute right-0 z-20 mt-1 w-56 rounded-md border bg-surface py-1 text-sm shadow-lg">
                                         @if ($canManage)<a href="{{ $link('edit', $u->id) }}" class="flex items-center gap-2 px-3 py-2 hover:bg-muted"><x-icon name="edit" /> {{ t('common.edit') }}</a>@endif
-                                        @if ($canRates)<a href="{{ $link('rates', $u->id) }}" class="flex items-center gap-2 px-3 py-2 hover:bg-muted"><x-icon name="dollar" /> {{ t('employees.rates') }}</a>@endif
+                                        @if ($canRates && \Illuminate\Support\Facades\Route::has('sales.rates.show'))<a href="{{ route('sales.rates.show', $u->id) }}" class="flex items-center gap-2 px-3 py-2 hover:bg-muted"><x-icon name="dollar" /> {{ t('employees.rates') }}</a>@endif
                                         @if (! $self && $canManage)
                                             <form method="POST" action="/team/employees/{{ $u->id }}/reset-password" data-confirm="{{ t('employees.resetConfirm', ['name' => $u->full_name]) }}">@csrf
                                                 <button class="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-muted"><x-icon name="lock" /> {{ t('employees.resetPassword') }}</button></form>
@@ -129,19 +128,6 @@
                     <a href="{{ $base }}" class="btn btn-outline">{{ t('employees.cancel') }}</a>
                     <button class="btn btn-danger">{{ t('employees.deleteConfirmButton') }}</button>
                 </div>
-            </form>
-        </x-modal>
-    @endisset
-    @isset($ratesFor)
-        <x-modal name="emp-rates" :title="t('rates.title', ['name' => $ratesFor->full_name])" size="max-w-2xl" :open="true">
-            <p class="mb-4 text-sm text-muted-foreground">{{ t($canRates ? 'rates.text' : 'rates.textReadonly') }}</p>
-            <form method="POST" action="/team/employees/{{ $ratesFor->id }}/rates" class="grid gap-4">
-                @csrf @method('PUT')
-                <input type="hidden" name="return_to" value="{{ $base }}">
-                @include('people.partials.rates-table', ['editable' => $canRates])
-                @if ($canRates)
-                    <div class="flex justify-end gap-2"><a href="{{ $base }}" class="btn btn-outline">{{ t('rates.cancel') }}</a><button class="btn btn-primary">{{ t('rates.save') }}</button></div>
-                @endif
             </form>
         </x-modal>
     @endisset

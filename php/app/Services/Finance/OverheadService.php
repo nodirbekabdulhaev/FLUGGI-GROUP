@@ -4,7 +4,8 @@ namespace App\Services\Finance;
 
 use App\Domain\Finance;
 use App\Domain\Tasks;
-use App\Models\Setting;
+use App\Support\Audit;
+use App\Support\Settings;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
@@ -21,8 +22,7 @@ final class OverheadService
     /** @return array{overheadDivisor:?int} */
     public static function settings(): array
     {
-        $v = Setting::find(self::KEY)?->value;
-        $d = is_array($v) ? ($v['overheadDivisor'] ?? null) : null;
+        $d = Settings::get(self::KEY)['overheadDivisor'] ?? null;
 
         return ['overheadDivisor' => is_numeric($d) && (int) $d >= 1 && (int) $d <= 1000 ? (int) $d : null];
     }
@@ -31,8 +31,8 @@ final class OverheadService
     {
         DB::transaction(function () use ($divisor) {
             $before = self::settings();
-            Setting::updateOrCreate(['key' => self::KEY], ['value' => ['overheadDivisor' => $divisor], 'updated_by_id' => access()->id()]);
-            \App\Support\Audit::log('settings.finance', 'setting', null, ['overheadDivisor' => ['old' => $before['overheadDivisor'], 'new' => $divisor]]);
+            Settings::save(self::KEY, ['overheadDivisor' => $divisor]);
+            Audit::log('settings.finance', 'setting', null, ['overheadDivisor' => ['old' => $before['overheadDivisor'], 'new' => $divisor]]);
         });
 
         return self::settings();

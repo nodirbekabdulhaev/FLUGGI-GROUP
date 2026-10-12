@@ -36,5 +36,10 @@
   "phone": "Telefon",
   "email": "Email",
   "website": "Sayt",
-  "saveRequisites": "Rekvizitlarni saqlash"
+  "saveRequisites": "Rekvizitlarni saqlash",
+  "errors": {
+    "inn": "STIR — 9 ta raqam",
+    "mfo": "MFO — 5 ta raqam",
+    "account": "Hisob raqami — 20 ta raqam"
+  }
 }

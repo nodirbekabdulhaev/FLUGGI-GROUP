@@ -31,7 +31,8 @@ class TodoController extends Controller
             $views[] = 'all';
         }
         $views[] = 'recurring';
-        $view = in_array($request->query('view'), $views, true) ? $request->query('view') : 'mine';
+        // «Все» без права — 403 (как в прежней версии)
+        $view = in_array($request->query('view'), self::VIEWS, true) ? $request->query('view') : 'mine';
         $status = $request->query('status') === 'DONE' ? 'DONE' : 'OPEN';
 
         return view('todos.index', [

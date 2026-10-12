@@ -6,8 +6,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Direction;
 use App\Models\Team;
 use App\Models\User;
-use App\Services\Finance\CatalogService;
-use App\Services\Finance\Input;
 use App\Services\People\UserService;
 use App\Services\Projects\ProjectAccess;
 use Illuminate\Http\RedirectResponse;
@@ -32,7 +30,7 @@ class EmployeesController extends Controller
         ]);
         $access = access();
         $data = [
-            'slug' => $role, 'fixedRole' => $fixed, 'filters' => $f,
+            'slug' => $role, 'fixedRole' => $fixed, 'titleKey' => ['MANAGER' => 'titleManagers', 'ROP' => 'titleRops', 'EXECUTOR' => 'titleExecutors'][$fixed] ?? 'title', 'filters' => $f,
             'users' => UserService::list(['q' => $f['q'] ?? null, 'roleCode' => $fixed ?? ($f['role'] ?? null), 'teamId' => $f['team'] ?? null, 'status' => $f['status'] ?? null]),
             'teams' => Team::orderBy('name')->pluck('name', 'id')->all(),
             'directions' => Direction::where('is_active', true)->orderBy('sort')->get(),
@@ -47,10 +45,6 @@ class EmployeesController extends Controller
             $data['deleting'] = UserService::findManageable($id);
             $data['workload'] = UserService::workload($id);
             $data['transferTo'] = User::where('status', 'ACTIVE')->whereKeyNot($id)->with('role')->orderBy('full_name')->get();
-        }
-        if ($id = $request->query('rates')) {
-            $data['ratesFor'] = User::findOrFail($id);
-            $data['rates'] = CatalogService::employeeRates($id);
         }
 
         return view('people.employees', $data);
@@ -130,30 +124,6 @@ class EmployeesController extends Controller
         UserService::remove($id, $data['transfer_to_id'] ?? null);
 
         return redirect($this->listUrl($request))->with('ok', t('employees.deleted'));
-    }
-
-    /** Личные сдельные ставки (только CEO — payroll.manage на всю компанию). */
-    public function saveRates(Request $request, string $id): RedirectResponse
-    {
-        $rates = [];
-        foreach ((array) $request->input('rates', []) as $workItemId => $r) {
-            $rates[] = ['work_item_id' => (string) $workItemId, 'rate' => Input::money($r['rate'] ?? null), 'currency' => $r['currency'] ?? 'UZS'];
-        }
-        validator(['rates' => $rates], [
-            'rates' => ['array', 'max:200'],
-            'rates.*.work_item_id' => ['required', 'uuid', 'exists:work_items,id'],
-            'rates.*.rate' => ['nullable', Input::MONEY],
-            'rates.*.currency' => ['required', Rule::in(['UZS', 'USD'])],
-        ])->validate();
-        CatalogService::saveEmployeeRates($id, $rates);
-
-        return redirect($this->listUrl($request))->with('ok', t('rates.saved'));
-    }
-
-    /** Свои сдельные ставки (видны каждому, кроме изменения). */
-    public function myRates(): View
-    {
-        return view('people.rates', ['user' => access()->user, 'rates' => CatalogService::employeeRates(access()->id())]);
     }
 
     private function listUrl(Request $request): string

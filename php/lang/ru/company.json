@@ -36,5 +36,10 @@
   "phone": "Телефон",
   "email": "Email",
   "website": "Сайт",
-  "saveRequisites": "Сохранить реквизиты"
+  "saveRequisites": "Сохранить реквизиты",
+  "errors": {
+    "inn": "ИНН — 9 цифр",
+    "mfo": "МФО — 5 цифр",
+    "account": "Расчётный счёт — 20 цифр"
+  }
 }

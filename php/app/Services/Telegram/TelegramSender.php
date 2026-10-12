@@ -2,7 +2,7 @@
 
 namespace App\Services\Telegram;
 
-use App\Support\Db;
+use App\Support\Db as DbSupport;
 use App\Support\Lang;
 use Illuminate\Support\Facades\DB;
 use Throwable;
@@ -36,7 +36,7 @@ final class TelegramSender
                 "SELECT d.id, d.title, d.body, d.link, d.attempts, u.telegram_chat_id, u.locale
                  FROM notification_deliveries d JOIN users u ON u.id = d.user_id
                  WHERE d.status = 'PENDING' AND d.next_attempt_at <= UTC_TIMESTAMP(3)
-                 ORDER BY d.created_at LIMIT ".$limit.' '.Db::lockRows(),
+                 ORDER BY d.created_at LIMIT ".$limit.' '.DbSupport::lockRows(),
             );
             foreach ($rows as $d) {
                 $q = DB::table('notification_deliveries')->where('id', $d->id);
