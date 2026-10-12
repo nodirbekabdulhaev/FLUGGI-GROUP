@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Crm;
 
+use App\Models\Deal;
 use App\Models\LeadSource;
 use App\Models\Service;
 use App\Services\Crm\ClientService;
@@ -54,7 +55,7 @@ class ClientController extends CrmController
         $deals = access()->can('deal.read')
             ? CrmAccess::deals()->where('client_id', $client->id)->with(['owner', 'stage'])->orderByDesc('created_at')->get()
             : collect();
-        $counts = \App\Models\Deal::where('client_id', $client->id)->selectRaw("COUNT(*) AS total, SUM(status = 'OPEN') AS open")->first();
+        $counts = Deal::where('client_id', $client->id)->selectRaw("COUNT(*) AS total, SUM(status = 'OPEN') AS open")->first();
 
         return view('crm.clients.show', [
             'client' => $client,

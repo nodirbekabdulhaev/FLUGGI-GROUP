@@ -8,6 +8,7 @@ use App\Models\Lead;
 use App\Models\StageHistory;
 use App\Support\Audit;
 use App\Support\Format;
+use App\Support\Lang;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -102,7 +103,7 @@ final class TimelineService
     {
         $p = $a->payload ?? [];
         $key = 'crm.activity.'.$a->type;
-        $label = \App\Support\Lang::has($key) || \App\Support\Lang::has($key, 'ru') ? t($key) : $a->type;
+        $label = Lang::has($key) || Lang::has($key, 'ru') ? t($key) : $a->type;
         $str = fn ($v) => is_scalar($v) ? (string) $v : '';
 
         return match ($a->type) {
@@ -128,7 +129,7 @@ final class TimelineService
     {
         $key = Str::camel(preg_replace('/_id$/', '', $field));
 
-        return \App\Support\Lang::has('crm.fields.'.$key, 'ru') ? t('crm.fields.'.$key) : $field;
+        return Lang::has('crm.fields.'.$key, 'ru') ? t('crm.fields.'.$key) : $field;
     }
 
     private static function change(?array $c): string

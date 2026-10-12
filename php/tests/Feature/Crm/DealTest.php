@@ -6,7 +6,9 @@ use App\Models\AuditLog;
 use App\Models\Client;
 use App\Models\Deal;
 use App\Models\OutboxEvent;
+use App\Services\Crm\DealService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 
 /** Сделки: создание, ворота этапов (BUSINESS_RULES §3), закрытие, возврат, удаление. */
 class DealTest extends CrmTestCase
@@ -40,7 +42,7 @@ class DealTest extends CrmTestCase
     private function proposalRow(Deal $deal): array
     {
         $cols = collect(DB::select('SHOW COLUMNS FROM proposals'))->keyBy('Field');
-        $row = ['id' => (string) \Illuminate\Support\Str::uuid(), 'deal_id' => $deal->id, 'status' => 'SENT'];
+        $row = ['id' => (string) Str::uuid(), 'deal_id' => $deal->id, 'status' => 'SENT'];
         foreach ($cols as $name => $c) {
             if (isset($row[$name]) || $c->Null === 'YES' || $c->Default !== null || str_contains($c->Extra, 'auto_increment')) {
                 continue;
@@ -112,6 +114,6 @@ class DealTest extends CrmTestCase
     {
         $deal = $this->deal();
         $this->actingAsUser($this->manager)->get("/sales/deals/{$deal->id}")->assertOk()->assertSee(t('sales.money.receivable'));
-        $this->assertSame('0', \App\Services\Crm\DealService::money($deal)['receivable'] === '0.00' ? '0' : 'x');
+        $this->assertSame('0', DealService::money($deal)['receivable'] === '0.00' ? '0' : 'x');
     }
 }

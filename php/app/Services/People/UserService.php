@@ -99,7 +99,7 @@ final class UserService
         self::assertTeam($input['team_id'] ?? null);
         self::assertDirections($input['direction_ids']);
         $temporary = empty($input['password']) ? Passwords::temporary() : null;
-        $hash = Passwords::hash($input['password'] ?: $temporary);
+        $hash = Passwords::hash($temporary ?? $input['password']);
 
         $user = DB::transaction(function () use ($input, $role, $hash) {
             $u = User::create([

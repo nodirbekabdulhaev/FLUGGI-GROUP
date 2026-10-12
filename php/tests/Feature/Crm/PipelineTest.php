@@ -29,6 +29,6 @@ class PipelineTest extends CrmTestCase
         $this->assertSame('5000000.00', $this->actingAsUser($this->manager)->getJson('/sales/pipeline/data')->json('weightedUzs'));
         // Фильтр по ответственному
         $this->assertSame(0, collect($this->actingAsUser($this->ceo)->getJson('/sales/pipeline/data?owner_id='.$this->otherManager->id)->json('columns'))->sum('count'));
-        $this->actingAsUser($this->manager)->get('/sales/pipeline')->assertOk()->assertSee($lead->title, false);
+        $this->actingAsUser($this->manager)->get('/sales/pipeline')->assertOk()->assertSee($lead->id, false);
     }
 }

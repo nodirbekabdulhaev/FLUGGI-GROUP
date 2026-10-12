@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Crm;
 
+use App\Models\Lead;
 use App\Models\LossReason;
 use App\Models\Service;
 use App\Services\Crm\Crm;
@@ -74,7 +75,7 @@ class DealController extends CrmController
 
         return view('crm.deals.show', [
             'deal' => $deal,
-            'leadId' => \App\Models\Lead::where('deal_id', $deal->id)->value('id'),
+            'leadId' => Lead::where('deal_id', $deal->id)->value('id'),
             'stages' => Crm::stages('DEAL'),
             'activities' => TimelineService::activities($target),
             'history' => TimelineService::history($target),

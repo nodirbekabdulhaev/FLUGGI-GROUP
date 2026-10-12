@@ -3,7 +3,6 @@
 namespace Tests\Feature\Crm;
 
 use App\Models\Lead;
-use App\Models\User;
 
 /** Разграничение данных CRM (ТЗ §65): OWN / TEAM / ALL, чужое — 404, без права — 403. */
 class AccessTest extends CrmTestCase

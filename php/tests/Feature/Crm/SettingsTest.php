@@ -9,7 +9,9 @@ use App\Models\ExchangeRate;
 use App\Models\LossReason;
 use App\Models\Service;
 use App\Models\Team;
+use App\Services\References\ExchangeRates;
 use App\Support\Format;
+use Brick\Math\BigDecimal;
 
 /** Справочники CRM и отделы продаж. */
 class SettingsTest extends CrmTestCase
@@ -46,7 +48,7 @@ class SettingsTest extends CrmTestCase
         $this->actingAsUser($this->ceo)->put('/settings/references/exchange-rate', ['rate_to_uzs' => '12 700,5'])->assertSessionHasNoErrors();
         $this->actingAsUser($this->ceo)->put('/settings/references/exchange-rate', ['rate_to_uzs' => '12800'])->assertSessionHasNoErrors();
         $this->assertSame(1, ExchangeRate::whereDate('date', Format::today()->toDateString())->count());
-        $this->assertSame(0, \Brick\Math\BigDecimal::of(\App\Services\References\ExchangeRates::rateFor('USD'))->compareTo('12800'));
+        $this->assertSame(0, BigDecimal::of(ExchangeRates::rateFor('USD'))->compareTo('12800'));
     }
 
     public function test_teams(): void

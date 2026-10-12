@@ -10,6 +10,7 @@ use App\Models\Lead;
 use App\Models\Meeting;
 use App\Models\OutboxEvent;
 use App\Models\StageHistory;
+use App\Services\Crm\TimelineService;
 
 /** Сценарий §84, шаги 3–8: лид → встреча → квалификация в клиента и сделку. */
 class LeadFlowTest extends CrmTestCase
@@ -65,7 +66,7 @@ class LeadFlowTest extends CrmTestCase
         // Карточка сделки видна менеджеру; таймлайн включает историю лида
         $this->actingAsUser($this->manager)->get("/sales/deals/{$dealId}")->assertOk()
             ->assertSee('Hamza Textile')->assertSee(t('crm.activity.lead.converted'))->assertSee(t('crm.activity.meeting.completed'));
-        $types = \App\Services\Crm\TimelineService::activities(['deal_id' => $dealId])->pluck('type')->all();
+        $types = TimelineService::activities(['deal_id' => $dealId])->pluck('type')->all();
         foreach (['lead.created', 'meeting.created', 'meeting.completed', 'lead.converted'] as $type) {
             $this->assertContains($type, $types);
         }

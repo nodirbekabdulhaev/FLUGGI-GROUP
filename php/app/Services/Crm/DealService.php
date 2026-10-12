@@ -9,6 +9,7 @@ use App\Models\Deal;
 use App\Services\References\ExchangeRates;
 use App\Support\Audit;
 use App\Support\Outbox;
+use Brick\Math\BigDecimal;
 use Illuminate\Support\Facades\DB;
 
 /**
@@ -201,9 +202,9 @@ final class DealService
         $contract = (string) (DB::table('contracts')->where('deal_id', $deal->id)->where('status', 'SIGNED')->sum('amount_uzs') ?: '0');
         $paid = (string) (DB::table('payments')->where('deal_id', $deal->id)->where('status', 'PAID')->where('type', '<>', 'REFUND')->sum('amount_uzs') ?: '0');
         $refunded = (string) (DB::table('payments')->where('deal_id', $deal->id)->where('status', 'PAID')->where('type', 'REFUND')->sum('amount_uzs') ?: '0');
-        $receivable = \Brick\Math\BigDecimal::of($contract)->minus($paid)->plus($refunded);
+        $receivable = BigDecimal::of($contract)->minus($paid)->plus($refunded);
         if ($receivable->isNegative()) {
-            $receivable = \Brick\Math\BigDecimal::zero();
+            $receivable = BigDecimal::zero();
         }
         $project = DB::table('projects')->where('deal_id', $deal->id)->first(['id', 'name', 'number', 'status']);
 
