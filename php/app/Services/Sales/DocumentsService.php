@@ -6,7 +6,6 @@ use App\Domain\Words;
 use App\Models\Client;
 use App\Models\Proposal;
 use App\Models\ProposalItem;
-use App\Services\Crm\CrmAccess;
 use App\Support\Audit;
 use App\Support\Settings;
 use Illuminate\Support\Facades\DB;
@@ -124,22 +123,6 @@ TXT;
     }
 
     // ─────────────── Реквизиты клиента ───────────────
-
-    public static function saveClientRequisites(string $clientId, array $input): array
-    {
-        $before = CrmAccess::client($clientId, 'client.update');
-        $value = [];
-        foreach (self::REQUISITES as $k) {
-            $value[$k] = trim((string) ($input[$k] ?? ''));
-        }
-        DB::transaction(function () use ($before, $value) {
-            $old = $before->requisites;
-            $before->update(['requisites' => $value]);
-            Audit::log('client.requisites', 'client', $before->id, ['requisites' => ['old' => $old, 'new' => $value]]);
-        });
-
-        return $value;
-    }
 
     public static function requisitesOf(Client $c): array
     {

@@ -2,8 +2,8 @@
 
 namespace App\Services\Telegram;
 
-use App\Support\Db as DbSupport;
 use App\Support\Lang;
+use App\Support\MySql as DbSupport;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 

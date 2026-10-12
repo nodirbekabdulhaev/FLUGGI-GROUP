@@ -1,7 +1,9 @@
 @extends('layouts.app')
 @section('title', t('sales.payments.title'))
 @section('content')
-    <x-page-header :title="t('sales.payments.title')" :subtitle="t('sales.payments.subtitle')" />
+    <x-page-header :title="t('sales.payments.title')" :subtitle="t('sales.payments.subtitle')">
+        @includeIf('analytics.partials.export-menu', ['entity' => 'payments'])
+    </x-page-header>
     <div class="card overflow-hidden">
         @component('sales.partials.filters', ['filtered' => collect($f)->filter()->isNotEmpty()])
             <x-select name="status" class="sm:w-52" :label="t('sales.status')" :placeholder="t('sales.allStatuses')" :value="$f['status'] ?? ''"

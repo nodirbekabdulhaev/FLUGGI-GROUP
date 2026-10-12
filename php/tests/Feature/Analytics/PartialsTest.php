@@ -2,6 +2,8 @@
 
 namespace Tests\Feature\Analytics;
 
+use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Support\ViewErrorBag;
 use Tests\Feature\Notifications\CommsFixtures;
 use Tests\TestCase;
 
@@ -14,7 +16,7 @@ class PartialsTest extends TestCase
     {
         $this->fixtures();
         $s = $this->sale($this->manager, 'Alfa');
-        view()->share('errors', new \Illuminate\Support\ViewErrorBag);
+        view()->share('errors', new ViewErrorBag);
         $this->as($this->ceo);
         $html = view('analytics.partials.export-menu', ['entity' => 'payments'])->render();
         $this->assertStringContainsString('/exports/payments?format=xlsx', $html);
@@ -25,7 +27,7 @@ class PartialsTest extends TestCase
         $this->assertSame('', trim(view('analytics.partials.export-menu', ['entity' => 'leads'])->render()));
         $this->assertSame('', trim(view('analytics.partials.accountant-button')->render()));
         $this->as($this->otherManager);
-        $this->expectException(\Illuminate\Database\Eloquent\ModelNotFoundException::class);
+        $this->expectException(ModelNotFoundException::class);
         view('analytics.partials.client-insight', ['client' => $s['client']])->render();
     }
 }

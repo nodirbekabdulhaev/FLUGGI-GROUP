@@ -260,7 +260,6 @@ class SalesFlowTest extends SalesTestCase
             $html = view('sales.partials.'.$partial, ['deal' => $deal->fresh()])->render();
             $this->assertNotSame('', trim($html), $partial);
         }
-        $this->assertStringContainsString(route('sales.requisites.update', $deal->client_id), view('sales.partials.client-requisites', ['client' => $deal->client])->render());
         $this->as($this->executor);
         foreach (['deal-proposals', 'deal-contracts', 'deal-payments'] as $partial) {
             $this->assertSame('', trim(view('sales.partials.'.$partial, ['deal' => $deal->fresh()])->render()), $partial);

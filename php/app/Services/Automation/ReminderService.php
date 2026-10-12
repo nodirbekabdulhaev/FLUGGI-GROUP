@@ -15,6 +15,8 @@ use App\Models\Todo;
 use App\Services\Notifications\NotificationEvents;
 use App\Services\Notifications\Notifier;
 use App\Support\Format;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;
@@ -135,7 +137,7 @@ final class ReminderService
         // Оплата просрочена (ожидаемая дата прошла)
         $rows = Payment::with(['deal' => fn ($q) => $q->withTrashed()])->where('status', 'PENDING')->where('due_date', '<', $today)->get();
         foreach ($rows as $p) {
-            $amount = Format::number(\Brick\Math\BigDecimal::of((string) $p->amount)->toScale(0, \Brick\Math\RoundingMode::HalfUp), 0).' '.$p->currency;
+            $amount = Format::number(BigDecimal::of((string) $p->amount)->toScale(0, RoundingMode::HalfUp), 0).' '.$p->currency;
             $add('payment.overdue', self::sendOnce('payment.overdue', $p->id, [$p->deal?->owner_id, Notifier::teamHead($p->deal?->team_id)], 'payment.overdue',
                 fn () => [t('automation.remind.paymentOverdue'), $p->deal?->title.': '.$amount], '/sales/deals/'.$p->deal_id));
         }

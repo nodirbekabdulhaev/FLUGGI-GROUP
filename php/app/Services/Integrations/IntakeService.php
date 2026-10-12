@@ -3,6 +3,7 @@
 namespace App\Services\Integrations;
 
 use App\Domain\LeadScore;
+use App\Domain\Money;
 use App\Exceptions\BusinessRule;
 use App\Models\Activity;
 use App\Models\DealStage;
@@ -17,7 +18,6 @@ use App\Services\Crm\Activities;
 use App\Services\Crm\CrmAccess;
 use App\Services\Notifications\Notifier;
 use App\Services\References\ExchangeRates;
-use App\Domain\Money;
 use Illuminate\Support\Facades\DB;
 
 /**

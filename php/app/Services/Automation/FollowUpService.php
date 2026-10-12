@@ -11,6 +11,7 @@ use App\Models\FollowUp;
 use App\Models\Project;
 use App\Services\Crm\Activities;
 use App\Services\Crm\CrmAccess;
+use App\Services\Notifications\Notifier;
 use App\Services\References\ExchangeRates;
 use App\Support\Audit;
 use App\Support\Outbox;
@@ -145,7 +146,7 @@ final class FollowUpService
         $today = Tasks::companyDate($now);
         $due = FollowUp::with('client')->where('status', 'PENDING')->whereNull('notified_at')->where('due_date', '<=', $today)->get();
         foreach ($due as $f) {
-            \App\Services\Notifications\Notifier::notify([$f->owner_id], 'followup.due', fn () => [t('followUps.kinds.'.$f->kind), $f->client?->name], '/sales/follow-ups');
+            Notifier::notify([$f->owner_id], 'followup.due', fn () => [t('followUps.kinds.'.$f->kind), $f->client?->name], '/sales/follow-ups');
             $f->update(['notified_at' => $now]);
         }
 

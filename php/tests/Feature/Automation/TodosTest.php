@@ -8,6 +8,7 @@ use App\Models\Todo;
 use App\Services\Automation\ReminderService;
 use App\Services\Automation\Scheduler;
 use App\Services\Todos\RecurringTodoService;
+use App\Support\Lang;
 use Carbon\CarbonImmutable;
 use Tests\Feature\Notifications\CommsFixtures;
 use Tests\TestCase;
@@ -124,7 +125,7 @@ class TodosTest extends TestCase
         foreach (['ru', 'uz'] as $loc) {
             $this->rop->update(['locale' => $loc]);
             foreach (['mine', 'assigned', 'all', 'recurring'] as $v) {
-                $this->actingAsUser($this->rop)->get('/todos?view='.$v)->assertOk()->assertSee(\App\Support\Lang::get('todos.pageTitle', [], $loc));
+                $this->actingAsUser($this->rop)->get('/todos?view='.$v)->assertOk()->assertSee(Lang::get('todos.pageTitle', [], $loc));
             }
         }
         $this->actingAsUser($this->rop)->get('/todos?view=assigned')->assertSee('Видимое дело');

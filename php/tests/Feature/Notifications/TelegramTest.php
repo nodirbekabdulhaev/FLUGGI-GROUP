@@ -7,6 +7,7 @@ use App\Models\NotificationDelivery;
 use App\Models\Setting;
 use App\Services\Telegram\TelegramSender;
 use App\Services\Telegram\TelegramService;
+use App\Support\Lang;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
@@ -164,7 +165,7 @@ class TelegramTest extends TestCase
     {
         foreach (['ru', 'uz'] as $loc) {
             $this->manager->update(['locale' => $loc]);
-            $this->actingAsUser($this->manager)->get('/profile')->assertOk()->assertSee(\App\Support\Lang::get('telegram.connect', [], $loc));
+            $this->actingAsUser($this->manager)->get('/profile')->assertOk()->assertSee(Lang::get('telegram.connect', [], $loc));
         }
         $this->link($this->manager);
         $this->actingAsUser($this->manager)->get('/profile')->assertOk()->assertSee('@aziz')->assertSee(t('telegram.unlink'));

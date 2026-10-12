@@ -5,7 +5,7 @@ namespace App\Support;
 use Illuminate\Support\Facades\DB as Facade;
 
 /** Особенности MySQL хостинга. */
-final class Db
+final class MySql
 {
     /** SKIP LOCKED есть в MySQL 8+ и MariaDB 10.6+; на MySQL 5.7 — обычная блокировка. */
     public static function supportsSkipLocked(string $version): bool

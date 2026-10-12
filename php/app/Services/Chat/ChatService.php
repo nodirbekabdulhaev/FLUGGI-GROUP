@@ -8,6 +8,7 @@ use App\Models\Conversation;
 use App\Models\ConversationMember;
 use App\Models\User;
 use App\Services\Notifications\Notifier;
+use Carbon\CarbonImmutable;
 use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -132,7 +133,7 @@ final class ChatService
         self::member($meId, $conversationId);
 
         return ChatMessage::with(['author' => fn ($q) => $q->withTrashed()])->where('conversation_id', $conversationId)
-            ->when($before, fn ($q) => $q->where('created_at', '<', \Carbon\CarbonImmutable::parse($before)->utc()))
+            ->when($before, fn ($q) => $q->where('created_at', '<', CarbonImmutable::parse($before)->utc()))
             ->orderByDesc('created_at')->orderByDesc('id')->limit($limit)->get()
             ->reverse()->values()->map(fn ($m) => self::dto($m, $meId))->all();
     }

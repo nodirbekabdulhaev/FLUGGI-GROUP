@@ -51,7 +51,7 @@ PHP-версия Fluggi CRM/ERP для **обычного виртуальног
 - Номера: `Format::code('L', $lead->number)` → `L-00001`. После `create()` поле `number`
   (AUTO_INCREMENT) появляется только после `$model->refresh()`.
 - Поиск по тексту: `LIKE` (сравнение в MySQL уже без учёта регистра, utf8mb4_unicode_ci).
-- Блокировка строк очередей: `App\Support\Db::lockRows()` (`FOR UPDATE SKIP LOCKED` на MySQL 8, `FOR UPDATE` на 5.7).
+- Блокировка строк очередей: `App\Support\MySql::lockRows()` (`FOR UPDATE SKIP LOCKED` на MySQL 8, `FOR UPDATE` на 5.7).
 - Настройки: `App\Support\Settings::automation()`, `::company()`, `::get('ключ')`, `::save()`.
 - Никаких вымышленных данных, заглушек «скоро будет», TODO. Нет данных — пустое состояние `<x-empty>`.
 - Секреты — только из `.env`; в коде читать через `config('fluggi.…')` (`config/fluggi.php`, дополнять там). `env()` вне `config/` не использовать (кэш конфигурации на хостинге).

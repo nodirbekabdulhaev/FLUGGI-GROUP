@@ -13,7 +13,12 @@ class SecurityHeaders
     {
         $response = $next($request);
         $response->headers->set('X-Content-Type-Options', 'nosniff');
-        $response->headers->set('X-Frame-Options', 'DENY');
+        if ($request->is('f/*')) {
+            // Публичная форма заявки встраивается на сайт компании через iframe (embed.js)
+            $response->headers->set('Content-Security-Policy', 'frame-ancestors *');
+        } else {
+            $response->headers->set('X-Frame-Options', 'DENY');
+        }
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
         if ($request->isSecure()) {

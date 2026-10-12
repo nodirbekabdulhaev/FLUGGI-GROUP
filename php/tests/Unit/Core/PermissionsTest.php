@@ -2,7 +2,7 @@
 
 namespace Tests\Unit\Core;
 
-use App\Support\Db;
+use App\Support\MySql;
 use App\Support\Permissions;
 use PHPUnit\Framework\TestCase;
 
@@ -35,11 +35,11 @@ class PermissionsTest extends TestCase
 
     public function test_skip_locked_support(): void
     {
-        $this->assertTrue(Db::supportsSkipLocked('8.0.46'));
-        $this->assertTrue(Db::supportsSkipLocked('8.4.2-log'));
-        $this->assertFalse(Db::supportsSkipLocked('5.7.44-log'));
-        $this->assertTrue(Db::supportsSkipLocked('10.6.12-MariaDB'));
-        $this->assertFalse(Db::supportsSkipLocked('10.3.39-MariaDB-0+deb10u1'));
-        $this->assertTrue(Db::supportsSkipLocked('11.4.2-MariaDB'));
+        $this->assertTrue(MySql::supportsSkipLocked('8.0.46'));
+        $this->assertTrue(MySql::supportsSkipLocked('8.4.2-log'));
+        $this->assertFalse(MySql::supportsSkipLocked('5.7.44-log'));
+        $this->assertTrue(MySql::supportsSkipLocked('10.6.12-MariaDB'));
+        $this->assertFalse(MySql::supportsSkipLocked('10.3.39-MariaDB-0+deb10u1'));
+        $this->assertTrue(MySql::supportsSkipLocked('11.4.2-MariaDB'));
     }
 }

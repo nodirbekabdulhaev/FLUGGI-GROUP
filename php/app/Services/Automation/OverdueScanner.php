@@ -4,7 +4,7 @@ namespace App\Services\Automation;
 
 use App\Domain\Tasks;
 use App\Models\OutboxEvent;
-use App\Support\Db as DbSupport;
+use App\Support\MySql as DbSupport;
 use Carbon\CarbonImmutable;
 use DateTimeInterface;
 use Illuminate\Support\Facades\DB;

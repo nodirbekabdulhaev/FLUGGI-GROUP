@@ -6,8 +6,6 @@ use App\Domain\Analytics;
 use App\Domain\Forecast;
 use App\Domain\People;
 use App\Domain\Tasks;
-use App\Models\Deal;
-use App\Models\Lead;
 use App\Services\Crm\CrmAccess;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;

@@ -66,7 +66,6 @@ Route::name('sales.')->group(function () {
 
     Route::get('/settings/documents', [DocumentController::class, 'settings'])->middleware('perm:settings.manage,ALL')->name('documents.settings');
     Route::put('/settings/documents', [DocumentController::class, 'saveSettings'])->middleware('perm:settings.manage,ALL')->name('documents.save');
-    Route::put('/clients/{id}/requisites', [DocumentController::class, 'saveRequisites'])->whereUuid('id')->middleware('perm:client.update')->name('requisites.update');
 
     // Личные сдельные ставки (карточка сотрудника): свои — каждый, чужие — CEO (payroll.manage)
     Route::get('/team/employees/{id}/rates', [TariffController::class, 'rates'])->whereUuid('id')->middleware('auth.only')->name('rates.show');

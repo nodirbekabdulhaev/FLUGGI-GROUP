@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\Integrations\InboxService;
 use App\Support\Format;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
@@ -50,7 +51,7 @@ class InboxController extends Controller
         return response()->json($rows->map(fn ($m) => self::messageDto($m))->all());
     }
 
-    public function lead(Request $request, string $id): JsonResponse|\Illuminate\Http\RedirectResponse
+    public function lead(Request $request, string $id): JsonResponse|RedirectResponse
     {
         $t = InboxService::createLead(access(), $id);
         $lead = $t->lead ? ['id' => $t->lead->id, 'number' => Format::code('L', $t->lead->number)] : null;

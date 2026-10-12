@@ -5,6 +5,8 @@ namespace Tests\Feature\Notifications;
 use App\Models\Notification;
 use App\Models\NotificationDelivery;
 use App\Models\NotificationSetting;
+use App\Models\Task;
+use App\Support\Lang;
 use App\Support\Outbox;
 use App\Support\Settings;
 use Tests\TestCase;
@@ -88,7 +90,7 @@ class NotificationsTest extends TestCase
         foreach (['ru', 'uz'] as $loc) {
             $this->manager->update(['locale' => $loc]);
             $this->actingAsUser($this->manager)->get('/notifications')->assertOk()->assertSee('Мой')->assertDontSee('Чужой')
-                ->assertSee(\App\Support\Lang::get('notifications.title', [], $loc));
+                ->assertSee(Lang::get('notifications.title', [], $loc));
         }
         $this->getJson('/notifications/unread-count')->assertExactJson(['count' => 1]);
         $this->postJson('/notifications/'.$foreign->id.'/read')->assertNoContent();
@@ -105,7 +107,7 @@ class NotificationsTest extends TestCase
     public function test_task_and_project_events(): void
     {
         $s = $this->sale($this->manager);
-        $task = \App\Models\Task::create(['project_id' => $s['project']->id, 'title' => 'Дизайн', 'assignee_id' => $this->executor->id, 'creator_id' => $this->manager->id, 'deadline' => now()->addDay()]);
+        $task = Task::create(['project_id' => $s['project']->id, 'title' => 'Дизайн', 'assignee_id' => $this->executor->id, 'creator_id' => $this->manager->id, 'deadline' => now()->addDay()]);
         Outbox::publish('task.assigned', ['taskId' => $task->id, 'assigneeId' => $this->executor->id], $this->manager->id);
         Outbox::publish('task.status_changed', ['taskId' => $task->id, 'projectId' => $s['project']->id, 'from' => 'IN_PROGRESS', 'to' => 'REVIEW'], $this->executor->id);
         Outbox::publish('task.status_changed', ['taskId' => $task->id, 'projectId' => $s['project']->id, 'from' => 'REVIEW', 'to' => 'IN_PROGRESS'], $this->manager->id);

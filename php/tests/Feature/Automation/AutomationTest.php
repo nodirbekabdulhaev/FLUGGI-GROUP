@@ -18,6 +18,8 @@ use App\Services\Automation\OverdueScanner;
 use App\Services\Automation\ReminderService;
 use App\Services\Automation\ReportService;
 use App\Services\Automation\Scheduler;
+use App\Support\Format;
+use App\Support\Lang;
 use App\Support\Outbox;
 use App\Support\Settings;
 use Tests\Feature\Notifications\CommsFixtures;
@@ -86,7 +88,7 @@ class AutomationTest extends TestCase
         foreach ([$this->manager, $this->rop, $this->ceo] as $u) {
             $u->employee->update(['schedule_id' => $schedule->id]);
         }
-        Attendance::create(['user_id' => $this->rop->id, 'date' => \App\Support\Format::today()->toDateString(), 'status' => 'PRESENT', 'check_in' => now()]);
+        Attendance::create(['user_id' => $this->rop->id, 'date' => Format::today()->toDateString(), 'status' => 'PRESENT', 'check_in' => now()]);
         $r = $this->actingAsUser($this->ceo)->postJson('/automation/jobs/absences/run')->json('result');
         $this->assertGreaterThanOrEqual(1, $r['absent']);
         $this->assertSame('ABSENT', Attendance::where('user_id', $this->manager->id)->value('status'));
@@ -138,7 +140,7 @@ class AutomationTest extends TestCase
         $this->postJson('/sales/follow-ups/'.$items[1]->id.'/complete', ['status' => 'SKIPPED', 'createDeal' => true])->assertStatus(422);
         foreach (['ru', 'uz'] as $loc) {
             $this->manager->update(['locale' => $loc]);
-            $this->actingAsUser($this->manager)->get('/sales/follow-ups?view=closed')->assertOk()->assertSee(\App\Support\Lang::get('followUps.title', [], $loc));
+            $this->actingAsUser($this->manager)->get('/sales/follow-ups?view=closed')->assertOk()->assertSee(Lang::get('followUps.title', [], $loc));
         }
     }
 
@@ -201,6 +203,6 @@ class AutomationTest extends TestCase
         $this->assertTrue(AuditLog::where('action', 'settings.company')->exists());
         $this->actingAsUser($this->rop)->putJson('/settings/automation/company', ['taxRegime' => 'OTHER'])->assertForbidden();
         $this->ceo->update(['locale' => 'uz']);
-        $this->actingAsUser($this->ceo)->get('/settings/automation')->assertOk()->assertSee(\App\Support\Lang::get('company.title', [], 'uz'));
+        $this->actingAsUser($this->ceo)->get('/settings/automation')->assertOk()->assertSee(Lang::get('company.title', [], 'uz'));
     }
 }

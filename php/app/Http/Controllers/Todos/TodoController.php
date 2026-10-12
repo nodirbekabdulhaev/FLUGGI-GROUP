@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Todos;
 
 use App\Http\Controllers\Controller;
-use App\Models\Client;
 use App\Models\User;
 use App\Services\Crm\CrmAccess;
 use App\Services\Todos\RecurringTodoService;
@@ -12,6 +11,7 @@ use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /**
@@ -144,7 +144,7 @@ class TodoController extends Controller
             'is_active' => ['sometimes', 'boolean'],
         ]);
         if ($data['frequency'] === 'QUARTERLY' && ! empty($data['month']) && $data['month'] > 3) {
-            throw \Illuminate\Validation\ValidationException::withMessages(['month' => t('todos.errors.quarterMonth')]);
+            throw ValidationException::withMessages(['month' => t('todos.errors.quarterMonth')]);
         }
         $data['is_active'] = $request->boolean('is_active', ! $request->has('_form'));
 

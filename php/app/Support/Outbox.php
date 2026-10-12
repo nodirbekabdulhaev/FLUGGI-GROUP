@@ -49,7 +49,7 @@ final class Outbox
             $rows = DB::select(
                 'SELECT id, type, payload, actor_id, created_at, attempts FROM outbox_events
                  WHERE processed_at IS NULL AND available_at <= UTC_TIMESTAMP(3) AND attempts < ?
-                 ORDER BY created_at LIMIT '.self::BATCH.' '.DB::lockRows(),
+                 ORDER BY created_at LIMIT '.self::BATCH.' '.MySql::lockRows(),
                 [self::MAX_ATTEMPTS],
             );
             foreach ($rows as $row) {

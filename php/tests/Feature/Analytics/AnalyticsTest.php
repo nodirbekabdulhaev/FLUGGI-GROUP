@@ -2,21 +2,24 @@
 
 namespace Tests\Feature\Analytics;
 
+use App\Http\Controllers\Analytics\AnalyticsController;
 use App\Models\AuditLog;
-use App\Models\Client;
 use App\Models\Contract;
-use App\Models\Deal;
 use App\Models\Expense;
 use App\Models\LeadSource;
 use App\Models\LossReason;
+use App\Models\Meeting;
 use App\Models\Notification;
 use App\Models\Payment;
+use App\Models\Proposal;
 use App\Services\Analytics\AnalyticsService;
 use App\Services\Analytics\ClientInsights;
 use App\Services\Analytics\Period;
 use App\Services\Analytics\SearchService;
 use App\Services\Automation\Scheduler;
 use App\Support\Format;
+use App\Support\Lang;
+use App\Support\Settings;
 use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\Feature\Notifications\CommsFixtures;
 use Tests\TestCase;
@@ -41,8 +44,8 @@ class AnalyticsTest extends TestCase
     public function test_sales_funnel_sources_losses_and_scopes(): void
     {
         $s = $this->sale($this->manager, 'Alfa');
-        \App\Models\Meeting::create(['lead_id' => $s['lead']->id, 'manager_id' => $this->manager->id, 'starts_at' => now(), 'type' => 'OFFLINE', 'status' => 'DONE', 'created_by_id' => $this->manager->id]);
-        \App\Models\Proposal::create(['deal_id' => $s['deal']->id, 'client_id' => $s['client']->id, 'manager_id' => $this->manager->id, 'title' => 'КП', 'status' => 'SENT', 'sent_at' => now()]);
+        Meeting::create(['lead_id' => $s['lead']->id, 'manager_id' => $this->manager->id, 'starts_at' => now(), 'type' => 'OFFLINE', 'status' => 'DONE', 'created_by_id' => $this->manager->id]);
+        Proposal::create(['deal_id' => $s['deal']->id, 'client_id' => $s['client']->id, 'manager_id' => $this->manager->id, 'title' => 'КП', 'status' => 'SENT', 'sent_at' => now()]);
         $src2 = LeadSource::where('code', 'INSTAGRAM')->value('id');
         $this->lead($this->manager, ['source_id' => $src2]);
         $reason = LossReason::first();
@@ -81,8 +84,8 @@ class AnalyticsTest extends TestCase
 
         foreach (['ru', 'uz'] as $loc) {
             $this->ceo->update(['locale' => $loc]);
-            foreach (\App\Http\Controllers\Analytics\AnalyticsController::TABS as $tab) {
-                $this->actingAsUser($this->ceo)->get('/analytics?tab='.$tab.'&period=month')->assertOk()->assertSee(\App\Support\Lang::get('analytics.tabs.'.$tab, [], $loc));
+            foreach (AnalyticsController::TABS as $tab) {
+                $this->actingAsUser($this->ceo)->get('/analytics?tab='.$tab.'&period=month')->assertOk()->assertSee(Lang::get('analytics.tabs.'.$tab, [], $loc));
             }
         }
         $this->actingAsUser($this->manager)->get('/analytics?tab=sales&period=custom&from=2026-01-01&to=2026-01-31')->assertOk();
@@ -207,7 +210,7 @@ class AnalyticsTest extends TestCase
         foreach ([['PROJECT', 'DESIGN', '700000', $s['project']->id], ['COMPANY', 'ADS', '300000', null], ['COMPANY', 'SERVICES', '200000', null]] as [$scope, $cat, $amount, $pid]) {
             Expense::create(['scope' => $scope, 'project_id' => $pid, 'category' => $cat, 'amount' => $amount, 'exchange_rate' => 1, 'amount_uzs' => $amount, 'expense_date' => $today, 'created_by_id' => $this->ceo->id]);
         }
-        \App\Support\Settings::save('company', ['name' => 'ООО «Fluggi»', 'inn' => '123456789', 'taxRegime' => 'IT_PARK'] + \App\Support\Settings::company());
+        Settings::save('company', ['name' => 'ООО «Fluggi»', 'inn' => '123456789', 'taxRegime' => 'IT_PARK'] + Settings::company());
         $year = (int) substr($today, 0, 4);
         $this->actingAsUser($this->rop)->get('/exports/accountant-package?year='.$year)->assertForbidden();
         $this->actingAsUser($this->ceo)->getJson('/exports/accountant-package?year=1999')->assertStatus(422);

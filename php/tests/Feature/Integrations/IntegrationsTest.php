@@ -2,6 +2,7 @@
 
 namespace Tests\Feature\Integrations;
 
+use App\Models\Activity;
 use App\Models\FormSubmission;
 use App\Models\Lead;
 use App\Models\LeadForm;
@@ -9,6 +10,9 @@ use App\Models\Notification;
 use App\Models\Service;
 use App\Models\SocialMessage;
 use App\Models\SocialThread;
+use App\Services\Integrations\IntakeService;
+use App\Services\Integrations\MetaService;
+use App\Support\Lang;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\Feature\Notifications\CommsFixtures;
@@ -90,7 +94,7 @@ class IntegrationsTest extends TestCase
         $this->assertStringContainsString('Нужен SMM', $lead->comment);
         $this->assertStringContainsString('Бюджет: больше 500$', $lead->comment);
         $this->assertStringContainsString('UTM: utm_source=google', $lead->comment);
-        $this->assertTrue(\App\Models\Activity::where('lead_id', $lead->id)->where('type', 'lead.created')->exists());
+        $this->assertTrue(Activity::where('lead_id', $lead->id)->where('type', 'lead.created')->exists());
         $this->drain();
         $this->assertGreaterThan(0, Notification::where('user_id', $this->manager->id)->where('type', 'lead.created')->count());
         $this->assertGreaterThan(0, Notification::where('user_id', $this->ceo->id)->where('type', 'lead.created')->count());
@@ -178,8 +182,8 @@ class IntegrationsTest extends TestCase
         $this->assertStringContainsString('какой_бюджет: 1000$', $ad->comment);
 
         $this->get('/settings/integrations')->assertOk()->assertSee(t('integrations.metaOn'))->assertSee('/hooks/meta');
-        $this->assertSame(1, \App\Services\Integrations\MetaService::status()['adsLeads']);
-        $this->assertSame(3, \App\Services\Integrations\MetaService::status()['threads']);
+        $this->assertSame(1, MetaService::status()['adsLeads']);
+        $this->assertSame(3, MetaService::status()['threads']);
         // Без права lead.update ответить нельзя
         $this->actingAsUser($this->executor)->postJson('/inbox/'.$buyer->id.'/reply', ['text' => 'x', 'commentId' => 'c2'])->assertForbidden();
     }
@@ -188,12 +192,12 @@ class IntegrationsTest extends TestCase
     {
         $this->actingAsUser($this->ceo)->put('/settings/integrations/meta', ['ownerId' => $this->manager->id, 'autoLeadFromComments' => 'off',
             'autoLeadFromDirect' => '0', 'commentKeywords' => 'цена, x, прайс'])->assertRedirect();
-        $s = \App\Services\Integrations\IntakeService::settings();
+        $s = IntakeService::settings();
         $this->assertSame([$this->manager->id, 'off', false, ['цена', 'прайс']], [$s['ownerId'], $s['autoLeadFromComments'], $s['autoLeadFromDirect'], $s['commentKeywords']]);
         foreach (['ru', 'uz'] as $loc) {
             $this->ceo->update(['locale' => $loc]);
-            $this->actingAsUser($this->ceo)->get('/settings/integrations')->assertOk()->assertSee(\App\Support\Lang::get('integrations.formsTitle', [], $loc));
-            $this->actingAsUser($this->ceo)->get('/inbox')->assertOk()->assertSee(\App\Support\Lang::get('inbox.title', [], $loc));
+            $this->actingAsUser($this->ceo)->get('/settings/integrations')->assertOk()->assertSee(Lang::get('integrations.formsTitle', [], $loc));
+            $this->actingAsUser($this->ceo)->get('/inbox')->assertOk()->assertSee(Lang::get('inbox.title', [], $loc));
         }
         $this->actingAsUser($this->executor)->get('/inbox')->assertForbidden();
     }

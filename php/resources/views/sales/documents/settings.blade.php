@@ -9,9 +9,9 @@
     <div class="grid gap-6">
         {{-- Реквизиты компании редактируются в «Настройки → Компания»; здесь — что попадёт в документы --}}
         <x-card :title="t('documents.companyTitle')" :subtitle="t('documents.companyText')">
-            @if (\Illuminate\Support\Facades\Route::has('automation.company') || \Illuminate\Support\Facades\Route::has('company.show'))
+            @if (\Illuminate\Support\Facades\Route::has('automation'))
                 <x-slot:actions>
-                    <a class="btn btn-outline btn-sm" href="{{ route(\Illuminate\Support\Facades\Route::has('automation.company') ? 'automation.company' : 'company.show') }}"><x-icon name="edit" /> {{ t('common.edit') }}</a>
+                    <a class="btn btn-outline btn-sm" href="{{ route('automation') }}#company"><x-icon name="edit" /> {{ t('common.edit') }}</a>
                 </x-slot:actions>
             @endif
             <dl class="grid grid-cols-1 gap-x-4 gap-y-1.5 text-sm sm:grid-cols-[auto,1fr]">

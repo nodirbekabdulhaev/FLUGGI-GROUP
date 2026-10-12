@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Integrations;
 use App\Exceptions\BusinessRule;
 use App\Http\Controllers\Controller;
 use App\Services\Integrations\FormService;
-use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\View\View;
