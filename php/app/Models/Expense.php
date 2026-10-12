@@ -28,7 +28,7 @@ class Expense extends Model
 
     public function categoryRef(): BelongsTo
     {
-        return $this->belongsTo(FinanceCategory::class, 'category');
+        return $this->belongsTo(FinanceCategory::class, 'category', 'code');
     }
 
     public function costLine(): HasOne

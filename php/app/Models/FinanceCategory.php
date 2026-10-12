@@ -22,11 +22,11 @@ class FinanceCategory extends Model
 
     public function expenses(): HasMany
     {
-        return $this->hasMany(Expense::class, 'category');
+        return $this->hasMany(Expense::class, 'category', 'code');
     }
 
     public function otherIncomes(): HasMany
     {
-        return $this->hasMany(OtherIncome::class, 'category');
+        return $this->hasMany(OtherIncome::class, 'category', 'code');
     }
 }

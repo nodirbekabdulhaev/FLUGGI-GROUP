@@ -3,11 +3,11 @@
 namespace App\Services\Finance;
 
 use App\Domain\Finance;
+use App\Exceptions\BusinessRule;
 use App\Models\Project;
 use App\Services\Crm\CrmAccess;
 use App\Services\Projects\ProjectAccess;
 use App\Services\References\ExchangeRates;
-use App\Exceptions\BusinessRule;
 use Brick\Math\BigDecimal;
 use Illuminate\Support\Facades\DB;
 

@@ -4,7 +4,6 @@ namespace App\Http\Controllers\People;
 
 use App\Http\Controllers\Controller;
 use App\Models\Attendance;
-use App\Models\User;
 use App\Services\People\KpiService;
 use App\Services\People\PeopleService;
 use App\Support\Format;

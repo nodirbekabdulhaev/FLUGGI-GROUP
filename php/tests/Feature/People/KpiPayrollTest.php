@@ -25,9 +25,8 @@ use App\Models\WorkSchedule;
 use App\Services\Finance\Period;
 use App\Services\People\DashboardService;
 use App\Services\People\KpiService;
+use App\Services\People\PeopleService;
 use App\Support\Format;
-use Carbon\CarbonImmutable;
-use Illuminate\Support\Facades\DB;
 use Tests\Feature\Projects\ProjectFixtures;
 use Tests\TestCase;
 
@@ -181,7 +180,7 @@ class KpiPayrollTest extends TestCase
         $h->put('/attendance', ['user_id' => $this->manager->id, 'date' => '2026-10-06', 'status' => 'SICK']);
         $this->actingAsUser($this->manager)->put('/attendance', ['user_id' => $this->manager->id, 'date' => '2026-10-05', 'status' => 'PRESENT'])->assertForbidden();
         $this->as($hr);
-        $sum = \App\Services\People\PeopleService::summary('2026-10-01', '2026-10-07', $this->manager->id)[0];
+        $sum = PeopleService::summary('2026-10-01', '2026-10-07', $this->manager->id)[0];
         $this->assertSame([1, 25, 1, '8.5'], [$sum['late'], $sum['lateMinutes'], $sum['sick'], $sum['workHours']]);
         // Исполнитель, проект-менеджер и CEO не отмечаются; раздел исполнителю недоступен
         $this->actingAsUser($this->executor)->get('/attendance')->assertForbidden();
@@ -190,7 +189,7 @@ class KpiPayrollTest extends TestCase
         $this->actingAsUser($this->user('PROJECT_MANAGER'))->post('/attendance/check-in')->assertForbidden();
         $this->actingAsUser($hr)->put('/attendance', ['user_id' => $this->executor->id, 'date' => '2026-10-06', 'status' => 'SICK'])->assertSessionHasErrors('user_id');
         $this->as($hr);
-        $this->assertNotContains($this->executor->id, collect(\App\Services\People\PeopleService::summary('2026-10-01', '2026-10-07'))->map(fn ($r) => $r['user']->id)->all());
+        $this->assertNotContains($this->executor->id, collect(PeopleService::summary('2026-10-01', '2026-10-07'))->map(fn ($r) => $r['user']->id)->all());
         foreach (['ru', 'uz'] as $locale) {
             $hr->update(['locale' => $locale]);
             $this->actingAsUser($hr)->get('/attendance?from=2026-10-01&to=2026-10-12')->assertOk();
@@ -203,7 +202,7 @@ class KpiPayrollTest extends TestCase
         $c->post('/settings/schedules', ['name' => 'Ещё менеджеры', 'role_code' => 'MANAGER', 'start_time' => '10:00', 'end_time' => '19:00', 'work_days' => [1, 2, 3, 4, 5], 'grace_minutes' => 0, 'is_active' => '1'])->assertSessionHas('error');
         $c->post('/settings/schedules', ['name' => 'Обучение', 'start_time' => '11:00', 'end_time' => '15:00', 'work_days' => [1, 2, 3, 4, 5, 6, 7], 'grace_minutes' => 0, 'is_active' => '1', 'user_ids' => [$this->manager->id]])->assertSessionHasNoErrors();
         $this->as($this->manager);
-        $this->assertSame('Обучение', \App\Services\People\PeopleService::today()['schedule']->name);
+        $this->assertSame('Обучение', PeopleService::today()['schedule']->name);
         $c = $this->actingAsUser($this->ceo);
         $c->post('/settings/schedules', ['name' => 'Плохой', 'start_time' => '18:00', 'end_time' => '09:00', 'work_days' => [1], 'grace_minutes' => 0])->assertSessionHasErrors('end_time');
         $this->actingAsUser($this->manager)->post('/settings/schedules', ['name' => 'x', 'start_time' => '09:00', 'end_time' => '18:00', 'work_days' => [1], 'grace_minutes' => 0])->assertForbidden();
@@ -251,9 +250,9 @@ class KpiPayrollTest extends TestCase
         // Свою видит каждый; изменять может только CEO
         $this->actingAsUser($this->manager)->get('/finance/payroll')->assertOk()->assertSee('Manager One');
         $this->as($this->manager);
-        $this->assertSame([$this->manager->id], \App\Services\People\PeopleService::payroll($this->month())->pluck('user_id')->all());
+        $this->assertSame([$this->manager->id], PeopleService::payroll($this->month())->pluck('user_id')->all());
         $this->as($this->rop);
-        $this->assertSame([$this->rop->id], \App\Services\People\PeopleService::payroll($this->month())->pluck('user_id')->all());
+        $this->assertSame([$this->rop->id], PeopleService::payroll($this->month())->pluck('user_id')->all());
         $this->actingAsUser($this->rop)->patch("/finance/payroll/{$mine->id}", ['penalty' => '0'])->assertForbidden();
         $this->actingAsUser($this->rop)->get('/finance/payroll')->assertOk();
         $c = $this->actingAsUser($this->ceo);

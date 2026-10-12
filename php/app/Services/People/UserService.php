@@ -7,6 +7,7 @@ use App\Auth\Sessions;
 use App\Exceptions\BusinessRule;
 use App\Models\Direction;
 use App\Models\Employee;
+use App\Models\ProjectMember;
 use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
@@ -281,7 +282,7 @@ final class UserService
                 // Задачи: новый исполнитель становится участником команды проекта
                 $tasks = DB::table('tasks')->where('assignee_id', $id)->whereNull('deleted_at')->whereIn('status', ProjectAccess::OPEN_TASK)->get(['id', 'project_id']);
                 foreach ($tasks->pluck('project_id')->unique() as $projectId) {
-                    $m = \App\Models\ProjectMember::firstOrNew(['project_id' => $projectId, 'user_id' => $target->id]);
+                    $m = ProjectMember::firstOrNew(['project_id' => $projectId, 'user_id' => $target->id]);
                     $m->exists ? $m->update(['status' => 'ACTIVE']) : $m->fill(['assigned_by_id' => $access->id(), 'assigned_at' => $now, 'status' => 'ACTIVE'])->save();
                 }
                 DB::table('tasks')->whereIn('id', $tasks->pluck('id'))->update(['assignee_id' => $target->id, 'updated_at' => $now]);

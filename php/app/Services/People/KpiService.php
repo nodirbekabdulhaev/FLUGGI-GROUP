@@ -2,8 +2,8 @@
 
 namespace App\Services\People;
 
-use App\Domain\People;
 use App\Domain\Finance;
+use App\Domain\People;
 use App\Domain\Tasks;
 use App\Models\KpiTarget;
 use App\Models\User;

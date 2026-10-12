@@ -15,12 +15,16 @@ use App\Models\Project;
 use App\Models\ProjectCostLine;
 use App\Models\Proposal;
 use App\Models\Tariff;
+use App\Models\WorkItem;
+use App\Providers\ProjectsServiceProvider;
 use App\Services\Finance\CostLineService;
 use App\Services\Finance\FinanceService;
 use App\Services\Finance\OverheadService;
 use App\Services\Finance\Period;
 use App\Support\Format;
+use App\Support\Outbox;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
 use Tests\Feature\Projects\ProjectFixtures;
 use Tests\TestCase;
 
@@ -200,17 +204,17 @@ class FinanceTest extends TestCase
         $p = $this->project();
         $tariff = Tariff::where('name', 'Эконом')->firstOrFail();
         $proposal = Proposal::create(['deal_id' => $p->deal_id, 'client_id' => $p->client_id, 'manager_id' => $this->manager->id, 'title' => 'SMM', 'status' => 'ACCEPTED', 'accepted_at' => now()]);
-        DB::table('proposal_items')->insert(['id' => (string) \Illuminate\Support\Str::uuid(), 'proposal_id' => $proposal->id, 'tariff_id' => $tariff->id,
+        DB::table('proposal_items')->insert(['id' => (string) Str::uuid(), 'proposal_id' => $proposal->id, 'tariff_id' => $tariff->id,
             'description' => 'SMM', 'quantity' => 1, 'unit_price' => 650, 'total' => 650, 'sort' => 0]);
         // План строится подписчиком события project.created
-        (new \App\Providers\ProjectsServiceProvider(app()))->boot();
-        \App\Support\Outbox::publish('project.created', ['projectId' => $p->id, 'dealId' => $p->deal_id]);
-        \App\Support\Outbox::drain(5);
+        (new ProjectsServiceProvider(app()))->boot();
+        Outbox::publish('project.created', ['projectId' => $p->id, 'dealId' => $p->deal_id]);
+        Outbox::drain(5);
         $this->assertSame(4, ProjectCostLine::where('project_id', $p->id)->count());
         $this->assertSame(0, CostLineService::generate($p->id)); // повторно — ничего
 
         $videographer = $this->user('EXECUTOR', attrs: ['full_name' => 'Video Pro'], employee: ['specialty' => 'VIDEOGRAPHER']);
-        $reel = \App\Models\WorkItem::where('code', 'REEL')->first();
+        $reel = WorkItem::where('code', 'REEL')->first();
         $this->actingAsUser($this->ceo)->put("/team/employees/{$videographer->id}/rates", ['rates' => [['work_item_id' => $reel->id, 'rate' => '120000', 'currency' => 'UZS']]])->assertSessionHasNoErrors();
         $this->assertTrue(AuditLog::where('action', 'employee.rates')->exists());
         $this->actingAsUser($this->rop)->put("/team/employees/{$videographer->id}/rates", ['rates' => []])->assertForbidden();

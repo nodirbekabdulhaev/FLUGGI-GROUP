@@ -4,6 +4,7 @@ namespace Tests\Feature\Projects;
 
 use App\Models\Activity;
 use App\Models\AuditLog;
+use App\Models\Direction;
 use App\Models\OutboxEvent;
 use App\Models\Project;
 use App\Models\ProjectMember;
@@ -11,6 +12,7 @@ use App\Models\ProjectTemplate;
 use App\Models\Task;
 use App\Models\TaskStatusHistory;
 use App\Models\User;
+use App\Services\Projects\TaskService;
 use Tests\TestCase;
 
 /** Проекты, команда, Kanban (ТЗ §19–24) — сценарии прежней версии (projects.int.test.ts). */
@@ -55,7 +57,7 @@ class ProjectsTest extends TestCase
         $this->actingAsUser($this->manager)->post('/tasks', ['project_id' => $p->id, 'title' => 'Согласовать рубрики', 'assignee_id' => $this->executor->id, 'priority' => 'HIGH'])->assertSessionHasNoErrors();
         $this->post('/tasks', ['project_id' => $p->id, 'title' => 'x', 'assignee_id' => $this->otherManager->id])->assertSessionHasErrors('assignee_id');
         $created = Task::where('title', 'Согласовать рубрики')->firstOrFail();
-        $this->assertMatchesRegularExpression('/^T-\d{5}$/', \App\Services\Projects\TaskService::code($created));
+        $this->assertMatchesRegularExpression('/^T-\d{5}$/', TaskService::code($created));
         $this->assertTrue(OutboxEvent::where('type', 'task.assigned')->get()->contains(fn ($e) => $e->payload['taskId'] === $created->id));
 
         // Исполнитель берёт задачу в работу → проект «В работе»
@@ -183,7 +185,7 @@ class ProjectsTest extends TestCase
 
     public function test_project_manager_sees_only_projects_of_directions(): void
     {
-        $media = \App\Models\Direction::where('code', 'MEDIA')->first();
+        $media = Direction::where('code', 'MEDIA')->first();
         $this->actingAsUser($this->ceo)->post('/team/employees', ['email' => 'pm@test.uz', 'full_name' => 'Проект Менеджер', 'role_code' => 'PROJECT_MANAGER', 'direction_ids' => [$media->id]])->assertSessionHasNoErrors()->assertSessionMissing('error');
         $pm = User::where('email', 'pm@test.uz')->firstOrFail();
         $smm = $this->project(['name' => 'SMM для кафе'], 'MEDIA');

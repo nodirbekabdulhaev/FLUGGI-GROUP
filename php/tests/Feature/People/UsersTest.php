@@ -3,16 +3,17 @@
 namespace Tests\Feature\People;
 
 use App\Auth\Passwords;
+use App\Auth\Sessions;
 use App\Models\AuditLog;
+use App\Models\DealStage;
 use App\Models\Lead;
 use App\Models\LeadSource;
-use App\Models\DealStage;
 use App\Models\OutboxEvent;
 use App\Models\Role;
-use App\Models\Session;
 use App\Models\User;
 use App\Support\Permissions;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Route;
 use Tests\Feature\Projects\ProjectFixtures;
 use Tests\TestCase;
 
@@ -89,7 +90,7 @@ class UsersTest extends TestCase
         $c->patch("/team/employees/{$this->manager->id}", ['email' => $this->manager->email, 'full_name' => $this->manager->full_name, 'role_code' => 'MANAGER', 'team_id' => $this->team2->id])->assertSessionHasNoErrors();
         $this->assertEquals(['teamId' => ['old' => $this->team1->id, 'new' => $this->team2->id]], AuditLog::where('action', 'user.update')->first()->changes);
         // Смена роли закрывает сессии
-        $s = \App\Auth\Sessions::create($this->otherManager, '1.1.1.1', 'x')['session'];
+        $s = Sessions::create($this->otherManager, '1.1.1.1', 'x')['session'];
         $c->patch("/team/employees/{$this->otherManager->id}", ['email' => $this->otherManager->email, 'full_name' => 'Manager Two', 'role_code' => 'EXECUTOR', 'specialty' => 'SMM'])->assertSessionHasNoErrors();
         $this->assertNotNull($s->fresh()->revoked_at);
         $this->assertTrue(OutboxEvent::where('type', 'user.role_changed')->exists());
@@ -138,7 +139,7 @@ class UsersTest extends TestCase
         $this->actingAsUser($this->ceo)->post("/team/employees/{$this->manager->id}/block");
         $this->get('/settings/audit')->assertOk()->assertSee(t('audit.user.block'));
         // Записи журнала только добавляются: страница не даёт их менять (методов изменения нет)
-        $this->assertSame(['GET', 'HEAD'], collect(\Illuminate\Support\Facades\Route::getRoutes())->first(fn ($r) => $r->uri() === 'settings/audit')->methods());
+        $this->assertSame(['GET', 'HEAD'], collect(Route::getRoutes())->first(fn ($r) => $r->uri() === 'settings/audit')->methods());
         $this->actingAsUser($this->rop)->get('/settings/audit')->assertForbidden();
     }
 }

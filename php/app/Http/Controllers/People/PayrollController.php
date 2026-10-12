@@ -7,6 +7,7 @@ use App\Models\PayrollEntry;
 use App\Services\Finance\Input;
 use App\Services\Finance\Period;
 use App\Services\People\PeopleService;
+use Brick\Math\BigDecimal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -54,7 +55,7 @@ class PayrollController extends Controller
         // Изменили «бонус при 100%», а сумму KPI-бонуса не трогали — пересчитать её по выполнению KPI
         $entry = PayrollEntry::with('user.employee')->findOrFail($id);
         $oldTarget = $entry->user->employee?->kpi_bonus_target;
-        $same = fn ($a, $b) => $a !== null && $b !== null ? \Brick\Math\BigDecimal::of((string) $a)->isEqualTo((string) $b) : $a === $b;
+        $same = fn ($a, $b) => $a !== null && $b !== null ? BigDecimal::of((string) $a)->isEqualTo((string) $b) : $a === $b;
         if (array_key_exists('kpi_bonus_target', $data) && ! $same($oldTarget, $data['kpi_bonus_target'])
             && isset($data['kpi_bonus']) && $same($entry->kpi_bonus, $data['kpi_bonus'])) {
             unset($data['kpi_bonus']);

@@ -3,8 +3,6 @@
 namespace App\Services\Finance;
 
 use App\Exceptions\BusinessRule;
-use Brick\Math\BigDecimal;
-use Brick\Math\RoundingMode;
 use App\Models\Expense;
 use App\Models\FinanceCategory;
 use App\Models\User;
@@ -13,6 +11,8 @@ use App\Services\Projects\ProjectAccess;
 use App\Services\References\ExchangeRates;
 use App\Support\Audit;
 use App\Support\Format;
+use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
 

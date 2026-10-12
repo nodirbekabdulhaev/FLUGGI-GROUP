@@ -4,6 +4,7 @@ namespace App\Http\Controllers\People;
 
 use App\Http\Controllers\Controller;
 use App\Models\AuditLog;
+use App\Support\Format;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
 
@@ -23,8 +24,8 @@ class AuditController extends Controller
             ->when($f['actor'] ?? null, fn ($q, $v) => $q->where('actor_id', $v))
             ->when($f['entity_type'] ?? null, fn ($q, $v) => $q->where('entity_type', $v))
             ->when($f['entity_id'] ?? null, fn ($q, $v) => $q->where('entity_id', $v))
-            ->when($f['from'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', \App\Support\Format::fromLocalInput($v.'T00:00')))
-            ->when($f['to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', \App\Support\Format::fromLocalInput($v.'T00:00')->addDay()))
+            ->when($f['from'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', Format::fromLocalInput($v.'T00:00')))
+            ->when($f['to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', Format::fromLocalInput($v.'T00:00')->addDay()))
             ->orderByDesc('created_at')->paginate(30)->withQueryString();
 
         return view('settings.audit', ['logs' => $logs, 'filters' => $f]);
