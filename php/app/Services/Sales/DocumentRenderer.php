@@ -8,6 +8,7 @@ use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\Settings as WordSettings;
 use PhpOffice\PhpWord\SimpleType\Jc;
+use PhpOffice\PhpWord\Style\Tab;
 
 /**
  * Документ (КП, договор) из модели блоков: HTML (предпросмотр и печать), PDF, Word, TXT.
@@ -326,7 +327,7 @@ CSS;
         $header = $section->addHeader();
         $hp = $header->addTextRun([
             'borderBottomSize' => 12, 'borderBottomColor' => $hex(self::ACCENT), 'spaceAfter' => 80,
-            'tabs' => [new \PhpOffice\PhpWord\Style\Tab('right', $content)],
+            'tabs' => [new Tab('right', $content)],
         ]);
         $hp->addText($doc['brand']['name'], ['bold' => true, 'size' => 15, 'color' => $hex(self::ACCENT)]);
         $hp->addText("\t".$doc['brand']['contacts'], ['size' => 7.5, 'color' => $hex(self::MUTED)]);

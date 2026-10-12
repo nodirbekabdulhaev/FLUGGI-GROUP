@@ -1,6 +1,6 @@
 {{-- Вкладка «Файлы» карточки сделки ($deal): загрузка с проверкой типа по содержимому, скачивание через проверку прав. --}}
 @if (can('deal.read'))
-    @php($files = \App\Services\Sales\Panels::files($deal))
+    @php $files = \App\Services\Sales\Panels::files($deal); @endphp
     <div class="grid gap-4">
         @if (can('deal.update'))
             <form method="POST" action="{{ route('sales.files.store') }}" enctype="multipart/form-data" class="flex flex-wrap items-center gap-3" x-data>

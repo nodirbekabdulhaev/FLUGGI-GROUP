@@ -63,5 +63,24 @@
     "tasks": "Ochiq vazifalar",
     "todos": "Ishlar",
     "threads": "Instagram yozishmalari"
+  },
+  "errors": {
+    "blockSelf": "Oʻz hisobingizni bloklab boʻlmaydi",
+    "ceoOnly": "CEO hisoblarini faqat CEO oʻzgartira oladi",
+    "ceoRole": "CEO rolini faqat CEO tayinlay oladi",
+    "deleteSelf": "Oʻz hisobingizni oʻchirib boʻlmaydi",
+    "direction": "Bunday yoʻnalish yoʻq",
+    "directionField": "Roʻyxatdan yoʻnalishni tanlang",
+    "emailTaken": "Bunday email bilan xodim allaqachon mavjud",
+    "hasWork": "Xodimda ochiq ishlar bor — ularni kimga topshirishni tanlang",
+    "hasWorkField": "Ishni kimga topshirishni tanlang",
+    "lastCeo": "Tizimda kamida bitta faol CEO qolishi kerak",
+    "ownRole": "Oʻz rolingizni oʻzgartirib boʻlmaydi",
+    "resetSelf": "Oʻz parolingizni oʻzgartirish uchun profildan foydalaning",
+    "team": "Boʻlim topilmadi",
+    "teamHead": "Xodim boʻlimga rahbarlik qiladi. Avval boʻlimga boshqa rahbar tayinlang",
+    "transferActive": "Faol xodimni tanlang",
+    "transferNotFound": "Ish topshiriladigan xodim topilmadi",
+    "transferOther": "Boshqa xodimni tanlang"
   }
 }

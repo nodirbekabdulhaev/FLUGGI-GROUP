@@ -85,5 +85,18 @@
   },
   "direction": "Yoʻnalish",
   "allDirections": "Barcha yoʻnalishlar",
-  "noDirection": "Yoʻnalishsiz"
+  "noDirection": "Yoʻnalishsiz",
+  "allStatuses": "Barcha holatlar",
+  "comment": "Izoh",
+  "errors": {
+    "alreadyMember": "Xodim allaqachon loyiha jamoasida",
+    "cancelReason": "Loyihani bekor qilish sababini koʻrsating",
+    "closed": "Loyiha yopilgan",
+    "deadlineBeforeStart": "Muddat boshlanish sanasidan oldin",
+    "memberRole": "Loyiha jamoasiga ijrochilar, menejerlar va savdo boʻlimi rahbarlari tayinlanadi",
+    "noDirection": "Bunday yoʻnalish yoʻq",
+    "openTasks": "Loyihani yakunlab boʻlmaydi: ochiq vazifalar — {count}. Ularni yakunlang yoki bekor qiling",
+    "ropRole": "Loyiha rahbari — savdo boʻlimi rahbari yoki CEO roli bilan xodim",
+    "userNotFound": "Xodim topilmadi yoki bloklangan"
+  }
 }

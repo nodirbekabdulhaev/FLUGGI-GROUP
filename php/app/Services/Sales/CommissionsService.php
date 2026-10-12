@@ -7,6 +7,7 @@ use App\Models\Commission;
 use App\Models\CommissionRule;
 use App\Models\User;
 use App\Support\Audit;
+use App\Support\Format;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
@@ -155,7 +156,7 @@ final class CommissionsService
         }
 
         return implode(' '.t($mode === 'any' ? 'commissionRules.or' : 'commissionRules.and').' ', array_map(
-            fn ($l) => t('commissionRules.metric.'.$l['metric']).' '.$l['op'].' '.\App\Support\Format::number((string) $l['value']),
+            fn ($l) => t('commissionRules.metric.'.$l['metric']).' '.$l['op'].' '.Format::number((string) $l['value']),
             $leaves,
         ));
     }

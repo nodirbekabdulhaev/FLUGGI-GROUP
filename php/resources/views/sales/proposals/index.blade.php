@@ -16,7 +16,7 @@
                     <thead><tr><th>{{ t('sales.proposals.proposal') }}</th><th>{{ t('sales.clientDeal') }}</th><th>{{ t('sales.status') }}</th><th class="text-right">{{ t('sales.proposals.total') }}</th><th>{{ t('sales.manager') }}</th><th>{{ t('sales.updatedAt') }}</th><th></th></tr></thead>
                     <tbody>
                         @foreach ($items as $p)
-                            @php($number = \App\Services\Sales\Numbers::proposal($p->number))
+                            @php $number = \App\Services\Sales\Numbers::proposal($p->number); @endphp
                             <tr>
                                 <td><a href="{{ url('/sales/deals/'.$p->deal_id) }}" class="font-medium hover:underline">{{ $number }} · {{ $p->title }}</a><span class="block text-xs text-muted-foreground">v{{ $p->current_version }}</span></td>
                                 <td>{{ $p->client?->name }}<span class="block text-xs text-muted-foreground">{{ \App\Services\Sales\Numbers::deal($p->deal?->number) }}</span></td>
@@ -32,7 +32,7 @@
             </div>
             <ul class="divide-y md:hidden">
                 @foreach ($items as $p)
-                    @php($number = \App\Services\Sales\Numbers::proposal($p->number))
+                    @php $number = \App\Services\Sales\Numbers::proposal($p->number); @endphp
                     <li class="flex items-start gap-3 p-4">
                         <a href="{{ url('/sales/deals/'.$p->deal_id) }}" class="min-w-0 flex-1">
                             <p class="font-medium">{{ $number }} · {{ $p->title }}</p>

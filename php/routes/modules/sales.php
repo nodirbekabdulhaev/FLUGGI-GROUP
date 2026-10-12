@@ -33,7 +33,7 @@ Route::name('sales.')->group(function () {
     // Документы КП и договора
     Route::get('/documents/{kind}/{id}', [DocumentController::class, 'show'])->whereIn('kind', ['proposals', 'contracts'])->whereUuid('id')
         ->middleware('perm:proposal.read|contract.read')->name('documents.show');
-    Route::get('/documents/{kind}/{id}/check', [DocumentController::class, 'check'])->whereIn('kind', ['proposals', 'contracts'])->whereUuid('id')
+    Route::get('/documents/{kind}/{id}/check', [DocumentController::class, 'missing'])->whereIn('kind', ['proposals', 'contracts'])->whereUuid('id')
         ->middleware('perm:proposal.read|contract.read')->name('documents.check');
 
     // Оплаты

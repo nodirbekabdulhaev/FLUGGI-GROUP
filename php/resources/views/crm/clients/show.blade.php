@@ -123,7 +123,7 @@
             </form>
         </x-modal>
         <x-modal name="requisites" :title="t('requisites.title')" size="max-w-2xl" :open="$errors->any() && old('_form') === 'requisites'">
-            <form method="POST" action="{{ route('crm.clients.requisites', $client->id) }}" class="grid gap-4 sm:grid-cols-2">
+            <form method="POST" action="{{ url('/clients/'.$client->id.'/requisites') }}" class="grid gap-4 sm:grid-cols-2">
                 @csrf @method('PUT') <input type="hidden" name="_form" value="requisites">
                 @php $defaults = ['legalName' => $client->name, 'directorPosition' => 'Директор', 'basis' => 'Устава', 'phone' => $client->phone]; @endphp
                 @foreach ($reqFields as [$key, $wide])

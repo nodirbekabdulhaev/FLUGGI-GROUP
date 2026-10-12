@@ -10,6 +10,7 @@ use App\Models\Tariff;
 use App\Models\TariffItem;
 use App\Models\User;
 use App\Models\WorkItem;
+use App\Services\References\ExchangeRates;
 use App\Support\Audit;
 use App\Support\Format;
 use App\Support\Settings;
@@ -102,7 +103,7 @@ final class CatalogService
     public static function usdRate(): string
     {
         try {
-            return \App\Services\References\ExchangeRates::rateFor('USD');
+            return ExchangeRates::rateFor('USD');
         } catch (Throwable) {
             return '0';
         }

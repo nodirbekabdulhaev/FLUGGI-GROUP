@@ -33,7 +33,7 @@ class DocumentController extends SalesController
         ]);
     }
 
-    public function check(string $kind, string $id): JsonResponse
+    public function missing(string $kind, string $id): JsonResponse
     {
         access()->authorize($kind === 'contracts' ? 'contract.read' : 'proposal.read');
 

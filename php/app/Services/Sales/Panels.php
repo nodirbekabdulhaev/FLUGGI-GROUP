@@ -2,8 +2,8 @@
 
 namespace App\Services\Sales;
 
-use App\Models\Deal;
 use App\Models\Contract;
+use App\Models\Deal;
 use App\Models\ProposalVersion;
 use App\Models\Service;
 use App\Models\StoredFile;

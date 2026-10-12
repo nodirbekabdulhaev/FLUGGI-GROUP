@@ -22,5 +22,10 @@
   "phone": "Telefon",
   "bank": "Bank",
   "mfo": "MFO",
-  "account": "Hisob raqami"
+  "account": "Hisob raqami",
+  "errors": {
+    "inn": "STIR — 9 raqam, JShShIR — 14 raqam",
+    "mfo": "MFO — 5 raqam",
+    "account": "Hisob raqami — 20 raqam"
+  }
 }

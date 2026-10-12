@@ -1,5 +1,6 @@
 <?php
 
+use App\Services\Automation\Cron;
 use App\Support\Outbox;
 use Illuminate\Support\Facades\Schedule;
 
@@ -10,3 +11,9 @@ use Illuminate\Support\Facades\Schedule;
  */
 Schedule::call(fn () => Outbox::drain(40))
     ->name('outbox')->everyMinute()->withoutOverlapping(5);
+
+// Очередь Telegram (повторы с паузой), проверка бота и планировщик модулей (ТЗ §55): просроченные
+// задачи, напоминания, follow-up, отчёты, отсутствующие, регулярные дела, здоровье клиентов, зарплата.
+// Каждая задача планировщика выполняется один раз за свой слот (job_runs).
+Schedule::call(fn () => Cron::comms(15))
+    ->name('comms')->everyMinute()->withoutOverlapping(10);

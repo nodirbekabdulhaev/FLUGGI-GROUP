@@ -24,5 +24,12 @@
   "cancelLine": "Rejadan olib tashlash",
   "cancelConfirm": "«{label}» rejadan olib tashlansinmi?",
   "cancel": "Bekor qilish",
-  "save": "Saqlash"
+  "save": "Saqlash",
+  "defaultLabel": "Ijrochiga toʻlov",
+  "errors": {
+    "accrued": "Qator allaqachon hisoblangan",
+    "cancelAccrued": "Hisoblangan qatorni bekor qilib boʻlmaydi — xarajatni oʻchiring",
+    "noAssignee": "Avval ijrochini tayinlang",
+    "notMember": "Ijrochi loyiha jamoasida boʻlishi kerak"
+  }
 }

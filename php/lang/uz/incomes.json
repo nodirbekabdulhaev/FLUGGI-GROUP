@@ -19,5 +19,9 @@
   "cancel": "Bekor qilish",
   "save": "Saqlash",
   "empty": "Hozircha boshqa tushumlar yoʻq",
-  "emptyText": "Tushum toifalari Sozlamalar → Moliya boʻlimida sozlanadi."
+  "emptyText": "Tushum toifalari Sozlamalar → Moliya boʻlimida sozlanadi.",
+  "errors": {
+    "category": "Daromad toifasini tanlang",
+    "categoryField": "Bunday daromad toifasi yoʻq"
+  }
 }

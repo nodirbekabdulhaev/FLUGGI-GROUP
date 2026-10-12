@@ -35,5 +35,17 @@
   "emptyCeo": "«Oyni hisoblash» tugmasini bosing.",
   "emptyOwn": "Bu oy uchun hisoblash hali shakllantirilmagan.",
   "kpiBonusTarget": "100% dagi KPI-bonus (doimiy)",
-  "kpiBonusTargetHint": "Xodim kartochkasida saqlanadi; oylik KPI-bonus = summa × KPI bajarilishi (120% gacha)"
+  "kpiBonusTargetHint": "Xodim kartochkasida saqlanadi; oylik KPI-bonus = summa × KPI bajarilishi (120% gacha)",
+  "comment": "Izoh",
+  "errors": {
+    "immutable": "Tasdiqlangan ish haqini oʻzgartirib boʻlmaydi",
+    "noFixed": "Belgilangan maosh faqat menejerlar va savdo boʻlimi rahbarlarida boʻladi",
+    "noFixedField": "Bu rolda maosh yoʻq: ishbay, bonuslar, KPI",
+    "approveDraft": "Faqat qoralamalarni tasdiqlash mumkin",
+    "payApproved": "Faqat tasdiqlangan ish haqini toʻlash mumkin"
+  },
+  "kpiBonusAutoHint": "«100% dagi KPI-bonus» oʻzgartirilsa, summa KPI bajarilishi boʻyicha qayta hisoblanadi",
+  "select": "{name} ni tanlash",
+  "selectAll": "Hammasini tanlash",
+  "statusLabel": "Holat"
 }

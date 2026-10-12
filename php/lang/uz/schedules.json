@@ -23,5 +23,10 @@
     "5": "Ju",
     "6": "Sh",
     "7": "Ya"
+  },
+  "errors": {
+    "days": "Ish kunlarini tanlang",
+    "endBeforeStart": "Tugash vaqti boshlanishdan oldin",
+    "roleClash": "Rolda allaqachon «{name}» jadvali bor"
   }
 }

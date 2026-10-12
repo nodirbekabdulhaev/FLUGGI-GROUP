@@ -49,5 +49,9 @@
     "avgHours": "Oʻrt. vaqt, soat",
     "completion": "Bajarilish %",
     "reworks": "Qayta ishlashlar"
+  },
+  "errors": {
+    "ownTargets": "Oʻz maqsadlaringizni rahbar belgilaydi",
+    "value": "Maqsad qiymati notoʻgʻri"
   }
 }

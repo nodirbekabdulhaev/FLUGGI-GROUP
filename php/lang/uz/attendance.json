@@ -40,5 +40,15 @@
   "workHours": "Soatlar",
   "records": "Yozuvlar",
   "empty": "Yozuvlar yoʻq",
-  "noMark": "Davr uchun belgilar yoʻq — kelmaganlikni HR yoki CEO kiritadi."
+  "noMark": "Davr uchun belgilar yoʻq — kelmaganlikni HR yoki CEO kiritadi.",
+  "errors": {
+    "absenceDay": "Bugun uchun taʼtil, kasallik yoki dam olish kuni rasmiylashtirilgan",
+    "alreadyIn": "Kelish allaqachon belgilangan",
+    "alreadyOut": "Ketish allaqachon belgilangan",
+    "notIn": "Avval kelishni belgilang",
+    "notTracked": "Kelish va ketishni faqat menejerlar va savdo boʻlimi rahbarlari belgilaydi",
+    "notTrackedUser": "Davomat faqat menejerlar va savdo boʻlimi rahbarlari uchun yuritiladi",
+    "outBeforeIn": "Ketish vaqti kelishdan oldin"
+  },
+  "statusLabel": "Holat"
 }

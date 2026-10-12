@@ -16,7 +16,7 @@
                     <thead><tr><th>{{ t('sales.contracts.contract') }}</th><th>{{ t('sales.clientDeal') }}</th><th>{{ t('sales.status') }}</th><th class="text-right">{{ t('sales.contracts.amount') }}</th><th class="text-right">{{ t('sales.contracts.paid') }}</th><th>{{ t('sales.contracts.signedAt') }}</th><th></th></tr></thead>
                     <tbody>
                         @foreach ($items as $c)
-                            @php($number = \App\Services\Sales\Numbers::contract($c->number))
+                            @php $number = \App\Services\Sales\Numbers::contract($c->number); @endphp
                             <tr>
                                 <td><a href="{{ url('/sales/deals/'.$c->deal_id) }}" class="font-medium hover:underline">{{ $number }}</a><span class="block text-xs text-muted-foreground">{{ t('sales.contracts.from', ['date' => d($c->contract_date)]) }}</span></td>
                                 <td>{{ $c->client?->name }}<span class="block text-xs text-muted-foreground">{{ \App\Services\Sales\Numbers::deal($c->deal?->number) }}</span></td>
@@ -32,7 +32,7 @@
             </div>
             <ul class="divide-y md:hidden">
                 @foreach ($items as $c)
-                    @php($number = \App\Services\Sales\Numbers::contract($c->number))
+                    @php $number = \App\Services\Sales\Numbers::contract($c->number); @endphp
                     <li class="flex items-start gap-3 p-4">
                         <a href="{{ url('/sales/deals/'.$c->deal_id) }}" class="min-w-0 flex-1">
                             <p class="font-medium">{{ $number }} · {{ $c->client?->name }}</p>

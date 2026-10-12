@@ -40,5 +40,14 @@
     "revenue_uzs": "Oylik tushum, UZS",
     "revenue_usd": "Oylik tushum, USD"
   },
-  "empty": "Qoidalar yoʻq"
+  "empty": "Qoidalar yoʻq",
+  "metricLabel": "Koʻrsatkich",
+  "opLabel": "Taqqoslash",
+  "removeCondition": "Shartni oʻchirish",
+  "user": "Xodim",
+  "userAll": "Roldagi barcha xodimlar",
+  "userHint": "Teng ustuvorlikda shaxsiy qoida umumiysidan ustun",
+  "valueLabel": "Qiymat",
+  "or": "yoki",
+  "and": "va"
 }

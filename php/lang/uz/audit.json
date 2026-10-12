@@ -12,7 +12,8 @@
     "update": "Xodim oʻzgartirildi",
     "block": "Xodim bloklandi",
     "unblock": "Xodim blokdan chiqarildi",
-    "reset_password": "Parol tiklandi"
+    "reset_password": "Parol tiklandi",
+    "delete": "Xodim oʻchirildi"
   },
   "team": {
     "create": "Boʻlim yaratildi",
@@ -107,5 +108,66 @@
   "commission_rule": {
     "create": "Komissiya qoidasi yaratildi",
     "update": "Komissiya qoidasi oʻzgartirildi"
+  },
+  "entityType": "Yozuv turi",
+  "project": {
+    "update": "Loyiha oʻzgartirildi",
+    "status": "Loyiha holati oʻzgartirildi",
+    "apply_template": "Loyiha shabloni qoʻllandi",
+    "member_add": "Loyiha ishtirokchisi qoʻshildi",
+    "member_update": "Loyiha ishtirokchisi oʻzgartirildi"
+  },
+  "task": {
+    "create": "Vazifa yaratildi",
+    "update": "Vazifa oʻzgartirildi",
+    "status": "Vazifa holati oʻzgartirildi",
+    "delete": "Vazifa oʻchirildi"
+  },
+  "project_template": {
+    "create": "Loyiha shabloni yaratildi",
+    "update": "Loyiha shabloni oʻzgartirildi"
+  },
+  "expense": {
+    "create": "Xarajat qoʻshildi",
+    "update": "Xarajat oʻzgartirildi",
+    "delete": "Xarajat oʻchirildi"
+  },
+  "finance_category": {
+    "create": "Moliyaviy toifa yaratildi",
+    "update": "Moliyaviy toifa oʻzgartirildi",
+    "delete": "Moliyaviy toifa oʻchirildi"
+  },
+  "other_income": {
+    "create": "Boshqa tushum qoʻshildi",
+    "update": "Boshqa tushum oʻzgartirildi",
+    "delete": "Boshqa tushum oʻchirildi"
+  },
+  "work_item": {
+    "create": "Ijrochi ishi qoʻshildi",
+    "update": "Ijrochi ishi oʻzgartirildi"
+  },
+  "employee": {
+    "rates": "Ishbay stavkalar oʻzgartirildi"
+  },
+  "settings": {
+    "finance": "Moliyaviy sozlamalar oʻzgartirildi"
+  },
+  "kpi": {
+    "target": "KPI maqsadi oʻzgartirildi"
+  },
+  "schedule": {
+    "create": "Ish jadvali yaratildi",
+    "update": "Ish jadvali oʻzgartirildi"
+  },
+  "attendance": {
+    "check_in": "Kelish belgilandi",
+    "check_out": "Ketish belgilandi",
+    "update": "Davomat tuzatildi"
+  },
+  "payroll": {
+    "calculate": "Ish haqi hisoblandi",
+    "update": "Ish haqi oʻzgartirildi",
+    "approve": "Ish haqi tasdiqlandi",
+    "pay": "Ish haqi toʻlandi"
   }
 }

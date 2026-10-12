@@ -43,7 +43,7 @@
 
         <div class="grid gap-6 lg:grid-cols-2">
             <x-card :title="t('references.services')" :padding="false">
-                @if ($canEdit)<x-slot:actions><button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('ref-service', @js($serviceJs(null))); $dispatch('open-modal', 'ref-service')"><x-icon name="plus" /> {{ t('references.add') }}</button></x-slot:actions>@endif
+                <x-slot:actions>@if ($canEdit)<button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('ref-service', @js($serviceJs(null))); $dispatch('open-modal', 'ref-service')"><x-icon name="plus" /> {{ t('references.add') }}</button>@endif</x-slot:actions>
                 <ul class="divide-y">
                     @foreach ($services as $s)
                         <li class="flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm sm:px-5">
@@ -58,7 +58,7 @@
             </x-card>
             <div class="grid content-start gap-6">
                 <x-card :title="t('references.directions')" :subtitle="t('references.directionsText')" :padding="false">
-                    @if ($canEdit)<x-slot:actions><button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('ref-direction', { url: @js(route('crm.references.directions.store')), method: 'POST', name: '', sort: 100, is_active: true }); $dispatch('open-modal', 'ref-direction')"><x-icon name="plus" /> {{ t('references.add') }}</button></x-slot:actions>@endif
+                    <x-slot:actions>@if ($canEdit)<button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('ref-direction', { url: @js(route('crm.references.directions.store')), method: 'POST', name: '', sort: 100, is_active: true }); $dispatch('open-modal', 'ref-direction')"><x-icon name="plus" /> {{ t('references.add') }}</button>@endif</x-slot:actions>
                     <ul class="divide-y">
                         @foreach ($directions as $d)
                             <li class="flex items-center gap-2 px-4 py-2.5 text-sm sm:px-5">
@@ -71,7 +71,7 @@
                 </x-card>
                 @foreach (['sources' => [t('references.sources'), $sources], 'loss-reasons' => [t('references.lossReasons'), $lossReasons]] as $kind => [$title, $items])
                     <x-card :title="$title" :padding="false">
-                        @if ($canEdit)<x-slot:actions><button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('ref-item', @js($itemJs($kind, null))); $dispatch('open-modal', 'ref-item')"><x-icon name="plus" /> {{ t('references.add') }}</button></x-slot:actions>@endif
+                        <x-slot:actions>@if ($canEdit)<button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('ref-item', @js($itemJs($kind, null))); $dispatch('open-modal', 'ref-item')"><x-icon name="plus" /> {{ t('references.add') }}</button>@endif</x-slot:actions>
                         <ul class="divide-y">
                             @foreach ($items as $r)
                                 <li class="flex flex-wrap items-center gap-2 px-4 py-2.5 text-sm sm:px-5">

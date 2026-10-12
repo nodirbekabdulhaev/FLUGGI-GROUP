@@ -34,5 +34,9 @@
   "defaultRate": "Bazaviy stavka",
   "currency": "Valyuta",
   "workItems": "Ijrochilar ishlari (ishbay stavkalar)",
-  "workItemsText": "Birlik uchun bazaviy narx: rils, muqova, karusel, storis. Xodimning shaxsiy stavkasini uning kartochkasida belgilash mumkin (Jamoa → Stavkalar)."
+  "workItemsText": "Birlik uchun bazaviy narx: rils, muqova, karusel, storis. Xodimning shaxsiy stavkasini uning kartochkasida belgilash mumkin (Jamoa → Stavkalar).",
+  "errors": {
+    "inUse": "Toifa allaqachon ishlatilmoqda — uni faqat oʻchirib qoʻyish mumkin",
+    "kind": "Toifa turini (daromad / xarajat) oʻzgartirib boʻlmaydi"
+  }
 }

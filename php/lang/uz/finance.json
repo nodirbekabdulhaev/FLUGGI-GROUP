@@ -85,5 +85,11 @@
     "title": "Loyihalar boʻyicha foyda",
     "subtitle": "Har bir loyihaning qiymati, olingan toʻlovlar, xarajatlari va marjasi",
     "empty": "Hozircha loyihalar yoʻq"
+  },
+  "errors": {
+    "category": "Maʼlumotnomadan xarajat toifasini tanlang",
+    "categoryField": "Bunday xarajat toifasi yoʻq",
+    "payee": "Oluvchi topilmadi",
+    "scopeProject": "Loyiha xarajati loyihaga bogʻlanadi, kompaniya xarajati — loyihasiz"
   }
 }

@@ -52,5 +52,13 @@
   "onlyMine": "Faqat sizning vazifalaringiz koʻrsatilgan",
   "kanbanHint": "Holatni oʻzgartirish uchun kartochkani boshqa ustunga sudrang",
   "progressSaved": "Progress saqlandi",
-  "open": "Vazifani ochish"
+  "open": "Vazifani ochish",
+  "errors": {
+    "assigneeNotMember": "Masʼul loyiha jamoasida boʻlishi kerak",
+    "cancelByLead": "Vazifani loyiha rahbari bekor qila oladi",
+    "projectClosed": "Loyiha yopilgan — vazifalarni oʻzgartirib boʻlmaydi",
+    "reopenByLead": "Yopilgan vazifani ishga qaytarishni loyiha rahbari amalga oshiradi"
+  },
+  "searchTitle": "Nomi boʻyicha qidirish",
+  "shownFirst": "dastlabki {count} tasi koʻrsatilgan"
 }

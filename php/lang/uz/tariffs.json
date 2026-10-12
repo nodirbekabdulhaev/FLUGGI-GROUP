@@ -36,5 +36,20 @@
   "priceUzs": "Narx, soʻm",
   "executorsUzs": "Ijrochilar",
   "overheadUzs": "Ustama xarajatlar (ulush)",
-  "marginUzs": "Marja"
+  "marginUzs": "Marja",
+  "title": "Tariflar",
+  "defaultRate": "Asosiy stavka",
+  "errors": {
+    "itemRequired": "Ishbay — ishni tanlang; belgilangan — ijrochi va summani",
+    "pricePositive": "Narx noldan katta boʻlishi kerak"
+  },
+  "noWorkItems": "Hozircha ishlar yoʻq",
+  "unit": "Birlik",
+  "workActive": "Faol",
+  "workItemEdit": "Ishni tahrirlash",
+  "workItemNew": "Yangi ish",
+  "workItemSaved": "Ish saqlandi",
+  "workItems": "Ish birliklari va asosiy stavkalar",
+  "workItemsText": "Birlik uchun standart ishbay narx. Shaxsiy stavkalar xodim kartochkasida belgilanadi.",
+  "workName": "Ish nomi"
 }

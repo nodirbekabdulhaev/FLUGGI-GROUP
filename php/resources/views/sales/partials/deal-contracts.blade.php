@@ -17,7 +17,7 @@
         @else
             <ul class="divide-y rounded-lg border">
                 @foreach ($panel['items'] as $c)
-                    @php($number = \App\Services\Sales\Numbers::contract($c->number))
+                    @php $number = \App\Services\Sales\Numbers::contract($c->number); @endphp
                     <li class="grid gap-2 px-4 py-3">
                         <div class="flex flex-wrap items-center gap-2">
                             <span class="font-medium">{{ t('sales.contracts.numberFrom', ['number' => $number, 'date' => d($c->contract_date)]) }}</span>
@@ -68,7 +68,7 @@
                                 @endif
                             </div>
                             @if (in_array($c->status, ['DRAFT', 'SENT', 'IN_APPROVAL'], true))
-                                @php($formName = 'contract-edit-'.$c->id)
+                                @php $formName = 'contract-edit-'.$c->id; @endphp
                                 <x-modal :name="$formName" :title="t('sales.contracts.editTitle', ['number' => $number])" :open="old('_form') === $formName && $errors->any()">
                                     <form method="POST" action="{{ route('sales.contracts.update', $c->id) }}" class="grid gap-4">
                                         @csrf @method('PATCH')

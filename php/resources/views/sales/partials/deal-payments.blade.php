@@ -17,7 +17,7 @@
         @else
             <ul class="divide-y rounded-lg border">
                 @foreach ($panel['items'] as $p)
-                    @php($number = \App\Services\Sales\Numbers::payment($p->number))
+                    @php $number = \App\Services\Sales\Numbers::payment($p->number); @endphp
                     <li class="flex flex-wrap items-center gap-3 px-4 py-3 text-sm">
                         <div class="min-w-0 flex-1">
                             <p class="font-medium">
@@ -54,7 +54,7 @@
                     </li>
 
                     @if ($p->status === 'PENDING' && can('payment.create'))
-                        @php($formName = 'payment-edit-'.$p->id)
+                        @php $formName = 'payment-edit-'.$p->id; @endphp
                         <x-modal :name="$formName" :title="t('sales.payments.edit').' '.$number" :open="old('_form') === $formName && $errors->any()">
                             <p class="mb-4 text-sm text-muted-foreground">{{ t('sales.payments.editHint') }}</p>
                             <form method="POST" action="{{ route('sales.payments.update', $p->id) }}" class="grid gap-4">
@@ -66,7 +66,7 @@
                         </x-modal>
                     @endif
                     @if ($p->status === 'PAID' && $p->type !== 'REFUND' && (float) $p->refundable_uzs > 0 && can('payment.refund'))
-                        @php($formName = 'payment-refund-'.$p->id)
+                        @php $formName = 'payment-refund-'.$p->id; @endphp
                         <x-modal :name="$formName" :title="t('sales.payments.refundTitle').' · '.$number" :open="old('_form') === $formName && $errors->any()">
                             <p class="mb-4 text-sm text-muted-foreground">{{ t('sales.payments.refundHint', ['amount' => money($p->refundable_uzs)]) }}</p>
                             <form method="POST" action="{{ route('sales.payments.refund', $p->id) }}" class="grid gap-4">

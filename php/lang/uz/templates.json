@@ -22,5 +22,6 @@
   "hint": "Start — vazifa loyiha boshlanganidan necha kun keyin boshlanadi; davomiyligi — unga necha kun ajratiladi.",
   "errors": {
     "noTasks": "Shablonda vazifalar yoʻq"
-  }
+  },
+  "removeTask": "Vazifani oʻchirish"
 }

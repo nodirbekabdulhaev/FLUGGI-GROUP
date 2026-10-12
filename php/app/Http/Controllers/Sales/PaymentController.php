@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\Sales;
 
+use App\Models\User;
 use App\Services\Sales\Numbers;
 use App\Services\Sales\PaymentsService;
 use App\Support\Format;
@@ -72,7 +73,7 @@ class PaymentController extends SalesController
             $lines[] = t('sales.payments.projectCreated', ['number' => Numbers::project($res['project']->number)]);
         }
         if ($res['commissions']) {
-            $names = \App\Models\User::whereIn('id', array_map(fn ($c) => $c->user_id, $res['commissions']))->pluck('full_name', 'id');
+            $names = User::whereIn('id', array_map(fn ($c) => $c->user_id, $res['commissions']))->pluck('full_name', 'id');
             $lines[] = t('sales.payments.commissions', ['list' => implode(', ', array_map(
                 fn ($c) => ($names[$c->user_id] ?? '').' '.money((string) $c->amount_uzs),
                 $res['commissions'],

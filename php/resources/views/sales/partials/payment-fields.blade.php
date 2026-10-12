@@ -13,7 +13,7 @@
     </div>
     <div>
         <label class="label" for="{{ $prefix }}-cur">{{ t('sales.currency') }}</label>
-        @php($cur = $val('currency', $payment?->currency ?? ($signed?->currency ?? $deal->currency)))
+        @php $cur = $val('currency', $payment?->currency ?? ($signed?->currency ?? $deal->currency)); @endphp
         <select id="{{ $prefix }}-cur" name="currency" class="input">
             @foreach (['UZS', 'USD'] as $c)<option value="{{ $c }}" @selected($cur === $c)>{{ $c }}</option>@endforeach
         </select>
@@ -22,21 +22,21 @@
 <div class="grid gap-4 sm:grid-cols-2">
     <div>
         <label class="label" for="{{ $prefix }}-type">{{ t('sales.payments.type') }}</label>
-        @php($type = $val('type', $payment?->type ?? 'PREPAYMENT'))
+        @php $type = $val('type', $payment?->type ?? 'PREPAYMENT'); @endphp
         <select id="{{ $prefix }}-type" name="type" class="input">
             @foreach ($types as $k => $label)<option value="{{ $k }}" @selected($type === $k)>{{ $label }}</option>@endforeach
         </select>
     </div>
     <div>
         <label class="label" for="{{ $prefix }}-method">{{ t('sales.payments.method') }}</label>
-        @php($method = $val('method', $payment?->method ?? 'BANK'))
+        @php $method = $val('method', $payment?->method ?? 'BANK'); @endphp
         <select id="{{ $prefix }}-method" name="method" class="input">
             @foreach ($methods as $k => $label)<option value="{{ $k }}" @selected($method === $k)>{{ $label }}</option>@endforeach
         </select>
     </div>
     <div>
         <label class="label" for="{{ $prefix }}-contract">{{ t('sales.payments.contract') }}</label>
-        @php($contract = (string) $val('contract_id', $payment ? $payment->contract_id : $signed?->id))
+        @php $contract = (string) $val('contract_id', $payment ? $payment->contract_id : $signed?->id); @endphp
         <select id="{{ $prefix }}-contract" name="contract_id" class="input">
             <option value="">—</option>
             @foreach ($contractOptions as $k => $label)<option value="{{ $k }}" @selected($contract === (string) $k)>{{ $label }}</option>@endforeach

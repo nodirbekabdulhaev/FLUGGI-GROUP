@@ -39,7 +39,7 @@
             <x-empty :title="t('tariffs.noServices')" />
         @endif
         @foreach ($services as $s)
-            @php($list = $tariffs[$s->id] ?? collect())
+            @php $list = $tariffs[$s->id] ?? collect(); @endphp
             <x-card :title="$svcName($s)" :subtitle="$list->count() ? t('tariffs.count', ['count' => $list->count()]) : t('tariffs.noTariffs')">
                 <x-slot:actions>
                     <button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-tariff', { service: @js($s->id) })"><x-icon name="plus" /> {{ t('tariffs.add') }}</button>
@@ -47,7 +47,7 @@
                 @if ($list->isNotEmpty())
                     <div class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                         @foreach ($list as $tf)
-                            @php($e = $tf->economics)
+                            @php $e = $tf->economics; @endphp
                             <div @class(['grid content-start gap-3 rounded-lg border p-4', 'opacity-60' => ! $tf->is_active])>
                                 <div class="flex items-start justify-between gap-2">
                                     <div class="min-w-0">
