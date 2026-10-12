@@ -33,6 +33,17 @@ cd fluggi && bash deploy/beget/setup.sh
 Если в базе уже есть данные прежней версии CRM (на Node.js) — таблицы и данные подходят без
 переноса, пароли сотрудников прежние.
 
+**Доступ Beget с домашней папкой `public_html`** (например, отдельный SSH-доступ к сайту, как
+`fluggi_crm`): выше подняться нельзя — ставьте прямо в домашнюю папку, установщик сам это поймёт:
+
+```bash
+cd ~ && git clone --depth 1 -b hosting https://github.com/nodirbekabdulhaev/FLUGGI-GROUP.git crm
+cd crm && PHP_BIN=/usr/local/bin/php8.3 bash deploy/beget/setup.sh
+```
+
+CRM будет в папке `public_html/crm`, а `.htaccess` в корне сайта направит все запросы в
+`crm/public` — код и `.env` из интернета недоступны (проверено на Apache: 403/404).
+
 ## 3. Cron
 
 Панель → «Cron» → добавить задачу **каждую минуту** с командой, которую напечатал `setup.sh`, например:

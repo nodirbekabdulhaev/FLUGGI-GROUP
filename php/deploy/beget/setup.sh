@@ -89,17 +89,49 @@ fi
 "$PHP" artisan storage:link -q 2>/dev/null || true
 "$PHP" artisan optimize -q
 
-# Сайт должен смотреть в папку public/ — остальное (код, .env) недоступно из интернета
-DOCROOT="${DOCROOT:-$SITE/public_html}"
-if [ -L "$DOCROOT" ]; then
-  ln -sfn "$APP/public" "$DOCROOT"
-elif [ -d "$DOCROOT" ]; then
-  mv "$DOCROOT" "$DOCROOT.beget-bak" && ln -s "$APP/public" "$DOCROOT"
-  echo "  прежняя папка сайта сохранена: $(basename "$DOCROOT").beget-bak"
-else
-  ln -s "$APP/public" "$DOCROOT"
+# Сайт должен смотреть в папку public/ — остальное (код, .env) недоступно из интернета.
+# Два случая:
+#  • проект рядом с public_html (~/crm.fluggi.uz/crm) — public_html становится ссылкой на crm/public;
+#  • проект внутри public_html (доступ Beget, у которого домашняя папка — корень сайта) —
+#    .htaccess в корне сайта направляет все запросы в crm/public, прямой доступ к коду закрыт.
+if [ -z "${DOCROOT:-}" ] && { [ "$(basename "$SITE")" = public_html ] || [ ! -d "$SITE/public_html" ]; }; then
+  DOCROOT="$SITE"   # проект лежит в корне сайта (домашняя папка доступа = public_html)
 fi
-echo "▸ Корень сайта: $DOCROOT → $APP/public"
+DOCROOT="${DOCROOT:-$SITE/public_html}"
+case "$APP/" in
+  "$DOCROOT"/*)
+    REL="${APP#"$DOCROOT"/}"
+    [ -f "$DOCROOT/.htaccess" ] && ! grep -q 'Fluggi CRM' "$DOCROOT/.htaccess" && cp "$DOCROOT/.htaccess" "$DOCROOT/.htaccess.beget-bak"
+    cat >"$DOCROOT/.htaccess" <<HTA
+# Fluggi CRM: сайт обслуживается из папки $REL/public, всё остальное недоступно
+Options -Indexes
+<FilesMatch "^\.">
+  Require all denied
+</FilesMatch>
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteCond %{REQUEST_URI} !^/$REL/public/
+  RewriteRule ^(.*)\$ $REL/public/\$1 [L]
+</IfModule>
+HTA
+    # Заглушка хостинга не мешает, но и не нужна
+    for f in index.php index.html; do
+      [ -f "$DOCROOT/$f" ] && mv "$DOCROOT/$f" "$DOCROOT/$f.beget-bak" && echo "  $f → $f.beget-bak"
+    done
+    echo "▸ Корень сайта: $DOCROOT/.htaccess → $REL/public"
+    ;;
+  *)
+    if [ -L "$DOCROOT" ]; then
+      ln -sfn "$APP/public" "$DOCROOT"
+    elif [ -d "$DOCROOT" ]; then
+      mv "$DOCROOT" "$DOCROOT.beget-bak" && ln -s "$APP/public" "$DOCROOT"
+      echo "  прежняя папка сайта сохранена: $(basename "$DOCROOT").beget-bak"
+    else
+      ln -s "$APP/public" "$DOCROOT"
+    fi
+    echo "▸ Корень сайта: $DOCROOT → $APP/public"
+    ;;
+esac
 
 DOMAIN="$(sed -n 's#^APP_URL=https\?://##p' .env)"
 echo
