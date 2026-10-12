@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Service;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Projects\TemplateService;
+use App\Support\Lang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -16,11 +17,10 @@ class TemplatesController extends Controller
 {
     public function index(): View
     {
-        $uz = app()->getLocale() === 'uz';
 
         return view('settings.templates', [
             'templates' => TemplateService::list(false),
-            'services' => Service::orderBy('sort')->get()->mapWithKeys(fn ($s) => [$s->id => $uz ? ($s->name_uz ?? $s->name_ru) : $s->name_ru])->all(),
+            'services' => Service::orderBy('sort')->get()->mapWithKeys(fn ($s) => [$s->id => Lang::name($s)])->all(),
         ]);
     }
 

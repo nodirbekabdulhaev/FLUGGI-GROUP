@@ -98,5 +98,7 @@
     "openTasks": "Loyihani yakunlab boʻlmaydi: ochiq vazifalar — {count}. Ularni yakunlang yoki bekor qiling",
     "ropRole": "Loyiha rahbari — savdo boʻlimi rahbari yoki CEO roli bilan xodim",
     "userNotFound": "Xodim topilmadi yoki bloklangan"
-  }
+  },
+  "deleteConfirm": "«{name}» loyihasi vazifalari bilan birga oʻchirilsinmi? Bitim, toʻlovlar va moliyaviy tarix saqlanib qoladi.",
+  "deleted": "Loyiha oʻchirildi"
 }

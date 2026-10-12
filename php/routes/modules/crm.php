@@ -58,6 +58,7 @@ Route::name('crm.')->group(function () {
     Route::post('/clients', [ClientController::class, 'store'])->middleware('perm:client.create')->name('clients.store');
     Route::get('/clients/{id}', [ClientController::class, 'show'])->whereUuid('id')->middleware('perm:client.read')->name('clients.show');
     Route::put('/clients/{id}', [ClientController::class, 'update'])->whereUuid('id')->middleware('perm:client.update')->name('clients.update');
+    Route::delete('/clients/{id}', [ClientController::class, 'destroy'])->whereUuid('id')->middleware('perm:client.delete')->name('clients.destroy');
     Route::put('/clients/{id}/requisites', [ClientController::class, 'requisites'])->whereUuid('id')->middleware('perm:client.update')->name('clients.requisites');
     Route::post('/clients/{id}/contacts', [ClientController::class, 'storeContact'])->whereUuid('id')->middleware('perm:client.update')->name('contacts.store');
     Route::put('/contacts/{id}', [ClientController::class, 'updateContact'])->whereUuid('id')->middleware('perm:client.update')->name('contacts.update');

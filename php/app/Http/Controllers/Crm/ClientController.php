@@ -8,6 +8,7 @@ use App\Models\Service;
 use App\Services\Crm\ClientService;
 use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
+use App\Services\Crm\Deletion;
 use App\Services\Crm\TimelineService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -67,7 +68,16 @@ class ClientController extends CrmController
             'sources' => Crm::options(LeadSource::class, $client->source_id),
             'serviceOptions' => Crm::options(Service::class),
             'requisites' => is_array($client->requisites) ? $client->requisites : null,
+            'deleteImpact' => access()->can('client.delete') ? Deletion::clientImpact($client) : null,
         ]);
+    }
+
+    /** Удаление клиента вместе с лидами, сделками и проектами — только CEO. */
+    public function destroy(Request $request, string $id): RedirectResponse|JsonResponse
+    {
+        Deletion::client(CrmAccess::client($id, 'client.delete'));
+
+        return $this->done($request, t('crm.common.deleted'), route('crm.clients.index'));
     }
 
     public function store(Request $request): RedirectResponse|JsonResponse

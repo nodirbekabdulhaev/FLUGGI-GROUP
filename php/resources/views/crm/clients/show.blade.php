@@ -19,6 +19,14 @@
         <div class="flex flex-wrap gap-2" x-data>
             @if (can('deal.create'))<button type="button" class="btn btn-primary btn-sm" x-on:click="$dispatch('open-modal', 'deal-create')"><x-icon name="plus" /> {{ t('clients.newDeal') }}</button>@endif
             @if ($canEdit)<button type="button" class="btn btn-outline btn-sm" x-on:click="$dispatch('open-modal', 'client-edit')"><x-icon name="edit" /> {{ t('crm.common.edit') }}</button>@endif
+            @if ($deleteImpact !== null)
+                {{-- Только CEO: клиент удаляется вместе с лидами, сделками и проектами; оплаты и история остаются --}}
+                <form method="POST" action="{{ route('crm.clients.destroy', $client->id) }}"
+                      data-confirm="{{ t('clients.deleteConfirm', ['name' => $client->name, 'leads' => $deleteImpact['leads'], 'deals' => $deleteImpact['deals'], 'projects' => $deleteImpact['projects']]) }}">
+                    @csrf @method('DELETE')
+                    <button class="btn btn-outline btn-sm text-danger"><x-icon name="trash" /> {{ t('crm.common.delete') }}</button>
+                </form>
+            @endif
         </div>
     </div>
 

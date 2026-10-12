@@ -25,5 +25,6 @@
     "inn": "STIR — 9 ta raqam, JShShIR — 14 ta raqam",
     "mfo": "MFO — 5 ta raqam",
     "nameRequired": "Nomini kiriting"
-  }
+  },
+  "deleteConfirm": "«{name}» mijozi oʻchirilsinmi? U bilan birga lidlar ({leads}), bitimlar ({deals}) va loyihalar ({projects}) ham oʻchiriladi. Toʻlovlar, shartnomalar va tarix saqlanib qoladi."
 }

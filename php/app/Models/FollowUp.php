@@ -21,12 +21,12 @@ class FollowUp extends Model
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'project_id');
+        return $this->belongsTo(Project::class, 'project_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function owner(): BelongsTo
@@ -41,6 +41,6 @@ class FollowUp extends Model
 
     public function resultDeal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'result_deal_id');
+        return $this->belongsTo(Deal::class, 'result_deal_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 }

@@ -141,12 +141,13 @@ class LeadFlowTest extends CrmTestCase
         $this->assertTrue(Activity::where('lead_id', $lead->id)->where('type', 'lead.updated')->exists());
     }
 
-    public function test_converted_lead_cannot_be_reopened_or_deleted(): void
+    public function test_converted_lead_cannot_be_reopened_or_converted_again(): void
     {
         $lead = $this->newLead($this->manager);
         $this->convert($lead, $this->rop);
         $this->actingAsUser($this->rop)->post("/sales/leads/{$lead->id}/reopen")->assertSessionHas('error');
-        $this->actingAsUser($this->rop)->delete("/sales/leads/{$lead->id}")->assertSessionHas('error');
+        // Удалять лиды может только CEO
+        $this->actingAsUser($this->rop)->delete("/sales/leads/{$lead->id}")->assertForbidden();
         $this->actingAsUser($this->rop)->post("/sales/leads/{$lead->id}/convert", ['client_name' => 'X', 'amount' => '1'])->assertSessionHas('error');
         $this->assertNull($lead->fresh()->deleted_at);
     }
@@ -166,7 +167,8 @@ class LeadFlowTest extends CrmTestCase
     public function test_delete_is_soft_and_audited(): void
     {
         $lead = $this->newLead($this->rop);
-        $this->actingAsUser($this->rop)->delete("/sales/leads/{$lead->id}")->assertRedirect('/sales/leads');
+        $this->actingAsUser($this->rop)->delete("/sales/leads/{$lead->id}")->assertForbidden();
+        $this->actingAsUser($this->user('CEO'))->delete("/sales/leads/{$lead->id}")->assertRedirect('/sales/leads');
         $this->assertSoftDeleted('leads', ['id' => $lead->id]);
         $this->assertTrue(AuditLog::where('action', 'lead.delete')->exists());
         // У менеджера нет права удалять лиды

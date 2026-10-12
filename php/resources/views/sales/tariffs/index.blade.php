@@ -2,8 +2,7 @@
 @section('title', t('tariffs.title'))
 @section('content')
     @php
-        $uz = app()->getLocale() === 'uz';
-        $svcName = fn ($s) => $uz ? ($s->name_uz ?? $s->name_ru) : $s->name_ru;
+        $svcName = fn ($s) => \App\Support\Lang::name($s);
         $all = $tariffs->flatten(1);
         $reopenTariff = old('_form') === 'tariff-editor' && $errors->any();
         $reopenWork = old('_form') === 'work-editor' && $errors->any();

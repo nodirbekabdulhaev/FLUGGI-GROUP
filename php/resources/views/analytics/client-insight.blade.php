@@ -14,7 +14,7 @@
             <div><dt class="text-xs text-muted-foreground">LTV</dt><dd class="text-lg font-semibold tabular-nums">{{ $short($insight['ltv']) }}</dd></div>
             <div><dt class="text-xs text-muted-foreground">{{ t('analytics.paidDeals') }}</dt><dd class="text-lg font-semibold tabular-nums">{{ $insight['paidDeals'] }}</dd></div>
             <div><dt class="text-xs text-muted-foreground">{{ t('analytics.avgCheck') }}</dt><dd class="text-lg font-semibold tabular-nums">{{ $insight['paidDeals'] ? $short($insight['avgCheck']) : '—' }}</dd></div>
-            <div><dt class="text-xs text-muted-foreground">{{ t('analytics.lastContact') }}</dt><dd class="text-lg font-semibold">{{ $insight['lastContactAt'] ? $insight['lastContactAt']->locale(app()->getLocale() === 'uz' ? 'uz_Latn' : 'ru')->diffForHumans() : '—' }}</dd></div>
+            <div><dt class="text-xs text-muted-foreground">{{ t('analytics.lastContact') }}</dt><dd class="text-lg font-semibold">{{ $insight['lastContactAt'] ? $insight['lastContactAt']->locale(\App\Support\Lang::icu())->diffForHumans() : '—' }}</dd></div>
         </dl>
     </div>
 </x-card>

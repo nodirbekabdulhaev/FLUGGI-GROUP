@@ -127,7 +127,8 @@
       "status_changed": "Статус проекта",
       "template_applied": "Применён шаблон",
       "member_added": "Добавлен в команду",
-      "member_removed": "Исключён из команды"
+      "member_removed": "Исключён из команды",
+      "deleted": "Проект удалён"
     },
     "task": {
       "created": "Создана задача",

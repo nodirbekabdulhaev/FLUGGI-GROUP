@@ -1,0 +1,28 @@
+{
+  "title": "Meetings",
+  "subtitle": "Client meetings for leads and deals",
+  "upcoming": "Upcoming",
+  "done": "Held",
+  "all": "All",
+  "emptyTitle": "No meetings",
+  "emptyText": "Schedule a meeting from a lead or deal page.",
+  "createTitle": "New meeting",
+  "completeTitle": "Meeting held",
+  "resultHint": "What was decided, next steps",
+  "cancel": "Cancel meeting",
+  "confirm": "Confirm",
+  "cancelled": "Meeting cancelled",
+  "noShow": "No-show",
+  "cancelConfirm": "Cancel the meeting?",
+  "edit": "Edit / reschedule",
+  "editTitle": "Edit meeting",
+  "rescheduleHint": "Changing the date without changing the status marks the meeting as rescheduled.",
+  "errors": {
+    "alreadyDone": "The meeting is already marked as held",
+    "cancelled": "The meeting has been cancelled",
+    "closedRecord": "You cannot schedule a meeting for a closed record",
+    "doneImmutable": "A held meeting cannot be edited",
+    "resultRequired": "Describe the meeting outcome",
+    "target": "A meeting must be linked to a lead or a deal"
+  }
+}

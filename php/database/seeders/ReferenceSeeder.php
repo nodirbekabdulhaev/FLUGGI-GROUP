@@ -14,6 +14,7 @@ use App\Models\Tariff;
 use App\Models\WorkItem;
 use App\Models\WorkSchedule;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Справочники CRM (ТЗ §7, §9, §39, §61, §62). Существующие записи не изменяются —
@@ -139,6 +140,14 @@ class ReferenceSeeder extends Seeder
         ['BRANDFACE_REEL', 'Рилс с брендфейсом', 'шт', 'BRANDFACE', 200000, 'UZS'],
     ];
 
+    /** Английские названия справочников (заполняются, если пусты). */
+    public const EN = [
+        'services' => ['SMM' => 'SMM', 'TARGET' => 'Targeted ads', 'BRANDING' => 'Branding', 'WEBSITE' => 'Website', 'CRM' => 'CRM system', 'ERP' => 'ERP system', 'DESIGN' => 'Design', 'PHOTO' => 'Photo shoot', 'VIDEO' => 'Video production', 'MARKETING' => 'Marketing'],
+        'lead_sources' => ['INSTAGRAM' => 'Instagram', 'TELEGRAM' => 'Telegram', 'WEBSITE' => 'Website', 'WHATSAPP' => 'WhatsApp', 'REFERRAL' => 'Referral', 'COLD_OUTREACH' => 'Cold outreach', 'ADVERTISEMENT' => 'Advertising', 'TARGET' => 'Targeting (Meta Ads)', 'PHONE' => 'Phone call', 'OTHER' => 'Other'],
+        'loss_reasons' => ['TOO_EXPENSIVE' => 'Too expensive', 'NO_BUDGET' => 'No budget', 'COMPETITOR' => 'Chose a competitor', 'POSTPONED' => 'Postponed the project', 'NO_RESPONSE' => 'Not responding', 'TERMS' => 'Terms did not fit', 'TIMING' => 'Timing', 'NO_NEED' => 'No need', 'OTHER' => 'Other reason'],
+        'deal_stages' => ['NEW' => 'New lead', 'CONTACTED' => 'Contacted', 'QUALIFICATION' => 'Qualification', 'MEETING_SCHEDULED' => 'Meeting scheduled', 'MEETING_DONE' => 'Meeting held', 'NEED_DEFINED' => 'Need defined', 'PROPOSAL_SENT' => 'Proposal sent', 'NEGOTIATION' => 'Negotiation', 'CONTRACT' => 'Contract', 'AWAITING_PAYMENT' => 'Awaiting payment', 'PAID' => 'Paid'],
+    ];
+
     public function run(): void
     {
         foreach (self::DIRECTIONS as $i => [$code, $name]) {
@@ -207,6 +216,12 @@ class ReferenceSeeder extends Seeder
             foreach ([['Эконом', 'Лендинг до 5 блоков', 750, 3000000, 0], ['Стандарт', 'Корпоративный сайт до 10 страниц', 1150, 5000000, 1]] as [$name, $desc, $price, $pay, $sort]) {
                 Tariff::create(['service_id' => $web, 'name' => $name, 'description' => $desc, 'price' => $price, 'currency' => 'USD', 'sort' => $sort])
                     ->items()->create(['kind' => 'FIXED', 'specialty' => 'DEVELOPER', 'amount' => $pay, 'currency' => 'UZS', 'label' => 'Веб-разработчик', 'quantity' => 1, 'sort' => 0]);
+            }
+        }
+
+        foreach (self::EN as $table => $names) {
+            foreach ($names as $code => $name) {
+                DB::table($table)->where('code', $code)->whereNull('name_en')->update(['name_en' => $name]);
             }
         }
     }

@@ -27,6 +27,7 @@ final class Permissions
         'client.read' => 'Просмотр клиентов',
         'client.create' => 'Создание клиентов',
         'client.update' => 'Редактирование клиентов',
+        'client.delete' => 'Удаление клиентов',
 
         'deal.read' => 'Просмотр сделок',
         'deal.create' => 'Создание сделок',
@@ -57,6 +58,7 @@ final class Permissions
         'project.create' => 'Создание проектов',
         'project.update' => 'Редактирование проектов',
         'project.assign' => 'Назначение исполнителей',
+        'project.delete' => 'Удаление проектов',
 
         'task.read' => 'Просмотр задач',
         'task.create' => 'Создание задач',
@@ -96,6 +98,9 @@ final class Permissions
     /** Права, которые нельзя снять с роли CEO (иначе можно потерять управление системой). */
     public const CEO_LOCKED = ['role.manage', 'employee.manage'];
 
+    /** Права только для роли CEO: удаление лидов, клиентов и проектов. Другим ролям не выдаются. */
+    public const CEO_ONLY = ['lead.delete', 'client.delete', 'project.delete'];
+
     public const ROLE_NAMES = [
         'CEO' => 'CEO / Владелец',
         'ROP' => 'Руководитель отдела продаж',
@@ -122,7 +127,7 @@ final class Permissions
 
             // Финансы проектов (прибыль, расходы) — только CEO; РОП назначает исполнителей
             'ROP' => $team([
-                'dashboard.team', 'lead.read', 'lead.create', 'lead.update', 'lead.assign', 'lead.delete',
+                'dashboard.team', 'lead.read', 'lead.create', 'lead.update', 'lead.assign',
                 'client.read', 'client.create', 'client.update',
                 'deal.read', 'deal.create', 'deal.update', 'deal.change_stage', 'deal.delete',
                 'meeting.read', 'meeting.create', 'meeting.update',
@@ -162,8 +167,11 @@ final class Permissions
     }
 
     /** Есть ли право в карте прав, не ниже указанной области. */
-    public static function has(array $map, string $code, string $minScope = 'OWN'): bool
+    public static function has(array $map, string $code, string $minScope = 'OWN', ?string $roleCode = null): bool
     {
+        if ($roleCode !== null && $roleCode !== 'CEO' && in_array($code, self::CEO_ONLY, true)) {
+            return false;
+        }
         $scope = $map[$code] ?? null;
 
         return $scope !== null && self::RANK[$scope] >= self::RANK[$minScope];

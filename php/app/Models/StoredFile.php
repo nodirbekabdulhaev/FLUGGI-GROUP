@@ -29,7 +29,7 @@ class StoredFile extends Model
 
     public function deal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'deal_id');
+        return $this->belongsTo(Deal::class, 'deal_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function proposal(): BelongsTo
@@ -49,7 +49,7 @@ class StoredFile extends Model
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'project_id');
+        return $this->belongsTo(Project::class, 'project_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function task(): BelongsTo

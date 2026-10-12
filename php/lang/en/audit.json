@@ -1,0 +1,173 @@
+{
+  "auth": {
+    "login": "Sign-in",
+    "logout": "Sign-out",
+    "login_failed": "Failed sign-in attempt",
+    "locked": "Sign-in temporarily locked",
+    "password_changed": "Password changed",
+    "session_revoked": "Session ended"
+  },
+  "user": {
+    "create": "Employee created",
+    "update": "Employee updated",
+    "block": "Employee blocked",
+    "unblock": "Employee unblocked",
+    "reset_password": "Password reset",
+    "delete": "Employee deleted"
+  },
+  "team": {
+    "create": "Team created",
+    "update": "Team updated",
+    "delete": "Team deleted"
+  },
+  "role": {
+    "permissions_update": "Role permissions updated"
+  },
+  "lead": {
+    "create": "Lead created",
+    "update": "Lead updated",
+    "assign": "Lead owner changed",
+    "stage_change": "Lead stage changed",
+    "close": "Lead closed",
+    "reopen": "Lead reopened",
+    "convert": "Lead qualified",
+    "delete": "Lead deleted"
+  },
+  "deal": {
+    "create": "Deal created",
+    "update": "Deal updated",
+    "assign": "Deal owner changed",
+    "stage_change": "Deal stage changed",
+    "close": "Deal closed",
+    "reopen": "Deal reopened",
+    "delete": "Deal deleted"
+  },
+  "client": {
+    "create": "Client created",
+    "update": "Client updated"
+  },
+  "contact": {
+    "create": "Contact added",
+    "update": "Contact updated",
+    "delete": "Contact deleted"
+  },
+  "meeting": {
+    "create": "Meeting scheduled",
+    "update": "Meeting updated",
+    "complete": "Meeting held"
+  },
+  "comment": {
+    "delete": "Comment deleted"
+  },
+  "service": {
+    "create": "Service added",
+    "update": "Service updated"
+  },
+  "sources": {
+    "create": "Source added",
+    "update": "Source updated"
+  },
+  "loss-reasons": {
+    "create": "Loss reason added",
+    "update": "Loss reason updated"
+  },
+  "stage": {
+    "update": "Pipeline stage updated"
+  },
+  "exchange_rate": {
+    "set": "Exchange rate set"
+  },
+  "proposal": {
+    "create": "Proposal created",
+    "update": "Proposal updated (new version)",
+    "approval_requested": "Proposal sent for approval",
+    "approved": "Proposal approved",
+    "sent": "Proposal sent",
+    "viewed": "Proposal viewed",
+    "accepted": "Proposal accepted",
+    "rejected": "Proposal rejected"
+  },
+  "contract": {
+    "create": "Contract created",
+    "update": "Contract updated",
+    "send": "Contract sent",
+    "submit-approval": "Contract in approval",
+    "sign": "Contract signed",
+    "cancel": "Contract cancelled"
+  },
+  "payment": {
+    "create": "Payment added",
+    "confirm": "Payment confirmed",
+    "refund": "Refund",
+    "cancel": "Payment cancelled"
+  },
+  "file": {
+    "upload": "File uploaded",
+    "delete": "File deleted"
+  },
+  "commission_rule": {
+    "create": "Commission rule created",
+    "update": "Commission rule updated"
+  },
+  "entityType": "Record type",
+  "project": {
+    "update": "Project updated",
+    "status": "Project status changed",
+    "apply_template": "Project template applied",
+    "member_add": "Project member added",
+    "member_update": "Project member updated"
+  },
+  "task": {
+    "create": "Task created",
+    "update": "Task updated",
+    "status": "Task status changed",
+    "delete": "Task deleted"
+  },
+  "project_template": {
+    "create": "Project template created",
+    "update": "Project template updated"
+  },
+  "expense": {
+    "create": "Expense added",
+    "update": "Expense updated",
+    "delete": "Expense deleted"
+  },
+  "finance_category": {
+    "create": "Finance category created",
+    "update": "Finance category updated",
+    "delete": "Finance category deleted"
+  },
+  "other_income": {
+    "create": "Other income added",
+    "update": "Other income updated",
+    "delete": "Other income deleted"
+  },
+  "work_item": {
+    "create": "Executor work item added",
+    "update": "Executor work item updated"
+  },
+  "employee": {
+    "rates": "Piece rates updated"
+  },
+  "settings": {
+    "finance": "Finance settings updated"
+  },
+  "kpi": {
+    "target": "KPI target updated"
+  },
+  "schedule": {
+    "create": "Work schedule created",
+    "update": "Work schedule updated"
+  },
+  "attendance": {
+    "check_in": "Checked in",
+    "check_out": "Checked out",
+    "update": "Attendance corrected"
+  },
+  "payroll": {
+    "calculate": "Payroll calculated",
+    "update": "Payroll updated",
+    "approve": "Payroll approved",
+    "pay": "Payroll paid"
+  }
+}

@@ -2,11 +2,12 @@
 
 namespace Tests\Feature\Core;
 
+use App\Support\Lang;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
 
 /**
- * Каждая страница без параметров открывается у каждой роли на обоих языках:
+ * Каждая страница без параметров открывается у каждой роли на всех языках:
  * 200 (или редирект) при наличии права, 403 без него, 422 для JSON без параметров — и никогда 500.
  */
 class PagesSmokeTest extends TestCase
@@ -27,7 +28,7 @@ class PagesSmokeTest extends TestCase
         $this->team($rop);
         foreach (['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN', 'PROJECT_MANAGER'] as $role) {
             $user = $role === 'ROP' ? $rop : $this->user($role);
-            foreach (['ru', 'uz'] as $locale) {
+            foreach (Lang::LOCALES as $locale) {
                 $user->update(['locale' => $locale]);
                 $this->actingAsUser($user);
                 foreach ($uris as $uri) {

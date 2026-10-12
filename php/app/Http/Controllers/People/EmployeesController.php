@@ -8,6 +8,7 @@ use App\Models\Team;
 use App\Models\User;
 use App\Services\People\UserService;
 use App\Services\Projects\ProjectAccess;
+use App\Support\Lang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -66,7 +67,7 @@ class EmployeesController extends Controller
             'team_id' => ['nullable', 'uuid'],
             'position' => ['nullable', 'string', 'max:120'],
             'specialty' => ['nullable', Rule::in(ProjectAccess::SPECIALTIES)],
-            'locale' => ['nullable', Rule::in(['ru', 'uz'])],
+            'locale' => ['nullable', Rule::in(Lang::LOCALES)],
             'direction_ids' => ['nullable', 'array', 'max:20'],
             'direction_ids.*' => ['uuid'],
         ]);

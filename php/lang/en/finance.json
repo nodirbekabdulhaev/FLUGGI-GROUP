@@ -1,0 +1,95 @@
+{
+  "dashboard": {
+    "title": "Financial overview",
+    "subtitle": "Revenue, payments, expenses and profit for the period",
+    "companyHint": "Operating profit and company expenses are visible only to the CEO."
+  },
+  "kpi": {
+    "revenue": "Revenue",
+    "revenueHint": "Contracts signed in the period",
+    "collected": "Collected",
+    "collectedHint": "Confirmed payments",
+    "receivables": "Receivables",
+    "receivablesHint": "Signed but not yet paid — as of today",
+    "expenses": "Expenses",
+    "expensesHint": "Project {project} · company {company}",
+    "projectExpensesHint": "Project expenses",
+    "grossProfit": "Gross profit",
+    "grossProfitHint": "Collected − refunds − project expenses",
+    "margin": "Margin",
+    "refunds": "Refunds",
+    "commissions": "Commissions",
+    "operatingProfit": "Operating profit",
+    "operatingProfitHint": "Gross + other income − company expenses − commissions",
+    "otherIncome": "Other income",
+    "otherIncomeHint": "Not from clients; included in operating profit"
+  },
+  "byCategory": "Expenses by category",
+  "noExpenses": "No expenses in this period",
+  "category": {
+    "EXECUTOR": "Executor",
+    "ADS": "Advertising",
+    "PRODUCTION": "Production",
+    "PHOTO": "Photo",
+    "VIDEO": "Video",
+    "DESIGN": "Design",
+    "DEVELOPMENT": "Development",
+    "TRANSPORT": "Transport",
+    "MATERIALS": "Materials",
+    "SERVICES": "Software & services",
+    "OTHER": "Other"
+  },
+  "scope": {
+    "PROJECT": "Project",
+    "COMPANY": "Company"
+  },
+  "expenses": {
+    "title": "Expenses",
+    "subtitle": "Project and company expenses",
+    "new": "New expense",
+    "edit": "Edit expense",
+    "created": "Expense added",
+    "saved": "Expense saved",
+    "deleted": "Expense deleted",
+    "deleteConfirm": "Delete expense {number}?",
+    "empty": "No expenses",
+    "emptyText": "Add a project or company expense.",
+    "total": "Total",
+    "scope": "Type",
+    "project": "Project",
+    "category": "Category",
+    "amount": "Amount",
+    "date": "Date",
+    "payee": "Payee",
+    "noPayee": "—",
+    "description": "Description",
+    "allScopes": "All expenses",
+    "allCategories": "All categories",
+    "companyOnlyCeo": "Company expenses are entered by the CEO"
+  },
+  "project": {
+    "title": "Project finances",
+    "revenue": "Project price",
+    "collected": "Collected",
+    "receivable": "Remaining to collect",
+    "expenses": "Expenses",
+    "grossProfit": "Gross profit",
+    "margin": "Margin",
+    "commissions": "Deal commissions",
+    "expensesList": "Project expenses",
+    "overhead": "Overhead (rent, office)",
+    "netProfit": "Net profit",
+    "plannedCost": "Executor plan (not accrued)"
+  },
+  "profit": {
+    "title": "Profit by project",
+    "subtitle": "Price, payments received, expenses and margin of each project",
+    "empty": "No projects yet"
+  },
+  "errors": {
+    "category": "Select an expense category from Reference data",
+    "categoryField": "No such expense category",
+    "payee": "Payee not found",
+    "scopeProject": "A project expense must be linked to a project; a company expense has no project"
+  }
+}

@@ -221,7 +221,7 @@
                                         <td class="whitespace-nowrap text-right tabular-nums">{{ $short($c['ltv']) }}</td>
                                         <td class="text-right tabular-nums">{{ $c['paidDeals'] }}</td>
                                         <td class="whitespace-nowrap text-right tabular-nums">{{ $c['paidDeals'] ? $short($c['avgCheck']) : '—' }}</td>
-                                        <td class="whitespace-nowrap text-muted-foreground">{{ $c['lastContactAt'] ? $c['lastContactAt']->locale(app()->getLocale() === 'uz' ? 'uz_Latn' : 'ru')->diffForHumans() : '—' }}</td>
+                                        <td class="whitespace-nowrap text-muted-foreground">{{ $c['lastContactAt'] ? $c['lastContactAt']->locale(\App\Support\Lang::icu())->diffForHumans() : '—' }}</td>
                                         <td>{{ $c['owner'] }}</td>
                                     </tr>
                                 @endforeach

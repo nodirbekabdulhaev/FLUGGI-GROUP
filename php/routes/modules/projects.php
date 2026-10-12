@@ -17,6 +17,7 @@ Route::redirect('/projects', '/projects/all')->middleware('perm:project.read');
 Route::get('/projects/{view}', [ProjectsController::class, 'index'])->whereIn('view', ['all', 'active', 'overdue', 'completed'])->middleware('perm:project.read')->name('projects.index');
 Route::get('/projects/{id}', [ProjectsController::class, 'show'])->where('id', $uuid)->middleware('perm:project.read')->name('projects.show');
 Route::patch('/projects/{id}', [ProjectsController::class, 'update'])->where('id', $uuid)->middleware('perm:project.update')->name('projects.update');
+Route::delete('/projects/{id}', [ProjectsController::class, 'destroy'])->where('id', $uuid)->middleware('perm:project.delete')->name('projects.destroy');
 Route::post('/projects/{id}/status', [ProjectsController::class, 'status'])->where('id', $uuid)->middleware('perm:project.update')->name('projects.status');
 Route::post('/projects/{id}/apply-template', [ProjectsController::class, 'applyTemplate'])->where('id', $uuid)->middleware('perm:project.update')->name('projects.template');
 Route::post('/projects/{id}/members', [ProjectsController::class, 'addMember'])->where('id', $uuid)->middleware('perm:project.assign')->name('projects.members.store');

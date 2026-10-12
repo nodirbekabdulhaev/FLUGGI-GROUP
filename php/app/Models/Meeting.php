@@ -21,17 +21,17 @@ class Meeting extends Model
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class, 'lead_id');
+        return $this->belongsTo(Lead::class, 'lead_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function deal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'deal_id');
+        return $this->belongsTo(Deal::class, 'deal_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function manager(): BelongsTo

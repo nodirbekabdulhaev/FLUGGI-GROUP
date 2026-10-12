@@ -4,6 +4,7 @@ namespace App\Http\Middleware;
 
 use App\Auth\Access;
 use App\Auth\Sessions;
+use App\Support\Lang;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -28,7 +29,7 @@ class Authenticate
         }
         app()->instance(Access::class, $access);
         Auth::setUser($access->user);
-        app()->setLocale(in_array($access->user->locale, ['uz', 'ru'], true) ? $access->user->locale : 'ru');
+        app()->setLocale(Lang::supported($access->user->locale) ? $access->user->locale : 'ru');
 
         return $next($request);
     }

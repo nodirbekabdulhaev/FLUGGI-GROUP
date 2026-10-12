@@ -38,7 +38,7 @@ class Expense extends Model
 
     public function project(): BelongsTo
     {
-        return $this->belongsTo(Project::class, 'project_id');
+        return $this->belongsTo(Project::class, 'project_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function payee(): BelongsTo

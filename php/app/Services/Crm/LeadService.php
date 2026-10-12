@@ -345,12 +345,9 @@ final class LeadService
         });
     }
 
-    /** Удаление — мягкое; квалифицированный лид удалить нельзя. */
+    /** Удаление — мягкое, только CEO. У квалифицированного лида клиент и сделка остаются. */
     public function remove(Lead $lead): void
     {
-        if ($lead->status === 'CONVERTED') {
-            throw new BusinessRule(t('leads.errors.cannotDeleteConverted'));
-        }
         DB::transaction(function () use ($lead) {
             $lead->delete();
             Audit::log('lead.delete', 'lead', $lead->id, ['title' => ['old' => $lead->title, 'new' => null]]);

@@ -21,6 +21,12 @@ class RolesSeeder extends Seeder
         }
         $permissionIds = Permission::pluck('id', 'code');
 
+        // Права «только CEO» снимаются с остальных ролей (в том числе выданные раньше)
+        DB::table('role_permissions as rp')->join('roles as r', 'r.id', '=', 'rp.role_id')
+            ->where('r.code', '<>', 'CEO')
+            ->whereIn('rp.permission_id', $permissionIds->only(Permissions::CEO_ONLY)->values())
+            ->delete();
+
         foreach (Permissions::defaults() as $roleCode => $map) {
             $role = Role::firstOrCreate(['code' => $roleCode], ['name' => Permissions::ROLE_NAMES[$roleCode], 'is_system' => true]);
             $existing = DB::table('role_permissions')->where('role_id', $role->id)->count();

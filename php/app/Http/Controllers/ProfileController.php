@@ -6,6 +6,7 @@ use App\Auth\Passwords;
 use App\Auth\Sessions;
 use App\Models\Session;
 use App\Support\Audit;
+use App\Support\Lang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -29,7 +30,7 @@ class ProfileController extends Controller
         $data = $request->validate([
             'full_name' => ['required', 'string', 'min:2', 'max:120'],
             'phone' => ['nullable', 'string', 'max:30'],
-            'locale' => ['required', Rule::in(['uz', 'ru'])],
+            'locale' => ['required', Rule::in(Lang::LOCALES)],
         ]);
         $user = access()->user;
         DB::transaction(function () use ($user, $data) {
@@ -47,7 +48,7 @@ class ProfileController extends Controller
     /** Быстрое переключение языка из шапки. */
     public function locale(Request $request): RedirectResponse
     {
-        $locale = $request->validate(['locale' => ['required', Rule::in(['uz', 'ru'])]])['locale'];
+        $locale = $request->validate(['locale' => ['required', Rule::in(Lang::LOCALES)]])['locale'];
         access()->user->update(['locale' => $locale]);
 
         return back();

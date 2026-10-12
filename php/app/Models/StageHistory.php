@@ -20,12 +20,12 @@ class StageHistory extends Model
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class, 'lead_id');
+        return $this->belongsTo(Lead::class, 'lead_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function deal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'deal_id');
+        return $this->belongsTo(Deal::class, 'deal_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function fromStage(): BelongsTo

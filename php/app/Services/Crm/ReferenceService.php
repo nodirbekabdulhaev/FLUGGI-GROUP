@@ -77,6 +77,7 @@ final class ReferenceService
         $data = array_filter([
             'name_ru' => $input['name'] ?? null,
             'name_uz' => $input['name_uz'] ?? null,
+            'name_en' => $input['name_en'] ?? null,
             'probability' => $input['probability'] ?? null,
             'color' => $input['color'] ?? null,
         ], fn ($v) => $v !== null);
@@ -85,7 +86,7 @@ final class ReferenceService
             $old = $stage->getAttributes();
             $stage->update($data);
             $after = $stage->fresh();
-            $changes = Audit::diff($old, $after->getAttributes(), ['name_ru', 'name_uz', 'probability', 'color']);
+            $changes = Audit::diff($old, $after->getAttributes(), ['name_ru', 'name_uz', 'name_en', 'probability', 'color']);
             if ($changes) {
                 Audit::log('stage.update', 'stage', $stage->id, $changes);
             }

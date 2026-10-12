@@ -69,6 +69,7 @@ class ReferenceController extends CrmController
         $data = $this->check($request, [
             'name' => ['nullable', 'string', 'min:1', 'max:80'],
             'name_uz' => ['nullable', 'string', 'max:80'],
+            'name_en' => ['nullable', 'string', 'max:80'],
             'probability' => ['nullable', 'integer', 'between:0,100'],
             'color' => ['nullable', 'regex:/^#[0-9a-fA-F]{6}$/'],
         ]);

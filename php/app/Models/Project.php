@@ -30,12 +30,12 @@ class Project extends Model
 
     public function client(): BelongsTo
     {
-        return $this->belongsTo(Client::class, 'client_id');
+        return $this->belongsTo(Client::class, 'client_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function deal(): BelongsTo
     {
-        return $this->belongsTo(Deal::class, 'deal_id');
+        return $this->belongsTo(Deal::class, 'deal_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
     public function rop(): BelongsTo

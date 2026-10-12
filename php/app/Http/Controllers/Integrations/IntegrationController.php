@@ -11,6 +11,7 @@ use App\Services\Integrations\FormService;
 use App\Services\Integrations\IntakeService;
 use App\Services\Integrations\MetaService;
 use App\Support\Format;
+use App\Support\Lang;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,7 +23,7 @@ class IntegrationController extends Controller
 {
     private static function name(object $r): string
     {
-        return app()->getLocale() === 'uz' && $r->name_uz ? $r->name_uz : $r->name_ru;
+        return Lang::name($r);
     }
 
     public function index(): View

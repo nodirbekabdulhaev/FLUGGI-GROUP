@@ -29,14 +29,22 @@
                 @if ($p->sees_money)<p class="text-2xl font-semibold">{{ money($p->price, $p->currency) }}</p>@endif
                 @include('projects.partials.progress', ['c' => $p->task_counts, 'class' => 'w-40 sm:justify-self-end'])
             </div>
-            @if ($p->can['update'])
+            @if ($p->can['update'] || can('project.delete'))
                 <div class="relative" x-data="{ menu: false }" @click.outside="menu = false">
                     <button type="button" class="btn btn-outline btn-icon" @click="menu = !menu" aria-label="{{ t('common.actions') }}"><x-icon name="more" /></button>
                     <div x-show="menu" x-cloak class="absolute right-0 z-20 mt-1 w-56 rounded-md border bg-surface py-1 shadow-lg">
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" @click="menu = false; $dispatch('open-modal', 'project-status')"><x-icon name="chevron-right" /> {{ t('projects.changeStatus') }}</button>
-                        <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" @click="menu = false; $dispatch('open-modal', 'project-edit')"><x-icon name="edit" /> {{ t('projects.edit') }}</button>
-                        @if ($open)
-                            <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" @click="menu = false; $dispatch('open-modal', 'project-template')"><x-icon name="copy" /> {{ t('projects.applyTemplate') }}</button>
+                        @if ($p->can['update'])
+                            <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" @click="menu = false; $dispatch('open-modal', 'project-status')"><x-icon name="chevron-right" /> {{ t('projects.changeStatus') }}</button>
+                            <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" @click="menu = false; $dispatch('open-modal', 'project-edit')"><x-icon name="edit" /> {{ t('projects.edit') }}</button>
+                            @if ($open)
+                                <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" @click="menu = false; $dispatch('open-modal', 'project-template')"><x-icon name="copy" /> {{ t('projects.applyTemplate') }}</button>
+                            @endif
+                        @endif
+                        @if (can('project.delete'))
+                            {{-- Только CEO: проект и задачи скрываются, оплаты и история остаются --}}
+                            <form method="POST" action="{{ $base }}" data-confirm="{{ t('projects.deleteConfirm', ['name' => $p->name]) }}" class="border-t">@csrf @method('DELETE')
+                                <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger hover:bg-muted"><x-icon name="trash" /> {{ t('common.delete') }}</button>
+                            </form>
                         @endif
                     </div>
                 </div>

@@ -5,13 +5,13 @@ namespace App\Support;
 use MessageFormatter;
 
 /**
- * Переводы интерфейса: lang/{ru,uz}/<группа>.json (вложенные ключи), формат ICU
+ * Переводы интерфейса: lang/{uz,ru,en}/<группа>.json (вложенные ключи), формат ICU
  * ({name}, {count, plural, one {…} few {…} many {…} other {…}}). Ключ: «группа.путь.к.строке».
  * Нет перевода на узбекский — показывается русский текст; нет ключа — сам ключ.
  */
 final class Lang
 {
-    public const LOCALES = ['uz', 'ru'];
+    public const LOCALES = ['uz', 'ru', 'en'];
 
     public const FALLBACK = 'ru';
 
@@ -27,6 +27,31 @@ final class Lang
         }
 
         return $params || str_contains($message, '{') ? self::format($message, $params, $locale) : $message;
+    }
+
+    /** Локаль ICU / Carbon для языка интерфейса. */
+    public static function icu(?string $locale = null): string
+    {
+        return ['uz' => 'uz_Latn', 'ru' => 'ru_RU', 'en' => 'en_US'][$locale ?? app()->getLocale()] ?? 'ru_RU';
+    }
+
+    public static function supported(?string $locale): bool
+    {
+        return in_array($locale, self::LOCALES, true);
+    }
+
+    /**
+     * Название из справочника на языке интерфейса: name_uz / name_en, если заполнено, иначе name_ru.
+     *
+     * @param  object|array  $row  модель или строка с полями name_ru, name_uz, name_en
+     */
+    public static function name(object|array $row, ?string $locale = null): ?string
+    {
+        $row = (array) (is_object($row) && method_exists($row, 'getAttributes') ? $row->getAttributes() : $row);
+        $locale ??= app()->getLocale();
+        $localized = $locale === 'ru' ? null : ($row['name_'.$locale] ?? null);
+
+        return filled($localized) ? $localized : ($row['name_ru'] ?? null);
     }
 
     public static function has(string $key, ?string $locale = null): bool
@@ -73,7 +98,7 @@ final class Lang
     private static function format(string $message, array $params, string $locale): string
     {
         if (class_exists(MessageFormatter::class)) {
-            $out = MessageFormatter::formatMessage($locale === 'uz' ? 'uz_Latn' : 'ru_RU', $message, $params);
+            $out = MessageFormatter::formatMessage(self::icu($locale), $message, $params);
             if ($out !== false) {
                 return $out;
             }

@@ -7,6 +7,7 @@ use App\Domain\Forecast;
 use App\Domain\People;
 use App\Domain\Tasks;
 use App\Services\Crm\CrmAccess;
+use App\Support\Lang;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
@@ -164,7 +165,7 @@ final class AnalyticsService
             return t('analytics.notSet');
         }
 
-        return app()->getLocale() === 'uz' && $ref->name_uz ? $ref->name_uz : $ref->name_ru;
+        return Lang::name($ref);
     }
 
     /** Лиды периода по источникам (ТЗ §42) или по услугам. */

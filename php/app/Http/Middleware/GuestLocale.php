@@ -16,8 +16,9 @@ class GuestLocale
         if (in_array($lang, Lang::LOCALES, true)) {
             $request->session()->put('locale', $lang);
         }
+        // Без заголовка Accept-Language — русский (первый в списке)
         $locale = $request->session()->get('locale')
-            ?? ($request->getPreferredLanguage(['ru', 'uz']) ?: 'ru');
+            ?? ($request->getPreferredLanguage(['ru', ...array_diff(Lang::LOCALES, ['ru'])]) ?: 'ru');
         app()->setLocale(in_array($locale, Lang::LOCALES, true) ? $locale : 'ru');
 
         return $next($request);

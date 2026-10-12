@@ -26,6 +26,6 @@ class FormSubmission extends Model
 
     public function lead(): BelongsTo
     {
-        return $this->belongsTo(Lead::class, 'lead_id');
+        return $this->belongsTo(Lead::class, 'lead_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 }

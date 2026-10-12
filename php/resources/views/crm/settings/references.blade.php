@@ -97,6 +97,7 @@
                             <x-badge>{{ $s->entity === 'LEAD' ? t('references.stageLead') : t('references.stageDeal') }}</x-badge>
                             <input name="name" value="{{ $s->name_ru }}" class="input h-8 min-w-40 flex-1" @disabled(! $canEdit) aria-label="{{ t('references.stageName') }}" required maxlength="80">
                             <input name="name_uz" value="{{ $s->name_uz }}" class="input h-8 min-w-40 flex-1" @disabled(! $canEdit) aria-label="{{ t('references.nameUz') }}" placeholder="{{ t('references.nameUz') }}" maxlength="80">
+                            <input name="name_en" value="{{ $s->name_en }}" class="input h-8 min-w-40 flex-1" @disabled(! $canEdit) aria-label="{{ t('references.nameEn') }}" placeholder="{{ t('references.nameEn') }}" maxlength="80">
                             <span class="flex items-center gap-1"><input name="probability" type="number" min="0" max="100" value="{{ $s->probability }}" class="input h-8 w-20" @disabled(! $canEdit) aria-label="{{ t('references.probability') }}"><span class="text-muted-foreground">%</span></span>
                             <input name="color" type="color" value="{{ $s->color }}" class="h-8 w-10 rounded border" @disabled(! $canEdit) aria-label="{{ t('references.color') }}">
                             @if ($canEdit)<button type="submit" class="btn btn-outline btn-sm">{{ t('common.save') }}</button>@endif

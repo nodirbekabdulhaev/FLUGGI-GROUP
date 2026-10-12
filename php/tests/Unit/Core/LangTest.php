@@ -5,25 +5,32 @@ namespace Tests\Unit\Core;
 use MessageFormatter;
 use PHPUnit\Framework\TestCase;
 
-/** Узбекский и русский переводы полные и одинаковые по ключам и подстановкам. */
+/** Переводы (узбекский, английский) полные и совпадают с русскими по ключам и подстановкам. */
 class LangTest extends TestCase
 {
-    public function test_uz_and_ru_have_same_keys_and_placeholders(): void
+    public function test_translations_have_same_keys_and_placeholders_as_russian(): void
+    {
+        foreach (['uz' => 'uz_Latn', 'en' => 'en_US'] as $locale => $icu) {
+            $this->assertSame([], $this->problems($locale, $icu), "lang/$locale");
+        }
+    }
+
+    private function problems(string $locale, string $icu): array
     {
         $dir = dirname(__DIR__, 3).'/lang';
         $problems = [];
         foreach (glob("$dir/ru/*.json") as $ruFile) {
             $group = basename($ruFile, '.json');
-            $uzFile = "$dir/uz/$group.json";
+            $uzFile = "$dir/$locale/$group.json";
             if (! is_file($uzFile)) {
-                $problems[] = "нет uz/$group.json";
+                $problems[] = "нет $locale/$group.json";
 
                 continue;
             }
             $ru = $this->flatten(json_decode(file_get_contents($ruFile), true));
             $uz = $this->flatten(json_decode(file_get_contents($uzFile), true));
             foreach (array_diff_key($ru, $uz) as $key => $_) {
-                $problems[] = "uz: нет $group.$key";
+                $problems[] = "$locale: нет $group.$key";
             }
             foreach (array_diff_key($uz, $ru) as $key => $_) {
                 $problems[] = "ru: нет $group.$key";
@@ -32,12 +39,13 @@ class LangTest extends TestCase
                 if ($this->vars($text) !== $this->vars($uz[$key])) {
                     $problems[] = "подстановки различаются: $group.$key";
                 }
-                if (class_exists(MessageFormatter::class) && str_contains($uz[$key], '{') && MessageFormatter::create('uz_Latn', $uz[$key]) === null) {
-                    $problems[] = "ошибка ICU: uz $group.$key";
+                if (class_exists(MessageFormatter::class) && str_contains($uz[$key], '{') && MessageFormatter::create($icu, $uz[$key]) === null) {
+                    $problems[] = "ошибка ICU: $locale $group.$key";
                 }
             }
         }
-        $this->assertSame([], $problems);
+
+        return $problems;
     }
 
     private function flatten(array $a, string $prefix = ''): array

@@ -103,6 +103,8 @@
     "reference_manage": "Справочники",
     "analytics_read": "Аналитика",
     "export_run": "Экспорт",
-    "audit_read": "Журнал аудита"
+    "audit_read": "Журнал аудита",
+    "client_delete": "Удаление клиентов",
+    "project_delete": "Удаление проектов"
   }
 }

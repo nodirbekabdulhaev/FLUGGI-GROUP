@@ -51,7 +51,7 @@
                                 <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"><x-icon name="refresh" /> {{ t('crm.common.reopen') }}</button>
                             </form>
                         @endif
-                        @if (can('lead.delete') && $lead->status !== 'CONVERTED')
+                        @if (can('lead.delete'))
                             <form method="POST" action="{{ route('crm.leads.destroy', $lead->id) }}" data-confirm="{{ t('crm.common.deleteConfirm', ['name' => $lead->title]) }}" class="border-t">@csrf @method('DELETE')
                                 <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger hover:bg-muted"><x-icon name="trash" /> {{ t('crm.common.delete') }}</button>
                             </form>

@@ -103,6 +103,8 @@
     "reference_manage": "Maʼlumotnomalar",
     "analytics_read": "Tahlil",
     "export_run": "Eksport",
-    "audit_read": "Audit jurnali"
+    "audit_read": "Audit jurnali",
+    "client_delete": "Mijozlarni oʻchirish",
+    "project_delete": "Loyihalarni oʻchirish"
   }
 }

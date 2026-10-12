@@ -9,6 +9,7 @@ use App\Models\Payment;
 use App\Services\Crm\CrmAccess;
 use App\Support\Audit;
 use App\Support\Format;
+use App\Support\Lang;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Facades\DB;
 
@@ -51,7 +52,7 @@ final class ExportService
             return null;
         }
 
-        return app()->getLocale() === 'uz' && ! empty($r->name_uz) ? $r->name_uz : $r->name_ru;
+        return Lang::name($r);
     }
 
     private static function label(string $group, ?string $v): ?string

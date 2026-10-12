@@ -6,14 +6,18 @@ use App\Auth\Passwords;
 use App\Auth\Sessions;
 use App\Models\AuditLog;
 use App\Models\Session;
+use App\Support\Lang;
 use Tests\TestCase;
 
 class AuthTest extends TestCase
 {
-    public function test_login_page_opens_in_both_languages(): void
+    public function test_login_page_opens_in_all_languages(): void
     {
-        $this->get('/login')->assertOk()->assertSee('Вход в Fluggi');
+        // Язык до входа — по языку браузера
+        $this->withHeader('Accept-Language', 'ru-RU,ru;q=0.9')->get('/login')->assertOk()->assertSee('Вход в Fluggi');
+        $this->withHeader('Accept-Language', 'uz')->get('/login')->assertOk()->assertSee('Fluggi tizimiga kirish');
         $this->get('/login?lang=uz')->assertOk()->assertSee('Fluggi tizimiga kirish');
+        $this->get('/login?lang=en')->assertOk()->assertSee(Lang::get('auth.title', [], 'en'));
     }
 
     public function test_guest_is_redirected_to_login(): void

@@ -37,7 +37,7 @@ final class Access
 
     public function can(string $code, string $minScope = 'OWN'): bool
     {
-        return Permissions::has($this->permissions, $code, $minScope);
+        return Permissions::has($this->permissions, $code, $minScope, $this->roleCode);
     }
 
     public function canAny(array $codes): bool
@@ -54,7 +54,11 @@ final class Access
     /** Область права или 403. */
     public function scope(string $code): string
     {
-        return $this->permissions[$code] ?? throw new HttpException(403);
+        if (! $this->can($code)) {
+            throw new HttpException(403);
+        }
+
+        return $this->permissions[$code];
     }
 
     public function authorize(string $code, string $minScope = 'OWN'): void

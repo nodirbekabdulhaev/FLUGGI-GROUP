@@ -42,6 +42,18 @@
         </button>
         <div x-show="open" x-cloak class="absolute right-0 mt-1 w-52 rounded-md border bg-surface py-1 shadow-lg">
             <a href="{{ route('profile') }}" class="flex items-center gap-2 px-3 py-2 text-sm hover:bg-muted"><x-icon name="user" />{{ t('nav.profile') }}</a>
+            {{-- Язык интерфейса — в меню, чтобы переключатель был и на телефоне --}}
+            <div class="border-y px-3 py-2">
+                <p class="mb-1 flex items-center gap-2 text-xs text-muted-foreground"><x-icon name="globe" class="size-3.5" />{{ t('auth.language') }}</p>
+                <div class="flex flex-wrap gap-1">
+                    @foreach (\App\Support\Lang::LOCALES as $loc)
+                        <form method="POST" action="{{ route('profile.locale') }}">@csrf
+                            <input type="hidden" name="locale" value="{{ $loc }}">
+                            <button @class(['btn btn-sm', 'btn-primary' => app()->getLocale() === $loc, 'btn-outline' => app()->getLocale() !== $loc])>{{ t('common.languages.'.$loc) }}</button>
+                        </form>
+                    @endforeach
+                </div>
+            </div>
             <form method="POST" action="{{ route('logout') }}">@csrf
                 <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"><x-icon name="logout" />{{ t('nav.logout') }}</button>
             </form>

@@ -33,7 +33,7 @@ final class ProposalsService
 
     public const ACTIONS = ['submit-approval', 'approve', 'send', 'mark-viewed', 'accept', 'reject'];
 
-    public const WITH = ['deal:id,number,title,status', 'client:id,name', 'manager:id,full_name', 'approvedBy:id,full_name', 'items.service:id,name_ru,name_uz', 'items.tariff:id,name'];
+    public const WITH = ['deal:id,number,title,status', 'client:id,name', 'manager:id,full_name', 'approvedBy:id,full_name', 'items.service:id,name_ru,name_uz,name_en', 'items.tariff:id,name'];
 
     public static function query(string $code = 'proposal.read'): Builder
     {

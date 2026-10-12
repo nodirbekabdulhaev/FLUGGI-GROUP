@@ -127,7 +127,8 @@
       "status_changed": "Loyiha holati",
       "template_applied": "Shablon qoʻllandi",
       "member_added": "Jamoaga qoʻshildi",
-      "member_removed": "Jamoadan chiqarildi"
+      "member_removed": "Jamoadan chiqarildi",
+      "deleted": "Loyiha oʻchirildi"
     },
     "task": {
       "created": "Vazifa yaratildi",

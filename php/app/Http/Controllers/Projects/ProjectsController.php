@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Projects;
 use App\Http\Controllers\Controller;
 use App\Models\Direction;
 use App\Models\StoredFile;
+use App\Services\Crm\Deletion;
 use App\Services\Finance\CostLineService;
 use App\Services\Finance\ExpenseService;
 use App\Services\Finance\FinanceService;
@@ -77,6 +78,14 @@ class ProjectsController extends Controller
         }
 
         return view('projects.show', $data);
+    }
+
+    /** Удаление проекта с задачами — только CEO. Сделка, оплаты и финансовая история остаются. */
+    public function destroy(string $id): RedirectResponse
+    {
+        Deletion::project(ProjectAccess::project($id, 'project.delete'));
+
+        return redirect()->route('projects.index', 'all')->with('ok', t('projects.deleted'));
     }
 
     public function update(Request $request, string $id): RedirectResponse
