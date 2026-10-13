@@ -5,6 +5,7 @@
     @php $canCreate = can('deal.create') && can('client.read'); @endphp
     <x-page-header :title="t('deals.title')" :subtitle="t('deals.subtitle')">
         @includeIf('analytics.partials.export-menu', ['entity' => 'deals'])
+        @include('import.partials.button', ['entity' => 'deals'])
         @if ($canCreate)
             <button type="button" class="btn btn-primary" x-data x-on:click="$dispatch('open-modal', 'deal-create')"><x-icon name="plus" /> {{ t('deals.add') }}</button>
         @endif

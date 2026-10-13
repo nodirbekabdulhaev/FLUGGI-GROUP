@@ -84,7 +84,8 @@
       "assigned": "Masʼul tayinlandi",
       "stage_changed": "Bosqich oʻzgardi",
       "closed": "Bitim yopildi",
-      "reopened": "Bitim ishga qaytarildi"
+      "reopened": "Bitim ishga qaytarildi",
+      "imported_won": "Bitim yutilgan sifatida import qilindi (toʻlovlarsiz)"
     },
     "meeting": {
       "created": "Uchrashuv belgilandi",

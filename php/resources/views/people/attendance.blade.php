@@ -13,6 +13,7 @@
             <input type="date" name="to" value="{{ $to }}" class="input w-auto" aria-label="{{ t('attendance.to') }}">
             <button class="btn btn-outline">{{ t('period.apply') }}</button>
         </form>
+        @include('import.partials.button', ['entity' => 'attendance'])
         @if ($manage)
             <button type="button" class="btn btn-primary" @click="$dispatch('open-modal', 'att-new')"><x-icon name="plus" /> {{ t('attendance.edit') }}</button>
         @endif

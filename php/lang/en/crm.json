@@ -84,7 +84,8 @@
       "assigned": "Owner assigned",
       "stage_changed": "Stage changed",
       "closed": "Deal closed",
-      "reopened": "Deal reopened"
+      "reopened": "Deal reopened",
+      "imported_won": "Deal imported as won (no payments)"
     },
     "meeting": {
       "created": "Meeting scheduled",

@@ -40,7 +40,8 @@
     "stage_change": "Bitim bosqichi oʻzgardi",
     "close": "Bitim yopildi",
     "reopen": "Bitim qaytarildi",
-    "delete": "Bitim oʻchirildi"
+    "delete": "Bitim oʻchirildi",
+    "import_won": "Bitim yutilgan sifatida import qilindi"
   },
   "client": {
     "create": "Mijoz yaratildi",
@@ -115,7 +116,8 @@
     "status": "Loyiha holati oʻzgartirildi",
     "apply_template": "Loyiha shabloni qoʻllandi",
     "member_add": "Loyiha ishtirokchisi qoʻshildi",
-    "member_update": "Loyiha ishtirokchisi oʻzgartirildi"
+    "member_update": "Loyiha ishtirokchisi oʻzgartirildi",
+    "create": "Loyiha yaratildi"
   },
   "task": {
     "create": "Vazifa yaratildi",
@@ -200,5 +202,8 @@
       "approve": "Hisoblash tasdiqlandi",
       "remove": "Hisoblash qoralamasi oʻchirildi"
     }
+  },
+  "import": {
+    "run": "Fayldan import"
   }
 }

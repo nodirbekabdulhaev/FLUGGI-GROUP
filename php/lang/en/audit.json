@@ -40,7 +40,8 @@
     "stage_change": "Deal stage changed",
     "close": "Deal closed",
     "reopen": "Deal reopened",
-    "delete": "Deal deleted"
+    "delete": "Deal deleted",
+    "import_won": "Deal imported as won"
   },
   "client": {
     "create": "Client created",
@@ -115,7 +116,8 @@
     "status": "Project status changed",
     "apply_template": "Project template applied",
     "member_add": "Project member added",
-    "member_update": "Project member updated"
+    "member_update": "Project member updated",
+    "create": "Project created"
   },
   "task": {
     "create": "Task created",
@@ -200,5 +202,8 @@
       "approve": "Accrual approved",
       "remove": "Accrual draft removed"
     }
+  },
+  "import": {
+    "run": "Import from file"
   }
 }

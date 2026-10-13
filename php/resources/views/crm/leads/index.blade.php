@@ -4,6 +4,7 @@
     @include('crm.partials.errors')
     <x-page-header :title="t('leads.title')" :subtitle="t('leads.subtitle')">
         @includeIf('analytics.partials.export-menu', ['entity' => 'leads'])
+        @include('import.partials.button', ['entity' => 'leads'])
         @if (can('lead.create'))
             <button type="button" class="btn btn-primary" x-data x-on:click="$dispatch('open-modal', 'lead-create')"><x-icon name="plus" /> {{ t('leads.add') }}</button>
         @endif

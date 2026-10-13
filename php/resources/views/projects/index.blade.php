@@ -4,6 +4,7 @@
     @php($showMoney = $projects->getCollection()->contains(fn ($p) => $p->sees_money))
     <x-page-header :title="t('projects.views.'.$view)" :subtitle="t('projects.viewsHint.'.$view)">
         @includeIf('analytics.partials.export-menu', ['entity' => 'projects'])
+        @include('import.partials.button', ['entity' => 'projects'])
     </x-page-header>
     <x-tabs :items="['/projects/all' => t('projects.views.all'), '/projects/active' => t('projects.views.active'), '/projects/overdue' => t('projects.views.overdue'), '/projects/completed' => t('projects.views.completed')]" :active="'/projects/'.$view" />
 
