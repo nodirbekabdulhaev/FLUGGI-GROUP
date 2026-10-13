@@ -14,6 +14,7 @@ use App\Models\WorkSchedule;
 use App\Services\Finance\Period;
 use App\Support\Audit;
 use Brick\Math\BigDecimal;
+use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -314,8 +315,108 @@ final class PeopleService
     }
 
     /**
+     * Посещаемость за месяц, % (2 знака): отработанные минуты / минуты по графику.
+     * Рабочие дни — по графику сотрудника (с даты приёма до даты увольнения; в текущем месяце — по сегодня).
+     * За день засчитывается не больше нормы графика: полдня = 50 %. Выходной (DAY_OFF) в норму не входит;
+     * прогул, отпуск, больничный и день без отметки — 0. Нет графика — null (оклад начисляется полностью).
+     */
+    public static function attendancePct(User $user, string $period): ?string
+    {
+        $schedule = self::scheduleOf($user->id);
+        if (! $schedule) {
+            return null;
+        }
+        $daily = People::minutesOf($schedule->end_time) - People::minutesOf($schedule->start_time);
+        if ($daily <= 0) {
+            return null;
+        }
+        $range = People::monthRange($period);
+        $tz = config('app.company_timezone');
+        $from = $range['from']->setTimezone($tz)->startOfDay();
+        $to = $range['to']->setTimezone($tz)->subDay()->startOfDay();
+        $today = CarbonImmutable::now($tz)->startOfDay();
+        if ($to->greaterThan($today)) {
+            $to = $today;
+        }
+        $hired = $user->employee?->hired_at;
+        $fired = $user->employee?->fired_at;
+        if ($hired && $hired->format('Y-m-d') > $from->format('Y-m-d')) {
+            $from = CarbonImmutable::parse($hired->format('Y-m-d'), $tz);
+        }
+        if ($fired && $fired->format('Y-m-d') < $to->format('Y-m-d')) {
+            $to = CarbonImmutable::parse($fired->format('Y-m-d'), $tz);
+        }
+        $rows = Attendance::where('user_id', $user->id)
+            ->whereDate('date', '>=', $from->format('Y-m-d'))->whereDate('date', '<=', $to->format('Y-m-d'))
+            ->get()->keyBy(fn ($r) => $r->date->format('Y-m-d'));
+
+        $plan = 0;
+        $worked = 0;
+        for ($d = $from; $d->lessThanOrEqualTo($to); $d = $d->addDay()) {
+            if (! in_array($d->isoWeekday(), $schedule->work_days, true)) {
+                continue;
+            }
+            $row = $rows[$d->format('Y-m-d')] ?? null;
+            if ($row?->status === 'DAY_OFF') {
+                continue;
+            }
+            $plan += $daily;
+            if ($row && in_array($row->status, ['PRESENT', 'LATE'], true)) {
+                $worked += min((int) $row->work_minutes, $daily);
+            }
+        }
+        if ($plan === 0) {
+            return null;
+        }
+
+        return (string) BigDecimal::of($worked)->multipliedBy(100)->dividedBy($plan, 2, RoundingMode::HalfUp);
+    }
+
+    /** Оклад в строке отличается от рассчитанного по посещаемости — значит, его исправили вручную. */
+    private static function baseEditedManually(PayrollEntry $e): bool
+    {
+        $base = BigDecimal::of((string) $e->base_salary);
+        if ($base->isZero()) {
+            return false;
+        }
+        if ($e->base_full === null) {
+            return true;
+        }
+        $auto = $e->attendance_pct === null ? BigDecimal::of((string) $e->base_full)
+            : BigDecimal::of((string) $e->base_full)->multipliedBy((string) $e->attendance_pct)->dividedBy(100, 2, RoundingMode::HalfUp);
+
+        return ! $base->isEqualTo($auto);
+    }
+
+    /** Менеджеры и РОП с окладом при 100 % посещаемости — для блока «Оклады». */
+    public static function salaries(): Collection
+    {
+        return User::with(['employee', 'role'])->where('status', 'ACTIVE')
+            ->whereHas('role', fn ($q) => $q->whereIn('code', self::FIXED_SALARY_ROLES))
+            ->orderBy('full_name')->get();
+    }
+
+    /** @param  array<string,?string>  $salaries  user_id → оклад при 100 % (null — не задан) */
+    public static function saveSalaries(array $salaries): void
+    {
+        $users = self::salaries()->keyBy('id');
+        DB::transaction(function () use ($salaries, $users) {
+            foreach ($salaries as $userId => $amount) {
+                $user = $users[$userId] ?? abort(404);
+                $old = $user->employee?->base_salary;
+                $new = $amount === null || $amount === '' ? null : self::dec($amount);
+                if ((string) $old === (string) $new || ($old !== null && $new !== null && BigDecimal::of((string) $old)->isEqualTo($new))) {
+                    continue;
+                }
+                Employee::updateOrCreate(['user_id' => $userId], ['base_salary' => $new]);
+                Audit::log('employee.salary_update', 'user', $userId, ['baseSalary' => ['old' => $old === null ? null : (string) $old, 'new' => $new]]);
+            }
+        });
+    }
+
+    /**
      * Расчёт месяца: черновики для всех активных сотрудников (кроме CEO). Комиссия — сумма утверждённых
-     * и выплаченных комиссий месяца; оклад — из карточки (только менеджер и РОП); сдельно — начисления
+     * и выплаченных комиссий месяца; оклад (только менеджер и РОП) — оклад при 100 % × посещаемость; сдельно — начисления
      * «Исполнитель» по проектам; KPI-бонус — «бонус при 100%» × KPI (до 120%); бонусы и штрафы вносятся
      * вручную и при пересчёте сохраняются. Утверждённые строки не пересчитываются.
      */
@@ -335,7 +436,16 @@ final class PeopleService
                 if ($existing && $existing->status !== 'DRAFT') {
                     continue;
                 }
-                $base = self::hasFixedSalary($u->role->code) ? self::dec($existing?->base_salary ?? $u->employee?->base_salary) : '0.00';
+                // Оклад (менеджер, РОП) = оклад при 100 % × посещаемость месяца
+                $fixed = self::hasFixedSalary($u->role->code);
+                $full = $fixed && $u->employee?->base_salary !== null ? self::dec($u->employee->base_salary) : null;
+                $attendancePct = $fixed ? self::attendancePct($u, $period) : null;
+                $base = $full === null ? '0.00' : ($attendancePct === null ? $full
+                    : (string) BigDecimal::of($full)->multipliedBy($attendancePct)->dividedBy(100, 2, RoundingMode::HalfUp));
+                // Оклад, исправленный вручную в черновике, пересчёт не затирает
+                if ($fixed && $existing && self::baseEditedManually($existing)) {
+                    $base = self::dec($existing->base_salary);
+                }
                 $target = $u->employee?->kpi_bonus_target;
                 $pct = $kpi[$u->id] ?? null;
                 $parts = [
@@ -346,7 +456,7 @@ final class PeopleService
                     'other_bonus' => self::dec($existing?->other_bonus),
                     'penalty' => self::dec($existing?->penalty),
                 ];
-                $data = $parts + ['final_salary' => self::final($parts), 'kpi_pct' => $pct];
+                $data = $parts + ['final_salary' => self::final($parts), 'kpi_pct' => $pct, 'base_full' => $full, 'attendance_pct' => $attendancePct];
                 $existing ? $existing->update($data) : PayrollEntry::create(['user_id' => $u->id, 'period' => $period] + $data);
             }
             Audit::log('payroll.calculate', 'payroll', null, ['period' => ['old' => null, 'new' => $period]]);
@@ -361,7 +471,7 @@ final class PeopleService
         ]);
     }
 
-    /** @param  array{base_salary?:string,kpi_bonus?:string,other_bonus?:string,penalty?:string,comment?:?string,save_base_salary?:bool,kpi_bonus_target?:?string}  $input */
+    /** @param  array{base_salary?:string,kpi_bonus?:string,other_bonus?:string,penalty?:string,comment?:?string,kpi_bonus_target?:?string}  $input */
     public static function updatePayroll(string $id, array $input): PayrollEntry
     {
         $e = PayrollEntry::with('user.role')->findOrFail($id);
@@ -392,9 +502,6 @@ final class PeopleService
                 'base_salary' => $parts['base_salary'], 'kpi_bonus' => $parts['kpi_bonus'], 'other_bonus' => $parts['other_bonus'], 'penalty' => $parts['penalty'],
                 'final_salary' => self::final($parts),
             ] + (array_key_exists('comment', $input) ? ['comment' => $input['comment']] : []));
-            if (! empty($input['save_base_salary']) && isset($input['base_salary'])) {
-                Employee::updateOrCreate(['user_id' => $e->user_id], ['base_salary' => $input['base_salary']]);
-            }
             Audit::log('payroll.update', 'payroll', $id, [
                 'baseSalary' => ['old' => $old['base'], 'new' => $parts['base_salary']],
                 'kpiBonus' => ['old' => $old['kpi'], 'new' => $parts['kpi_bonus']],

@@ -42,7 +42,16 @@
                     <tr>
                         @if ($manage)<td><input type="checkbox" value="{{ $e->id }}" x-model="selected" aria-label="{{ t('payroll.select', ['name' => $e->user?->full_name]) }}"></td>@endif
                         <td><span class="font-medium">{{ $e->user?->full_name }}</span><span class="block text-xs text-muted-foreground">{{ $e->period }}@if ($e->kpi_pct !== null) · {{ t('payroll.kpi') }} {{ $e->kpi_pct }}%@endif</span></td>
-                        <td class="whitespace-nowrap text-right tabular-nums">{{ PeopleService::hasFixedSalary($e->user?->role?->code ?? '') ? money($e->base_salary) : '—' }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">
+                            @if (PeopleService::hasFixedSalary($e->user?->role?->code ?? ''))
+                                {{ money($e->base_salary) }}
+                                @if ($e->attendance_pct !== null && $e->base_full !== null)
+                                    <span class="block text-xs text-muted-foreground">{{ t('payroll.attendanceOf', ['pct' => $num($e->attendance_pct), 'full' => money($e->base_full)]) }}</span>
+                                @endif
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ (float) $e->piece_rate ? money($e->piece_rate) : '—' }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->kpi_bonus) }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->commission) }}</td>
@@ -59,6 +68,33 @@
         @endif
     </div>
     @if ($manage)<p class="mt-3 text-xs text-muted-foreground">{{ t('payroll.calculateHint') }}</p>@endif
+
+    @if ($manage)
+        {{-- Оклады при 100 % посещаемости: при расчёте месяца умножаются на посещаемость (полдня = 50 %) --}}
+        <x-card class="mt-6" :title="t('payroll.salariesTitle')" :subtitle="t('payroll.salariesHint')">
+            @if ($salaries->isEmpty())
+                <x-empty icon="users" :title="t('payroll.salariesEmpty')" />
+            @else
+                <form method="POST" action="{{ route('payroll.salaries') }}" class="space-y-3">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="period" value="{{ $period }}">
+                    <div class="divide-y">
+                        @foreach ($salaries as $u)
+                            <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0"><span class="font-medium">{{ $u->full_name }}</span>
+                                    <span class="block text-xs text-muted-foreground">{{ t('roles.'.$u->role->code) }}</span></div>
+                                <input name="salaries[{{ $u->id }}]" inputmode="decimal" class="input w-full sm:w-48 text-right tabular-nums"
+                                       value="{{ old('salaries.'.$u->id, $u->employee?->base_salary !== null ? $num($u->employee->base_salary) : '') }}"
+                                       placeholder="4000000" aria-label="{{ t('payroll.salaryFor', ['name' => $u->full_name]) }}">
+                            </div>
+                        @endforeach
+                    </div>
+                    @error('salaries.*')<p class="error">{{ $message }}</p>@enderror
+                    <div class="flex justify-end"><button class="btn btn-primary">{{ t('common.save') }}</button></div>
+                </form>
+            @endif
+        </x-card>
+    @endif
 
     @isset($editing)
         @php($fixed = PeopleService::hasFixedSalary($editing->user->role->code))
@@ -79,7 +115,7 @@
                     <x-field name="comment" class="sm:col-span-2" :label="t('payroll.comment')" :value="$editing->comment" />
                 </div>
                 @if ($fixed)
-                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="save_base_salary" value="1" checked> {{ t('payroll.saveBase') }}</label>
+                    <p class="text-xs text-muted-foreground">{{ t('payroll.baseManualHint') }}</p>
                 @else
                     <input type="hidden" name="base_salary" value="0">
                     <p class="text-xs text-muted-foreground">{{ t('payroll.noFixedHint') }}</p>

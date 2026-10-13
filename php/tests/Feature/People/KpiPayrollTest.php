@@ -229,11 +229,13 @@ class KpiPayrollTest extends TestCase
         $this->assertSame(['900000.00', '0.00', '50.00', '0.00'], [(string) $mine->commission, (string) $mine->base_salary, (string) $mine->kpi_pct, (string) $mine->kpi_bonus]);
 
         // KPI-бонус при 100% — из карточки, начисляется по выполнению (50% → 1 000 000)
-        $c->patch("/finance/payroll/{$mine->id}", ['base_salary' => '5 000 000', 'save_base_salary' => '1', 'kpi_bonus_target' => '2 000 000', 'kpi_bonus' => '0', 'other_bonus' => '200000', 'penalty' => '150000'])->assertSessionHasNoErrors();
+        // Оклад при 100 % посещаемости задаётся в блоке «Оклады»; в черновике месяца его можно поправить вручную
+        $c->put('/finance/payroll/salaries', ['salaries' => [$this->manager->id => '5 000 000']])->assertSessionHasNoErrors();
+        $c->patch("/finance/payroll/{$mine->id}", ['base_salary' => '5 000 000', 'kpi_bonus_target' => '2 000 000', 'kpi_bonus' => '0', 'other_bonus' => '200000', 'penalty' => '150000'])->assertSessionHasNoErrors();
         $mine->refresh();
         $this->assertSame(['1000000.00', '6950000.00'], [(string) $mine->kpi_bonus, (string) $mine->final_salary]);
         $this->assertSame('5000000.00', (string) Employee::where('user_id', $this->manager->id)->value('base_salary'));
-        // Пересчёт сохраняет ручные поля
+        // Пересчёт сохраняет ручные поля, в том числе исправленный вручную оклад
         $c->post('/finance/payroll/calculate', ['period' => $this->month()]);
         $this->assertSame('6950000.00', (string) $mine->fresh()->final_salary);
         // KPI-бонус ограничен 120%

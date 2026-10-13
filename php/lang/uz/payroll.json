@@ -22,7 +22,6 @@
   },
   "edit": "Oʻzgartirish",
   "editTitle": "{period} uchun ish haqi: {name}",
-  "saveBase": "Okladni keyingi oylar uchun saqlash",
   "pieceRate": "Ishbay",
   "pieceRateHint": "Oy davomida hisoblangan «Ijrochi» xarajatlari",
   "noFixedHint": "Oklad — faqat menejerlar va ROP uchun. Ijrochilarga ishbay haq hisoblanadi.",
@@ -47,5 +46,12 @@
   "kpiBonusAutoHint": "«100% dagi KPI-bonus» oʻzgartirilsa, summa KPI bajarilishi boʻyicha qayta hisoblanadi",
   "select": "{name} ni tanlash",
   "selectAll": "Hammasini tanlash",
-  "statusLabel": "Holat"
+  "statusLabel": "Holat",
+  "salariesTitle": "100% davomatdagi maoshlar",
+  "salariesHint": "Menejerlar va ROP. Oy hisoblanganda maosh jadval boʻyicha davomatga koʻpaytiriladi: yarim kun kelsa — kunning 50% i hisoblanadi. Taʼtil, kasallik va ishga kelmaslik maosh boʻyicha toʻlanmaydi — kerak boʻlsa, bonus qoʻshing.",
+  "salariesEmpty": "Faol menejer va ROP yoʻq",
+  "salaryFor": "Maosh: {name}",
+  "salariesSaved": "Maoshlar saqlandi. Qoʻllash uchun oyni qayta hisoblang",
+  "attendanceOf": "{full} dan {pct}% davomat",
+  "baseManualHint": "Maosh davomat boʻyicha hisoblangan. Qoʻlda tuzatish faqat shu oy uchun amal qiladi; 100% dagi maosh «Maoshlar» blokida oʻzgartiriladi."
 }

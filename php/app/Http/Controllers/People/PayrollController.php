@@ -20,6 +20,9 @@ class PayrollController extends Controller
         $period = Period::month($request->query('period'));
         $manage = access()->can('payroll.manage', 'ALL');
         $data = ['period' => $period, 'manage' => $manage, 'entries' => PeopleService::payroll($period)];
+        if ($manage) {
+            $data['salaries'] = PeopleService::salaries();
+        }
         if ($manage && ($id = $request->query('edit'))) {
             $data['editing'] = PayrollEntry::with(['user.role', 'user.employee'])->findOrFail($id);
         }
@@ -33,6 +36,21 @@ class PayrollController extends Controller
         PeopleService::calculate($period);
 
         return redirect('/finance/payroll?period='.$period)->with('ok', t('payroll.calculated'));
+    }
+
+    /** Оклады менеджеров и РОП при 100 % посещаемости. */
+    public function salaries(Request $request): RedirectResponse
+    {
+        $raw = (array) $request->input('salaries', []);
+        $request->merge(['salaries' => array_map(fn ($v) => $v === null ? null : str_replace([' ', "\u{00A0}", ','], ['', '', '.'], (string) $v), $raw)]);
+        $data = $request->validate([
+            'salaries' => ['required', 'array', 'max:500'],
+            'salaries.*' => ['nullable', Input::MONEY],
+            'period' => ['nullable', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
+        ]);
+        PeopleService::saveSalaries($data['salaries']);
+
+        return redirect('/finance/payroll?period='.($data['period'] ?? Period::month(null)))->with('ok', t('payroll.salariesSaved'));
     }
 
     public function update(Request $request, string $id): RedirectResponse
@@ -51,7 +69,6 @@ class PayrollController extends Controller
                 $data[$k] = '0';
             }
         }
-        $data['save_base_salary'] = $request->boolean('save_base_salary');
         // Изменили «бонус при 100%», а сумму KPI-бонуса не трогали — пересчитать её по выполнению KPI
         $entry = PayrollEntry::with('user.employee')->findOrFail($id);
         $oldTarget = $entry->user->employee?->kpi_bonus_target;

@@ -32,6 +32,7 @@ Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])-
 Route::put('/attendance', [AttendanceController::class, 'upsert'])->middleware('perm:attendance.manage')->name('attendance.upsert');
 
 Route::get('/finance/payroll', [PayrollController::class, 'index'])->middleware('perm:payroll.read')->name('payroll');
+Route::put('/finance/payroll/salaries', [PayrollController::class, 'salaries'])->middleware('perm:payroll.manage,ALL')->name('payroll.salaries');
 Route::post('/finance/payroll/calculate', [PayrollController::class, 'calculate'])->middleware('perm:payroll.manage,ALL')->name('payroll.calculate');
 Route::patch('/finance/payroll/{id}', [PayrollController::class, 'update'])->where('id', $uuid)->middleware('perm:payroll.manage,ALL')->name('payroll.update');
 Route::post('/finance/payroll/approve', [PayrollController::class, 'approve'])->middleware('perm:payroll.manage,ALL')->name('payroll.approve');

@@ -22,7 +22,6 @@
   },
   "edit": "Edit",
   "editTitle": "Payroll for {period}: {name}",
-  "saveBase": "Keep this base salary for the following months",
   "pieceRate": "Piece rate",
   "pieceRateHint": "Accrued “Executor” expenses for the month",
   "noFixedHint": "Only managers and Sales heads (ROP) have a base salary. Executors are paid piece rates.",
@@ -47,5 +46,12 @@
   "kpiBonusAutoHint": "If you change “KPI bonus at 100%”, the amount is recalculated based on KPI achievement",
   "select": "Select {name}",
   "selectAll": "Select all",
-  "statusLabel": "Status"
+  "statusLabel": "Status",
+  "salariesTitle": "Salaries at 100% attendance",
+  "salariesHint": "Managers and sales heads. When the month is calculated, the salary is multiplied by attendance against the work schedule: half a day counts as 50% of the day. Vacation, sick leave and absences are not paid from the salary — add a bonus if needed.",
+  "salariesEmpty": "No active managers or sales heads",
+  "salaryFor": "Salary: {name}",
+  "salariesSaved": "Salaries saved. Recalculate the month to apply them",
+  "attendanceOf": "{pct}% attendance of {full}",
+  "baseManualHint": "The salary is calculated from attendance. A manual change applies to this month only; the 100% salary is changed in the “Salaries” block."
 }
