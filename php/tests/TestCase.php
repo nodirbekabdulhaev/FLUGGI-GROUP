@@ -41,6 +41,8 @@ abstract class TestCase extends BaseTestCase
     {
         Outbox::forget();
         app()->forgetInstance(Access::class);
+        // Запрос к /hooks/cron ставит set_time_limit(60) — в тестах он не должен действовать на следующие тесты
+        set_time_limit(0);
         parent::tearDown();
     }
 
