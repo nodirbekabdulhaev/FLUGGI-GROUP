@@ -90,6 +90,9 @@ final class Permissions
         'settings.manage' => 'Системные настройки',
         'reference.manage' => 'Справочники',
 
+        'accounting.read' => 'Бухгалтерия: просмотр',
+        'accounting.manage' => 'Бухгалтерия: ведение',
+
         'analytics.read' => 'Аналитика',
         'export.run' => 'Экспорт',
         'audit.read' => 'Журнал аудита',
@@ -108,6 +111,7 @@ final class Permissions
         'EXECUTOR' => 'Исполнитель',
         'HR_ADMIN' => 'HR / Администратор',
         'PROJECT_MANAGER' => 'Проект-менеджер',
+        'ACCOUNTANT' => 'Бухгалтер',
     ];
 
     public static function codes(): array
@@ -160,6 +164,9 @@ final class Permissions
             ]) + $own(['payroll.read']),
 
             // Проект-менеджер направления: «Отдел» для проектов = проекты его направлений
+            // Бухгалтер работает только в разделе «Бухгалтерия»
+            'ACCOUNTANT' => $all(['accounting.read', 'accounting.manage', 'export.run']) + $own(['dashboard.own']),
+
             'PROJECT_MANAGER' => $team(['project.read', 'project.update', 'project.assign', 'task.read', 'task.create', 'task.update'])
                 + $all(['employee.read'])
                 + $own(['dashboard.own', 'kpi.read', 'payroll.read']),

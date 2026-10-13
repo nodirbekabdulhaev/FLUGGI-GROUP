@@ -21,7 +21,7 @@ use Illuminate\Support\Facades\DB;
 /** Сотрудники (ТЗ §3, §37): учётные записи, роли, отделы, направления, блокировка, удаление с передачей работы. */
 final class UserService
 {
-    public const ROLES = ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN', 'PROJECT_MANAGER'];
+    public const ROLES = ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN', 'PROJECT_MANAGER', 'ACCOUNTANT'];
 
     public const SALES_ROLES = ['ROP', 'MANAGER'];
 

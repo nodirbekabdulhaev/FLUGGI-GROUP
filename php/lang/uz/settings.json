@@ -105,6 +105,8 @@
     "export_run": "Eksport",
     "audit_read": "Audit jurnali",
     "client_delete": "Mijozlarni oʻchirish",
-    "project_delete": "Loyihalarni oʻchirish"
+    "project_delete": "Loyihalarni oʻchirish",
+    "accounting_read": "Buxgalteriya: koʻrish",
+    "accounting_manage": "Buxgalteriya: yuritish"
   }
 }

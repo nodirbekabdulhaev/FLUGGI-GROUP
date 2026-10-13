@@ -41,6 +41,7 @@ return [
         ['key' => 'commissions', 'href' => '/finance/commissions', 'any' => ['commission.read']],
         ['key' => 'payroll', 'href' => '/finance/payroll', 'any' => ['payroll.read']],
     ]],
+    ['key' => 'accounting', 'href' => '/accounting', 'icon' => 'dollar', 'any' => ['accounting.read']],
     ['key' => 'kpi', 'href' => '/kpi', 'icon' => 'target', 'any' => ['kpi.read']],
     ['key' => 'attendance', 'href' => '/attendance', 'icon' => 'calendar', 'any' => ['attendance.read']],
     ['key' => 'analytics', 'href' => '/analytics', 'icon' => 'chart', 'any' => ['analytics.read']],

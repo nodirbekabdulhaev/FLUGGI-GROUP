@@ -4,5 +4,6 @@
   "MANAGER": "Manager",
   "EXECUTOR": "Executor",
   "HR_ADMIN": "HR / Admin",
-  "PROJECT_MANAGER": "Project manager"
+  "PROJECT_MANAGER": "Project manager",
+  "ACCOUNTANT": "Accountant"
 }

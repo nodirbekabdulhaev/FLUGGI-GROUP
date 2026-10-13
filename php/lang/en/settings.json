@@ -105,6 +105,8 @@
     "export_run": "Export",
     "audit_read": "Audit log",
     "client_delete": "Delete clients",
-    "project_delete": "Delete projects"
+    "project_delete": "Delete projects",
+    "accounting_read": "Accounting: view",
+    "accounting_manage": "Accounting: manage"
   }
 }

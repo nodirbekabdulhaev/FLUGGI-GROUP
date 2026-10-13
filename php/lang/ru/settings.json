@@ -105,6 +105,8 @@
     "export_run": "Экспорт",
     "audit_read": "Журнал аудита",
     "client_delete": "Удаление клиентов",
-    "project_delete": "Удаление проектов"
+    "project_delete": "Удаление проектов",
+    "accounting_read": "Бухгалтерия: просмотр",
+    "accounting_manage": "Бухгалтерия: ведение"
   }
 }
