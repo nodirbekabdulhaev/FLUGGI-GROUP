@@ -55,6 +55,9 @@ final class NotificationCatalog
         'smm.idea_approved' => ['EXECUTOR', 'PROJECT_MANAGER'],
         'smm.idea_rejected' => ['EXECUTOR', 'PROJECT_MANAGER'],
         'smm.idea_status_changed' => ['EXECUTOR', 'PROJECT_MANAGER'],
+        // Партнёр (второй CEO) обычно с ролью CEO; уведомление о решении приходит ему при любой роли
+        'partner.payout_requested' => ['CEO'],
+        'partner.payout_decided' => ['CEO'],
     ];
 
     /** Близкие типы настраиваются одним переключателем. */

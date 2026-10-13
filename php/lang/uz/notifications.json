@@ -84,6 +84,10 @@
       "idea_approved": "SMM: gʻoya tasdiqlandi",
       "idea_rejected": "SMM: gʻoya rad etildi",
       "idea_status_changed": "SMM: rolik bosqichi oʻzgardi"
+    },
+    "partner": {
+      "payout_requested": "Hamkor: toʻlov soʻrovi",
+      "payout_decided": "Hamkor: toʻlov boʻyicha qaror"
     }
   },
   "events": {

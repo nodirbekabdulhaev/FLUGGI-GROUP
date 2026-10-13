@@ -55,6 +55,15 @@
         </div>
     </div>
 
+    @isset($partnerShare)
+        <div class="mb-4 grid gap-3 rounded-lg border p-3 text-sm sm:grid-cols-3">
+            <div><p class="text-xs text-muted-foreground">{{ t('finance.project.partnerShare', ['pct' => $partnerShare['pct']]) }}</p><p class="text-lg font-semibold tabular-nums">{{ money($partnerShare['shareUzs']) }}</p></div>
+            <div><p class="text-xs text-muted-foreground">{{ t('finance.project.partnerPaid') }}</p><p class="text-lg font-semibold tabular-nums">{{ money($partnerShare['paidUzs']) }}</p></div>
+            <div><p class="text-xs text-muted-foreground">{{ t('finance.project.partnerRemaining') }}</p><p class="text-lg font-semibold tabular-nums">{{ money($partnerShare['remainingUzs']) }}</p>
+                <a class="link text-xs" href="/finance/partner">{{ t('partner.title') }}</a></div>
+        </div>
+    @endisset
+
     <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
         @foreach ($tabs as $key)
             <a href="{{ $base }}?tab={{ $key }}" @class(['whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium', 'border-foreground text-foreground' => $tab === $key, 'border-transparent text-muted-foreground hover:text-foreground' => $tab !== $key])>

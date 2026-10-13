@@ -79,7 +79,12 @@
     "expensesList": "Loyiha xarajatlari",
     "overhead": "Ustama xarajatlar (ijara, ofis)",
     "netProfit": "Sof foyda",
-    "plannedCost": "Ijrochilar boʻyicha reja (hisoblanmagan)"
+    "plannedCost": "Ijrochilar boʻyicha reja (hisoblanmagan)",
+    "salaries": "Maoshlar (qatʼiy), ulush",
+    "partnerShare": "Hamkor ulushi ({pct}%)",
+    "partnerPaid": "Hamkorga toʻlangan",
+    "partnerRemaining": "Hamkorga toʻlanishi qolgan",
+    "netProfitHint": "Sof foyda = yalpi foyda − bitim boʻyicha komissiyalar − ustama xarajatlar − qatʼiy maoshlar ulushi."
   },
   "profit": {
     "title": "Loyihalar boʻyicha foyda",

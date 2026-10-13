@@ -35,6 +35,17 @@
   "currency": "Currency",
   "workItems": "Executor work (piece rates)",
   "workItemsText": "Base price per unit: reel, cover, carousel, story. An employee’s personal rate can be set in their profile (Team → Rates).",
+  "salariesTitle": "Fixed salaries in project cost",
+  "salariesText": "Monthly salaries of the selected employees are split between projects like overhead and reduce project net profit.",
+  "salariesEmpty": "No employees with a fixed salary. Salaries are set in Finance → Payroll.",
+  "salariesHint": "The salary from the month's payroll is used; if the month is not calculated yet — the salary at 100%. CEO and partner are excluded.",
+  "partnerTitle": "Partner (second CEO)",
+  "partnerText": "A percentage of each project's net profit is the partner's income. Payouts are approved by the CEO.",
+  "partnerUser": "Partner",
+  "partnerNone": "Not assigned",
+  "partnerPct": "Percent of net profit",
+  "partnerPctHint": "From 0 to 100, default 40",
+  "partnerCeoOnly": "Only the CEO can change the partner and percent.",
   "errors": {
     "inUse": "This category is already in use — it can only be disabled",
     "kind": "The category type (income / expense) cannot be changed"

@@ -79,7 +79,12 @@
     "expensesList": "Project expenses",
     "overhead": "Overhead (rent, office)",
     "netProfit": "Net profit",
-    "plannedCost": "Executor plan (not accrued)"
+    "plannedCost": "Executor plan (not accrued)",
+    "salaries": "Fixed salaries, share",
+    "partnerShare": "Partner share ({pct}%)",
+    "partnerPaid": "Paid to partner",
+    "partnerRemaining": "Remaining to pay partner",
+    "netProfitHint": "Net profit = gross profit − deal commissions − overhead − share of fixed salaries."
   },
   "profit": {
     "title": "Profit by project",

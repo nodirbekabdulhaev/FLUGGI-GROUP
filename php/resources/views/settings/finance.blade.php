@@ -20,6 +20,37 @@
                         <div><button class="btn btn-primary btn-sm">{{ t('financeSettings.save') }}</button></div>
                     </form>
                 </x-card>
+                <x-card :title="t('financeSettings.salariesTitle')" :subtitle="t('financeSettings.salariesText')">
+                    @if ($salaryCandidates->isEmpty())
+                        <p class="text-sm text-muted-foreground">{{ t('financeSettings.salariesEmpty') }}</p>
+                    @else
+                        <form method="POST" action="/settings/finance/salaries" class="grid gap-2 text-sm">
+                            @csrf @method('PUT')
+                            @foreach ($salaryCandidates as $u)
+                                <label class="flex items-center justify-between gap-3">
+                                    <span class="flex items-center gap-2"><input type="checkbox" name="user_ids[]" value="{{ $u->id }}" @checked(in_array($u->id, $salaryUserIds, true))> {{ $u->full_name }}
+                                        <span class="text-xs text-muted-foreground">{{ t('roles.'.$u->role->code) }}</span></span>
+                                    <span class="whitespace-nowrap tabular-nums text-muted-foreground">{{ money($u->employee->base_salary) }}</span>
+                                </label>
+                            @endforeach
+                            <p class="text-xs text-muted-foreground">{{ t('financeSettings.salariesHint') }}</p>
+                            <div><button class="btn btn-primary btn-sm">{{ t('financeSettings.save') }}</button></div>
+                        </form>
+                    @endif
+                </x-card>
+                <x-card :title="t('financeSettings.partnerTitle')" :subtitle="t('financeSettings.partnerText')">
+                    <form method="POST" action="/settings/finance/partner" class="grid gap-3 text-sm">
+                        @csrf @method('PUT')
+                        <x-select name="partner_id" id="fs-partner" :label="t('financeSettings.partnerUser')" :value="$partnerSettings['partnerId']" :placeholder="t('financeSettings.partnerNone')"
+                            :options="$partnerCandidates->mapWithKeys(fn ($u) => [$u->id => $u->full_name.' · '.t('roles.'.$u->role?->code)])->all()" :disabled="! $canManagePartner" />
+                        <x-field name="partner_pct" id="fs-partner-pct" inputmode="decimal" :label="t('financeSettings.partnerPct')" :value="$partnerSettings['partnerPct']" :hint="t('financeSettings.partnerPctHint')" required :disabled="! $canManagePartner" />
+                        @if ($canManagePartner)
+                            <div><button class="btn btn-primary btn-sm">{{ t('financeSettings.save') }}</button></div>
+                        @else
+                            <p class="text-xs text-muted-foreground">{{ t('financeSettings.partnerCeoOnly') }}</p>
+                        @endif
+                    </form>
+                </x-card>
             @endif
         </div>
         <div class="lg:col-span-2">

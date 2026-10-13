@@ -60,4 +60,24 @@ final class FinanceTest extends DomainTestCase
             ]),
         );
     }
+
+    public function test_net_profit_subtracts_commissions_overhead_and_salaries(): void
+    {
+        // Пример CEO: валовая 5 290 000, комиссии 636 000, накладные 0, зарплаты 0 → 4 654 000
+        self::assertSame('4654000.00', Finance::netProfit('5290000', '636000', '0', '0'));
+        self::assertSame('2654000.00', Finance::netProfit('5290000', '636000', '500000', '1500000'));
+        self::assertSame('-1000000.00', Finance::netProfit('1000000', '500000', '500000', '1000000'));
+        self::assertSame('0.00', Finance::netProfit(0, 0, 0, 0));
+    }
+
+    public function test_partner_share(): void
+    {
+        self::assertSame('1861600.00', Finance::partnerShare('4654000', 40));
+        self::assertSame('0.00', Finance::partnerShare('-100000', 40));
+        self::assertSame('0.00', Finance::partnerShare('0', 40));
+        self::assertSame('0.00', Finance::partnerShare('1000000', 0));
+        self::assertSame('1000000.00', Finance::partnerShare('1000000', 100));
+        self::assertSame('0.33', Finance::partnerShare('1', '33.33'));
+        self::assertSame('41.25', Finance::partnerShare('100', '41.25'));
+    }
 }

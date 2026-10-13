@@ -65,6 +65,42 @@ final class FinanceService
         return $lines->reduce(fn ($s, $l) => $s->plus(self::d($l->quantity)->multipliedBy(self::d($l->rate))->multipliedBy($l->currency === 'USD' ? $usd : 1)), BigDecimal::zero());
     }
 
+    /**
+     * Прибыль проектов пакетом (без проверки прав — вызывающий отвечает за видимость):
+     * расходы, комиссии по сделке, доли накладных и окладов, чистая прибыль.
+     *
+     * @param  iterable<Project|object>  $projects
+     * @return array<string, array{revenue:BigDecimal, expenses:BigDecimal, grossProfit:string, marginPct:?string, commissions:BigDecimal, overhead:BigDecimal, salary:BigDecimal, netProfit:string}>
+     */
+    public static function profitRows(iterable $projects): array
+    {
+        $list = collect($projects);
+        if ($list->isEmpty()) {
+            return [];
+        }
+        $expenses = DB::table('expenses')->whereIn('project_id', $list->pluck('id'))->whereNull('deleted_at')
+            ->groupBy('project_id')->select('project_id', DB::raw('SUM(amount_uzs) AS s'))->pluck('s', 'project_id');
+        $commissions = DB::table('commissions')->whereIn('deal_id', $list->pluck('deal_id')->filter()->unique())->where('status', '<>', 'CANCELLED')
+            ->groupBy('deal_id')->select('deal_id', DB::raw('SUM(amount_uzs) AS s'))->pluck('s', 'deal_id');
+        $shares = OverheadService::sharesForProjects($list);
+        $out = [];
+        foreach ($list as $p) {
+            $price = self::d($p->price_uzs);
+            $exp = self::d($expenses[$p->id] ?? 0);
+            $f = Finance::projectFinance($price, $exp);
+            $com = self::d($commissions[$p->deal_id] ?? 0);
+            $oh = $shares['overhead'][$p->id] ?? BigDecimal::zero();
+            $sal = $shares['salary'][$p->id] ?? BigDecimal::zero();
+            $out[$p->id] = [
+                'revenue' => $price, 'expenses' => $exp, 'grossProfit' => $f['grossProfit'], 'marginPct' => $f['marginPct'],
+                'commissions' => $com, 'overhead' => $oh, 'salary' => $sal,
+                'netProfit' => Finance::netProfit($f['grossProfit'], $com, $oh, $sal),
+            ];
+        }
+
+        return $out;
+    }
+
     /** Финансовая карточка проекта (ТЗ §25). */
     public static function project(string $id): array
     {
@@ -72,26 +108,24 @@ final class FinanceService
         $byCat = DB::table('expenses')->where('project_id', $id)->whereNull('deleted_at')->groupBy('category')
             ->select('category', DB::raw('SUM(amount_uzs) AS s'))->get();
         $names = self::categoryNames();
-        $expenses = $byCat->reduce(fn ($s, $r) => $s->plus(self::d($r->s)), BigDecimal::zero());
         $got = self::collectedByDeal([$p->deal_id])[$p->deal_id] ?? BigDecimal::zero();
-        $commissions = self::d(DB::table('commissions')->where('deal_id', $p->deal_id)->where('status', '<>', 'CANCELLED')->sum('amount_uzs'));
-        $overhead = OverheadService::forProjects([$p])[$p->id] ?? BigDecimal::zero();
-        $price = self::d($p->price_uzs);
-        $f = Finance::projectFinance($price, $expenses);
-        $receivable = $price->minus($got);
+        $r = self::profitRows([$p])[$p->id];
+        $receivable = $r['revenue']->minus($got);
 
         return [
-            'revenueUzs' => self::money($price),
+            'revenueUzs' => self::money($r['revenue']),
             'collectedUzs' => self::money($got),
             'receivableUzs' => self::money($receivable->isNegative() ? BigDecimal::zero() : $receivable),
-            'expensesUzs' => self::money($expenses),
+            'expensesUzs' => self::money($r['expenses']),
             'byCategory' => self::sortCats($byCat->map(fn ($r) => ['category' => $r->category, 'name' => $names[$r->category] ?? $r->category, 'amountUzs' => self::money(self::d($r->s))])->all()),
-            'grossProfitUzs' => $f['grossProfit'],
-            'marginPct' => $f['marginPct'],
-            'commissionsUzs' => self::money($commissions),
-            'overheadUzs' => self::money($overhead),
-            'netProfitUzs' => self::money(self::d($f['grossProfit'])->minus($overhead)),
+            'grossProfitUzs' => $r['grossProfit'],
+            'marginPct' => $r['marginPct'],
+            'commissionsUzs' => self::money($r['commissions']),
+            'overheadUzs' => self::money($r['overhead']),
+            'salaryUzs' => self::money($r['salary']),
+            'netProfitUzs' => $r['netProfit'],
             'plannedCostUzs' => self::money(self::plannedCost($id)),
+            'partner' => PartnerService::forProject($p, $r['netProfit']),
         ];
     }
 
@@ -164,7 +198,7 @@ final class FinanceService
         }, BigDecimal::zero());
     }
 
-    /** Прибыльность проектов: выручка, получено, расходы, валовая прибыль, маржа, накладные. */
+    /** Прибыльность проектов: выручка, получено, расходы, валовая прибыль, маржа, комиссии, накладные, оклады, чистая прибыль. */
     public static function projectsProfit(?string $search, int $perPage = 25)
     {
         $q = ProjectAccess::projects('finance.read')->with('client:id,name');
@@ -175,23 +209,21 @@ final class FinanceService
         }
         $page = $q->orderByDesc('projects.created_at')->paginate($perPage)->withQueryString();
         $rows = $page->getCollection();
-        $expenses = $rows->isEmpty() ? collect() : DB::table('expenses')->whereIn('project_id', $rows->pluck('id'))->whereNull('deleted_at')
-            ->groupBy('project_id')->select('project_id', DB::raw('SUM(amount_uzs) AS s'))->pluck('s', 'project_id');
         $collected = self::collectedByDeal($rows->pluck('deal_id')->all());
-        $overhead = OverheadService::forProjects($rows);
+        $profit = self::profitRows($rows);
         foreach ($rows as $p) {
             /** @var Project $p */
-            $exp = self::d($expenses[$p->id] ?? 0);
-            $f = Finance::projectFinance(self::d($p->price_uzs), $exp);
-            $oh = $overhead[$p->id] ?? BigDecimal::zero();
+            $r = $profit[$p->id];
             $p->setAttribute('fin', [
-                'revenueUzs' => self::money(self::d($p->price_uzs)),
+                'revenueUzs' => self::money($r['revenue']),
                 'collectedUzs' => self::money($collected[$p->deal_id] ?? BigDecimal::zero()),
-                'expensesUzs' => self::money($exp),
-                'grossProfitUzs' => $f['grossProfit'],
-                'marginPct' => $f['marginPct'],
-                'overheadUzs' => self::money($oh),
-                'netProfitUzs' => self::money(self::d($f['grossProfit'])->minus($oh)),
+                'expensesUzs' => self::money($r['expenses']),
+                'grossProfitUzs' => $r['grossProfit'],
+                'marginPct' => $r['marginPct'],
+                'commissionsUzs' => self::money($r['commissions']),
+                'overheadUzs' => self::money($r['overhead']),
+                'salaryUzs' => self::money($r['salary']),
+                'netProfitUzs' => $r['netProfit'],
             ]);
         }
 

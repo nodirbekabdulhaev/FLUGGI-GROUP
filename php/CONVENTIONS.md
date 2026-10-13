@@ -43,7 +43,7 @@ PHP-версия Fluggi CRM/ERP для **обычного виртуальног
   (`Audit::diff($model, $data, [поля])`) + `Outbox::publish($type, $payload)`.
 - Неизменяемые таблицы (только добавление): `audit_logs`, `activities`, `stage_history`,
   `proposal_versions`, `task_status_history`, `reminder_log`, `smm_idea_history`. Без удаления: `payments`, `contracts`,
-  `commissions`, `payroll_entries` (только отмена/сторно с причиной).
+  `commissions`, `payroll_entries`, `partner_payouts` (только отмена/сторно/отказ с причиной).
 - Деньги: `Brick\Math\BigDecimal` и `App\Domain\Money` — никаких float. В базе DECIMAL, модель отдаёт
   строку (`decimal:2`). Суммы в UZS считаются по курсу на дату (`exchange_rates`), курс фиксируется в записи.
 - Время: в базе UTC (`DATETIME(3)`), показывать по Ташкенту: `dt($v)`, `d($v)`,
@@ -80,6 +80,8 @@ task.assigned {taskId, assigneeId}   task.status_changed {taskId, projectId, fro
 task.overdue {taskId, overdueDays}   task.deadline_changed {taskId}
 smm.idea_created {ideaId, authorId, assigneeId}   smm.idea_approved {ideaId, assigneeId, authorId}
 smm.idea_rejected {ideaId, assigneeId, authorId, reason}   smm.idea_status_changed {ideaId, from, to, assigned?}
+partner.payout_requested {payoutId, projectId, partnerId, amountUzs, requestedById}
+partner.payout_decided {payoutId, projectId, partnerId, status, amountUzs, reason}
 ```
 
 Модуль «Уведомления/Telegram» подписывается на эти события и рассылает уведомления — остальные

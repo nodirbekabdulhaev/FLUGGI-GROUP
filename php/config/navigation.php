@@ -1,10 +1,12 @@
 <?php
 
+use App\Services\Finance\PartnerService;
 use App\Services\Smm\SmmAccess;
 
 /**
  * Левое меню (ТЗ §4). Подписи — lang/{uz,ru}/nav.json. any — пункт виден при любом из прав;
  * без any — любому вошедшему. Раздел с подпунктами виден, если виден хоть один подпункт.
+ * count — [класс, метод] числа для бейджа у подпункта (показывается, если больше нуля).
  * Скрытие пункта — только удобство: доступ проверяется на сервере (perm:… у маршрутов).
  */
 return [
@@ -43,6 +45,8 @@ return [
         ['key' => 'profit', 'href' => '/finance/profit', 'any' => ['finance.read']],
         ['key' => 'commissions', 'href' => '/finance/commissions', 'any' => ['commission.read']],
         ['key' => 'payroll', 'href' => '/finance/payroll', 'any' => ['payroll.read']],
+        // Доход партнёра — только партнёру (второму CEO) и CEO; count — заявки, ждущие решения CEO
+        ['key' => 'partner', 'href' => '/finance/partner', 'gate' => [PartnerService::class, 'navAllowed'], 'count' => [PartnerService::class, 'pendingCount']],
     ]],
     ['key' => 'accounting', 'href' => '/accounting', 'icon' => 'dollar', 'any' => ['accounting.read']],
     ['key' => 'kpi', 'href' => '/kpi', 'icon' => 'target', 'any' => ['kpi.read']],

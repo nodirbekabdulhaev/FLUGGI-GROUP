@@ -10,7 +10,8 @@
                 </button>
                 <div x-show="open" x-collapse class="ml-5 space-y-0.5 border-l pl-3">
                     @foreach ($section['children'] as $item)
-                        <a href="{{ $item['href'] }}" @class(['block rounded-md px-3 py-1.5', 'bg-muted font-medium text-foreground' => Navigation::isActive($item['href']), 'text-muted-foreground hover:bg-muted hover:text-foreground' => ! Navigation::isActive($item['href'])])>{{ t('nav.'.$item['key']) }}</a>
+                        @php($count = isset($item['count']) ? (int) call_user_func($item['count']) : 0)
+                        <a href="{{ $item['href'] }}" @class(['flex items-center justify-between gap-2 rounded-md px-3 py-1.5', 'bg-muted font-medium text-foreground' => Navigation::isActive($item['href']), 'text-muted-foreground hover:bg-muted hover:text-foreground' => ! Navigation::isActive($item['href'])])><span>{{ t('nav.'.$item['key']) }}</span>@if ($count > 0)<span class="badge">{{ $count }}</span>@endif</a>
                     @endforeach
                 </div>
             </div>

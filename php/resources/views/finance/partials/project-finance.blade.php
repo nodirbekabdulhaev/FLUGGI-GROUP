@@ -1,4 +1,4 @@
-{{-- Финансовая карточка проекта (ТЗ §25): стоимость, расходы, прибыль, маржа, накладные, план по тарифу --}}
+{{-- Финансовая карточка проекта (ТЗ §25): стоимость, расходы, прибыль, маржа, комиссии, накладные, оклады, доля партнёра, план по тарифу --}}
 @php
     $fin = $finance;
     $neg = fn ($v) => str_starts_with((string) $v, '-');
@@ -11,8 +11,14 @@
         [t('finance.project.margin'), $fin['marginPct'] === null ? '—' : $fin['marginPct'].'%', null],
         [t('finance.project.commissions'), money($fin['commissionsUzs']), null],
         [t('finance.project.overhead'), money($fin['overheadUzs']), null],
+        [t('finance.project.salaries'), money($fin['salaryUzs']), null],
         [t('finance.project.netProfit'), money($fin['netProfitUzs']), $neg($fin['netProfitUzs']) ? 'text-danger' : 'text-success'],
+        [t('finance.project.partnerShare', ['pct' => $fin['partner']['pct']]), money($fin['partner']['shareUzs']), null],
     ];
+    if ($fin['partner']['configured']) {
+        $tiles[] = [t('finance.project.partnerPaid'), money($fin['partner']['paidUzs']), null];
+        $tiles[] = [t('finance.project.partnerRemaining'), money($fin['partner']['remainingUzs']), null];
+    }
     if ((float) $fin['plannedCostUzs'] > 0) {
         $tiles[] = [t('finance.project.plannedCost'), money($fin['plannedCostUzs']), null];
     }
@@ -28,6 +34,8 @@
             <div class="rounded-lg border p-3"><p class="text-xs text-muted-foreground">{{ $label }}</p><p class="text-lg font-semibold tabular-nums {{ $tone }}">{{ $value }}</p></div>
         @endforeach
     </div>
+    <p class="-mt-3 text-xs text-muted-foreground">{{ t('finance.project.netProfitHint') }}
+        @if (\App\Services\Finance\PartnerService::canView())· <a class="link" href="/finance/partner">{{ t('partner.title') }}</a>@endif</p>
 
     <section class="grid content-start gap-3">
         <div>

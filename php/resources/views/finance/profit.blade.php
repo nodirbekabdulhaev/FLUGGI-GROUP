@@ -16,7 +16,8 @@
                         <th>{{ t('projects.col.project') }}</th><th>{{ t('projects.col.status') }}</th>
                         <th class="text-right">{{ t('finance.project.revenue') }}</th><th class="text-right">{{ t('finance.project.collected') }}</th>
                         <th class="text-right">{{ t('finance.project.expenses') }}</th><th class="text-right">{{ t('finance.project.grossProfit') }}</th>
-                        <th class="text-right">{{ t('finance.project.margin') }}</th><th class="text-right">{{ t('finance.project.overhead') }}</th><th class="text-right">{{ t('finance.project.netProfit') }}</th>
+                        <th class="text-right">{{ t('finance.project.margin') }}</th><th class="text-right">{{ t('finance.project.commissions') }}</th><th class="text-right">{{ t('finance.project.overhead') }}</th>
+                        <th class="text-right">{{ t('finance.project.salaries') }}</th><th class="text-right">{{ t('finance.project.netProfit') }}</th>
                     </tr></thead>
                     <tbody>
                     @foreach ($projects as $p)
@@ -30,7 +31,9 @@
                             <td class="whitespace-nowrap text-right tabular-nums">{{ money($f['expensesUzs']) }}</td>
                             <td @class(['whitespace-nowrap text-right font-semibold tabular-nums', 'text-danger' => str_starts_with($f['grossProfitUzs'], '-')])>{{ money($f['grossProfitUzs']) }}</td>
                             <td class="text-right tabular-nums">{{ $f['marginPct'] === null ? '—' : $f['marginPct'].'%' }}</td>
+                            <td class="whitespace-nowrap text-right tabular-nums">{{ money($f['commissionsUzs']) }}</td>
                             <td class="whitespace-nowrap text-right tabular-nums">{{ money($f['overheadUzs']) }}</td>
+                            <td class="whitespace-nowrap text-right tabular-nums">{{ money($f['salaryUzs']) }}</td>
                             <td @class(['whitespace-nowrap text-right tabular-nums', 'text-danger' => str_starts_with($f['netProfitUzs'], '-')])>{{ money($f['netProfitUzs']) }}</td>
                         </tr>
                     @endforeach

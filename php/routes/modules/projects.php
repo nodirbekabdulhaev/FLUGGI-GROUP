@@ -5,6 +5,7 @@ use App\Http\Controllers\Finance\ExpensesController;
 use App\Http\Controllers\Finance\FinanceController;
 use App\Http\Controllers\Finance\FinanceSettingsController;
 use App\Http\Controllers\Finance\IncomesController;
+use App\Http\Controllers\Finance\PartnerController;
 use App\Http\Controllers\Projects\ProjectsController;
 use App\Http\Controllers\Projects\TasksController;
 use App\Http\Controllers\Projects\TemplatesController;
@@ -55,3 +56,13 @@ Route::post('/settings/finance/categories', [FinanceSettingsController::class, '
 Route::put('/settings/finance/categories/{id}', [FinanceSettingsController::class, 'updateCategory'])->where('id', $uuid)->middleware('perm:reference.manage,ALL')->name('settings.finance.categories.update');
 Route::delete('/settings/finance/categories/{id}', [FinanceSettingsController::class, 'destroyCategory'])->where('id', $uuid)->middleware('perm:reference.manage,ALL')->name('settings.finance.categories.destroy');
 Route::put('/settings/finance/overhead', [FinanceSettingsController::class, 'overhead'])->middleware('perm:finance.company.read,ALL')->name('settings.finance.overhead');
+Route::put('/settings/finance/salaries', [FinanceSettingsController::class, 'salaries'])->middleware('perm:finance.company.read,ALL')->name('settings.finance.salaries');
+// Партнёр и процент меняет только CEO (дополнительная проверка роли в контроллере)
+Route::put('/settings/finance/partner', [FinanceSettingsController::class, 'partner'])->middleware('perm:finance.company.read,ALL')->name('settings.finance.partner');
+
+// Доход партнёра (второго CEO): видят партнёр и CEO — проверка PartnerService::canView() (иначе 403),
+// утверждает выплату только CEO, который сам не партнёр
+Route::get('/finance/partner', [PartnerController::class, 'index'])->middleware('auth.only')->name('finance.partner');
+Route::post('/finance/partner/payouts', [PartnerController::class, 'store'])->middleware('auth.only')->name('finance.partner.store');
+Route::post('/finance/partner/payouts/{id}/approve', [PartnerController::class, 'approve'])->where('id', $uuid)->middleware('auth.only')->name('finance.partner.approve');
+Route::post('/finance/partner/payouts/{id}/reject', [PartnerController::class, 'reject'])->where('id', $uuid)->middleware('auth.only')->name('finance.partner.reject');

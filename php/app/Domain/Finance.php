@@ -72,4 +72,28 @@ final class Finance
 
         return Dec::toFixed(Dec::div($monthOverheadUzs, $n), 2);
     }
+
+    /**
+     * Чистая прибыль проекта = валовая прибыль − комиссии по сделке − доля накладных − доля фиксированных зарплат.
+     * Может быть отрицательной.
+     */
+    public static function netProfit(
+        BigDecimal|string|int|float $grossProfitUzs,
+        BigDecimal|string|int|float $commissionsUzs,
+        BigDecimal|string|int|float $overheadShareUzs,
+        BigDecimal|string|int|float $salaryShareUzs,
+    ): string {
+        return Dec::toFixed(Dec::sub(Dec::sub(Dec::sub($grossProfitUzs, $commissionsUzs), $overheadShareUzs), $salaryShareUzs), 2);
+    }
+
+    /** Доля партнёра: чистая прибыль × процент (0–100); при убытке — 0. */
+    public static function partnerShare(BigDecimal|string|int|float $netProfitUzs, BigDecimal|string|int|float $pct): string
+    {
+        $net = Dec::of($netProfitUzs);
+        if ($net->isLessThanOrEqualTo(0)) {
+            return '0.00';
+        }
+
+        return Dec::toFixed(Dec::dp(Dec::div(Dec::mul($net, $pct), 100), 2), 2);
+    }
 }

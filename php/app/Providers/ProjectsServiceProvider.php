@@ -5,6 +5,7 @@ namespace App\Providers;
 use App\Models\PayrollEntry;
 use App\Services\Automation\Scheduler;
 use App\Services\Finance\CostLineService;
+use App\Services\Finance\PartnerEvents;
 use App\Services\People\PeopleService;
 use App\Support\Outbox;
 use Illuminate\Support\Facades\DB;
@@ -12,7 +13,7 @@ use Illuminate\Support\ServiceProvider;
 
 /**
  * Модуль «Проекты и люди»: план расходов проекта по тарифу принятого КП (подписчик outbox)
- * и предварительный расчёт зарплаты для ежемесячной задачи планировщика.
+ * предварительный расчёт зарплаты для ежемесячной задачи планировщика и уведомления о выплатах партнёру.
  */
 class ProjectsServiceProvider extends ServiceProvider
 {
@@ -30,5 +31,7 @@ class ProjectsServiceProvider extends ServiceProvider
         Outbox::on('project.created', function (array $payload) {
             DB::transaction(fn () => CostLineService::generate($payload['projectId']));
         });
+        // Выплаты доли партнёра: уведомления CEO о заявке и партнёру о решении
+        PartnerEvents::register();
     }
 }

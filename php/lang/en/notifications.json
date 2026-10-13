@@ -84,6 +84,10 @@
       "idea_approved": "SMM: idea approved",
       "idea_rejected": "SMM: idea rejected",
       "idea_status_changed": "SMM: video stage changed"
+    },
+    "partner": {
+      "payout_requested": "Partner: payout request",
+      "payout_decided": "Partner: payout decision"
     }
   },
   "events": {

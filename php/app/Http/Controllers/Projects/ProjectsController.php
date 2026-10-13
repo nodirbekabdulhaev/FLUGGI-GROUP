@@ -9,6 +9,7 @@ use App\Services\Crm\Deletion;
 use App\Services\Finance\CostLineService;
 use App\Services\Finance\ExpenseService;
 use App\Services\Finance\FinanceService;
+use App\Services\Finance\PartnerService;
 use App\Services\Projects\ProjectAccess;
 use App\Services\Projects\ProjectService;
 use App\Services\Projects\TaskService;
@@ -49,6 +50,10 @@ class ProjectsController extends Controller
             $tab = 'tasks';
         }
         $data = ['project' => $project, 'tab' => $tab, 'tabs' => $tabs];
+        // Партнёр видит свою долю по проекту, даже если финансы проекта его роли закрыты
+        if (! $seesFinance && PartnerService::isPartner()) {
+            $data['partnerShare'] = PartnerService::projectShare($id);
+        }
         $tasks = TaskService::list(['projectId' => $id], 100);
         $data['tasks'] = $tasks;
         $data['assignees'] = ProjectService::assignees($project);
