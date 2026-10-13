@@ -44,6 +44,7 @@ class TasksController extends Controller
             'start_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'deadline' => ['sometimes', 'nullable', 'date_format:Y-m-d\TH:i'],
             'progress_pct' => ['sometimes', 'integer', 'min:0', 'max:100'],
+            'add_member' => [$create ? 'sometimes' : 'prohibited', 'boolean'],
         ], [], ['assignee_id' => t('tasks.fields.assignee')]);
         if (array_key_exists('deadline', $data)) {
             // Поле формы — время по Ташкенту

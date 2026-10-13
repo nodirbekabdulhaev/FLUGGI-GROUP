@@ -82,7 +82,7 @@
         <x-modal name="acc-payroll-edit" :title="t('accounting.payroll.editTitle', ['name' => $editing->person?->full_name, 'period' => $editing->period])" :open="true">
             <form method="POST" action="/accounting/payroll/{{ $editing->id }}" class="space-y-4">
                 @csrf @method('PATCH')
-                <x-field name="gross" inputmode="decimal" :label="t('accounting.payroll.gross')" :hint="t('accounting.payroll.grossHint', ['salary' => money($editing->person?->monthly_salary)])" :value="$num($editing->gross)" required />
+                <x-field name="gross" inputmode="decimal" data-money :label="t('accounting.payroll.gross')" :hint="t('accounting.payroll.grossHint', ['salary' => money($editing->person?->monthly_salary)])" :value="$num($editing->gross)" required />
                 <div class="flex justify-end gap-2">
                     <a href="/accounting/payroll?period={{ $period }}" class="btn btn-outline">{{ t('common.cancel') }}</a>
                     <button class="btn btn-primary">{{ t('common.save') }}</button>

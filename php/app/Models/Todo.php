@@ -49,6 +49,11 @@ class Todo extends Model
         return $this->belongsTo(Lead::class, 'lead_id')->withTrashed(); // удалённая запись видна в истории связанных
     }
 
+    public function smmIdea(): BelongsTo
+    {
+        return $this->belongsTo(SmmIdea::class, 'smm_idea_id')->withTrashed(); // удалённая запись видна в истории связанных
+    }
+
     public function recurring(): BelongsTo
     {
         return $this->belongsTo(RecurringTodo::class, 'recurring_id');

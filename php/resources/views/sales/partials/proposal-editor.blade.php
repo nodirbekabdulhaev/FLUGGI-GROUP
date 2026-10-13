@@ -85,7 +85,7 @@
                                 <p class="error" x-show="err(i, 'quantity')" x-text="err(i, 'quantity')"></p>
                             </div>
                             <div>
-                                <input class="input" :name="`items[${i}][unit_price]`" x-model="l.unit_price" inputmode="decimal" placeholder="{{ t('sales.proposals.price') }}" aria-label="{{ t('sales.proposals.price') }}"
+                                <input class="input" :name="`items[${i}][unit_price]`" x-model="l.unit_price" inputmode="decimal" data-money placeholder="{{ t('sales.proposals.price') }}" aria-label="{{ t('sales.proposals.price') }}"
                                        :readonly="l.tariff_id && !canPrice" :title="l.tariff_id && !canPrice ? @js(t('sales.proposals.tariffPriceLocked')) : ''">
                                 <p class="error" x-show="err(i, 'unit_price')" x-text="err(i, 'unit_price')"></p>
                             </div>

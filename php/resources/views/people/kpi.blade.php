@@ -93,7 +93,7 @@
                     <div @class(['grid gap-2', 'grid-cols-[1fr,6rem]' => $metric === 'REVENUE'])>
                         <div>
                             <label class="label" for="tg-{{ $metric }}">{{ t('kpi.metric.'.$metric) }}</label>
-                            <input id="tg-{{ $metric }}" class="input" name="targets[{{ $i }}][value]" inputmode="decimal" value="{{ isset($cur[$metric]) ? rtrim(rtrim($cur[$metric]['target'], '0'), '.') : '' }}">
+                            <input id="tg-{{ $metric }}" class="input" name="targets[{{ $i }}][value]" inputmode="decimal" data-money value="{{ isset($cur[$metric]) ? rtrim(rtrim($cur[$metric]['target'], '0'), '.') : '' }}">
                         </div>
                         @if ($metric === 'REVENUE')
                             <div><label class="label" for="tg-cur">{{ t('incomes.currency') }}</label>

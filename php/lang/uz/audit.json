@@ -205,5 +205,11 @@
   },
   "import": {
     "run": "Fayldan import"
+  },
+  "todo": {
+    "create": "Ish yaratildi",
+    "update": "Ish oʻzgartirildi",
+    "status": "Ish holati oʻzgartirildi",
+    "delete": "Ish oʻchirildi"
   }
 }

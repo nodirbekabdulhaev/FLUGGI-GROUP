@@ -35,7 +35,7 @@
   "kind": "Type",
   "priority": "Priority",
   "due": "Due",
-  "owner": "Executor",
+  "owner": "Responsible",
   "me": "me",
   "client": "Client",
   "noClient": "No client",
@@ -132,5 +132,20 @@
     "transferred": "A to-do was transferred to you",
     "done": "{name} completed a to-do",
     "recurringBody": "Due: {date}"
-  }
+  },
+  "record": "Linked to",
+  "recordKinds": {
+    "lead_id": "Lead",
+    "deal_id": "Deal",
+    "client_id": "Client",
+    "smm_idea_id": "SMM idea"
+  },
+  "recordLog": "“{title}” — for {name}",
+  "assignTask": "Assign a task",
+  "tasksBlock": "Tasks",
+  "tasksEmpty": "No tasks for this record yet",
+  "tasksEmptyText": "Click “Assign a task” — it will appear in the responsible person’s to-dos.",
+  "taskCreated": "Task assigned",
+  "done": "Done",
+  "assignHint": "You can assign a task to any employee — it appears in their to-dos, with a notification in the CRM and Telegram."
 }

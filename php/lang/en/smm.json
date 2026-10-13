@@ -98,7 +98,8 @@
     "rejected": "Rejected",
     "commented": "Comment",
     "resubmitted": "Resubmitted for approval",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "todo_created": "Task assigned"
   },
   "historyFields": {
     "title": "Title",

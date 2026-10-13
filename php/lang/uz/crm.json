@@ -140,6 +140,9 @@
     },
     "expense": {
       "created": "Xarajat qoʻshildi"
+    },
+    "todo": {
+      "created": "Vazifa qoʻyildi"
     }
   },
   "fields": {

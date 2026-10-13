@@ -68,7 +68,7 @@
 </div>
 
 @if ($p->can['createTasks'] && $open)
-    <x-modal name="task-new" :title="t('tasks.new')" :open="$errors->any() && old('project_id') === $p->id">
+    <x-modal name="task-new" :title="t('tasks.new')" :open="$errors->any() && old('project_id') === $p->id && old('_form') !== 'project-quick-task'">
         @include('projects.partials.task-form', ['action' => '/tasks', 'method' => 'POST', 'task' => null])
     </x-modal>
 @endif

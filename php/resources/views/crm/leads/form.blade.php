@@ -34,7 +34,7 @@
             <x-select name="owner_id" :label="t('crm.fields.owner')" :options="$formOwners" :value="$selfOwner ? access()->id() : ''" :placeholder="$selfOwner ? null : t('crm.fields.ownerAuto')" />
         @endif
         <div class="grid grid-cols-[1fr_6rem] gap-2">
-            <x-field name="budget" :label="t('crm.fields.budget')" :value="$lead?->budget !== null ? rtrim(rtrim((string) $lead->budget, '0'), '.') : null" inputmode="decimal" placeholder="0" />
+            <x-field name="budget" :label="t('crm.fields.budget')" :value="$lead?->budget !== null ? rtrim(rtrim((string) $lead->budget, '0'), '.') : null" inputmode="decimal" data-money placeholder="0" />
             <x-select name="currency" :label="t('crm.fields.currency')" :options="array_combine(\App\Services\Crm\Crm::CURRENCIES, \App\Services\Crm\Crm::CURRENCIES)" :value="$lead?->currency ?? 'UZS'" />
         </div>
     </div>

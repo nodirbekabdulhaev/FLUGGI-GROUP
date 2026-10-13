@@ -74,7 +74,7 @@
                                         @csrf @method('PATCH')
                                         <input type="hidden" name="_form" value="{{ $formName }}">
                                         <div class="grid gap-4 sm:grid-cols-[1fr_6rem]">
-                                            <x-field name="amount" :label="t('sales.contracts.amount')" :value="\App\Services\Sales\Numbers::rate($c->amount)" inputmode="decimal" required />
+                                            <x-field name="amount" :label="t('sales.contracts.amount')" :value="\App\Services\Sales\Numbers::rate($c->amount)" inputmode="decimal" data-money required />
                                             <x-select name="currency" :label="t('sales.currency')" :options="['UZS' => 'UZS', 'USD' => 'USD']" :value="$c->currency" />
                                         </div>
                                         <x-field name="contract_date" type="date" :label="t('sales.contracts.date')" :value="$c->contract_date->format('Y-m-d')" required />
@@ -114,7 +114,7 @@
                 <div class="grid gap-4 sm:grid-cols-[1fr_6rem]">
                     <div>
                         <label class="label" for="ct-amount">{{ t('sales.contracts.amount') }}<span class="text-danger"> *</span></label>
-                        <input id="ct-amount" name="amount" class="input" inputmode="decimal" x-model="amount" :readonly="proposal !== ''" required>
+                        <input id="ct-amount" name="amount" class="input" inputmode="decimal" data-money x-model="amount" :readonly="proposal !== ''" required>
                         @error('amount')<p class="error">{{ $message }}</p>@enderror
                     </div>
                     <div>

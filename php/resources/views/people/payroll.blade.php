@@ -86,7 +86,7 @@
                             <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="min-w-0"><span class="font-medium">{{ $u->full_name }}</span>
                                     <span class="block text-xs text-muted-foreground">{{ t('roles.'.$u->role->code) }}</span></div>
-                                <input name="salaries[{{ $u->id }}]" inputmode="decimal" class="input w-full sm:w-48 text-right tabular-nums"
+                                <input name="salaries[{{ $u->id }}]" inputmode="decimal" data-money class="input w-full sm:w-48 text-right tabular-nums"
                                        value="{{ old('salaries.'.$u->id, $u->employee?->base_salary !== null ? $num($u->employee->base_salary) : '') }}"
                                        placeholder="4000000" aria-label="{{ t('payroll.salaryFor', ['name' => $u->full_name]) }}">
                             </div>
@@ -112,7 +112,7 @@
                                 <div class="min-w-0"><span class="font-medium">{{ $u->full_name }}</span>
                                     <span class="block text-xs text-muted-foreground">{{ t('specialties.'.$u->employee->specialty) }}</span></div>
                                 <div class="grid grid-cols-[1fr_6rem] gap-2 sm:w-auto">
-                                    <input name="plans[{{ $u->id }}][salary]" inputmode="decimal" class="input w-full text-right tabular-nums sm:w-44"
+                                    <input name="plans[{{ $u->id }}][salary]" inputmode="decimal" data-money class="input w-full text-right tabular-nums sm:w-44"
                                            value="{{ old('plans.'.$u->id.'.salary', $u->employee?->base_salary !== null ? $num($u->employee->base_salary) : '') }}"
                                            placeholder="2000000" aria-label="{{ t('payroll.smmSalaryFor', ['name' => $u->full_name]) }}">
                                     <input name="plans[{{ $u->id }}][target]" inputmode="numeric" class="input w-full text-right tabular-nums"
@@ -137,15 +137,15 @@
                 @csrf @method('PATCH')
                 <div class="grid gap-4 sm:grid-cols-2">
                     @if ($fixed)
-                        <x-field name="base_salary" inputmode="decimal" :label="t('payroll.base')" :value="$num($editing->base_salary)" />
+                        <x-field name="base_salary" inputmode="decimal" data-money :label="t('payroll.base')" :value="$num($editing->base_salary)" />
                     @else
                         <x-field name="piece_rate_view" :label="t('payroll.pieceRate')" :hint="t('payroll.pieceRateHint')" :value="money($editing->piece_rate)" disabled />
                     @endif
-                    <x-field name="kpi_bonus_target" inputmode="decimal" :label="t('payroll.kpiBonusTarget')" :hint="t('payroll.kpiBonusTargetHint')" :value="$editing->user->employee?->kpi_bonus_target !== null ? $num($editing->user->employee->kpi_bonus_target) : null" />
-                    <x-field name="kpi_bonus" inputmode="decimal" :label="t('payroll.kpiBonus').($editing->kpi_pct !== null ? ' (KPI '.$editing->kpi_pct.'%)' : '')" :hint="t('payroll.kpiBonusAutoHint')" :value="$num($editing->kpi_bonus)" />
+                    <x-field name="kpi_bonus_target" inputmode="decimal" data-money :label="t('payroll.kpiBonusTarget')" :hint="t('payroll.kpiBonusTargetHint')" :value="$editing->user->employee?->kpi_bonus_target !== null ? $num($editing->user->employee->kpi_bonus_target) : null" />
+                    <x-field name="kpi_bonus" inputmode="decimal" data-money :label="t('payroll.kpiBonus').($editing->kpi_pct !== null ? ' (KPI '.$editing->kpi_pct.'%)' : '')" :hint="t('payroll.kpiBonusAutoHint')" :value="$num($editing->kpi_bonus)" />
                     <x-field name="commission_view" :label="t('payroll.commission')" :value="money($editing->commission)" disabled />
-                    <x-field name="other_bonus" inputmode="decimal" :label="t('payroll.otherBonus')" :value="$num($editing->other_bonus)" />
-                    <x-field name="penalty" inputmode="decimal" :label="t('payroll.penalty')" :value="$num($editing->penalty)" />
+                    <x-field name="other_bonus" inputmode="decimal" data-money :label="t('payroll.otherBonus')" :value="$num($editing->other_bonus)" />
+                    <x-field name="penalty" inputmode="decimal" data-money :label="t('payroll.penalty')" :value="$num($editing->penalty)" />
                     <x-field name="comment" class="sm:col-span-2" :label="t('payroll.comment')" :value="$editing->comment" />
                 </div>
                 @if ($fixed)

@@ -87,7 +87,7 @@
                     </div>
                     <div>
                         <label class="label" for="cr-value" x-text="f.calc_type === 'FIXED_PER_DEAL' ? @js(t('commissionRules.valueFixed')) : @js(t('commissionRules.valuePct'))"></label>
-                        <input id="cr-value" name="value" class="input" inputmode="decimal" x-model="f.value" required>
+                        <input id="cr-value" name="value" class="input" inputmode="decimal" data-money x-model="f.value" required>
                         @if ($reopen)@error('value')<p class="error">{{ $message }}</p>@enderror @endif
                     </div>
                     <div>
@@ -113,7 +113,7 @@
                             <select class="input" :name="`leaves[${i}][op]`" x-model="l.op" aria-label="{{ t('commissionRules.opLabel') }}">
                                 @foreach (\App\Services\Sales\CommissionsService::OPS as $o)<option value="{{ $o }}">{{ $o }}</option>@endforeach
                             </select>
-                            <input class="input" :name="`leaves[${i}][value]`" x-model="l.value" inputmode="decimal" required aria-label="{{ t('commissionRules.valueLabel') }}">
+                            <input class="input" :name="`leaves[${i}][value]`" x-model="l.value" inputmode="decimal" data-money data-allow-negative required aria-label="{{ t('commissionRules.valueLabel') }}">
                             <button type="button" class="btn btn-ghost btn-icon" x-on:click="f.leaves.splice(i, 1)" aria-label="{{ t('commissionRules.removeCondition') }}"><x-icon name="trash" /></button>
                         </div>
                     </template>

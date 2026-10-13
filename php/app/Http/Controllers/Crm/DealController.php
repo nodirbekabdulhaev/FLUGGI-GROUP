@@ -35,7 +35,7 @@ class DealController extends CrmController
             'amount_max' => ['nullable', 'numeric', 'min:0'],
             'date_from' => ['nullable', 'date_format:Y-m-d'],
             'date_to' => ['nullable', 'date_format:Y-m-d'],
-        ]);
+        ], [], ['amount_min', 'amount_max']);
         $status = $f['status'] ?? 'OPEN';
         $q = CrmAccess::deals()->with(['client', 'owner', 'stage']);
         if ($s = $f['q'] ?? null) {

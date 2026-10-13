@@ -72,7 +72,7 @@
                                 @if ($l->kind === 'PIECE')
                                     <x-field name="quantity" :id="'cl-qty-'.$l->id" type="number" step="any" min="0.01" :label="t('costLines.quantity')" :value="rtrim(rtrim((string) $l->quantity, '0'), '.')" required />
                                 @endif
-                                <x-field name="rate" :id="'cl-rate-'.$l->id" inputmode="decimal" :label="t($l->kind === 'PIECE' ? 'costLines.rate' : 'costLines.amount').', '.$l->currency" :value="rtrim(rtrim((string) $l->rate, '0'), '.')" required />
+                                <x-field name="rate" :id="'cl-rate-'.$l->id" inputmode="decimal" data-money :label="t($l->kind === 'PIECE' ? 'costLines.rate' : 'costLines.amount').', '.$l->currency" :value="rtrim(rtrim((string) $l->rate, '0'), '.')" required />
                             </div>
                             <div class="flex justify-end gap-2">
                                 <button type="button" class="btn btn-outline" @click="$dispatch('close-modal', 'cl-{{ $l->id }}')">{{ t('costLines.cancel') }}</button>

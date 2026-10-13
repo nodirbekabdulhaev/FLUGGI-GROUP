@@ -205,5 +205,11 @@
   },
   "import": {
     "run": "Import from file"
+  },
+  "todo": {
+    "create": "To-do created",
+    "update": "To-do updated",
+    "status": "To-do status changed",
+    "delete": "To-do deleted"
   }
 }

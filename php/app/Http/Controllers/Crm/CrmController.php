@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Crm;
 
 use App\Http\Controllers\Controller;
+use App\Services\Finance\Input;
 use App\Support\Format;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -22,8 +23,7 @@ abstract class CrmController extends Controller
         foreach ($money as $field) {
             $v = $request->input($field);
             if (is_string($v) || is_numeric($v)) {
-                $v = str_replace([' ', "\u{00A0}", ','], ['', '', '.'], (string) $v);
-                $request->merge([$field => $v === '' ? null : $v]);
+                $request->merge([$field => Input::money($v)]);
             }
         }
         $generic = [];

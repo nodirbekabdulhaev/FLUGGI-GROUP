@@ -20,6 +20,7 @@
             : (in_array($idea->status, $work, true) ? array_values(array_diff($work, [$idea->status])) : []);
     @endphp
     <x-page-header :title="$idea->title" :subtitle="$idea->code().' · '.t('smm.authorOn', ['name' => $idea->author?->full_name, 'date' => dt($idea->created_at)])" back="/smm">
+        <button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-modal', 'record-task')"><x-icon name="list" /> {{ t('todos.assignTask') }}</button>
         <x-badge :color="SmmIdeaService::COLORS[$idea->status]">{{ t('smm.status.'.$idea->status) }}</x-badge>
     </x-page-header>
 
@@ -51,6 +52,11 @@
                     @endif
                     @if ($idea->notes)<p class="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">{{ $idea->notes }}</p>@endif
                 @endif
+            </x-card>
+
+            {{-- Задачи по идее --}}
+            <x-card :title="t('todos.tasksBlock')" id="tasks">
+                @include('todos.partials.record-tasks', ['column' => 'smm_idea_id', 'recordId' => $idea->id])
             </x-card>
 
             {{-- Комментарии --}}
@@ -195,4 +201,5 @@
             </form>
         </x-modal>
     @endif
+    @include('todos.partials.record-task-modal', ['column' => 'smm_idea_id', 'recordId' => $idea->id, 'back' => '/smm/'.$idea->id.'#tasks'])
 @endsection

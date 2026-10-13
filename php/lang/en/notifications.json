@@ -63,7 +63,7 @@
       "due": "Client follow-up"
     },
     "todo": {
-      "assigned": "To-do assigned to you",
+      "assigned": "A to-do or a task from a card was assigned to you",
       "due": "To-do due / recurring task"
     },
     "chat": {

@@ -43,7 +43,7 @@
                 @csrf @if ($inc) @method('PUT') @endif
                 <x-select name="category" :id="$mid.'-cat'" :label="t('incomes.category')" :value="$inc?->category" placeholder="—" :options="$categories" required />
                 <div class="grid gap-4 sm:grid-cols-[1fr,7rem,10rem]">
-                    <x-field name="amount" :id="$mid.'-amount'" inputmode="decimal" :label="t('incomes.amount')" :value="$inc ? rtrim(rtrim((string) $inc->amount, '0'), '.') : null" required />
+                    <x-field name="amount" :id="$mid.'-amount'" inputmode="decimal" data-money :label="t('incomes.amount')" :value="$inc ? rtrim(rtrim((string) $inc->amount, '0'), '.') : null" required />
                     <x-select name="currency" :id="$mid.'-cur'" :label="t('incomes.currency')" :value="$inc?->currency ?? 'UZS'" :options="['UZS' => 'UZS', 'USD' => 'USD']" />
                     <x-field name="income_date" type="date" :id="$mid.'-date'" :label="t('incomes.date')" :value="$inc?->income_date?->format('Y-m-d') ?? \App\Support\Format::today()->toDateString()" required />
                 </div>

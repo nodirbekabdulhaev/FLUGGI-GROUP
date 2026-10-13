@@ -7,7 +7,7 @@
             <form method="POST" action="{{ route('automation.save') }}" class="space-y-5"
                   x-data="{ rows: @js(old('followUps', $settings['followUps'])) }">
                 @csrf @method('PUT')
-                <x-field name="largeAmountUzs" type="number" min="0" :label="t('automation.largeAmount')" :hint="t('automation.largeAmountHint')" :value="$settings['largeAmountUzs']" required />
+                <x-field name="largeAmountUzs" inputmode="decimal" data-money data-decimals="0" :label="t('automation.largeAmount')" :hint="t('automation.largeAmountHint')" :value="$settings['largeAmountUzs']" required />
                 <fieldset class="grid gap-2">
                     <legend class="mb-1 text-sm font-medium">{{ t('automation.followUps') }}</legend>
                     <p class="text-xs text-muted-foreground">{{ t('automation.followUpsHint') }}</p>

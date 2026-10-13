@@ -24,7 +24,10 @@
                 @include('projects.partials.priority', ['priority' => $p->priority])
             </div>
         </div>
-        <div class="flex items-start gap-3">
+        <div class="flex flex-wrap items-start gap-3">
+            @if ($p->can['createTasks'] && $open)
+                <button type="button" class="btn btn-primary btn-sm" x-data @click="$dispatch('open-modal', 'project-quick-task')"><x-icon name="list" /> {{ t('todos.assignTask') }}</button>
+            @endif
             <div class="grid gap-1 sm:text-right">
                 @if ($p->sees_money)<p class="text-2xl font-semibold">{{ money($p->price, $p->currency) }}</p>@endif
                 @include('projects.partials.progress', ['c' => $p->task_counts, 'class' => 'w-40 sm:justify-self-end'])
@@ -163,5 +166,8 @@
                 </form>
             </x-modal>
         @endif
+    @endif
+    @if ($p->can['createTasks'] && $open)
+        @include('projects.partials.quick-task')
     @endif
 @endsection

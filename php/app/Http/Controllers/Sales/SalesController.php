@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Sales;
 
 use App\Http\Controllers\Controller;
+use App\Services\Finance\Input;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -38,9 +39,7 @@ abstract class SalesController extends Controller
     {
         if (! $path) {
             if (is_string($data) || is_int($data) || is_float($data)) {
-                $v = str_replace([' ', "\u{00A0}", "\u{202F}", ','], ['', '', '', '.'], (string) $data);
-
-                return $v === '' ? null : $v;
+                return Input::money($data);
             }
 
             return $data;

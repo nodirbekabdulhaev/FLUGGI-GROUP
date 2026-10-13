@@ -37,7 +37,7 @@
             @error('contact_id')<p class="error">{{ $message }}</p>@enderror
         </div>
         <div class="grid grid-cols-[1fr_6rem] gap-2">
-            <x-field name="amount" :label="t('crm.fields.amount')" :value="$deal ? rtrim(rtrim((string) $deal->amount, '0'), '.') : null" inputmode="decimal" required />
+            <x-field name="amount" :label="t('crm.fields.amount')" :value="$deal ? rtrim(rtrim((string) $deal->amount, '0'), '.') : null" inputmode="decimal" data-money required />
             <x-select name="currency" :label="t('crm.fields.currency')" :options="array_combine(\App\Services\Crm\Crm::CURRENCIES, \App\Services\Crm\Crm::CURRENCIES)" :value="$deal?->currency ?? 'UZS'" />
         </div>
         <x-field name="expected_close_date" type="date" :label="t('crm.fields.expectedCloseDate')" :value="$deal?->expected_close_date?->format('Y-m-d')" />

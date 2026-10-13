@@ -10,7 +10,8 @@ final class NotificationCatalog
 {
     public const CHANNELS = ['IN_APP', 'TELEGRAM'];
 
-    private const ALL_ROLES = ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN'];
+    /** Все роли: дела поручают любому сотруднику, чат — у всех. */
+    private const ALL_ROLES = ['CEO', 'ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN', 'PROJECT_MANAGER', 'ACCOUNTANT'];
 
     /** Тип → роли (CEO видит все типы). */
     public const EVENTS = [

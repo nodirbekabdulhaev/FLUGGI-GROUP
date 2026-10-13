@@ -63,7 +63,7 @@
       "due": "Mijoz bilan takroriy aloqa"
     },
     "todo": {
-      "assigned": "Sizga ish topshirildi",
+      "assigned": "Sizga ish yoki kartochkadan vazifa topshirildi",
       "due": "Ish muddati / muntazam vazifa"
     },
     "chat": {

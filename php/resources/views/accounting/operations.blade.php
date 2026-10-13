@@ -135,7 +135,7 @@
                     <p class="hint" x-show="cat === 'CLIENT_PAYMENT'">{{ t('accounting.operations.manualClientHint') }}</p>
                 </div>
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <x-field name="amount" inputmode="decimal" :label="t('accounting.fields.amount')" :value="old('amount', $prefill['p_amount'] ?? null)" required />
+                    <x-field name="amount" inputmode="decimal" data-money :label="t('accounting.fields.amount')" :value="old('amount', $prefill['p_amount'] ?? null)" required />
                     <x-field name="date" type="date" :label="t('accounting.fields.date')" :value="old('date', \App\Support\Format::today()->toDateString())" required />
                 </div>
                 <div x-show="cat === 'SALARY'" x-cloak>
@@ -170,8 +170,8 @@
                 <x-select name="from_id" :label="t('accounting.fields.fromAccount')" :options="$activeOptions" :value="old('from_id')" required />
                 <x-select name="to_id" :label="t('accounting.fields.toAccount')" :options="$activeOptions" :value="old('to_id', array_keys($activeOptions)[1] ?? null)" required />
                 <div class="grid gap-4 sm:grid-cols-2">
-                    <x-field name="amount" inputmode="decimal" :label="t('accounting.fields.amount')" :value="old('amount')" required />
-                    <x-field name="amount_to" inputmode="decimal" :label="t('accounting.fields.amountTo')" :hint="t('accounting.operations.amountToHint')" :value="old('amount_to')" />
+                    <x-field name="amount" inputmode="decimal" data-money :label="t('accounting.fields.amount')" :value="old('amount')" required />
+                    <x-field name="amount_to" inputmode="decimal" data-money :label="t('accounting.fields.amountTo')" :hint="t('accounting.operations.amountToHint')" :value="old('amount_to')" />
                     <x-field name="date" type="date" :label="t('accounting.fields.date')" :value="old('date', \App\Support\Format::today()->toDateString())" required />
                 </div>
                 <x-field name="description" type="textarea" rows="2" :label="t('accounting.fields.description')" :value="old('description')" />

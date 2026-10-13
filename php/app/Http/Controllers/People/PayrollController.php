@@ -44,7 +44,7 @@ class PayrollController extends Controller
     public function salaries(Request $request): RedirectResponse
     {
         $raw = (array) $request->input('salaries', []);
-        $request->merge(['salaries' => array_map(fn ($v) => $v === null ? null : str_replace([' ', "\u{00A0}", ','], ['', '', '.'], (string) $v), $raw)]);
+        $request->merge(['salaries' => array_map(fn ($v) => Input::money($v), $raw)]);
         $data = $request->validate([
             'salaries' => ['required', 'array', 'max:500'],
             'salaries.*' => ['nullable', Input::MONEY],

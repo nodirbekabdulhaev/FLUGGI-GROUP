@@ -74,7 +74,7 @@
                                 <input type="hidden" name="_form" value="{{ $formName }}">
                                 <input type="hidden" name="_idem" value="{{ \Illuminate\Support\Str::random(32) }}">
                                 <div class="grid gap-4 sm:grid-cols-2">
-                                    <x-field name="amount" :id="'rf-amount-'.$p->id" :label="t('sales.payments.amount').', '.$p->currency" inputmode="decimal" required />
+                                    <x-field name="amount" :id="'rf-amount-'.$p->id" :label="t('sales.payments.amount').', '.$p->currency" inputmode="decimal" data-money required />
                                     <x-select name="method" :id="'rf-method-'.$p->id" :label="t('sales.payments.method')" :options="$methods" :value="$p->method" />
                                 </div>
                                 <x-field name="comment" type="textarea" :id="'rf-comment-'.$p->id" :label="t('sales.payments.refundReason')" required />

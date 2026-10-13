@@ -7,6 +7,7 @@ use App\Models\JobRun;
 use App\Services\Automation\FollowUpService;
 use App\Services\Automation\ReportService;
 use App\Services\Automation\Scheduler;
+use App\Services\Finance\Input;
 use App\Support\Audit;
 use App\Support\Settings;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +39,7 @@ class AutomationController extends Controller
 
     public function save(Request $request): JsonResponse|RedirectResponse
     {
+        Input::normalize($request, ['largeAmountUzs']);
         $data = $request->validate([
             'largeAmountUzs' => ['required', 'integer', 'min:0', 'max:10000000000000'],
             'followUps' => ['nullable', 'array', 'max:10'],

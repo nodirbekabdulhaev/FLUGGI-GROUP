@@ -3,7 +3,6 @@
     $dockOpen = \App\Models\Todo::where('owner_id', $dockAccess->id())->where('status', 'OPEN');
     $dockCount = (clone $dockOpen)->count();
     $dockOverdue = (clone $dockOpen)->whereNotNull('due_at')->where('due_at', '<', now())->count();
-    $dockOwners = \App\Http\Controllers\Todos\TodoController::owners();
     $dockClients = \App\Http\Controllers\Todos\TodoController::clients();
     $dockChatUnread = \App\Services\Chat\ChatService::unreadTotal($dockAccess->id());
 @endphp
@@ -43,10 +42,9 @@
                                 <x-icon name="chevron-right" class="size-3.5 transition-transform" ::class="more && 'rotate-90'" />
                             </button>
                             <div class="min-w-0 flex-1">
-                                <p x-show="t.client || t.deal" class="flex flex-wrap items-center gap-1 text-sm text-foreground">
+                                <p x-show="t.record" class="flex flex-wrap items-center gap-1 text-sm text-foreground">
                                     <x-icon name="briefcase" class="size-3.5 text-accent" />
-                                    <template x-if="t.client"><a :href="'/clients/' + t.client.id" class="font-medium hover:underline" x-text="t.client.name"></a></template>
-                                    <template x-if="t.deal"><a :href="'/sales/deals/' + t.deal.id" class="hover:underline" x-text="t.deal.name"></a></template>
+                                    <template x-if="t.record"><a :href="t.record.url" class="font-medium hover:underline" x-text="t.record.label"></a></template>
                                 </p>
                                 <p class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
                                     <span x-text="t.kindLabel"></span>
@@ -90,11 +88,11 @@
                         <select id="dock-priority" class="input" x-model="form.priority">@foreach (\App\Services\Todos\TodoService::PRIORITIES as $p)<option value="{{ $p }}">{{ t('crm.priority.'.$p) }}</option>@endforeach</select></div>
                     <div><label class="label" for="dock-due">{{ t('todos.due') }}</label>
                         <input id="dock-due" type="datetime-local" class="input" x-model="form.due_at"><p class="error" x-show="errors.due_at" x-text="errors.due_at"></p></div>
-                    @if (count($dockOwners) > 1)
-                        <div><label class="label" for="dock-owner">{{ t('todos.owner') }}</label>
-                            <select id="dock-owner" class="input" x-model="form.owner_id">@foreach ($dockOwners as $id => $name)<option value="{{ $id }}">{{ $id === $dockAccess->id() ? $name.' ('.t('todos.me').')' : $name }}</option>@endforeach</select>
-                            <p class="error" x-show="errors.owner_id" x-text="errors.owner_id"></p></div>
-                    @endif
+                    <div x-show="owners.length > 1"><label class="label" for="dock-owner">{{ t('todos.owner') }}</label>
+                        <select id="dock-owner" class="input" x-model="form.owner_id">
+                            <template x-for="o in owners" :key="o.id"><option :value="o.id" x-text="o.name" :selected="o.id === form.owner_id"></option></template>
+                        </select>
+                        <p class="error" x-show="errors.owner_id" x-text="errors.owner_id"></p></div>
                     @if ($dockClients)
                         <div><label class="label" for="dock-client">{{ t('todos.client') }}</label>
                             <select id="dock-client" class="input" x-model="form.client_id"><option value="">{{ t('todos.noClient') }}</option>@foreach ($dockClients as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach</select></div>
@@ -195,7 +193,7 @@ document.addEventListener('alpine:init', () => {
     const fieldErrors = (e) => Object.fromEntries(Object.entries(e.errors || {}).map(([k, v]) => [k, Array.isArray(v) ? v[0] : v]));
 
     Alpine.data('todoDock', (count, overdue) => ({
-        open: false, loading: false, items: [], count, overdue, sort: 'due', dialog: false, busy: false, errors: {}, form: {},
+        open: false, loading: false, items: [], owners: [], count, overdue, sort: 'due', dialog: false, busy: false, errors: {}, form: {},
         me: @js($dockAccess->id()),
         completeLabel: @js(t('todos.complete', ['title' => '{title}'])),
         overdueLabel: @js(t('todos.overdue')),
@@ -211,7 +209,9 @@ document.addEventListener('alpine:init', () => {
         async load() {
             this.loading = true;
             try {
-                this.items = (await window.api('{{ route('todos.dock') }}')).todos;
+                const data = await window.api('{{ route('todos.dock') }}');
+                this.items = data.todos;
+                this.owners = data.owners ?? [];
                 this.count = this.items.length;
                 this.overdue = this.items.filter((t) => t.overdue).length;
             } catch (e) {} finally { this.loading = false; }

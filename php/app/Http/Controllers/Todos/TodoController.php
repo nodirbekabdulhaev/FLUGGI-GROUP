@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Todos;
 
 use App\Http\Controllers\Controller;
-use App\Models\User;
 use App\Services\Crm\CrmAccess;
 use App\Services\Todos\RecurringTodoService;
 use App\Services\Todos\TodoService;
@@ -16,7 +15,7 @@ use Illuminate\View\View;
 
 /**
  * «Мои дела»: личные дела, поручения и регулярные дела (налоговый календарь).
- * Доступны каждому сотруднику для себя; поручить другому — по праву task.create.
+ * Доступны каждому сотруднику; поручить дело можно любому активному сотруднику.
  */
 class TodoController extends Controller
 {
@@ -47,21 +46,10 @@ class TodoController extends Controller
         ]);
     }
 
-    /** Кому можно поручить: себе; РОП — своему отделу; CEO — всем. */
+    /** Кому можно поручить дело: любой активный сотрудник (себя — первым). */
     public static function owners(): array
     {
-        $a = access();
-        $scope = $a->permissions['task.create'] ?? null;
-        $q = User::where('status', 'ACTIVE')->orderBy('full_name');
-        if ($scope === 'ALL') {
-            // все
-        } elseif ($scope === 'TEAM') {
-            $q->where(fn ($w) => $w->whereIn('team_id', $a->teamIds() ?: ['-'])->orWhere('id', $a->id()));
-        } else {
-            $q->whereKey($a->id());
-        }
-
-        return $q->pluck('full_name', 'id')->all();
+        return TodoService::assignees(access());
     }
 
     public static function clients(): array
@@ -71,7 +59,10 @@ class TodoController extends Controller
 
     public function dock(): JsonResponse
     {
-        return response()->json(['todos' => TodoService::dock(access())]);
+        // Список «Ответственный» — с данными панели, а не в разметке каждой страницы
+        $owners = collect(TodoService::assignees(access()))->map(fn ($name, $id) => ['id' => $id, 'name' => $name])->values()->all();
+
+        return response()->json(['todos' => TodoService::dock(access()), 'owners' => $owners]);
     }
 
     private function input(Request $request, bool $partial): array
@@ -88,21 +79,26 @@ class TodoController extends Controller
             'client_id' => ['nullable', 'uuid'],
             'deal_id' => ['nullable', 'uuid'],
             'lead_id' => ['nullable', 'uuid'],
+            'smm_idea_id' => ['nullable', 'uuid'],
         ]);
     }
 
     private function respond(Request $request, $todo, string $message, int $status = 200): JsonResponse|RedirectResponse
     {
-        return $request->expectsJson()
-            ? response()->json(TodoService::dto(access(), $todo), $status)
-            : back()->with('ok', $message);
+        if ($request->expectsJson()) {
+            return response()->json(TodoService::dto(access(), $todo), $status);
+        }
+        // Форма из карточки записи возвращает на её вкладку «Задачи» (только адрес внутри CRM)
+        $back = (string) $request->input('_back');
+
+        return (preg_match('~^/(?![/\\\\])[^\s]*$~', $back) ? redirect($back) : back())->with('ok', $message);
     }
 
     public function store(Request $request): JsonResponse|RedirectResponse
     {
         $t = TodoService::create(access(), $this->input($request, false));
 
-        return $this->respond($request, $t, t('todos.created'), 201);
+        return $this->respond($request, $t, t($request->has('_back') ? 'todos.taskCreated' : 'todos.created'), 201);
     }
 
     public function update(Request $request, string $id): JsonResponse|RedirectResponse

@@ -38,8 +38,8 @@
                 @endif
             </div>
             <div class="flex flex-wrap items-end gap-3">
-                <div><label class="label text-xs" for="df-min">{{ t('deals.amountFrom') }}</label><input id="df-min" name="amount_min" inputmode="decimal" value="{{ $f['amount_min'] ?? '' }}" class="input w-36"></div>
-                <div><label class="label text-xs" for="df-max">{{ t('deals.amountTo') }}</label><input id="df-max" name="amount_max" inputmode="decimal" value="{{ $f['amount_max'] ?? '' }}" class="input w-36"></div>
+                <div><label class="label text-xs" for="df-min">{{ t('deals.amountFrom') }}</label><input id="df-min" name="amount_min" inputmode="decimal" data-money value="{{ $f['amount_min'] ?? '' }}" class="input w-36"></div>
+                <div><label class="label text-xs" for="df-max">{{ t('deals.amountTo') }}</label><input id="df-max" name="amount_max" inputmode="decimal" data-money value="{{ $f['amount_max'] ?? '' }}" class="input w-36"></div>
                 <div><label class="label text-xs" for="df-from">{{ t('crm.common.dateFrom') }}</label><input id="df-from" type="date" name="date_from" value="{{ $f['date_from'] ?? '' }}" class="input"></div>
                 <div><label class="label text-xs" for="df-to">{{ t('crm.common.dateTo') }}</label><input id="df-to" type="date" name="date_to" value="{{ $f['date_to'] ?? '' }}" class="input"></div>
                 <button class="btn btn-outline"><x-icon name="filter" /> {{ t('common.filter') }}</button>

@@ -96,6 +96,9 @@ smm.idea_rejected {ideaId, assigneeId, authorId, reason}   smm.idea_status_chang
   пагинация `$items->links('vendor.pagination.fluggi')`.
 - Классы: `btn btn-primary|btn-outline|btn-ghost|btn-danger|btn-accent btn-sm`, `input`, `label`, `card`,
   `table`, `badge`, `link`, `muted`. Tailwind собирается в CI (`npm run build`); новые классы в Blade подхватываются.
+- Поля сумм: `<input inputmode="decimal" data-money>` (не `type="number"`) — при вводе «10 000 000», на сервер уходит
+  без пробелов; на сервере всё равно нормализовать (`App\Services\Finance\Input::normalize()` / `check(..., money)`),
+  чтобы принималось «10 000 000,50». Минус — `data-allow-negative`, знаков после точки — `data-decimals` (по умолчанию 2).
 - Телефон: все экраны без горизонтальной прокрутки страницы (таблицы — внутри `<x-table>`), формы в одну колонку.
 - Тексты — только через `t('группа.ключ', [...])`, оба языка (`lang/ru`, `lang/uz`, узбекский — латиница
   с ʻ/ʼ). Названия из справочников: `name_uz ?? name_ru` при узбекском языке.

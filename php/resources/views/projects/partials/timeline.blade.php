@@ -19,7 +19,7 @@
                             {{ $label }} «{{ $pl['title'] ?? '' }}»: @include('projects.partials.task-status', ['status' => $pl['from'] ?? 'TODO']) → @include('projects.partials.task-status', ['status' => $pl['to'] ?? 'TODO'])
                             @break
                         @case('task.created') @case('task.updated') @case('task.deleted') @case('task.commented')
-                            {{ $label }} «{{ $pl['title'] ?? '' }}»
+                            {{ $label }} «{{ $pl['title'] ?? '' }}»@if (! empty($pl['assignee'])) — {{ t('tasks.forAssignee', ['name' => $pl['assignee']]) }}@endif
                             @break
                         @case('project.template_applied')
                             {{ $label }} «{{ $pl['template'] ?? '' }}» ({{ $pl['tasks'] ?? 0 }})

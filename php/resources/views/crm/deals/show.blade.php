@@ -17,7 +17,7 @@
         'files' => ['sales.partials.deal-files', null, t('leads.tabs.files')],
         'projects' => ['projects.partials.deal-project', 'project.read', t('leads.tabs.projects')],
     ], fn ($s) => view()->exists($s[0]) && ($s[1] === null || can($s[1])));
-    $tabs = ['overview' => t('leads.tabs.overview'), 'activity' => t('leads.tabs.activity'), 'meetings' => t('leads.tabs.meetings'),
+    $tabs = ['overview' => t('leads.tabs.overview'), 'tasks' => t('leads.tabs.tasks'), 'activity' => t('leads.tabs.activity'), 'meetings' => t('leads.tabs.meetings'),
         'comments' => t('leads.tabs.comments'), 'history' => t('leads.tabs.history')] + array_map(fn ($s) => $s[2], $slots);
 @endphp
     <a href="{{ route('crm.deals.index') }}" class="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"><x-icon name="arrow-left" /> {{ t('deals.title') }}</a>
@@ -36,7 +36,8 @@
                 <p class="mt-2 text-sm text-danger">{{ $deal->lossReason->label() }}@if ($deal->loss_comment) — {{ $deal->loss_comment }}@endif</p>
             @endif
         </div>
-        <div class="flex items-start gap-3">
+        <div class="flex flex-wrap items-start gap-3">
+            <button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-modal', 'record-task')"><x-icon name="list" /> {{ t('todos.assignTask') }}</button>
             <div class="text-right">
                 <p class="text-2xl font-semibold tabular-nums">{{ money($deal->amount, $deal->currency) }}</p>
                 <p class="text-xs text-muted-foreground">
@@ -133,6 +134,7 @@
                     [t('crm.fields.createdAt'), dt($deal->created_at)],
                 ]])
             </div>
+            <div x-show="tab === 'tasks'" x-cloak>@include('todos.partials.record-tasks', ['column' => 'deal_id', 'recordId' => $deal->id])</div>
             <div x-show="tab === 'activity'" x-cloak>@include('crm.partials.timeline')</div>
             <div x-show="tab === 'meetings'" x-cloak>@include('crm.partials.meetings', ['target' => ['deal_id' => $deal->id], 'canCreate' => $open])</div>
             <div x-show="tab === 'comments'" x-cloak>@include('crm.partials.comments', ['target' => ['deal_id' => $deal->id]])</div>
@@ -156,4 +158,5 @@
             @include('crm.partials.assign-modal', ['action' => route('crm.deals.assign', $deal->id), 'current' => $deal->owner_id])
         @endif
     @endif
+    @include('todos.partials.record-task-modal', ['column' => 'deal_id', 'recordId' => $deal->id, 'back' => route('crm.deals.show', $deal->id, false).'#tasks'])
 @endsection

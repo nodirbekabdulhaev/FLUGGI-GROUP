@@ -9,6 +9,7 @@ use App\Models\ProjectMember;
 use App\Models\Task;
 use App\Models\TaskComment;
 use App\Models\TaskStatusHistory;
+use App\Models\User;
 use App\Services\Crm\Activities;
 use App\Support\Audit;
 use App\Support\Format;
@@ -120,13 +121,17 @@ final class TaskService
         }
     }
 
+    /** Участник команды (активный), РОП или менеджер проекта. */
+    private static function inTeam(Project $p, ?string $userId): bool
+    {
+        return ! $userId || $userId === $p->rop_id || $userId === $p->manager_id
+            || ProjectMember::where('project_id', $p->id)->where('user_id', $userId)->where('status', 'ACTIVE')->exists();
+    }
+
     /** Ответственный — участник команды, РОП или менеджер проекта. */
     private static function assertAssignee(Project $p, ?string $userId): void
     {
-        if (! $userId || $userId === $p->rop_id || $userId === $p->manager_id) {
-            return;
-        }
-        if (! ProjectMember::where('project_id', $p->id)->where('user_id', $userId)->where('status', 'ACTIVE')->exists()) {
+        if (! self::inTeam($p, $userId)) {
             throw new BusinessRule(t('tasks.errors.assigneeNotMember'), ['assignee_id' => t('tasks.errors.assigneeNotMember')]);
         }
     }
@@ -137,9 +142,19 @@ final class TaskService
         $access = access();
         $p = ProjectAccess::project($input['project_id'], 'task.create');
         self::assertProjectOpen($p);
-        self::assertAssignee($p, $input['assignee_id']);
+        // «Поставить задачу» из карточки проекта: сотрудник не из команды добавляется в неё (право project.assign)
+        $addMember = ! empty($input['add_member']) && ! self::inTeam($p, $input['assignee_id']);
+        if ($addMember && ! ProjectAccess::can($p->id, 'project.assign')) {
+            $addMember = false;
+        }
+        if (! $addMember) {
+            self::assertAssignee($p, $input['assignee_id']);
+        }
 
-        return DB::transaction(function () use ($p, $input, $access) {
+        return DB::transaction(function () use ($p, $input, $access, $addMember) {
+            if ($addMember) {
+                ProjectService::addMember($p->id, ['user_id' => $input['assignee_id']]);
+            }
             $last = Task::where('project_id', $p->id)->where('status', 'TODO')->max('sort_order');
             $t = Task::create([
                 'project_id' => $p->id,
@@ -154,7 +169,8 @@ final class TaskService
             ]);
             $t->refresh();
             TaskStatusHistory::create(['task_id' => $t->id, 'to_status' => 'TODO', 'changed_by_id' => $access->id()]);
-            Activities::log('task.created', ['project_id' => $p->id, 'task_id' => $t->id], ['number' => self::code($t), 'title' => $t->title]);
+            Activities::log('task.created', ['project_id' => $p->id, 'task_id' => $t->id], ['number' => self::code($t), 'title' => $t->title,
+                'assignee' => $t->assignee_id !== $access->id() ? User::whereKey($t->assignee_id)->value('full_name') : null]);
             Audit::log('task.create', 'task', $t->id, ['title' => ['old' => null, 'new' => $t->title], 'assigneeId' => ['old' => null, 'new' => $t->assignee_id]]);
             if ($t->assignee_id !== $access->id()) {
                 Outbox::publish('task.assigned', ['taskId' => $t->id, 'assigneeId' => $t->assignee_id]);

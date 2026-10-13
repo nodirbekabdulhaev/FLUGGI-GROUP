@@ -17,6 +17,7 @@
             <p class="mt-1 text-sm text-muted-foreground">{{ t('clients.dealsCount', ['count' => $dealsCount, 'open' => $openDealsCount]) }} · {{ $client->owner?->full_name }}</p>
         </div>
         <div class="flex flex-wrap gap-2" x-data>
+            <button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-modal', 'record-task')"><x-icon name="list" /> {{ t('todos.assignTask') }}</button>
             @if (can('deal.create'))<button type="button" class="btn btn-primary btn-sm" x-on:click="$dispatch('open-modal', 'deal-create')"><x-icon name="plus" /> {{ t('clients.newDeal') }}</button>@endif
             @if ($canEdit)<button type="button" class="btn btn-outline btn-sm" x-on:click="$dispatch('open-modal', 'client-edit')"><x-icon name="edit" /> {{ t('crm.common.edit') }}</button>@endif
             @if ($deleteImpact !== null)
@@ -47,7 +48,7 @@
         <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
             @foreach (array_filter([
                 'deals' => t('clients.deals').' ('.$deals->count().')', 'contacts' => t('clients.contacts').' ('.$client->contacts->count().')',
-                'requisites' => t('requisites.tab'), 'activity' => t('leads.tabs.activity'), 'comments' => t('leads.tabs.comments'),
+                'requisites' => t('requisites.tab'), 'tasks' => t('leads.tabs.tasks'), 'activity' => t('leads.tabs.activity'), 'comments' => t('leads.tabs.comments'),
                 'projects' => $projectsSlot ? t('leads.tabs.projects') : null,
             ]) as $key => $label)
                 <a href="#{{ $key }}" class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium" :class="tab === '{{ $key }}' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'">{{ $label }}</a>
@@ -106,6 +107,7 @@
                     <div class="mt-4"><button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-modal', 'requisites')"><x-icon name="edit" /> {{ $req ? t('requisites.edit') : t('requisites.fill') }}</button></div>
                 @endif
             </div>
+            <div x-show="tab === 'tasks'" x-cloak class="card-body">@include('todos.partials.record-tasks', ['column' => 'client_id', 'recordId' => $client->id])</div>
             <div x-show="tab === 'activity'" x-cloak class="card-body">@include('crm.partials.timeline')</div>
             <div x-show="tab === 'comments'" x-cloak class="card-body">@include('crm.partials.comments', ['target' => ['client_id' => $client->id]])</div>
             @if ($projectsSlot)<div x-show="tab === 'projects'" x-cloak>@includeIf('projects.partials.client-projects', ['client' => $client])</div>@endif
@@ -151,4 +153,5 @@
             @include('crm.deals.form', ['deal' => null, 'fixedClient' => $client])
         </x-modal>
     @endif
+    @include('todos.partials.record-task-modal', ['column' => 'client_id', 'recordId' => $client->id, 'back' => route('crm.clients.show', $client->id, false).'#tasks'])
 @endsection

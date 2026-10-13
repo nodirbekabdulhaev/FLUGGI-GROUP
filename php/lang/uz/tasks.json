@@ -60,5 +60,8 @@
     "reopenByLead": "Yopilgan vazifani ishga qaytarishni loyiha rahbari amalga oshiradi"
   },
   "searchTitle": "Nomi boʻyicha qidirish",
-  "shownFirst": "dastlabki {count} tasi koʻrsatilgan"
+  "shownFirst": "dastlabki {count} tasi koʻrsatilgan",
+  "forAssignee": "{name} uchun",
+  "addMemberHint": "Loyiha jamoasida boʻlmagan xodim jamoaga qoʻshiladi.",
+  "candidateGroup": "Jamoaga qoʻshish"
 }

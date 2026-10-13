@@ -22,7 +22,7 @@
         <x-field name="account_number" inputmode="numeric" :label="t('accounting.accounts.accountNumber')" :value="$account?->account_number" />
     </div>
     <div class="grid gap-4 sm:grid-cols-2">
-        <x-field name="opening_balance" inputmode="decimal" :label="t('accounting.accounts.openingBalance')" :value="$num($account?->opening_balance) ?? '0'" />
+        <x-field name="opening_balance" inputmode="decimal" data-money data-allow-negative :label="t('accounting.accounts.openingBalance')" :value="$num($account?->opening_balance) ?? '0'" />
         <x-field name="opening_date" type="date" :label="t('accounting.accounts.openingDate')" :hint="t('accounting.accounts.openingDateHint')" :value="$account?->opening_date?->toDateString()" />
     </div>
     <fieldset>

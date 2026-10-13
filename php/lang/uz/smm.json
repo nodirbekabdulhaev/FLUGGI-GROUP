@@ -98,7 +98,8 @@
     "rejected": "Rad etildi",
     "commented": "Izoh",
     "resubmitted": "Qayta tasdiqlashga yuborildi",
-    "deleted": "Oʻchirildi"
+    "deleted": "Oʻchirildi",
+    "todo_created": "Vazifa qoʻyildi"
   },
   "historyFields": {
     "title": "Nomi",

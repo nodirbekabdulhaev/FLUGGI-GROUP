@@ -21,7 +21,7 @@
                             @if ($editable)
                                 <input type="hidden" name="rates[{{ $i }}][work_item_id]" value="{{ $r->workItem->id }}">
                                 <div class="flex gap-1">
-                                    <input class="input" name="rates[{{ $i }}][rate]" inputmode="decimal" placeholder="{{ t('rates.asBase') }}" aria-label="{{ t('rates.personal') }}: {{ $r->workItem->name }}" value="{{ $r->rate !== null ? \App\Services\Sales\Numbers::rate($r->rate) : '' }}">
+                                    <input class="input" name="rates[{{ $i }}][rate]" inputmode="decimal" data-money placeholder="{{ t('rates.asBase') }}" aria-label="{{ t('rates.personal') }}: {{ $r->workItem->name }}" value="{{ $r->rate !== null ? \App\Services\Sales\Numbers::rate($r->rate) : '' }}">
                                     <select class="input w-20" name="rates[{{ $i }}][currency]" aria-label="{{ t('rates.currency') }}">
                                         @foreach (['UZS', 'USD'] as $c)<option value="{{ $c }}" @selected(($r->currency ?? $r->workItem->currency) === $c)>{{ $c }}</option>@endforeach
                                     </select>

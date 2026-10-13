@@ -60,5 +60,8 @@
     "reopenByLead": "Only the project lead can reopen a closed task"
   },
   "searchTitle": "Search by title",
-  "shownFirst": "showing first {count}"
+  "shownFirst": "showing first {count}",
+  "forAssignee": "for {name}",
+  "addMemberHint": "An employee outside the project team will be added to it.",
+  "candidateGroup": "Add to team"
 }

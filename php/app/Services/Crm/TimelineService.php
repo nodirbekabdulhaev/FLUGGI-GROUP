@@ -120,6 +120,7 @@ final class TimelineService
             'meeting.created' => t('crm.common.meetingAt', ['label' => $label, 'date' => Format::dateTime($p['startsAt'] ?? null)]),
             'meeting.completed' => $label.': '.$str($p['result'] ?? ''),
             'comment.added' => $label.': '.$str($p['preview'] ?? ''),
+            'todo.created' => $label.': '.t('todos.recordLog', ['title' => $str($p['title'] ?? ''), 'name' => $str($p['owner'] ?? '')]),
             'lead.converted' => $label.' ('.$str($p['client'] ?? '').')',
             default => $label,
         };

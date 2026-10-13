@@ -18,7 +18,9 @@
         };
     };
     $formJs = fn ($t) => ['action' => route('todos.update', $t->id), 'method' => 'PATCH', 'title' => $t->title, 'description' => (string) $t->description,
-        'kind' => $t->kind, 'priority' => $t->priority, 'due_at' => \App\Support\Format::toLocalInput($t->due_at), 'owner_id' => $t->owner_id, 'client_id' => (string) $t->client_id];
+        'kind' => $t->kind, 'priority' => $t->priority, 'due_at' => \App\Support\Format::toLocalInput($t->due_at), 'owner_id' => $t->owner_id, 'client_id' => (string) $t->client_id,
+        // Клиент, которого пользователь не видит (дело поручили по чужой записи), — поле не отправляется, связь не меняется
+        'client_locked' => $t->client_id && ! isset($clients[$t->client_id])];
 @endphp
 @section('content')
     <x-page-header :title="t('todos.pageTitle')" :subtitle="t('todos.pageSubtitle')" />
@@ -40,7 +42,7 @@
             @else
                 <x-table>
                     <thead><tr>
-                        <th>{{ t('todos.title') }}</th><th>{{ t('todos.kind') }}</th><th>{{ t('todos.due') }}</th><th>{{ t('todos.client') }}</th>
+                        <th>{{ t('todos.title') }}</th><th>{{ t('todos.kind') }}</th><th>{{ t('todos.due') }}</th><th>{{ t('todos.record') }}</th>
                         <th>{{ $view === 'mine' ? t('todos.from') : t('todos.owner') }}</th><th class="w-28"></th>
                     </tr></thead>
                     <tbody>
@@ -55,9 +57,13 @@
                                 </td>
                                 <td class="whitespace-nowrap text-muted-foreground">{{ t('todos.kinds.'.$x->kind) }}</td>
                                 <td @class(['whitespace-nowrap', 'font-medium text-danger' => TodoService::overdue($x)])>{{ TodoService::dueLabel($x->due_at) }}</td>
-                                <td>@if ($x->client)<a href="/clients/{{ $x->client->id }}" class="link">{{ $x->client->name }}</a>@else — @endif</td>
+                                <td class="min-w-40">@if ($rec = TodoService::record($x))<a href="{{ $rec[3] }}" class="link">{{ t('todos.recordKinds.'.$rec[0]) }} {{ $rec[2] }}</a>@else — @endif</td>
                                 <td class="whitespace-nowrap text-muted-foreground">
-                                    {{ $view === 'mine' ? ($x->creator_id === $x->owner_id ? '—' : $x->creator?->full_name) : $x->owner?->full_name }}
+                                    @if ($view === 'mine')
+                                        {{ $x->creator_id === $x->owner_id ? '—' : $x->creator?->full_name }}
+                                    @else
+                                        {{ $x->owner?->full_name }}@if ($view === 'all' && $x->creator_id !== $x->owner_id)<span class="block text-xs">{{ t('todos.from') }}: {{ $x->creator?->full_name }}</span>@endif
+                                    @endif
                                 </td>
                                 <td class="whitespace-nowrap text-right">
                                     @if (TodoService::canEdit($access, $x))
@@ -99,11 +105,11 @@
                             <input id="td-due" type="datetime-local" name="due_at" class="input" x-model="f.due_at"></div>
                         @if (count($owners) > 1)
                             <div><label class="label" for="td-owner">{{ t('todos.owner') }}</label>
-                                <select id="td-owner" name="owner_id" class="input" x-model="f.owner_id">@foreach ($owners as $id => $name)<option value="{{ $id }}">{{ $id === $access->id() ? $name.' ('.t('todos.me').')' : $name }}</option>@endforeach</select></div>
+                                <select id="td-owner" name="owner_id" class="input" x-model="f.owner_id">@foreach ($owners as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach</select></div>
                         @endif
                         @if ($clients)
                             <div><label class="label" for="td-client">{{ t('todos.client') }}</label>
-                                <select id="td-client" name="client_id" class="input" x-model="f.client_id"><option value="">{{ t('todos.noClient') }}</option>@foreach ($clients as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach</select></div>
+                                <select id="td-client" name="client_id" class="input" x-model="f.client_id" :disabled="f.client_locked"><option value="">{{ t('todos.noClient') }}</option>@foreach ($clients as $id => $name)<option value="{{ $id }}">{{ $name }}</option>@endforeach</select></div>
                         @endif
                     </div>
                     <div><label class="label" for="td-desc">{{ t('todos.description') }}</label>

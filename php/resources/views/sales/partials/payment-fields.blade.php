@@ -8,7 +8,7 @@
 <div class="grid gap-4 sm:grid-cols-[1fr_6rem]">
     <div>
         <label class="label" for="{{ $prefix }}-amount">{{ t('sales.payments.amount') }}<span class="text-danger"> *</span></label>
-        <input id="{{ $prefix }}-amount" name="amount" class="input" inputmode="decimal" required value="{{ $val('amount', $payment ? \App\Services\Sales\Numbers::rate($payment->amount) : '') }}">
+        <input id="{{ $prefix }}-amount" name="amount" class="input" inputmode="decimal" data-money required value="{{ $val('amount', $payment ? \App\Services\Sales\Numbers::rate($payment->amount) : '') }}">
         @if ($err('amount'))<p class="error">{{ $err('amount') }}</p>@endif
     </div>
     <div>

@@ -30,6 +30,7 @@
             @endif
         </div>
         <div class="flex flex-wrap gap-2">
+            <button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-modal', 'record-task')"><x-icon name="list" /> {{ t('todos.assignTask') }}</button>
             @if ($lead->phone)<a href="tel:{{ $lead->phone }}" class="btn btn-outline btn-sm"><x-icon name="phone" /> {{ t('crm.common.byPhone') }}</a>@endif
             @if ($lead->telegram)<a href="https://t.me/{{ ltrim($lead->telegram, '@') }}" target="_blank" rel="noopener noreferrer" class="btn btn-outline btn-sm"><x-icon name="send" /> Telegram</a>@endif
             @if ($open && can('deal.create') && $canEdit)
@@ -98,7 +99,7 @@
 
     <div x-data="{ tab: (location.hash || '#overview').slice(1) }" x-on:hashchange.window="tab = (location.hash || '#overview').slice(1)">
         <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
-            @foreach (['overview', 'activity', 'meetings', 'comments', 'history', 'docs'] as $key)
+            @foreach (['overview', 'tasks', 'activity', 'meetings', 'comments', 'history', 'docs'] as $key)
                 <a href="#{{ $key }}" class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium" :class="tab === '{{ $key }}' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'">
                     {{ $key === 'docs' ? t('leads.tabs.proposals').' · '.t('leads.tabs.contracts').' · '.t('leads.tabs.payments') : t('leads.tabs.'.$key) }}
                 </a>
@@ -133,6 +134,7 @@
                     <p class="mt-4 text-sm"><a href="#meetings" class="link inline-flex items-center gap-1"><x-icon name="calendar" /> {{ t('crm.common.newMeeting') }}</a></p>
                 @endif
             </div>
+            <div x-show="tab === 'tasks'" x-cloak>@include('todos.partials.record-tasks', ['column' => 'lead_id', 'recordId' => $lead->id])</div>
             <div x-show="tab === 'activity'" x-cloak>@include('crm.partials.timeline')</div>
             <div x-show="tab === 'meetings'" x-cloak>@include('crm.partials.meetings', ['target' => ['lead_id' => $lead->id], 'canCreate' => $open])</div>
             <div x-show="tab === 'comments'" x-cloak>@include('crm.partials.comments', ['target' => ['lead_id' => $lead->id]])</div>
@@ -158,4 +160,5 @@
     @if ($open && can('deal.create') && $canEdit)
         @include('crm.leads.convert')
     @endif
+    @include('todos.partials.record-task-modal', ['column' => 'lead_id', 'recordId' => $lead->id, 'back' => route('crm.leads.show', $lead->id, false).'#tasks'])
 @endsection

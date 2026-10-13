@@ -55,7 +55,7 @@
                     <div class="grid gap-4 sm:grid-cols-2">
                         <x-select name="specialty" :id="$mid.'-spec'" :label="t('financeSettings.specialty')" :value="$w?->specialty" placeholder="—" :options="collect(\App\Services\Projects\ProjectAccess::SPECIALTIES)->mapWithKeys(fn ($s) => [$s => t('specialties.'.$s)])->all()" />
                         <x-field name="unit" :id="$mid.'-unit'" :label="t('financeSettings.unit')" :value="$w?->unit ?? 'шт'" required />
-                        <x-field name="default_rate" :id="$mid.'-rate'" inputmode="decimal" :label="t('financeSettings.defaultRate')" :value="$w ? rtrim(rtrim((string) $w->default_rate, '0'), '.') : null" required />
+                        <x-field name="default_rate" :id="$mid.'-rate'" inputmode="decimal" data-money :label="t('financeSettings.defaultRate')" :value="$w ? rtrim(rtrim((string) $w->default_rate, '0'), '.') : null" required />
                         <x-select name="currency" :id="$mid.'-cur'" :label="t('financeSettings.currency')" :value="$w?->currency ?? 'UZS'" :options="['UZS' => 'UZS', 'USD' => 'USD']" />
                     </div>
                     <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" @checked($w?->is_active ?? true)> {{ t('financeSettings.active') }}</label>

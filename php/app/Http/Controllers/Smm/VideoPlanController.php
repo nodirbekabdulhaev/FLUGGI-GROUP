@@ -16,7 +16,7 @@ class VideoPlanController extends Controller
     {
         $raw = (array) $request->input('plans', []);
         $request->merge(['plans' => array_map(fn ($p) => [
-            'salary' => isset($p['salary']) ? str_replace([' ', "\u{00A0}", ','], ['', '', '.'], (string) $p['salary']) : null,
+            'salary' => isset($p['salary']) ? Input::money($p['salary']) : null,
             'target' => isset($p['target']) ? trim((string) $p['target']) : null,
         ], array_filter($raw, 'is_array'))]);
         $data = $request->validate([

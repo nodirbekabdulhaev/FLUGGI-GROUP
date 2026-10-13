@@ -33,7 +33,7 @@
                 @if (can('finance.company.read', 'ALL'))
                     <form method="POST" action="{{ route('crm.references.rate') }}" class="flex flex-wrap items-end gap-2">
                         @csrf @method('PUT')
-                        <x-field name="rate_to_uzs" :label="t('references.rate')" inputmode="decimal" class="w-40" required />
+                        <x-field name="rate_to_uzs" :label="t('references.rate')" inputmode="decimal" data-money data-decimals="4" class="w-40" required />
                         <x-field name="date" type="date" :label="t('references.rateDate')" :value="\App\Support\Format::today()->toDateString()" />
                         <button type="submit" class="btn btn-primary">{{ t('common.save') }}</button>
                     </form>
@@ -117,8 +117,8 @@
                     <div><label class="label" for="rs-code">{{ t('references.code') }} *</label><input id="rs-code" name="code" class="input" required maxlength="40" x-model="s.code" x-on:input="s.code = s.code.toUpperCase()"><p class="hint">A–Z, 0–9, _</p></div>
                     <div><label class="label" for="rs-uz">{{ t('references.nameUz') }}</label><input id="rs-uz" name="name_uz" class="input" maxlength="120" x-model="s.name_uz"></div>
                     <div><label class="label" for="rs-en">{{ t('references.nameEn') }}</label><input id="rs-en" name="name_en" class="input" maxlength="120" x-model="s.name_en"></div>
-                    <div><label class="label" for="rs-bp">{{ t('references.basePrice') }}</label><input id="rs-bp" name="base_price" inputmode="decimal" class="input" x-model="s.base_price"></div>
-                    <div><label class="label" for="rs-mp">{{ t('references.minPrice') }}</label><input id="rs-mp" name="min_price" inputmode="decimal" class="input" x-model="s.min_price"></div>
+                    <div><label class="label" for="rs-bp">{{ t('references.basePrice') }}</label><input id="rs-bp" name="base_price" inputmode="decimal" data-money class="input" x-model="s.base_price"></div>
+                    <div><label class="label" for="rs-mp">{{ t('references.minPrice') }}</label><input id="rs-mp" name="min_price" inputmode="decimal" data-money class="input" x-model="s.min_price"></div>
                     <div><label class="label" for="rs-cur">{{ t('crm.fields.currency') }}</label><select id="rs-cur" name="currency" class="input" x-model="s.currency">@foreach (\App\Services\Crm\Crm::CURRENCIES as $c)<option>{{ $c }}</option>@endforeach</select></div>
                     <div><label class="label" for="rs-pt">{{ t('references.pricingType') }}</label><select id="rs-pt" name="pricing_type" class="input" x-model="s.pricing_type">@foreach (\App\Services\Crm\Crm::PRICING_TYPES as $p)<option value="{{ $p }}">{{ t('references.pricing.'.$p) }}</option>@endforeach</select></div>
                     <div><label class="label" for="rs-dir">{{ t('references.direction') }}</label><select id="rs-dir" name="direction_id" class="input" x-model="s.direction_id"><option value="">{{ t('references.noDirection') }}</option>@foreach ($directions as $d)<option value="{{ $d->id }}">{{ $d->name }}</option>@endforeach</select><p class="hint">{{ t('references.directionHint') }}</p></div>

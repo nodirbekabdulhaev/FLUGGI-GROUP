@@ -20,7 +20,7 @@
             @if ($clients->isEmpty())<p class="hint">{{ t('leads.noClientsFound') }}</p>@endif
         </div>
         <div class="grid grid-cols-[1fr_6rem] gap-2">
-            <x-field name="amount" :label="t('crm.fields.amount')" :value="$lead->budget !== null ? rtrim(rtrim((string) $lead->budget, '0'), '.') : null" inputmode="decimal" required />
+            <x-field name="amount" :label="t('crm.fields.amount')" :value="$lead->budget !== null ? rtrim(rtrim((string) $lead->budget, '0'), '.') : null" inputmode="decimal" data-money required />
             <x-select name="currency" :label="t('crm.fields.currency')" :options="array_combine(\App\Services\Crm\Crm::CURRENCIES, \App\Services\Crm\Crm::CURRENCIES)" :value="$lead->currency" />
         </div>
         <div class="grid gap-4 sm:grid-cols-2">

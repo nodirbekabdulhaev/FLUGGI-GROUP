@@ -35,7 +35,7 @@
   "kind": "Turi",
   "priority": "Ustuvorlik",
   "due": "Muddat",
-  "owner": "Ijrochi",
+  "owner": "Masʼul",
   "me": "men",
   "client": "Mijoz",
   "noClient": "Mijozsiz",
@@ -132,5 +132,20 @@
     "transferred": "Sizga ish oʻtkazildi",
     "done": "{name} ishni bajardi",
     "recurringBody": "Muddat: {date}"
-  }
+  },
+  "record": "Bogʻliq yozuv",
+  "recordKinds": {
+    "lead_id": "Lid",
+    "deal_id": "Bitim",
+    "client_id": "Mijoz",
+    "smm_idea_id": "SMM gʻoyasi"
+  },
+  "recordLog": "«{title}» — {name} uchun",
+  "assignTask": "Vazifa qoʻyish",
+  "tasksBlock": "Vazifalar",
+  "tasksEmpty": "Bu yozuv boʻyicha hozircha vazifa yoʻq",
+  "tasksEmptyText": "«Vazifa qoʻyish» tugmasini bosing — ish masʼulning «Mening ishlarim» boʻlimida paydo boʻladi.",
+  "taskCreated": "Vazifa qoʻyildi",
+  "done": "Bajarildi",
+  "assignHint": "Vazifani istalgan xodimga qoʻyish mumkin — u «Mening ishlarim»da paydo boʻladi, bildirishnoma CRM va Telegramga keladi."
 }

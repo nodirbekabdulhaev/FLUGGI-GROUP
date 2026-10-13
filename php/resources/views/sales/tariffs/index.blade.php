@@ -136,7 +136,7 @@
                     </div>
                     <div>
                         <label class="label" for="tf-price">{{ t('tariffs.price') }}<span class="text-danger"> *</span></label>
-                        <input id="tf-price" name="price" class="input" inputmode="decimal" x-model="f.price" required>
+                        <input id="tf-price" name="price" class="input" inputmode="decimal" data-money x-model="f.price" required>
                     </div>
                     <div>
                         <label class="label" for="tf-cur">{{ t('tariffs.currency') }}</label>
@@ -180,7 +180,7 @@
                                     </select>
                                 </template>
                                 <template x-if="i.kind === 'FIXED'">
-                                    <input class="input" :name="`items[${idx}][amount]`" x-model="i.amount" inputmode="decimal" required aria-label="{{ t('tariffs.amount') }}">
+                                    <input class="input" :name="`items[${idx}][amount]`" x-model="i.amount" inputmode="decimal" data-money required aria-label="{{ t('tariffs.amount') }}">
                                 </template>
                                 <template x-if="i.kind === 'FIXED'">
                                     <select class="input" :name="`items[${idx}][currency]`" x-model="i.currency" aria-label="{{ t('tariffs.currency') }}"><option value="UZS">UZS</option><option value="USD">USD</option></select>
@@ -227,7 +227,7 @@
                             @foreach (\App\Services\Sales\CatalogService::SPECIALTIES as $sp)<option value="{{ $sp }}">{{ t('specialties.'.$sp) }}</option>@endforeach
                         </select>
                     </div>
-                    <div><label class="label" for="wi-rate">{{ t('tariffs.defaultRate') }}<span class="text-danger"> *</span></label><input id="wi-rate" name="default_rate" class="input" inputmode="decimal" x-model="f.default_rate" required></div>
+                    <div><label class="label" for="wi-rate">{{ t('tariffs.defaultRate') }}<span class="text-danger"> *</span></label><input id="wi-rate" name="default_rate" class="input" inputmode="decimal" data-money x-model="f.default_rate" required></div>
                     <div><label class="label" for="wi-cur">{{ t('tariffs.currency') }}</label><select id="wi-cur" name="currency" class="input" x-model="f.currency"><option value="UZS">UZS</option><option value="USD">USD</option></select></div>
                 </div>
                 <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" x-model="f.is_active"> {{ t('tariffs.workActive') }}</label>

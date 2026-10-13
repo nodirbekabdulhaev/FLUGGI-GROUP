@@ -23,7 +23,7 @@
         @endif
     @endif
     <div class="grid gap-4 sm:grid-cols-[1fr,6rem]">
-        <x-field name="amount" inputmode="decimal" :label="t('finance.expenses.amount')" :value="$expense ? rtrim(rtrim((string) $expense->amount, '0'), '.') : null" required />
+        <x-field name="amount" inputmode="decimal" data-money :label="t('finance.expenses.amount')" :value="$expense ? rtrim(rtrim((string) $expense->amount, '0'), '.') : null" required />
         <x-select name="currency" :label="t('incomes.currency')" :value="$expense?->currency ?? 'UZS'" :options="['UZS' => 'UZS', 'USD' => 'USD']" />
     </div>
     <div class="grid gap-4 sm:grid-cols-2">

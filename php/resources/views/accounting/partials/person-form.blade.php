@@ -7,7 +7,7 @@
     <div class="grid gap-4 sm:grid-cols-2">
         <x-field name="pinfl" inputmode="numeric" maxlength="14" :label="t('accounting.people.pinfl')" :hint="t('accounting.people.pinflHint')" :value="$person?->pinfl" />
         <x-field name="position" :label="t('accounting.people.position')" :value="$person?->position" />
-        <x-field name="monthly_salary" inputmode="decimal" :label="t('accounting.people.salary')" :hint="t('accounting.people.salaryHint')" :value="$num($person?->monthly_salary)" required />
+        <x-field name="monthly_salary" inputmode="decimal" data-money :label="t('accounting.people.salary')" :hint="t('accounting.people.salaryHint')" :value="$num($person?->monthly_salary)" required />
         <x-select name="user_id" :label="t('accounting.people.user')" :placeholder="t('accounting.people.noUser')" :options="$users" :value="$person?->user_id" />
         <x-field name="hired_at" type="date" :label="t('accounting.people.hiredAt')" :value="$person?->hired_at?->toDateString()" />
         <x-field name="fired_at" type="date" :label="t('accounting.people.firedAt')" :value="$person?->fired_at?->toDateString()" />

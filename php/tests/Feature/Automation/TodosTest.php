@@ -30,20 +30,19 @@ class TodosTest extends TestCase
         $this->assertSame(['OPEN', $this->executor->id, true], [$own['status'], $own['owner']['id'], $own['can']['update']]);
         $this->assertMatchesRegularExpression('/^TD-\d{5}$/', $own['number']);
 
-        // РОП поручает менеджеру своего отдела, с клиентом; чужому отделу — нельзя
+        // РОП поручает менеджеру, с клиентом (поручить можно любому активному сотруднику — Todos\TodoAssignTest)
         $client = $this->client($this->manager, ['name' => 'Alfa']);
         $t = $this->actingAsUser($this->rop)->postJson('/todos', ['title' => 'Позвонить клиенту', 'kind' => 'CALL', 'priority' => 'HIGH',
             'due_at' => now()->addDay()->format('Y-m-d\TH:i'), 'owner_id' => $this->manager->id, 'client_id' => $client->id])->assertCreated()->json();
         $this->assertSame(['id' => $client->id, 'name' => 'Alfa'], $t['client']);
         $this->assertSame(1, Notification::where('user_id', $this->manager->id)->where('type', 'todo.assigned')->count());
-        $this->postJson('/todos', ['title' => 'x', 'owner_id' => $this->otherManager->id])->assertForbidden();
-        $this->actingAsUser($this->manager)->postJson('/todos', ['title' => 'x', 'owner_id' => $this->rop->id])->assertForbidden();
+        $this->postJson('/todos', ['title' => 'x', 'owner_id' => '00000000-0000-4000-8000-000000000000'])->assertNotFound();
         // Клиент, которого не видишь, не привязать
         $foreign = $this->client($this->otherManager);
         $this->postJson('/todos', ['title' => 'x', 'client_id' => $foreign->id])->assertNotFound();
 
         // «Список дел» менеджера: только его личные открытые дела
-        $this->assertSame(['Позвонить клиенту'], array_column($this->getJson('/todos/dock')->json('todos'), 'title'));
+        $this->assertSame(['Позвонить клиенту'], array_column($this->actingAsUser($this->manager)->getJson('/todos/dock')->json('todos'), 'title'));
         $this->actingAsUser($this->executor)->patchJson('/todos/'.$t['id'], ['title' => 'hack'])->assertNotFound();
         $this->actingAsUser($this->manager)->get('/todos?view=all')->assertForbidden();
         // «Все» у РОП — только сотрудники его отдела

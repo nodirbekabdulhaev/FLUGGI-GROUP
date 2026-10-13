@@ -140,6 +140,9 @@
     },
     "expense": {
       "created": "Expense added"
+    },
+    "todo": {
+      "created": "Task assigned"
     }
   },
   "fields": {

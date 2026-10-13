@@ -98,7 +98,8 @@
     "rejected": "Отклонено",
     "commented": "Комментарий",
     "resubmitted": "Отправлено на утверждение снова",
-    "deleted": "Удалено"
+    "deleted": "Удалено",
+    "todo_created": "Поставлена задача"
   },
   "historyFields": {
     "title": "Название",

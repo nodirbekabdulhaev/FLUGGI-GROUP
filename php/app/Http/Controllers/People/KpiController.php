@@ -4,6 +4,7 @@ namespace App\Http\Controllers\People;
 
 use App\Domain\People;
 use App\Http\Controllers\Controller;
+use App\Services\Finance\Input;
 use App\Services\Finance\Period;
 use App\Services\People\KpiService;
 use App\Services\People\PeopleService;
@@ -42,7 +43,7 @@ class KpiController extends Controller
         ]);
         $targets = array_map(fn ($t) => [
             'metric' => $t['metric'],
-            'value' => isset($t['value']) && trim($t['value']) !== '' ? str_replace([' ', "\u{00A0}", ','], ['', '', '.'], $t['value']) : null,
+            'value' => isset($t['value']) ? Input::money($t['value']) : null,
             'currency' => $t['currency'] ?? 'UZS',
         ], array_values($data['targets'] ?? []));
         PeopleService::setTargets($data['user_id'], $data['period'], $targets);
