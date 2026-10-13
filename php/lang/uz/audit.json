@@ -169,5 +169,36 @@
     "update": "Ish haqi oʻzgartirildi",
     "approve": "Ish haqi tasdiqlandi",
     "pay": "Ish haqi toʻlandi"
+  },
+  "accounting": {
+    "settings": "Buxgalteriya stavkalari oʻzgartirildi",
+    "crm_import": "CRM toʻlovi buxgalteriyaga yuklandi",
+    "crm_import_period": "Davr uchun CRM toʻlovlari yuklandi",
+    "account": {
+      "create": "Hisob yaratildi",
+      "update": "Hisob oʻzgartirildi",
+      "activate": "Hisob yoqildi",
+      "deactivate": "Hisob oʻchirib qoʻyildi",
+      "delete": "Hisob oʻchirildi"
+    },
+    "operation": {
+      "create": "Operatsiya qoʻshildi",
+      "delete": "Operatsiya oʻchirildi"
+    },
+    "transfer": {
+      "create": "Hisoblar orasida oʻtkazma"
+    },
+    "person": {
+      "create": "Soliq uchun xodim qoʻshildi",
+      "update": "Soliq uchun xodim oʻzgartirildi",
+      "delete": "Soliq uchun xodim oʻchirildi"
+    },
+    "payroll": {
+      "create": "Soliq uchun ish haqi hisoblandi",
+      "recalculate": "Soliq uchun ish haqi qayta hisoblandi",
+      "update": "Hisoblash oʻzgartirildi",
+      "approve": "Hisoblash tasdiqlandi",
+      "remove": "Hisoblash qoralamasi oʻchirildi"
+    }
   }
 }

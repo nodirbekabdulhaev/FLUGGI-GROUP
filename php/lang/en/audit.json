@@ -169,5 +169,36 @@
     "update": "Payroll updated",
     "approve": "Payroll approved",
     "pay": "Payroll paid"
+  },
+  "accounting": {
+    "settings": "Accounting rates changed",
+    "crm_import": "CRM payment loaded into accounting",
+    "crm_import_period": "CRM payments loaded for a period",
+    "account": {
+      "create": "Account created",
+      "update": "Account changed",
+      "activate": "Account activated",
+      "deactivate": "Account deactivated",
+      "delete": "Account deleted"
+    },
+    "operation": {
+      "create": "Operation added",
+      "delete": "Operation deleted"
+    },
+    "transfer": {
+      "create": "Transfer between accounts"
+    },
+    "person": {
+      "create": "Tax office person added",
+      "update": "Tax office person changed",
+      "delete": "Tax office person deleted"
+    },
+    "payroll": {
+      "create": "Tax payroll accrued",
+      "recalculate": "Tax payroll recalculated",
+      "update": "Accrual changed",
+      "approve": "Accrual approved",
+      "remove": "Accrual draft removed"
+    }
   }
 }
