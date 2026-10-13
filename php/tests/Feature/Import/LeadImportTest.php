@@ -9,6 +9,8 @@ use App\Models\OutboxEvent;
 use App\Models\SmmIdea;
 use App\Models\StageHistory;
 use App\Services\Import\LeadImporter;
+use App\Services\Import\RowError;
+use App\Services\Import\Values;
 use App\Support\Format;
 
 class LeadImportTest extends ImportTestCase
@@ -188,5 +190,16 @@ class LeadImportTest extends ImportTestCase
         $this->as($this->manager);
         $rows = $importer->normalize([['n' => 2, 'cells' => array_values((fn () => $this->example())->call($importer))]], $importer->keys());
         $this->assertSame('error', $importer->preview($rows, [])[0]['status']);
+    }
+
+    public function test_phone_from_excel_text_cell_or_other_systems_is_cleaned(): void
+    {
+        $this->assertSame('+998909338500', Values::phone("'+998909338500", 'Телефон'));
+        $this->assertSame('+998 90 933 85 00', Values::phone('="+998 90 933 85 00"', 'Телефон'));
+        $this->assertSame('+998 90 123 45 67', Values::phone('+998.90.123.45.67', 'Телефон'));
+        $this->assertSame('+998901234567', Values::phone('+998901234567, +998711234567', 'Телефон'));
+        $this->assertNull(Values::phone("'", 'Телефон'));
+        $this->expectException(RowError::class);
+        Values::phone('звонить вечером', 'Телефон');
     }
 }

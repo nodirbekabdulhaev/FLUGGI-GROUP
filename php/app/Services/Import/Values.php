@@ -160,13 +160,22 @@ final class Values
         return $s;
     }
 
-    /** Телефон — как в формах CRM: цифры, +, пробелы, дефисы, скобки; до 30 символов. */
+    /**
+     * Телефон — как в формах CRM: цифры, +, пробелы, дефисы, скобки; до 30 символов.
+     * Excel и выгрузки из других систем добавляют к номеру ' (признак текста), кавычки, «=», точки
+     * или пишут несколько номеров через запятую — такое убираем, из нескольких номеров берём первый.
+     */
     public static function phone(?string $v, string $column): ?string
     {
         if ($v === null || trim($v) === '') {
             return null;
         }
-        $s = trim($v);
+        $s = trim(str_replace(["'", '"', '`', '‘', '’', 'ʻ', 'ʼ', '«', '»', '='], '', $v));
+        $s = trim(preg_split('/[,;\/\n]+/', $s)[0] ?? '');
+        $s = trim((string) preg_replace('/(?<=\d)\.(?=\d)/', ' ', $s));
+        if ($s === '') {
+            return null;
+        }
         if (mb_strlen($s) > 30 || ! preg_match('/^[+0-9\s\-()]*$/', $s)) {
             throw new RowError(t('import.errors.phone', ['column' => $column, 'value' => $v]));
         }
