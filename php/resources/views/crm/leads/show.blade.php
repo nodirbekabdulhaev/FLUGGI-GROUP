@@ -117,6 +117,7 @@
                     [t('crm.fields.website'), $lead->website],
                     [t('crm.fields.city'), collect([$lead->city, $lead->country])->filter()->implode(', ')],
                     [t('crm.fields.source'), $lead->source?->label()],
+                    [t('crm.fields.smmIdea'), $lead->smmIdea ? (\App\Services\Smm\SmmAccess::allowed() ? $h('<a class="link" href="/smm/'.e($lead->smm_idea_id).'">'.e($lead->smmIdea->code().' · '.$lead->smmIdea->title).'</a>') : $lead->smmIdea->code().' · '.$lead->smmIdea->title) : null],
                     [t('crm.fields.service'), $lead->service?->label()],
                     [t('crm.fields.budget'), $lead->budget !== null ? money($lead->budget, $lead->currency).($lead->currency === 'USD' ? ' ≈ '.money($lead->budget_uzs) : '') : null],
                     [t('crm.fields.desiredDate'), $lead->desired_date ? d($lead->desired_date) : null],

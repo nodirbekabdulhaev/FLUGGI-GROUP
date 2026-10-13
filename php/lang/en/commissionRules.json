@@ -21,7 +21,8 @@
   "any": "any condition",
   "role": {
     "MANAGER": "Manager",
-    "ROP": "Sales head (ROP)"
+    "ROP": "Sales head (ROP)",
+    "SMM": "SMM specialist of the video"
   },
   "calc": {
     "PERCENT_OF_PAYMENT": "% of payment",

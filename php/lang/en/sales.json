@@ -176,7 +176,8 @@
     "total": "Total for selection",
     "role": {
       "MANAGER": "Manager",
-      "ROP": "Sales head (ROP)"
+      "ROP": "Sales head (ROP)",
+      "SMM": "SMM (video)"
     },
     "rule": "Rule",
     "base": "Base",

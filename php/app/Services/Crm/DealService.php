@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Deal;
 use App\Services\References\ExchangeRates;
+use App\Services\Smm\SmmIdeaService;
 use App\Support\Audit;
 use App\Support\Outbox;
 use Brick\Math\BigDecimal;
@@ -18,7 +19,7 @@ use Illuminate\Support\Facades\DB;
  */
 final class DealService
 {
-    public const TRACKED = ['title', 'amount', 'currency', 'service_id', 'contact_id', 'expected_close_date', 'probability_override'];
+    public const TRACKED = ['title', 'amount', 'currency', 'service_id', 'contact_id', 'expected_close_date', 'probability_override', 'smm_idea_id'];
 
     public const EDITABLE = ['title', 'contact_id', 'service_id', 'amount', 'currency', 'expected_close_date', 'probability_override'];
 
@@ -71,6 +72,12 @@ final class DealService
         $data = array_intersect_key($input, array_flip(self::EDITABLE));
         if (! empty($data['contact_id'])) {
             self::assertContact($before->client_id, $data['contact_id']);
+        }
+        // Ролик SMM, из которого пришёл клиент: опубликованный (сохранённый ранее можно оставить), пусто — убрать
+        if (array_key_exists('smm_idea_id', $input)) {
+            $data['smm_idea_id'] = $input['smm_idea_id']
+                ? SmmIdeaService::videoFor(SmmIdeaService::LEAD_SOURCE, $input['smm_idea_id'], $before->smm_idea_id)
+                : null;
         }
         if (array_key_exists('amount', $data) || array_key_exists('currency', $data)) {
             ['rate' => $data['exchange_rate'], 'amountUzs' => $data['amount_uzs']] = ExchangeRates::convert(

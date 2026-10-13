@@ -54,3 +54,9 @@ CREATE TRIGGER `commissions_no_delete` BEFORE DELETE ON `commissions` FOR EACH R
 DROP TRIGGER IF EXISTS `payroll_entries_no_delete`;
 CREATE TRIGGER `payroll_entries_no_delete` BEFORE DELETE ON `payroll_entries` FOR EACH ROW
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'rows of payroll_entries cannot be deleted';
+DROP TRIGGER IF EXISTS `smm_idea_history_no_update`;
+CREATE TRIGGER `smm_idea_history_no_update` BEFORE UPDATE ON `smm_idea_history` FOR EACH ROW
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'smm_idea_history is append-only';
+DROP TRIGGER IF EXISTS `smm_idea_history_no_delete`;
+CREATE TRIGGER `smm_idea_history_no_delete` BEFORE DELETE ON `smm_idea_history` FOR EACH ROW
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'smm_idea_history is append-only';

@@ -67,8 +67,7 @@
                     <div>
                         <label class="label" for="cr-role">{{ t('commissionRules.appliesTo') }}</label>
                         <select id="cr-role" name="applies_to" class="input" x-model="f.applies_to">
-                            <option value="MANAGER">{{ t('commissionRules.role.MANAGER') }}</option>
-                            <option value="ROP">{{ t('commissionRules.role.ROP') }}</option>
+                            @foreach (\App\Services\Sales\CommissionsService::ROLES as $role)<option value="{{ $role }}">{{ t('commissionRules.role.'.$role) }}</option>@endforeach
                         </select>
                     </div>
                     <div>

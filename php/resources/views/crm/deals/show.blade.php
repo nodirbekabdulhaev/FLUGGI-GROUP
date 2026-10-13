@@ -123,6 +123,7 @@
                     [t('crm.fields.client'), $h('<a class="link" href="'.route('crm.clients.show', $deal->client_id).'">'.e($deal->client?->name).'</a>')],
                     [t('crm.fields.contact'), $deal->contact?->full_name],
                     [t('crm.fields.service'), $deal->service?->label()],
+                    [t('crm.fields.smmIdea'), $deal->smmIdea ? (\App\Services\Smm\SmmAccess::allowed() ? $h('<a class="link" href="/smm/'.e($deal->smm_idea_id).'">'.e($deal->smmIdea->code().' · '.$deal->smmIdea->title).'</a>') : $deal->smmIdea->code().' · '.$deal->smmIdea->title) : null],
                     [t('crm.fields.amount'), money($deal->amount, $deal->currency).($deal->currency === 'USD' ? ' ('.t('deals.rate', ['rate' => \App\Support\Format::number((string) $deal->exchange_rate, 6)]).')' : '')],
                     [t('crm.fields.probability'), $probability.'%'.($deal->probability_override !== null ? ' ('.t('deals.manual').')' : '')],
                     [t('crm.fields.expectedCloseDate'), d($deal->expected_close_date)],

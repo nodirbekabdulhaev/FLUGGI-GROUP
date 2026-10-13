@@ -21,7 +21,8 @@
   "any": "shartlardan istalgani",
   "role": {
     "MANAGER": "Menejer",
-    "ROP": "ROP"
+    "ROP": "ROP",
+    "SMM": "Rolik SMM mutaxassisi"
   },
   "calc": {
     "PERCENT_OF_PAYMENT": "Toʻlovdan %",

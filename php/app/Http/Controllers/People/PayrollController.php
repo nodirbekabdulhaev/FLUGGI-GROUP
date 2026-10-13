@@ -7,6 +7,7 @@ use App\Models\PayrollEntry;
 use App\Services\Finance\Input;
 use App\Services\Finance\Period;
 use App\Services\People\PeopleService;
+use App\Services\Smm\SmmPayroll;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -22,6 +23,7 @@ class PayrollController extends Controller
         $data = ['period' => $period, 'manage' => $manage, 'entries' => PeopleService::payroll($period)];
         if ($manage) {
             $data['salaries'] = PeopleService::salaries();
+            $data['videoPlans'] = SmmPayroll::plans();
         }
         if ($manage && ($id = $request->query('edit'))) {
             $data['editing'] = PayrollEntry::with(['user.role', 'user.employee'])->findOrFail($id);

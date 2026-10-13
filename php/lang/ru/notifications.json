@@ -78,6 +78,12 @@
     },
     "payroll": {
       "calculated": "Предварительный расчёт зарплаты"
+    },
+    "smm": {
+      "idea_created": "SMM: новая идея ролика",
+      "idea_approved": "SMM: идея утверждена",
+      "idea_rejected": "SMM: идея отклонена",
+      "idea_status_changed": "SMM: смена этапа ролика"
     }
   },
   "events": {

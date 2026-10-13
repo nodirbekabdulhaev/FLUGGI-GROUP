@@ -135,4 +135,10 @@ class Deal extends Model
     {
         return $this->hasMany(FollowUp::class, 'result_deal_id');
     }
+
+    /** Ролик SMM, из-за которого пришёл клиент (источник «Видео SMM»). */
+    public function smmIdea(): BelongsTo
+    {
+        return $this->belongsTo(SmmIdea::class, 'smm_idea_id')->withTrashed();
+    }
 }

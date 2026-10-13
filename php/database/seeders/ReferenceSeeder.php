@@ -47,6 +47,8 @@ class ReferenceSeeder extends Seeder
         ['TARGET', 'Таргет (Meta Ads)', 'Target (Meta Ads)'],
         ['PHONE', 'Звонок', 'Qoʻngʻiroq'],
         ['OTHER', 'Другой', 'Boshqa'],
+        // Клиент пришёл из ролика собственного SMM — в лиде выбирается опубликованный ролик (раздел «SMM»)
+        ['SMM_VIDEO', 'Видео SMM', 'SMM video'],
     ];
 
     public const LOSS_REASONS = [
@@ -143,7 +145,7 @@ class ReferenceSeeder extends Seeder
     /** Английские названия справочников (заполняются, если пусты). */
     public const EN = [
         'services' => ['SMM' => 'SMM', 'TARGET' => 'Targeted ads', 'BRANDING' => 'Branding', 'WEBSITE' => 'Website', 'CRM' => 'CRM system', 'ERP' => 'ERP system', 'DESIGN' => 'Design', 'PHOTO' => 'Photo shoot', 'VIDEO' => 'Video production', 'MARKETING' => 'Marketing'],
-        'lead_sources' => ['INSTAGRAM' => 'Instagram', 'TELEGRAM' => 'Telegram', 'WEBSITE' => 'Website', 'WHATSAPP' => 'WhatsApp', 'REFERRAL' => 'Referral', 'COLD_OUTREACH' => 'Cold outreach', 'ADVERTISEMENT' => 'Advertising', 'TARGET' => 'Targeting (Meta Ads)', 'PHONE' => 'Phone call', 'OTHER' => 'Other'],
+        'lead_sources' => ['INSTAGRAM' => 'Instagram', 'TELEGRAM' => 'Telegram', 'WEBSITE' => 'Website', 'WHATSAPP' => 'WhatsApp', 'REFERRAL' => 'Referral', 'COLD_OUTREACH' => 'Cold outreach', 'ADVERTISEMENT' => 'Advertising', 'TARGET' => 'Targeting (Meta Ads)', 'PHONE' => 'Phone call', 'OTHER' => 'Other', 'SMM_VIDEO' => 'SMM video'],
         'loss_reasons' => ['TOO_EXPENSIVE' => 'Too expensive', 'NO_BUDGET' => 'No budget', 'COMPETITOR' => 'Chose a competitor', 'POSTPONED' => 'Postponed the project', 'NO_RESPONSE' => 'Not responding', 'TERMS' => 'Terms did not fit', 'TIMING' => 'Timing', 'NO_NEED' => 'No need', 'OTHER' => 'Other reason'],
         'deal_stages' => ['NEW' => 'New lead', 'CONTACTED' => 'Contacted', 'QUALIFICATION' => 'Qualification', 'MEETING_SCHEDULED' => 'Meeting scheduled', 'MEETING_DONE' => 'Meeting held', 'NEED_DEFINED' => 'Need defined', 'PROPOSAL_SENT' => 'Proposal sent', 'NEGOTIATION' => 'Negotiation', 'CONTRACT' => 'Contract', 'AWAITING_PAYMENT' => 'Awaiting payment', 'PAID' => 'Paid'],
     ];
@@ -179,6 +181,11 @@ class ReferenceSeeder extends Seeder
                 'calc_type' => 'PERCENT_OF_PAYMENT', 'value' => 15, 'priority' => 10,
                 'conditions' => ['any' => [['metric' => 'avg_check_usd', 'op' => '>', 'value' => 3000], ['metric' => 'orders_count', 'op' => '>', 'value' => 15]]],
             ]);
+        }
+
+        // Бонус SMM-специалисту с оплат клиентов, пришедших из его ролика — один раз (ставку меняют в правилах комиссий)
+        if (! CommissionRule::where('applies_to', 'SMM')->exists()) {
+            CommissionRule::create(['name' => 'SMM — 5% от оплаты по видео', 'applies_to' => 'SMM', 'calc_type' => 'PERCENT_OF_PAYMENT', 'value' => 5, 'priority' => 0]);
         }
 
         // Шаблоны проектов (ТЗ §62) — один раз

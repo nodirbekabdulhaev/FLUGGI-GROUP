@@ -10,6 +10,7 @@ use App\Services\Crm\CrmAccess;
 use App\Services\Crm\DealService;
 use App\Services\Crm\DealStages;
 use App\Services\Crm\TimelineService;
+use App\Services\Smm\SmmIdeaService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,7 +71,7 @@ class DealController extends CrmController
     public function show(string $id): View
     {
         $deal = CrmAccess::deal($id);
-        $deal->load(['client.contacts', 'contact', 'owner', 'team', 'service', 'stage', 'lossReason']);
+        $deal->load(['client.contacts', 'contact', 'owner', 'team', 'service', 'stage', 'lossReason', 'smmIdea']);
         $target = ['deal_id' => $deal->id];
 
         return view('crm.deals.show', [
@@ -83,6 +84,7 @@ class DealController extends CrmController
             'meetings' => CrmAccess::meetings()->where('deal_id', $deal->id)->with(['manager', 'rop', 'lead', 'deal'])->orderBy('starts_at')->get(),
             'money' => access()->can('payment.read') ? DealService::money($deal) : null,
             'serviceOptions' => Crm::options(Service::class, $deal->service_id),
+            'smmVideos' => SmmIdeaService::publishedOptions($deal->smm_idea_id),
             'owners' => Crm::assignableUsers(),
             'reasons' => Crm::options(LossReason::class),
         ]);
@@ -120,6 +122,7 @@ class DealController extends CrmController
             'currency' => ['required', Rule::in(Crm::CURRENCIES)],
             'expected_close_date' => ['nullable', 'date_format:Y-m-d'],
             'probability_override' => ['nullable', 'integer', 'between:0,100'],
+            'smm_idea_id' => ['sometimes', 'nullable', 'uuid'],
         ], ['amount.regex' => t('crm.validation.money')], ['amount']);
         foreach (['contact_id', 'service_id', 'expected_close_date', 'probability_override'] as $k) {
             $data[$k] ??= null;

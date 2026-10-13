@@ -50,6 +50,10 @@ final class NotificationCatalog
         'report.daily' => ['CEO', 'ROP'],
         'report.weekly' => ['CEO'],
         'payroll.calculated' => ['CEO'],
+        'smm.idea_created' => ['CEO', 'PROJECT_MANAGER'],
+        'smm.idea_approved' => ['EXECUTOR', 'PROJECT_MANAGER'],
+        'smm.idea_rejected' => ['EXECUTOR', 'PROJECT_MANAGER'],
+        'smm.idea_status_changed' => ['EXECUTOR', 'PROJECT_MANAGER'],
     ];
 
     /** Близкие типы настраиваются одним переключателем. */

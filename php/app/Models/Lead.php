@@ -111,4 +111,10 @@ class Lead extends Model
     {
         return $this->hasMany(SocialThread::class, 'lead_id');
     }
+
+    /** Ролик SMM, из-за которого пришёл клиент (источник «Видео SMM»). */
+    public function smmIdea(): BelongsTo
+    {
+        return $this->belongsTo(SmmIdea::class, 'smm_idea_id')->withTrashed();
+    }
 }

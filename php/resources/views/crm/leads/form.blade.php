@@ -19,7 +19,16 @@
         <x-field name="company_name" :label="t('crm.fields.companyName')" :value="$lead?->company_name" maxlength="160" />
         <x-field name="phone" type="tel" :label="t('crm.fields.phone')" :value="$lead?->phone" placeholder="+998" maxlength="30" x-on:change="check($el.form)" />
         <x-field name="telegram" :label="t('crm.fields.telegram')" :value="$lead?->telegram" placeholder="@username" maxlength="64" />
-        <x-select name="source_id" :label="t('crm.fields.source')" :options="$form['sources']" :value="$lead?->source_id" :placeholder="t('crm.common.select')" required />
+        {{-- Источник «Видео SMM» → обязательный выбор опубликованного ролика (проверяется и на сервере) --}}
+        <div class="contents" x-data="{ src: @js((string) old('source_id', $lead?->source_id ?? '')), smm: @js($form['smmSourceId'] ?? null) }">
+            <x-select name="source_id" :label="t('crm.fields.source')" :options="$form['sources']" :value="$lead?->source_id" :placeholder="t('crm.common.select')" required x-on:change="src = $event.target.value" />
+            @if (! empty($form['smmSourceId']))
+                <div x-show="smm && src === smm" x-cloak>
+                    <x-select name="smm_idea_id" :id="$isNew ? 'f-smm-idea-new' : 'f-smm-idea-edit'" :label="t('smm.leadVideo')" :options="$form['smmVideos']" :value="$lead?->smm_idea_id"
+                              :placeholder="$form['smmVideos'] ? t('crm.common.select') : t('smm.noPublished')" required x-bind:disabled="src !== smm" :hint="t('smm.leadVideoHint')" />
+                </div>
+            @endif
+        </div>
         <x-select name="service_id" :label="t('crm.fields.service')" :options="$form['services']" :value="$lead?->service_id" :placeholder="$isNew ? t('crm.common.select') : t('crm.common.none')" :required="$isNew" />
         @if ($isNew && access()->can('lead.create', 'TEAM') && ($formOwners ?? []))
             <x-select name="owner_id" :label="t('crm.fields.owner')" :options="$formOwners" :value="$selfOwner ? access()->id() : ''" :placeholder="$selfOwner ? null : t('crm.fields.ownerAuto')" />

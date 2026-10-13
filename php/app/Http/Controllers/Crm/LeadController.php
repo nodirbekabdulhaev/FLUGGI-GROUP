@@ -9,6 +9,7 @@ use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
 use App\Services\Crm\LeadService;
 use App\Services\Crm\TimelineService;
+use App\Services\Smm\SmmIdeaService;
 use App\Support\Format;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -66,7 +67,7 @@ class LeadController extends CrmController
     public function show(string $id): View
     {
         $lead = CrmAccess::lead($id);
-        $lead->load(['source', 'owner', 'team', 'service', 'stage', 'lossReason']);
+        $lead->load(['source', 'owner', 'team', 'service', 'stage', 'lossReason', 'smmIdea']);
         $target = ['lead_id' => $lead->id];
 
         return view('crm.leads.show', [
@@ -76,7 +77,7 @@ class LeadController extends CrmController
             'history' => TimelineService::history($target),
             'comments' => TimelineService::comments($target),
             'meetings' => CrmAccess::meetings()->where('lead_id', $lead->id)->with(['manager', 'rop', 'lead', 'deal'])->orderBy('starts_at')->get(),
-            'form' => $this->formOptions($lead->source_id, $lead->service_id),
+            'form' => $this->formOptions($lead->source_id, $lead->service_id, $lead->smm_idea_id),
             'owners' => Crm::assignableUsers(),
             'reasons' => Crm::options(LossReason::class),
             'clients' => access()->can('client.read')
@@ -203,6 +204,7 @@ class LeadController extends CrmController
             'city' => ['nullable', 'string', 'max:80'],
             'country' => ['nullable', 'string', 'max:80'],
             'source_id' => ['required', 'uuid'],
+            'smm_idea_id' => ['nullable', 'uuid'],
             'service_id' => [$create ? 'required' : 'nullable', 'uuid'],
             'budget' => ['nullable', ...self::MONEY],
             'currency' => ['required', Rule::in(Crm::CURRENCIES)],
@@ -252,9 +254,12 @@ class LeadController extends CrmController
         ]);
     }
 
-    private function formOptions(?string $sourceId = null, ?string $serviceId = null): array
+    private function formOptions(?string $sourceId = null, ?string $serviceId = null, ?string $smmIdeaId = null): array
     {
         return [
+            // Источник «Видео SMM» → выбор опубликованного ролика
+            'smmSourceId' => LeadSource::where('code', SmmIdeaService::LEAD_SOURCE)->value('id'),
+            'smmVideos' => SmmIdeaService::publishedOptions($smmIdeaId),
             'sources' => Crm::options(LeadSource::class, $sourceId),
             'services' => Crm::options(Service::class, $serviceId),
             'allSources' => Crm::allOptions(LeadSource::class),

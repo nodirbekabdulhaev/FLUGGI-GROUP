@@ -186,7 +186,8 @@
     "manager": "Manager",
     "lossReason": "Reason",
     "number": "No.",
-    "ownerAuto": "Automatic — the manager with the lightest workload"
+    "ownerAuto": "Automatic — the manager with the lightest workload",
+    "smmIdea": "SMM video"
   },
   "common": {
     "more": "More fields",

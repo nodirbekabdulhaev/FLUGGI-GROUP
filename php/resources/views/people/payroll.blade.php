@@ -43,10 +43,13 @@
                         @if ($manage)<td><input type="checkbox" value="{{ $e->id }}" x-model="selected" aria-label="{{ t('payroll.select', ['name' => $e->user?->full_name]) }}"></td>@endif
                         <td><span class="font-medium">{{ $e->user?->full_name }}</span><span class="block text-xs text-muted-foreground">{{ $e->period }}@if ($e->kpi_pct !== null) · {{ t('payroll.kpi') }} {{ $e->kpi_pct }}%@endif</span></td>
                         <td class="whitespace-nowrap text-right tabular-nums">
-                            @if (PeopleService::hasFixedSalary($e->user?->role?->code ?? ''))
+                            @if (PeopleService::hasFixedSalary($e->user?->role?->code ?? '') || $e->videos_target !== null)
                                 {{ money($e->base_salary) }}
                                 @if ($e->attendance_pct !== null && $e->base_full !== null)
                                     <span class="block text-xs text-muted-foreground">{{ t('payroll.attendanceOf', ['pct' => $num($e->attendance_pct), 'full' => money($e->base_full)]) }}</span>
+                                @endif
+                                @if ($e->videos_target !== null)
+                                    <span class="block text-xs text-muted-foreground">{{ t('payroll.videosOf', ['published' => (int) $e->videos_published, 'target' => $e->videos_target, 'pct' => \App\Services\Smm\SmmPayroll::pct((int) $e->videos_published, $e->videos_target)]) }}</span>
                                 @endif
                             @else
                                 —
@@ -94,10 +97,41 @@
                 </form>
             @endif
         </x-card>
+
+        {{-- SMM: оклад при 100 % плана × доля опубликованных роликов месяца (не больше 100 %) --}}
+        <x-card class="mt-6" :title="t('payroll.smmTitle')" :subtitle="t('payroll.smmHint')">
+            @if ($videoPlans->isEmpty())
+                <x-empty icon="play" :title="t('payroll.smmEmpty')" />
+            @else
+                <form method="POST" action="{{ route('payroll.video-plans') }}" class="space-y-3">
+                    @csrf @method('PUT')
+                    <input type="hidden" name="period" value="{{ $period }}">
+                    <div class="divide-y">
+                        @foreach ($videoPlans as $u)
+                            <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
+                                <div class="min-w-0"><span class="font-medium">{{ $u->full_name }}</span>
+                                    <span class="block text-xs text-muted-foreground">{{ t('specialties.'.$u->employee->specialty) }}</span></div>
+                                <div class="grid grid-cols-[1fr_6rem] gap-2 sm:w-auto">
+                                    <input name="plans[{{ $u->id }}][salary]" inputmode="decimal" class="input w-full text-right tabular-nums sm:w-44"
+                                           value="{{ old('plans.'.$u->id.'.salary', $u->employee?->base_salary !== null ? $num($u->employee->base_salary) : '') }}"
+                                           placeholder="2000000" aria-label="{{ t('payroll.smmSalaryFor', ['name' => $u->full_name]) }}">
+                                    <input name="plans[{{ $u->id }}][target]" inputmode="numeric" class="input w-full text-right tabular-nums"
+                                           value="{{ old('plans.'.$u->id.'.target', $u->employee?->video_target) }}"
+                                           placeholder="12" aria-label="{{ t('payroll.smmTargetFor', ['name' => $u->full_name]) }}">
+                                </div>
+                            </div>
+                        @endforeach
+                    </div>
+                    <p class="text-xs text-muted-foreground">{{ t('payroll.smmColumns') }}</p>
+                    @error('plans.*')<p class="error">{{ $message }}</p>@enderror
+                    <div class="flex justify-end"><button class="btn btn-primary">{{ t('common.save') }}</button></div>
+                </form>
+            @endif
+        </x-card>
     @endif
 
     @isset($editing)
-        @php($fixed = PeopleService::hasFixedSalary($editing->user->role->code))
+        @php($fixed = PeopleService::hasBaseSalary($editing->user))
         <x-modal name="payroll-edit" :title="t('payroll.editTitle', ['period' => $editing->period, 'name' => $editing->user->full_name])" :open="true">
             <form method="POST" action="/finance/payroll/{{ $editing->id }}" class="space-y-4">
                 @csrf @method('PATCH')

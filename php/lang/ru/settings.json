@@ -107,6 +107,9 @@
     "client_delete": "Удаление клиентов",
     "project_delete": "Удаление проектов",
     "accounting_read": "Бухгалтерия: просмотр",
-    "accounting_manage": "Бухгалтерия: ведение"
+    "accounting_manage": "Бухгалтерия: ведение",
+    "smm_read": "SMM: просмотр идей роликов",
+    "smm_create": "SMM: создание идей",
+    "smm_approve": "SMM: утверждение идей"
   }
 }

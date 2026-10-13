@@ -9,7 +9,9 @@ final class Navigation
 {
     public static function for(Access $access): array
     {
-        $visible = fn (array $item) => empty($item['any']) || $access->canAny($item['any']);
+        // gate — дополнительная проверка [класс, метод] (например, SMM-раздел исполнителю — только при SMM-специальности)
+        $visible = fn (array $item) => (empty($item['any']) || $access->canAny($item['any']))
+            && (empty($item['gate']) || call_user_func($item['gate']));
         $out = [];
         foreach (config('navigation') as $section) {
             if (isset($section['children'])) {

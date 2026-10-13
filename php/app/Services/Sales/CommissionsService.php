@@ -20,6 +20,9 @@ final class CommissionsService
 {
     public const STATUSES = ['ACCRUED', 'APPROVED', 'PAID', 'CANCELLED'];
 
+    /** Кому начисляется: менеджер сделки, РОП отдела, SMM-специалист ролика, из которого пришёл клиент. */
+    public const ROLES = ['MANAGER', 'ROP', 'SMM'];
+
     public const CALC_TYPES = ['PERCENT_OF_PAYMENT', 'PERCENT_OF_PROFIT', 'FIXED_PER_DEAL'];
 
     public const METRICS = ['avg_check_usd', 'avg_check_uzs', 'orders_count', 'revenue_uzs', 'revenue_usd'];

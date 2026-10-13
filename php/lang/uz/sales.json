@@ -176,7 +176,8 @@
     "total": "Tanlov boʻyicha jami",
     "role": {
       "MANAGER": "Menejer",
-      "ROP": "ROP"
+      "ROP": "ROP",
+      "SMM": "SMM (video)"
     },
     "rule": "Qoida",
     "base": "Baza",

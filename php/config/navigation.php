@@ -1,5 +1,7 @@
 <?php
 
+use App\Services\Smm\SmmAccess;
+
 /**
  * Левое меню (ТЗ §4). Подписи — lang/{uz,ru}/nav.json. any — пункт виден при любом из прав;
  * без any — любому вошедшему. Раздел с подпунктами виден, если виден хоть один подпункт.
@@ -25,6 +27,7 @@ return [
         ['key' => 'projectsCompleted', 'href' => '/projects/completed', 'any' => ['project.read']],
     ]],
     ['key' => 'tasks', 'href' => '/tasks', 'icon' => 'check', 'any' => ['task.read']],
+    ['key' => 'smm', 'href' => '/smm', 'icon' => 'play', 'any' => ['smm.read'], 'gate' => [SmmAccess::class, 'allowed']],
     ['key' => 'todos', 'href' => '/todos', 'icon' => 'list'],
     ['key' => 'team', 'icon' => 'users', 'children' => [
         ['key' => 'employees', 'href' => '/team/employees', 'any' => ['employee.read']],

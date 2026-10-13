@@ -60,7 +60,7 @@ class CommissionController extends SalesController
     {
         return view('sales.commission-rules.index', [
             'rules' => CommissionsService::rules(),
-            'users' => User::query()->whereHas('role', fn ($q) => $q->whereIn('code', ['MANAGER', 'ROP']))
+            'users' => User::query()->whereHas('role', fn ($q) => $q->whereIn('code', ['MANAGER', 'ROP', 'EXECUTOR']))
                 ->where('status', 'ACTIVE')->orderBy('full_name')->get(['id', 'full_name']),
         ]);
     }
@@ -69,7 +69,7 @@ class CommissionController extends SalesController
     {
         $data = $this->check($request, [
             'name' => ['required', 'string', 'min:1', 'max:120'],
-            'applies_to' => ['required', Rule::in(['MANAGER', 'ROP'])],
+            'applies_to' => ['required', Rule::in(CommissionsService::ROLES)],
             'user_id' => ['nullable', 'uuid', 'exists:users,id'],
             'calc_type' => ['required', Rule::in(CommissionsService::CALC_TYPES)],
             'value' => ['required', 'numeric', 'min:0', 'max:1000000000'],

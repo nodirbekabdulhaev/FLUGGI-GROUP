@@ -53,5 +53,15 @@
   "salaryFor": "Salary: {name}",
   "salariesSaved": "Salaries saved. Recalculate the month to apply them",
   "attendanceOf": "{pct}% attendance of {full}",
-  "baseManualHint": "The salary is calculated from attendance. A manual change applies to this month only; the 100% salary is changed in the “Salaries” block."
+  "baseManualHint": "The salary is calculated from attendance. A manual change applies to this month only; the 100% salary is changed in the “Salaries” block.",
+  "videosOf": "{published} of {target} videos ({pct}%)",
+  "smmTitle": "SMM: salary and video plan",
+  "smmHint": "Executors with an SMM specialty. Monthly salary = salary at 100% × published / video plan (capped at 100%). Piece-rate pay for projects stays as is.",
+  "smmEmpty": "No active executors with an SMM specialty",
+  "smmSalary": "Salary at 100%",
+  "smmTarget": "Videos per month",
+  "smmSalaryFor": "Salary at 100%: {name}",
+  "smmTargetFor": "Videos per month: {name}",
+  "smmColumns": "Left — salary at 100% of the plan, right — videos per month. Empty plan — no salary is accrued.",
+  "smmSaved": "Video plan saved. Recalculate the month to apply it"
 }

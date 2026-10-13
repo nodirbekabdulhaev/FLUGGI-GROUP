@@ -53,5 +53,15 @@
   "salaryFor": "Maosh: {name}",
   "salariesSaved": "Maoshlar saqlandi. Qoʻllash uchun oyni qayta hisoblang",
   "attendanceOf": "{full} dan {pct}% davomat",
-  "baseManualHint": "Maosh davomat boʻyicha hisoblangan. Qoʻlda tuzatish faqat shu oy uchun amal qiladi; 100% dagi maosh «Maoshlar» blokida oʻzgartiriladi."
+  "baseManualHint": "Maosh davomat boʻyicha hisoblangan. Qoʻlda tuzatish faqat shu oy uchun amal qiladi; 100% dagi maosh «Maoshlar» blokida oʻzgartiriladi.",
+  "videosOf": "{target} tadan {published} ta video ({pct}%)",
+  "smmTitle": "SMM: maosh va roliklar rejasi",
+  "smmHint": "SMM mutaxassisligidagi ijrochilar. Oylik maosh = 100% dagi maosh × eʼlon qilingan / roliklar rejasi (100% dan oshmaydi). Loyihalar boʻyicha ishbay haq saqlanadi.",
+  "smmEmpty": "SMM mutaxassisligidagi faol ijrochilar yoʻq",
+  "smmSalary": "100% dagi maosh",
+  "smmTarget": "Oyiga roliklar",
+  "smmSalaryFor": "100% dagi maosh: {name}",
+  "smmTargetFor": "Oyiga roliklar: {name}",
+  "smmColumns": "Chapda — reja 100% bajarilgandagi maosh, oʻngda — oylik roliklar rejasi. Reja boʻsh boʻlsa — maosh hisoblanmaydi.",
+  "smmSaved": "Roliklar rejasi saqlandi. Qoʻllash uchun oyni qayta hisoblang"
 }

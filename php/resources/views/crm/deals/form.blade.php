@@ -42,6 +42,8 @@
         </div>
         <x-field name="expected_close_date" type="date" :label="t('crm.fields.expectedCloseDate')" :value="$deal?->expected_close_date?->format('Y-m-d')" />
         @unless ($isNew)
+            {{-- Ролик SMM, из которого пришёл клиент: бонус SMM-специалисту с каждой оплаты (правила комиссий) --}}
+            <x-select name="smm_idea_id" id="f-deal-smm-idea" :label="t('crm.fields.smmIdea')" :options="$smmVideos ?? []" :value="$deal->smm_idea_id" :placeholder="t('crm.common.none')" :hint="t('smm.dealVideoHint')" />
             <x-field name="probability_override" type="number" min="0" max="100" :label="t('crm.fields.probability').', %'" :value="$deal->probability_override" :hint="t('deals.probabilityHint')" />
         @endunless
     </div>

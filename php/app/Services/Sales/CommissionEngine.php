@@ -17,7 +17,8 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Начисление комиссий с подтверждённой оплаты (ТЗ §33–34, Rule 7).
- * Получатели: менеджер сделки и РОП её отдела. Правило выбирается по метрикам получателя
+ * Получатели: менеджер сделки, РОП её отдела и — если клиент пришёл из ролика SMM (deals.smm_idea_id) —
+ * ответственный за ролик SMM-специалист (роль SMM). Правило выбирается по метрикам получателя
  * за месяц оплаты (заказы, выручка, средний чек), условия — из БД. Вызывать в транзакции.
  */
 final class CommissionEngine
@@ -29,14 +30,18 @@ final class CommissionEngine
     }
 
     /**
-     * Метрики за месяц: менеджер — его сделки, РОП — сделки отдела.
+     * Метрики за месяц: менеджер — его сделки, РОП — сделки отдела, SMM — сделки по его роликам.
      *
      * @return array<string, int|float>
      */
     public static function metrics(string $role, string $userId, ?string $teamId, string $period, float $usdRate): array
     {
         ['from' => $from, 'to' => $to] = People::monthRange($period);
-        $dealFilter = fn ($q) => $role === 'MANAGER' ? $q->where('owner_id', $userId) : $q->where('team_id', $teamId ?? '__none__');
+        $dealFilter = fn ($q) => match ($role) {
+            'MANAGER' => $q->where('owner_id', $userId),
+            'SMM' => $q->whereIn('smm_idea_id', fn ($s) => $s->select('id')->from('smm_ideas')->where('assignee_id', $userId)),
+            default => $q->where('team_id', $teamId ?? '__none__'),
+        };
         $orders = $dealFilter(DB::table('deals'))->where('won_at', '>=', $from)->where('won_at', '<', $to)->count();
         $revenue = DB::table('payments as p')
             ->where('p.status', 'PAID')->where('p.paid_at', '>=', $from)->where('p.paid_at', '<', $to)
@@ -100,6 +105,11 @@ final class CommissionEngine
         $recipients = [['role' => 'MANAGER', 'userId' => $deal->owner_id]];
         if ($team?->head_id) {
             $recipients[] = ['role' => 'ROP', 'userId' => $team->head_id];
+        }
+        // Клиент пришёл из ролика SMM — бонус ответственному за ролик
+        $smmUserId = $deal->smm_idea_id ? DB::table('smm_ideas')->where('id', $deal->smm_idea_id)->value('assignee_id') : null;
+        if ($smmUserId) {
+            $recipients[] = ['role' => 'SMM', 'userId' => $smmUserId];
         }
         $usd = DB::table('exchange_rates')->where('currency', 'USD')->orderByDesc('date')->value('rate_to_uzs');
         $usdRate = $usd ? (float) $usd : 0.0;

@@ -107,6 +107,9 @@
     "client_delete": "Mijozlarni oʻchirish",
     "project_delete": "Loyihalarni oʻchirish",
     "accounting_read": "Buxgalteriya: koʻrish",
-    "accounting_manage": "Buxgalteriya: yuritish"
+    "accounting_manage": "Buxgalteriya: yuritish",
+    "smm_read": "SMM: rolik gʻoyalarini koʻrish",
+    "smm_create": "SMM: gʻoya yaratish",
+    "smm_approve": "SMM: gʻoyalarni tasdiqlash"
   }
 }

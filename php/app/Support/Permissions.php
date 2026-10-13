@@ -93,6 +93,10 @@ final class Permissions
         'accounting.read' => 'Бухгалтерия: просмотр',
         'accounting.manage' => 'Бухгалтерия: ведение',
 
+        'smm.read' => 'SMM: просмотр идей роликов',
+        'smm.create' => 'SMM: создание идей',
+        'smm.approve' => 'SMM: утверждение идей',
+
         'analytics.read' => 'Аналитика',
         'export.run' => 'Экспорт',
         'audit.read' => 'Журнал аудита',
@@ -156,7 +160,8 @@ final class Permissions
                 'commission.read', 'kpi.read', 'attendance.read', 'payroll.read', 'analytics.read',
             ]),
 
-            'EXECUTOR' => $own(['dashboard.own', 'project.read', 'task.read', 'task.update', 'kpi.read', 'payroll.read']),
+            // SMM-раздел исполнителю открыт только при SMM-специальности (проверка — App\Services\Smm\SmmAccess)
+            'EXECUTOR' => $own(['dashboard.own', 'project.read', 'task.read', 'task.update', 'kpi.read', 'payroll.read', 'smm.read', 'smm.create']),
 
             'HR_ADMIN' => $all([
                 'kpi.read', 'kpi.target.manage', 'attendance.read', 'attendance.manage', 'schedule.manage',
@@ -168,7 +173,7 @@ final class Permissions
             'ACCOUNTANT' => $all(['accounting.read', 'accounting.manage', 'export.run']) + $own(['dashboard.own']),
 
             'PROJECT_MANAGER' => $team(['project.read', 'project.update', 'project.assign', 'task.read', 'task.create', 'task.update'])
-                + $all(['employee.read'])
+                + $all(['employee.read', 'smm.read', 'smm.create', 'smm.approve'])
                 + $own(['dashboard.own', 'kpi.read', 'payroll.read']),
         ];
     }

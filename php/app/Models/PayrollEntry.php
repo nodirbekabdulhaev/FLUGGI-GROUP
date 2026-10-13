@@ -15,6 +15,8 @@ class PayrollEntry extends Model
         'base_salary' => 'decimal:2',
         'base_full' => 'decimal:2',
         'attendance_pct' => 'decimal:2',
+        'videos_published' => 'integer',
+        'videos_target' => 'integer',
         'piece_rate' => 'decimal:2',
         'kpi_bonus' => 'decimal:2',
         'commission' => 'decimal:2',

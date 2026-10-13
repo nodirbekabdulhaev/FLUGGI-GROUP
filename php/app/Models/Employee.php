@@ -14,6 +14,7 @@ class Employee extends Model
     protected $casts = [
         'base_salary' => 'decimal:2',
         'kpi_bonus_target' => 'decimal:2',
+        'video_target' => 'integer',
         'hired_at' => 'date',
         'fired_at' => 'date',
         'created_at' => 'datetime',

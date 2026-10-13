@@ -78,6 +78,12 @@
     },
     "payroll": {
       "calculated": "Preliminary payroll calculation"
+    },
+    "smm": {
+      "idea_created": "SMM: new video idea",
+      "idea_approved": "SMM: idea approved",
+      "idea_rejected": "SMM: idea rejected",
+      "idea_status_changed": "SMM: video stage changed"
     }
   },
   "events": {

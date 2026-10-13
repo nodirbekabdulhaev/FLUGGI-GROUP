@@ -16,6 +16,7 @@ use App\Models\LossReason;
 use App\Models\Meeting;
 use App\Models\Service;
 use App\Services\References\ExchangeRates;
+use App\Services\Smm\SmmIdeaService;
 use App\Support\Audit;
 use App\Support\Outbox;
 use Carbon\CarbonImmutable;
@@ -31,7 +32,7 @@ final class LeadService
     /** Поля, изменения которых видны в таймлайне и аудите. */
     public const TRACKED = [
         'title', 'contact_name', 'company_name', 'phone', 'telegram', 'email', 'source_id', 'service_id',
-        'budget', 'currency', 'priority', 'desired_date', 'next_contact_at', 'company_size', 'interest',
+        'budget', 'currency', 'priority', 'desired_date', 'next_contact_at', 'company_size', 'interest', 'smm_idea_id',
     ];
 
     /** Поля, которые можно изменить формой редактирования (ответственный — через assign). */
@@ -53,13 +54,15 @@ final class LeadService
         if (! $source) {
             throw new BusinessRule(t('leads.errors.sourceNotFound'), ['source_id' => t('leads.errors.selectSource')]);
         }
+        // Источник «Видео SMM» — обязателен опубликованный ролик, из которого пришёл клиент
+        $smmIdeaId = SmmIdeaService::videoFor($source->code, $input['smm_idea_id'] ?? null);
         $stage = Crm::stage('NEW');
         $currency = $input['currency'] ?? 'UZS';
         $budget = $input['budget'] ?? null;
         $budgetUzs = $budget !== null ? ExchangeRates::convert($budget, $currency)['amountUzs'] : null;
         $title = ($input['title'] ?? null) ?: (($input['company_name'] ?? null) ?: $input['contact_name']).' — '.$service->name_ru;
 
-        return DB::transaction(function () use ($input, $access, $owner, $service, $source, $stage, $currency, $budget, $budgetUzs, $title) {
+        return DB::transaction(function () use ($input, $access, $owner, $service, $source, $stage, $currency, $budget, $budgetUzs, $title, $smmIdeaId) {
             $lead = Lead::create([
                 'title' => $title,
                 'contact_name' => $input['contact_name'] ?? null,
@@ -73,6 +76,7 @@ final class LeadService
                 'city' => $input['city'] ?? null,
                 'country' => $input['country'] ?? null,
                 'source_id' => $source->id,
+                'smm_idea_id' => $smmIdeaId,
                 'service_id' => $service->id,
                 'owner_id' => $owner->id,
                 'team_id' => $owner->team_id,
@@ -117,6 +121,11 @@ final class LeadService
         }
         if (! empty($data['service_id']) && ! Service::whereKey($data['service_id'])->exists()) {
             throw new BusinessRule(t('leads.errors.serviceNotFound'), ['service_id' => t('leads.errors.selectService')]);
+        }
+        if (array_key_exists('source_id', $data) || array_key_exists('smm_idea_id', $input)) {
+            $sourceCode = LeadSource::whereKey(($data['source_id'] ?? null) ?: $before->source_id)->value('code');
+            $ideaId = array_key_exists('smm_idea_id', $input) ? ($input['smm_idea_id'] ?: null) : $before->smm_idea_id;
+            $data['smm_idea_id'] = SmmIdeaService::videoFor($sourceCode, $ideaId, $before->smm_idea_id);
         }
 
         return DB::transaction(function () use ($before, $data) {
@@ -316,6 +325,7 @@ final class LeadService
                 'owner_id' => $lead->owner_id,
                 'team_id' => $lead->team_id,
                 'service_id' => $lead->service_id,
+                'smm_idea_id' => $lead->smm_idea_id,
                 'amount' => $input['amount'],
                 'currency' => $currency,
                 'exchange_rate' => $rate,

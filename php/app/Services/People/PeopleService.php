@@ -12,6 +12,8 @@ use App\Models\PayrollEntry;
 use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Services\Finance\Period;
+use App\Services\Smm\SmmIdeaService;
+use App\Services\Smm\SmmPayroll;
 use App\Support\Audit;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
@@ -40,6 +42,17 @@ final class PeopleService
     public static function hasFixedSalary(string $role): bool
     {
         return in_array($role, self::FIXED_SALARY_ROLES, true);
+    }
+
+    /**
+     * Есть ли у сотрудника оклад: менеджер и РОП (по посещаемости) или исполнитель SMM-специальности
+     * с планом роликов (оклад × доля опубликованных роликов, App\Services\Smm\SmmPayroll).
+     */
+    public static function hasBaseSalary(User $user): bool
+    {
+        $user->loadMissing('role');
+
+        return self::hasFixedSalary($user->role?->code ?? '') || SmmPayroll::hasVideoPlan($user);
     }
 
     // ─────────────────────────── Цели (§31) ───────────────────────────
@@ -382,6 +395,9 @@ final class PeopleService
         if ($e->base_full === null) {
             return true;
         }
+        if ($e->videos_target !== null) {
+            return ! $base->isEqualTo(SmmPayroll::base((string) $e->base_full, (int) $e->videos_published, (int) $e->videos_target));
+        }
         $auto = $e->attendance_pct === null ? BigDecimal::of((string) $e->base_full)
             : BigDecimal::of((string) $e->base_full)->multipliedBy((string) $e->attendance_pct)->dividedBy(100, 2, RoundingMode::HalfUp);
 
@@ -416,7 +432,8 @@ final class PeopleService
 
     /**
      * Расчёт месяца: черновики для всех активных сотрудников (кроме CEO). Комиссия — сумма утверждённых
-     * и выплаченных комиссий месяца; оклад (только менеджер и РОП) — оклад при 100 % × посещаемость; сдельно — начисления
+     * и выплаченных комиссий месяца; оклад (менеджер и РОП) — оклад при 100 % × посещаемость, SMM-исполнитель с планом
+     * роликов — оклад при 100 % × доля опубликованных роликов (не больше 100 %); сдельно — начисления
      * «Исполнитель» по проектам; KPI-бонус — «бонус при 100%» × KPI (до 120%); бонусы и штрафы вносятся
      * вручную и при пересчёте сохраняются. Утверждённые строки не пересчитываются.
      */
@@ -436,14 +453,18 @@ final class PeopleService
                 if ($existing && $existing->status !== 'DRAFT') {
                     continue;
                 }
-                // Оклад (менеджер, РОП) = оклад при 100 % × посещаемость месяца
+                // Оклад (менеджер, РОП) = оклад при 100 % × посещаемость месяца;
+                // SMM-исполнитель с планом роликов = оклад при 100 % × min(опубликовано / план, 1)
                 $fixed = self::hasFixedSalary($u->role->code);
-                $full = $fixed && $u->employee?->base_salary !== null ? self::dec($u->employee->base_salary) : null;
+                $video = ! $fixed && SmmPayroll::hasVideoPlan($u);
+                $full = ($fixed || $video) && $u->employee?->base_salary !== null ? self::dec($u->employee->base_salary) : null;
                 $attendancePct = $fixed ? self::attendancePct($u, $period) : null;
-                $base = $full === null ? '0.00' : ($attendancePct === null ? $full
-                    : (string) BigDecimal::of($full)->multipliedBy($attendancePct)->dividedBy(100, 2, RoundingMode::HalfUp));
+                $videosTarget = $video ? (int) $u->employee->video_target : null;
+                $videosPublished = $video ? SmmIdeaService::publishedCount($u->id, $period) : null;
+                $base = $full === null ? '0.00' : ($video ? SmmPayroll::base($full, $videosPublished, $videosTarget) : ($attendancePct === null ? $full
+                    : (string) BigDecimal::of($full)->multipliedBy($attendancePct)->dividedBy(100, 2, RoundingMode::HalfUp)));
                 // Оклад, исправленный вручную в черновике, пересчёт не затирает
-                if ($fixed && $existing && self::baseEditedManually($existing)) {
+                if (($fixed || $video) && $existing && self::baseEditedManually($existing)) {
                     $base = self::dec($existing->base_salary);
                 }
                 $target = $u->employee?->kpi_bonus_target;
@@ -456,7 +477,8 @@ final class PeopleService
                     'other_bonus' => self::dec($existing?->other_bonus),
                     'penalty' => self::dec($existing?->penalty),
                 ];
-                $data = $parts + ['final_salary' => self::final($parts), 'kpi_pct' => $pct, 'base_full' => $full, 'attendance_pct' => $attendancePct];
+                $data = $parts + ['final_salary' => self::final($parts), 'kpi_pct' => $pct, 'base_full' => $full, 'attendance_pct' => $attendancePct,
+                    'videos_published' => $videosPublished, 'videos_target' => $videosTarget];
                 $existing ? $existing->update($data) : PayrollEntry::create(['user_id' => $u->id, 'period' => $period] + $data);
             }
             Audit::log('payroll.calculate', 'payroll', null, ['period' => ['old' => null, 'new' => $period]]);
@@ -474,11 +496,11 @@ final class PeopleService
     /** @param  array{base_salary?:string,kpi_bonus?:string,other_bonus?:string,penalty?:string,comment?:?string,kpi_bonus_target?:?string}  $input */
     public static function updatePayroll(string $id, array $input): PayrollEntry
     {
-        $e = PayrollEntry::with('user.role')->findOrFail($id);
+        $e = PayrollEntry::with(['user.role', 'user.employee'])->findOrFail($id);
         if ($e->status !== 'DRAFT') {
             throw new BusinessRule(t('payroll.errors.immutable'));
         }
-        if (isset($input['base_salary']) && ! BigDecimal::of($input['base_salary'])->isZero() && ! self::hasFixedSalary($e->user->role->code)) {
+        if (isset($input['base_salary']) && ! BigDecimal::of($input['base_salary'])->isZero() && ! self::hasBaseSalary($e->user)) {
             throw new BusinessRule(t('payroll.errors.noFixed'), ['base_salary' => t('payroll.errors.noFixedField')]);
         }
         $hasTarget = array_key_exists('kpi_bonus_target', $input);

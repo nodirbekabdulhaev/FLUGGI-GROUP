@@ -78,6 +78,12 @@
     },
     "payroll": {
       "calculated": "Ish haqining dastlabki hisobi"
+    },
+    "smm": {
+      "idea_created": "SMM: yangi rolik gʻoyasi",
+      "idea_approved": "SMM: gʻoya tasdiqlandi",
+      "idea_rejected": "SMM: gʻoya rad etildi",
+      "idea_status_changed": "SMM: rolik bosqichi oʻzgardi"
     }
   },
   "events": {
