@@ -3,6 +3,14 @@
 @section('content')
     <x-page-header :title="t('accounting.title')" :subtitle="t('accounting.subtitle')">
         <form method="GET"><input type="month" name="period" value="{{ $period }}" class="input w-44" aria-label="{{ t('accounting.fields.month') }}" onchange="this.form.submit()"></form>
+        @if (access()->can('export.run'))
+            <form method="GET" action="/accounting/annual-report" class="flex items-center gap-1">
+                <select name="year" class="input h-9 w-auto" aria-label="{{ t('accounting.annual.year') }}">
+                    @foreach (range((int) now()->format('Y'), (int) now()->format('Y') - 5) as $y)<option value="{{ $y }}" @selected($y === (int) now()->format('Y') - 1)>{{ $y }}</option>@endforeach
+                </select>
+                <button class="btn btn-outline" title="{{ t('accounting.annual.hint') }}"><x-icon name="download" /> {{ t('accounting.annual.button') }}</button>
+            </form>
+        @endif
         @if (access()->can('accounting.manage'))
             <a href="/accounting/operations?new=IN" class="btn btn-outline"><x-icon name="plus" /> {{ t('accounting.operations.newIncome') }}</a>
             <a href="/accounting/operations?new=OUT" class="btn btn-primary"><x-icon name="plus" /> {{ t('accounting.operations.newExpense') }}</a>

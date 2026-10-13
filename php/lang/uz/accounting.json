@@ -229,7 +229,7 @@
     "ndflRate": "JShDS stavkasi, %",
     "inpsRate": "INPS stavkasi, %",
     "inpsWithinNdfl": "INPS JShDS tarkibida ushlanadi",
-    "inpsWithinNdflHint": "Oʻzbekistonda shunday: qoʻlga = hisoblangan − JShDS, toʻlanadigan JShDS = JShDS − INPS.",
+    "inpsWithinNdflHint": "Sukut boʻyicha oʻchirilgan: JShDS 7,5% va INPS 0,1% alohida ushlanadi, qoʻlga = hisoblangan − JShDS − INPS. Agar INPS JShDS tarkibiga kirsa, yoqing (toʻlanadigan JShDS = JShDS − INPS).",
     "itparkRate": "IT Park ajratmasi, %",
     "itparkHint": "Oy davomida bank hisoblariga tushgan tushumlardan",
     "saved": "Sozlamalar saqlandi"
@@ -251,5 +251,10 @@
     "pinflTaken": "Bunday JShShIR li xodim allaqachon bor",
     "payrollApproved": "Tasdiqlangan hisoblash oʻzgartirilmaydi",
     "noUsdRate": "USD kursi yoʻq — dollar hisoblari summalari soʻmga oʻtkazilmadi. Maʼlumotnomalarda kursni qoʻshing."
+  },
+  "annual": {
+    "button": "Yillik hisobot",
+    "year": "Hisobot yili",
+    "hint": "Soliq uchun Excel: 1-shakl (yil boshi va oxiridagi balans), 2-shakl (moliyaviy natijalar), oylar boʻyicha soliqlar va ish haqi, hisoblar boʻyicha pul harakati"
   }
 }

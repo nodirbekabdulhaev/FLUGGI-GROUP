@@ -229,7 +229,7 @@
     "ndflRate": "NDFL rate, %",
     "inpsRate": "INPS rate, %",
     "inpsWithinNdfl": "INPS is withheld within NDFL",
-    "inpsWithinNdflHint": "As in Uzbekistan: net = gross − NDFL, NDFL payable = NDFL − INPS.",
+    "inpsWithinNdflHint": "Off by default: personal income tax 7.5% and INPS 0.1% are withheld separately, net = gross − PIT − INPS. Turn on if INPS is included in PIT (PIT payable = PIT − INPS).",
     "itparkRate": "IT Park fee, %",
     "itparkHint": "Of the month’s receipts on bank accounts",
     "saved": "Settings saved"
@@ -251,5 +251,10 @@
     "pinflTaken": "A person with this PINFL already exists",
     "payrollApproved": "An approved accrual cannot be changed",
     "noUsdRate": "No USD rate — USD account amounts were not converted to UZS. Add the rate in references."
+  },
+  "annual": {
+    "button": "Annual report",
+    "year": "Report year",
+    "hint": "Excel for the tax office: Form 1 (balance sheet at the start and end of the year), Form 2 (financial results), taxes and payroll by month, cash flow by account"
   }
 }

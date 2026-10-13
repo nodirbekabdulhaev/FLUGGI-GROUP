@@ -215,6 +215,10 @@ class AccountingTest extends TestCase
 
     public function test_payroll_calculation_proration_rates_and_approval(): void
     {
+        // По умолчанию ИНПС удерживается сверх НДФЛ (7,5 % + 0,1 %); здесь сначала — вариант «ИНПС в составе НДФЛ»
+        $this->assertFalse(Accounting::settings()['inpsWithinNdfl']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => true, 'itparkRate' => '1']);
         $this->actingAsUser($this->accountant);
         $this->post('/accounting/people', ['full_name' => 'Aliyev Aziz', 'pinfl' => '3120 1950 1234 56', 'position' => 'Direktor', 'monthly_salary' => '10 000 000', 'hired_at' => '2026-01-01', 'is_active' => 1])->assertSessionHasNoErrors();
         $this->post('/accounting/people', ['full_name' => 'Karimova Dilnoza', 'monthly_salary' => '6000000', 'hired_at' => '2026-09-16', 'is_active' => 1])->assertSessionHasNoErrors();
@@ -282,6 +286,7 @@ class AccountingTest extends TestCase
         $a = AccPerson::create(['full_name' => 'Aliyev Aziz', 'monthly_salary' => '10000000', 'hired_at' => '2026-01-01']);
         AccPerson::create(['full_name' => 'Karimova Dilnoza', 'monthly_salary' => '6000000', 'hired_at' => '2026-09-16']);
         $this->as($this->accountant);
+        Accounting::saveSettings(['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => true, 'itparkRate' => '1']);
         TaxPayrollService::calculate('2026-09');
 
         // База IT Park: поступления на банковские счета (оплаты клиентов и прочие доходы), без касс и переводов

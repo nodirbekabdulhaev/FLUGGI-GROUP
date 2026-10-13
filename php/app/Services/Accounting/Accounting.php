@@ -37,7 +37,7 @@ final class Accounting
     /** Доход, с которого считается отчисление IT Park (поступления на банковские счета). */
     public const ITPARK_BASE = ['CLIENT_PAYMENT', 'OTHER_INCOME'];
 
-    public const DEFAULTS = ['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => true, 'itparkRate' => '1'];
+    public const DEFAULTS = ['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1'];
 
     public const PERIOD_RE = '/^\d{4}-(0[1-9]|1[0-2])$/';
 

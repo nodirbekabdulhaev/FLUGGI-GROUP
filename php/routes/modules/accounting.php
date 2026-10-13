@@ -42,6 +42,7 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
 
     Route::get('/taxes', [TaxesController::class, 'index'])->middleware($read)->name('taxes');
     Route::get('/taxes/export', [TaxesController::class, 'export'])->middleware($export)->name('taxes.export');
+    Route::get('/annual-report', [TaxesController::class, 'annual'])->middleware($export)->name('annual');
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware($manage)->name('settings');
     Route::put('/settings', [SettingsController::class, 'update'])->middleware($manage)->name('settings.update');
