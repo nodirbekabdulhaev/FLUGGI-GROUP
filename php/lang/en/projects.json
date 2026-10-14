@@ -64,8 +64,7 @@
     "add": "Add executor",
     "added": "Executor added to the project",
     "user": "Employee",
-    "role": "Project role",
-    "noRole": "No role",
+    "role": "Project positions",
     "workload": "Workload, %",
     "deadline": "Member deadline",
     "assignedAt": "Assigned",
@@ -81,7 +80,11 @@
       "DONE": "Finished work",
       "REMOVED": "Removed"
     },
-    "leads": "Project leadership"
+    "leads": "Project leadership",
+    "positions": "Positions",
+    "positionsHint": "You can pick several — each position is paid separately. The first one picked is the main one.",
+    "mainPosition": "main",
+    "edit": "Positions and workload: {name}"
   },
   "direction": "Direction",
   "allDirections": "All directions",

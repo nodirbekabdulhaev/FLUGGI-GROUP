@@ -82,5 +82,7 @@
     "transferActive": "Select an active employee",
     "transferNotFound": "Employee to transfer to not found",
     "transferOther": "Select a different employee"
-  }
+  },
+  "specialties": "Specialties",
+  "specialtiesHint": "You can pick several: when added to a project they become the member’s positions."
 }

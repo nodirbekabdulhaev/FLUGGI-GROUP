@@ -133,6 +133,8 @@ class ProjectsController extends Controller
         $data = $request->validate([
             'user_id' => ['required', 'uuid'],
             'role' => ['nullable', Rule::in(ProjectAccess::SPECIALTIES)],
+            'roles' => ['nullable', 'array', 'max:'.count(ProjectAccess::SPECIALTIES)],
+            'roles.*' => ['nullable', 'distinct', Rule::in(ProjectAccess::SPECIALTIES)],
             'workload_pct' => ['nullable', 'integer', 'min:0', 'max:100'],
             'deadline' => ['nullable', 'date_format:Y-m-d'],
         ]);
@@ -145,6 +147,8 @@ class ProjectsController extends Controller
     {
         $data = $request->validate([
             'role' => ['sometimes', 'nullable', Rule::in(ProjectAccess::SPECIALTIES)],
+            'roles' => ['sometimes', 'nullable', 'array', 'max:'.count(ProjectAccess::SPECIALTIES)],
+            'roles.*' => ['nullable', 'distinct', Rule::in(ProjectAccess::SPECIALTIES)],
             'workload_pct' => ['sometimes', 'nullable', 'integer', 'min:0', 'max:100'],
             'deadline' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'status' => ['sometimes', Rule::in(['ACTIVE', 'DONE', 'REMOVED'])],

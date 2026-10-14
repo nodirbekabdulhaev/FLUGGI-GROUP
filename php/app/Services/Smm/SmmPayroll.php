@@ -44,7 +44,7 @@ final class SmmPayroll
     {
         return User::with(['employee', 'role'])->where('status', 'ACTIVE')
             ->whereHas('role', fn ($q) => $q->where('code', 'EXECUTOR'))
-            ->whereHas('employee', fn ($q) => $q->whereIn('specialty', SmmAccess::SPECIALTIES))
+            ->whereHas('employee', fn ($q) => $q->withSpecialty(SmmAccess::SPECIALTIES))
             ->orderBy('full_name')->get();
     }
 

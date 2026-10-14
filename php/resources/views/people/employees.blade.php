@@ -49,7 +49,8 @@
             <ul class="divide-y">
                 @foreach ($users as $u)
                     @php
-                        $sub = $u->employee?->specialty ? t('specialties.'.$u->employee->specialty) : $u->employee?->position;
+                        $specs = $u->employee?->specialtyList() ?? [];
+                        $sub = $specs ? collect($specs)->map(fn ($s) => t('specialties.'.$s))->implode(', ') : $u->employee?->position;
                         $sub = $sub && $sub !== t('roles.'.$u->role->code) ? $sub : null;
                         $self = $u->id === $me->id();
                         $actions = ($canManage || $canRates) && ! ($u->role->code === 'CEO' && $me->roleCode !== 'CEO');

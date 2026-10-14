@@ -25,7 +25,7 @@
                             {{ $label }} «{{ $pl['template'] ?? '' }}» ({{ $pl['tasks'] ?? 0 }})
                             @break
                         @case('project.member_added') @case('project.member_removed')
-                            {{ $label }}: {{ $pl['user'] ?? '' }}
+                            {{ $label }}: {{ $pl['user'] ?? '' }}@php($pr = $pl['roles'] ?? (! empty($pl['role']) ? [$pl['role']] : []))@if ($pr) ({{ collect($pr)->map(fn ($r) => t('specialties.'.$r))->implode(', ') }})@endif
                             @break
                         @default
                             {{ $label }}

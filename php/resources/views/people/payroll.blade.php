@@ -110,7 +110,7 @@
                         @foreach ($videoPlans as $u)
                             <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="min-w-0"><span class="font-medium">{{ $u->full_name }}</span>
-                                    <span class="block text-xs text-muted-foreground">{{ t('specialties.'.$u->employee->specialty) }}</span></div>
+                                    <span class="block text-xs text-muted-foreground">{{ collect($u->employee->specialtyList())->map(fn ($s) => t('specialties.'.$s))->implode(', ') }}</span></div>
                                 <div class="grid grid-cols-[1fr_6rem] gap-2 sm:w-auto">
                                     <input name="plans[{{ $u->id }}][salary]" inputmode="decimal" data-money class="input w-full text-right tabular-nums sm:w-44"
                                            value="{{ old('plans.'.$u->id.'.salary', $u->employee?->base_salary !== null ? $num($u->employee->base_salary) : '') }}"

@@ -39,8 +39,13 @@ final class Templates
             throw new BusinessRule(t('templates.errors.noTasks'));
         }
         $start = $project->start_date?->format('Y-m-d') ?? Format::today()->toDateString();
-        $byRole = ProjectMember::where('project_id', $project->id)->where('status', 'ACTIVE')->whereNotNull('role')
-            ->orderBy('assigned_at')->get()->pluck('user_id', 'role'); // позже назначенный — приоритетнее
+        // Роль задачи шаблона → участник, у которого есть эта позиция (среди всех его позиций); позже назначенный — приоритетнее
+        $byRole = [];
+        foreach (ProjectMember::where('project_id', $project->id)->where('status', 'ACTIVE')->orderBy('assigned_at')->get() as $m) {
+            foreach ($m->positions() as $position) {
+                $byRole[$position] = $m->user_id;
+            }
+        }
         $sortOrder = (float) (Task::where('project_id', $project->id)->where('status', 'TODO')->max('sort_order') ?? 0);
 
         foreach ($template->tasks as $t) {

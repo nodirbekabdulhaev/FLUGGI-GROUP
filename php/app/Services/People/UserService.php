@@ -4,6 +4,7 @@ namespace App\Services\People;
 
 use App\Auth\Passwords;
 use App\Auth\Sessions;
+use App\Casts\SpecialtySet;
 use App\Exceptions\BusinessRule;
 use App\Models\Direction;
 use App\Models\Employee;
@@ -89,7 +90,7 @@ final class UserService
     }
 
     /**
-     * @param  array{email:string,full_name:string,phone:?string,role_code:string,team_id:?string,position:?string,specialty:?string,locale:string,direction_ids:array,password?:?string}  $input
+     * @param  array{email:string,full_name:string,phone:?string,role_code:string,team_id:?string,position:?string,specialties?:list<string>,locale:string,direction_ids:array,password?:?string}  $input
      * @return array{user:User, temporaryPassword:?string}
      */
     public static function create(array $input): array
@@ -107,7 +108,8 @@ final class UserService
                 'email' => $input['email'], 'full_name' => $input['full_name'], 'phone' => $input['phone'] ?? null,
                 'password_hash' => $hash, 'role_id' => $role->id, 'team_id' => $input['team_id'] ?? null, 'locale' => $input['locale'],
             ]);
-            Employee::create(['user_id' => $u->id, 'position' => $input['position'] ?? null, 'specialty' => $input['role_code'] === 'EXECUTOR' ? ($input['specialty'] ?? null) : null]);
+            $specialties = $input['role_code'] === 'EXECUTOR' ? SpecialtySet::normalize($input['specialties'] ?? []) : [];
+            Employee::create(['user_id' => $u->id, 'position' => $input['position'] ?? null, 'specialty' => $specialties[0] ?? null, 'specialties' => $specialties]);
             foreach (array_unique($input['direction_ids']) as $d) {
                 UserDirection::create(['user_id' => $u->id, 'direction_id' => $d]);
             }
@@ -128,7 +130,7 @@ final class UserService
 
         return [
             'email' => $u->email, 'fullName' => $u->full_name, 'phone' => $u->phone, 'locale' => $u->locale, 'teamId' => $u->team_id,
-            'role' => $u->role->code, 'position' => $u->employee?->position, 'specialty' => $u->employee?->specialty,
+            'role' => $u->role->code, 'position' => $u->employee?->position, 'specialty' => $u->employee?->specialty, 'specialties' => SpecialtySet::sorted($u->employee?->specialtyList()),
             'directions' => $u->directions->map(fn ($d) => $d->direction?->name)->sort()->implode(', '),
         ];
     }
@@ -170,9 +172,12 @@ final class UserService
                 $data['role_id'] = Role::where('code', $newRole)->value('id');
             }
             $before->update($data);
-            $specialty = $newRole === 'EXECUTOR' ? (array_key_exists('specialty', $input) ? $input['specialty'] : $before->employee?->specialty) : null;
+            // Специальности — только у исполнителя; основная (specialty) — первая выбранная
+            $specialties = $newRole === 'EXECUTOR'
+                ? (array_key_exists('specialties', $input) ? SpecialtySet::normalize($input['specialties']) : ($before->employee?->specialtyList() ?? []))
+                : [];
             $position = array_key_exists('position', $input) ? $input['position'] : $before->employee?->position;
-            Employee::updateOrCreate(['user_id' => $id], ['position' => $position, 'specialty' => $specialty]);
+            Employee::updateOrCreate(['user_id' => $id], ['position' => $position, 'specialty' => $specialties[0] ?? null, 'specialties' => $specialties]);
             // Направления меняют видимость проектов сразу: права собираются из БД на каждый запрос
             if (isset($input['direction_ids'])) {
                 UserDirection::where('user_id', $id)->delete();

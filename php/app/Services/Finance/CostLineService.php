@@ -65,18 +65,53 @@ final class CostLineService
         return $n;
     }
 
-    /** Новый исполнитель в команде: ему — плановые строки его роли, с его личными ставками. */
+    /**
+     * Исполнитель в команде: ему — свободные плановые строки каждой его позиции (фотограф,
+     * видеограф, мобилограф — каждая строка оплачивается отдельно), с его личными ставками.
+     */
     public static function assign(string $projectId, string $userId): void
     {
         $member = ProjectMember::where('project_id', $projectId)->where('user_id', $userId)->first();
-        if (! $member?->role || $member->status !== 'ACTIVE') {
+        if (! $member || $member->status !== 'ACTIVE' || ! ($positions = $member->positions())) {
             return;
         }
-        foreach (ProjectCostLine::where('project_id', $projectId)->where('status', 'PLANNED')->where('specialty', $member->role)->whereNull('assignee_id')->get() as $l) {
+        foreach (ProjectCostLine::where('project_id', $projectId)->where('status', 'PLANNED')->whereIn('specialty', $positions)->whereNull('assignee_id')->get() as $l) {
             $personal = $l->kind === 'PIECE' && $l->work_item_id
                 ? DB::table('employee_rates')->where('user_id', $userId)->where('work_item_id', $l->work_item_id)->first() : null;
             $l->update(['assignee_id' => $userId] + ($personal ? ['rate' => $personal->rate, 'currency' => $personal->currency] : []));
         }
+    }
+
+    /**
+     * С участника сняли позиции: его ещё не начисленные строки этих специальностей освобождаются
+     * (личная ставка штучной работы — снова базовая) и переходят к другому участнику с такой позицией.
+     * Начисленные и отменённые строки не меняются. Вызывать в транзакции.
+     *
+     * @param  list<string>  $specialties
+     * @return int сколько строк освобождено
+     */
+    public static function unassign(string $projectId, string $userId, array $specialties): int
+    {
+        if (! $specialties) {
+            return 0;
+        }
+        $lines = ProjectCostLine::with('workItem:id,default_rate,currency')->where('project_id', $projectId)->where('status', 'PLANNED')
+            ->where('assignee_id', $userId)->whereIn('specialty', $specialties)->get();
+        $personal = DB::table('employee_rates')->where('user_id', $userId)->whereIn('work_item_id', $lines->pluck('work_item_id')->filter()->all() ?: ['-'])->get()->keyBy('work_item_id');
+        foreach ($lines as $l) {
+            // Личная ставка ушедшего исполнителя заменяется базовой; ставку, изменённую вручную, не трогаем
+            $own = $l->kind === 'PIECE' && $l->workItem ? ($personal[$l->work_item_id] ?? null) : null;
+            $base = $own && BigDecimal::of($own->rate)->isEqualTo(BigDecimal::of($l->rate)) && $own->currency === $l->currency
+                ? ['rate' => $l->workItem->default_rate, 'currency' => $l->workItem->currency] : [];
+            $l->update(['assignee_id' => null] + $base);
+        }
+        if ($lines->isNotEmpty()) {
+            foreach (ProjectMember::where('project_id', $projectId)->where('status', 'ACTIVE')->where('user_id', '<>', $userId)->orderBy('assigned_at')->pluck('user_id') as $uid) {
+                self::assign($projectId, $uid);
+            }
+        }
+
+        return $lines->count();
     }
 
     /** Статус для экрана: удалённый расход — строку можно начислить снова. */

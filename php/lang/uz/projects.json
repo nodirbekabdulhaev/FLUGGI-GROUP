@@ -64,8 +64,7 @@
     "add": "Ijrochi qoʻshish",
     "added": "Ijrochi loyihaga qoʻshildi",
     "user": "Xodim",
-    "role": "Loyihadagi roli",
-    "noRole": "Rolsiz",
+    "role": "Loyihadagi lavozimlari",
     "workload": "Bandlik, %",
     "deadline": "Ishtirokchi dedlayni",
     "assignedAt": "Tayinlangan",
@@ -81,7 +80,11 @@
       "DONE": "Ishni yakunlagan",
       "REMOVED": "Chiqarilgan"
     },
-    "leads": "Loyiha rahbariyati"
+    "leads": "Loyiha rahbariyati",
+    "positions": "Lavozimlar",
+    "positionsHint": "Bir nechtasini tanlash mumkin — har bir lavozim uchun alohida toʻlanadi. Birinchi tanlangani — asosiy.",
+    "mainPosition": "asosiy",
+    "edit": "Lavozimlar va bandlik: {name}"
   },
   "direction": "Yoʻnalish",
   "allDirections": "Barcha yoʻnalishlar",

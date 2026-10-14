@@ -82,5 +82,7 @@
     "transferActive": "Faol xodimni tanlang",
     "transferNotFound": "Ish topshiriladigan xodim topilmadi",
     "transferOther": "Boshqa xodimni tanlang"
-  }
+  },
+  "specialties": "Mutaxassisliklar",
+  "specialtiesHint": "Bir nechtasini tanlash mumkin: loyihaga qoʻshilganda ular uning lavozimlari boʻladi."
 }

@@ -12,7 +12,7 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * Доступ к разделу SMM. Права: smm.read / smm.create / smm.approve. Исполнитель видит раздел,
- * только если его специальность — SMM-видео (SMM, видеограф, монтажёр, мобилограф, брендфейс);
+ * только если среди его специальностей есть SMM-видео (SMM, видеограф, монтажёр, мобилограф, брендфейс);
  * с областью OWN — идеи, где он ответственный или автор. Чужая идея — 404.
  */
 final class SmmAccess
@@ -30,7 +30,7 @@ final class SmmAccess
         }
         $user->loadMissing(['role', 'employee']);
 
-        return $user->role?->code === 'EXECUTOR' && in_array($user->employee?->specialty, self::SPECIALTIES, true);
+        return $user->role?->code === 'EXECUTOR' && array_intersect($user->employee?->specialtyList() ?? [], self::SPECIALTIES) !== [];
     }
 
     /** Право на раздел: smm.read и (для исполнителя) SMM-специальность — иначе 403. */
@@ -93,7 +93,7 @@ final class SmmAccess
         return User::query()->where(fn ($q) => $q
             ->where(fn ($w) => $w->where('status', 'ACTIVE')
                 ->whereHas('role', fn ($r) => $r->where('code', 'EXECUTOR'))
-                ->whereHas('employee', fn ($e) => $e->whereIn('specialty', self::SPECIALTIES)))
+                ->whereHas('employee', fn ($e) => $e->withSpecialty(self::SPECIALTIES)))
             ->when($keepId, fn ($w) => $w->orWhere('id', $keepId)))
             ->orderBy('full_name')->get(['id', 'full_name']);
     }
@@ -102,7 +102,7 @@ final class SmmAccess
     {
         return User::whereKey($userId)->where('status', 'ACTIVE')
             ->whereHas('role', fn ($r) => $r->where('code', 'EXECUTOR'))
-            ->whereHas('employee', fn ($e) => $e->whereIn('specialty', self::SPECIALTIES))
+            ->whereHas('employee', fn ($e) => $e->withSpecialty(self::SPECIALTIES))
             ->exists();
     }
 

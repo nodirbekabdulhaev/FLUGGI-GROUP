@@ -2,6 +2,7 @@
 
 namespace App\Services\Projects;
 
+use App\Casts\SpecialtySet;
 use App\Domain\Tasks;
 use App\Exceptions\BusinessRule;
 use App\Models\Activity;
@@ -264,12 +265,30 @@ final class ProjectService
     /** Кого можно добавить в команду: активные исполнители, менеджеры и РОП. */
     public static function candidates(): Collection
     {
-        return User::with(['role:id,code', 'employee:id,user_id,specialty'])->where('status', 'ACTIVE')
+        return User::with(['role:id,code', 'employee:id,user_id,specialty,specialties'])->where('status', 'ACTIVE')
             ->whereHas('role', fn ($q) => $q->whereIn('code', ['EXECUTOR', 'MANAGER', 'ROP']))
             ->orderBy('full_name')->get();
     }
 
-    /** @param  array{user_id:string, role?:?string, workload_pct?:?int, deadline?:?string}  $input */
+    /**
+     * Позиции из формы: roles[] (несколько), прежнее поле role — одна позиция. null — поле не передано.
+     *
+     * @param  array<string,mixed>  $input
+     * @return list<string>|null
+     */
+    private static function inputRoles(array $input): ?array
+    {
+        if (array_key_exists('roles', $input)) {
+            return SpecialtySet::normalize(is_array($input['roles']) ? $input['roles'] : []);
+        }
+        if (array_key_exists('role', $input)) {
+            return SpecialtySet::normalize($input['role'] ? [$input['role']] : []);
+        }
+
+        return null;
+    }
+
+    /** @param  array{user_id:string, roles?:?array, role?:?string, workload_pct?:?int, deadline?:?string}  $input */
     public static function addMember(string $id, array $input): void
     {
         $p = ProjectAccess::project($id, 'project.assign');
@@ -283,15 +302,18 @@ final class ProjectService
         if (! in_array($user->role->code, ['EXECUTOR', 'MANAGER', 'ROP'], true)) {
             throw new BusinessRule(t('projects.errors.memberRole'), ['user_id' => t('projects.errors.memberRole')]);
         }
-        $role = ($input['role'] ?? null) ?: $user->employee?->specialty;
+        // Позиции не выбраны — берутся специальности из карточки сотрудника
+        $roles = self::inputRoles($input) ?: ($user->employee?->specialtyList() ?? []);
+        $role = $roles[0] ?? null;
 
-        DB::transaction(function () use ($p, $user, $role, $input, $id) {
+        DB::transaction(function () use ($p, $user, $role, $roles, $input, $id) {
             $existing = ProjectMember::where('project_id', $id)->where('user_id', $user->id)->lockForUpdate()->first();
             if ($existing && $existing->status === 'ACTIVE') {
                 throw new BusinessRule(t('projects.errors.alreadyMember'), ['user_id' => t('projects.errors.alreadyMember')]);
             }
             $data = [
                 'role' => $role,
+                'roles' => $roles,
                 'workload_pct' => $input['workload_pct'] ?? null,
                 'deadline' => ($input['deadline'] ?? null) ?: null,
                 'status' => 'ACTIVE',
@@ -300,20 +322,30 @@ final class ProjectService
             ];
             $existing ? $existing->update($data) : ProjectMember::create(['project_id' => $id, 'user_id' => $user->id] + $data);
 
-            // Задачи из шаблона, которые ждали исполнителя этой роли у РОП, переходят к нему
-            $assigned = $role ? Task::where('project_id', $id)->where('assignee_id', $p->rop_id)->where('template_role', $role)
-                ->where('status', 'TODO')->update(['assignee_id' => $user->id]) : 0;
+            // Задачи из шаблона, которые ждали исполнителя одной из его позиций у РОП, переходят к нему
+            $assigned = self::takeTemplateTasks($p, $user->id, $roles);
             // Первый исполнитель — проект переходит из «Новый» в «Планирование»
             if ($p->status === 'NEW') {
                 $p->update(['status' => 'PLANNING']);
             }
-            // Плановые расходы его роли — новому исполнителю, с его личными ставками
+            // Плановые расходы каждой его позиции — новому исполнителю, с его личными ставками
             CostLineService::assign($id, $user->id);
 
-            Activities::log('project.member_added', ['project_id' => $id], ['user' => $user->full_name, 'role' => $role, 'tasksAssigned' => $assigned]);
-            Audit::log('project.member_add', 'project', $id, ['member' => ['old' => null, 'new' => $user->full_name], 'role' => ['old' => null, 'new' => $role]]);
-            Outbox::publish('project.member_added', ['projectId' => $id, 'userId' => $user->id]);
+            Activities::log('project.member_added', ['project_id' => $id], ['user' => $user->full_name, 'role' => $role, 'roles' => $roles, 'tasksAssigned' => $assigned]);
+            Audit::log('project.member_add', 'project', $id, [
+                'member' => ['old' => null, 'new' => $user->full_name],
+                'role' => ['old' => null, 'new' => $role],
+                'roles' => ['old' => null, 'new' => SpecialtySet::sorted($roles)],
+            ]);
+            Outbox::publish('project.member_added', ['projectId' => $id, 'userId' => $user->id, 'roles' => $roles]);
         });
+    }
+
+    /** Задачи шаблона у РОП, ждущие позицию из $roles, — участнику. */
+    private static function takeTemplateTasks(Project $p, string $userId, array $roles): int
+    {
+        return $roles ? Task::where('project_id', $p->id)->where('assignee_id', $p->rop_id)->whereIn('template_role', $roles)
+            ->where('status', 'TODO')->update(['assignee_id' => $userId]) : 0;
     }
 
     /** @param  array<string,mixed>  $input */
@@ -322,9 +354,18 @@ final class ProjectService
         $project = ProjectAccess::project($id, 'project.assign');
         $m = ProjectMember::with('user:id,full_name')->where('project_id', $id)->whereKey($memberId)->firstOrFail();
         $fields = ['role', 'workload_pct', 'deadline', 'status'];
-        $data = array_intersect_key($input, array_flip($fields));
-        DB::transaction(function () use ($project, $m, $data, $fields, $id) {
+        $data = array_intersect_key($input, array_flip(['workload_pct', 'deadline', 'status']));
+        $roles = self::inputRoles($input);
+        if ($roles !== null) {
+            $data['roles'] = $roles;
+            $data['role'] = $roles[0] ?? null;
+        }
+        DB::transaction(function () use ($project, $m, $data, $fields, $id, $roles) {
+            $oldRoles = SpecialtySet::sorted($m->positions());
             $changes = Audit::diff(['deadline' => $m->deadline?->format('Y-m-d')] + $m->getAttributes(), $data, $fields);
+            if ($roles !== null && $oldRoles !== SpecialtySet::sorted($roles)) {
+                $changes = ($changes ?? []) + ['roles' => ['old' => $oldRoles, 'new' => SpecialtySet::sorted($roles)]];
+            }
             $wasRemoved = $m->status === 'REMOVED';
             $m->update($data);
             // Исключённый участник: его открытые задачи переходят к РОП проекта (ТЗ §77, Rule 5)
@@ -332,6 +373,14 @@ final class ProjectService
                 $moved = Task::where('project_id', $id)->where('assignee_id', $m->user_id)->whereIn('status', ProjectAccess::OPEN_TASK)
                     ->update(['assignee_id' => $project->rop_id]);
                 Activities::log('project.member_removed', ['project_id' => $id], ['user' => $m->user->full_name, 'tasksToRop' => $moved]);
+            }
+            if ($roles !== null) {
+                // Снятые позиции: не начисленные строки себестоимости освобождаются; новые — получают свои строки и задачи шаблона
+                CostLineService::unassign($id, $m->user_id, array_values(array_diff($oldRoles, $roles)));
+                if ($m->status === 'ACTIVE') {
+                    self::takeTemplateTasks($project, $m->user_id, array_values(array_diff($roles, $oldRoles)));
+                    CostLineService::assign($id, $m->user_id);
+                }
             }
             if ($changes) {
                 Audit::log('project.member_update', 'project', $id, ['member' => ['old' => $m->user->full_name, 'new' => $m->user->full_name]] + $changes);

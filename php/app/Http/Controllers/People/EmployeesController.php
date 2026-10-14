@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers\People;
 
+use App\Casts\SpecialtySet;
 use App\Http\Controllers\Controller;
 use App\Models\Direction;
 use App\Models\Team;
@@ -67,6 +68,8 @@ class EmployeesController extends Controller
             'team_id' => ['nullable', 'uuid'],
             'position' => ['nullable', 'string', 'max:120'],
             'specialty' => ['nullable', Rule::in(ProjectAccess::SPECIALTIES)],
+            'specialties' => ['nullable', 'array', 'max:'.count(ProjectAccess::SPECIALTIES)],
+            'specialties.*' => ['nullable', 'distinct', Rule::in(ProjectAccess::SPECIALTIES)],
             'locale' => ['nullable', Rule::in(Lang::LOCALES)],
             'direction_ids' => ['nullable', 'array', 'max:20'],
             'direction_ids.*' => ['uuid'],
@@ -76,7 +79,13 @@ class EmployeesController extends Controller
         $data['position'] = ($data['position'] ?? null) ?: null;
         // Отдел — только у отдела продаж; специализация — у исполнителя; направления — у проект-менеджера
         $data['team_id'] = in_array($role, UserService::SALES_ROLES, true) ? (($data['team_id'] ?? null) ?: null) : null;
-        $data['specialty'] = $role === 'EXECUTOR' ? (($data['specialty'] ?? null) ?: null) : null;
+        // Несколько специальностей (specialties[]); прежнее поле specialty — одна. Не передано — без изменений.
+        // Специальности хранятся только у исполнителя — это проверяет UserService по итоговой роли
+        if (array_key_exists('specialties', $data) || array_key_exists('specialty', $data)) {
+            $data['specialties'] = array_key_exists('specialties', $data) ? SpecialtySet::normalize((array) ($data['specialties'] ?? []))
+                : SpecialtySet::normalize(($data['specialty'] ?? null) ? [$data['specialty']] : []);
+        }
+        unset($data['specialty']);
         $data['direction_ids'] = $role === 'PROJECT_MANAGER' ? array_values($data['direction_ids'] ?? []) : [];
         if ($create) {
             $data['locale'] = $data['locale'] ?? 'ru';

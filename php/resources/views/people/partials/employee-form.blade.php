@@ -26,9 +26,10 @@
         <div x-show="role === 'ROP' || role === 'MANAGER'">
             <x-select name="team_id" :id="$mid.'-team'" :label="t('employees.team')" :value="$u?->team_id" :placeholder="t('employees.noTeam')" :options="$teams" />
         </div>
-        <div x-show="role === 'EXECUTOR'">
-            <x-select name="specialty" :id="$mid.'-spec'" :label="t('employees.specialty')" :value="$u?->employee?->specialty" placeholder="—" :options="collect(\App\Services\Projects\ProjectAccess::SPECIALTIES)->mapWithKeys(fn ($s) => [$s => t('specialties.'.$s)])->all()" />
-        </div>
+    </div>
+    <div x-show="role === 'EXECUTOR'">
+        <x-specialty-picker name="specialties" :id="$mid.'-spec'" :label="t('employees.specialties')" :hint="t('employees.specialtiesHint')"
+            :selected="old('full_name') !== null ? array_values(array_filter((array) old('specialties', []))) : ($u?->employee?->specialtyList() ?? [])" />
     </div>
     <fieldset class="grid gap-2 rounded-md border p-3" x-show="role === 'PROJECT_MANAGER'">
         <legend class="px-1 text-sm font-medium">{{ t('employees.directions') }}</legend>
