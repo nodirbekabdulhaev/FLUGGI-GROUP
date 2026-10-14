@@ -94,7 +94,7 @@ final class MetaService
             foreach ((array) ($entry['changes'] ?? []) as $c) {
                 $field = $c['field'] ?? null;
                 if ($field === 'comments' || $field === 'feed') {
-                    self::safe(fn () => self::onComment((array) ($c['value'] ?? []), $object));
+                    self::safe(fn () => self::onComment((array) ($c['value'] ?? []), $object, $ownId));
                 }
                 if ($field === 'leadgen') {
                     self::safe(fn () => self::onLeadgen((array) ($c['value'] ?? [])));
@@ -216,7 +216,7 @@ final class MetaService
         }
     }
 
-    private static function onComment(array $v, ?string $object): void
+    private static function onComment(array $v, ?string $object, ?string $ownId = null): void
     {
         $from = (array) ($v['from'] ?? []);
         $commentId = $v['id'] ?? $v['comment_id'] ?? null;
@@ -228,6 +228,19 @@ final class MetaService
             return;
         }
         if (! empty($v['verb']) && $v['verb'] !== 'add') {
+            return;
+        }
+        // Комментарий от нашего же аккаунта (ответ из CRM или из приложения) — не новый собеседник и не лид:
+        // ответ из CRM уже сохранён; ответ из приложения кладём исходящим в переписку родительского комментария.
+        if (SocialMessage::where('external_id', (string) $commentId)->exists()) {
+            return;
+        }
+        if ($ownId !== null && (string) $from['id'] === (string) $ownId) {
+            $parent = ! empty($v['parent_id']) ? SocialMessage::where('external_id', (string) $v['parent_id'])->first() : null;
+            if ($parent) {
+                self::addMessage(SocialThread::findOrFail($parent->thread_id), 'OUT', (string) $text, (string) $commentId, $parent->media_id, CarbonImmutable::now('UTC'));
+            }
+
             return;
         }
         $channel = $object === 'page' ? 'FACEBOOK_COMMENT' : 'INSTAGRAM_COMMENT';

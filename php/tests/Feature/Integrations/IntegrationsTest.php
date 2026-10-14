@@ -171,6 +171,14 @@ class IntegrationsTest extends TestCase
         $buyer = SocialThread::where('peer_id', 'BUYER1')->firstOrFail();
         $this->postJson('/inbox/'.$buyer->id.'/reply', ['text' => 'Написали в Директ', 'commentId' => 'c2'])->assertOk();
         $this->assertTrue(collect($this->graph)->contains(fn ($c) => str_ends_with($c['path'], '/c2/replies')));
+        // Наш ответ возвращается вебхуком от нашего же аккаунта — не новая переписка и не лид
+        $threads = SocialThread::count();
+        $leads = Lead::count();
+        $own = ['object' => 'instagram', 'entry' => [['id' => 'PAGE1', 'changes' => [['field' => 'comments',
+            'value' => ['id' => 'own1', 'parent_id' => 'c2', 'text' => 'Какая цена? Ответили в директ', 'from' => ['id' => 'PAGE1', 'username' => 'fluggi_group'], 'media' => ['id' => 'POST1']]]]]]];
+        $this->signed($own)->assertOk();
+        $this->assertSame([$threads, $leads], [SocialThread::count(), Lead::count()]);
+        $this->assertSame('OUT', $buyer->messages()->where('external_id', 'own1')->value('direction'));
         $this->postJson('/inbox/'.$buyer->id.'/reply', ['text' => 'x', 'commentId' => 'c1'])->assertStatus(422);
         $this->postJson('/inbox/'.$buyer->id.'/reply', ['text' => 'x'])->assertStatus(422);
 
