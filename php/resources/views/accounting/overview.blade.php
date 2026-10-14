@@ -54,7 +54,12 @@
             @else
                 <ul class="divide-y text-sm">
                     @foreach ($income as $cat => $sum)
-                        <li class="flex items-center justify-between gap-3 px-4 py-2.5"><a class="link" href="/accounting/operations?period={{ $period }}&direction=IN&category={{ $cat }}">{{ t('accounting.category.'.$cat) }}</a><span class="whitespace-nowrap tabular-nums">{{ money($sum) }}</span></li>
+                        <li class="px-4 py-2.5">
+                            <p class="flex items-center justify-between gap-3"><a class="link" href="/accounting/operations?period={{ $period }}&direction=IN&category={{ $cat }}">{{ t('accounting.category.'.$cat) }}</a><span class="whitespace-nowrap tabular-nums">{{ money($sum) }}</span></p>
+                            @foreach ($incomeArticles[$cat] ?? [] as $art)
+                                <p class="mt-1 flex items-center justify-between gap-3 pl-3 text-xs text-muted-foreground"><a class="min-w-0 truncate hover:underline" href="/accounting/operations?period={{ $period }}&category={{ $art['id'] }}">{{ $art['name'] }}</a><span class="whitespace-nowrap tabular-nums">{{ money($art['sum']) }}</span></p>
+                            @endforeach
+                        </li>
                     @endforeach
                 </ul>
             @endif
@@ -65,7 +70,12 @@
             @else
                 <ul class="divide-y text-sm">
                     @foreach ($expenses as $cat => $sum)
-                        <li class="flex items-center justify-between gap-3 px-4 py-2.5"><a class="link" href="/accounting/operations?period={{ $period }}&direction=OUT&category={{ $cat }}">{{ t('accounting.category.'.$cat) }}</a><span class="whitespace-nowrap tabular-nums">{{ money($sum) }}</span></li>
+                        <li class="px-4 py-2.5">
+                            <p class="flex items-center justify-between gap-3"><a class="link" href="/accounting/operations?period={{ $period }}&direction=OUT&category={{ $cat }}">{{ t('accounting.category.'.$cat) }}</a><span class="whitespace-nowrap tabular-nums">{{ money($sum) }}</span></p>
+                            @foreach ($expensesArticles[$cat] ?? [] as $art)
+                                <p class="mt-1 flex items-center justify-between gap-3 pl-3 text-xs text-muted-foreground"><a class="min-w-0 truncate hover:underline" href="/accounting/operations?period={{ $period }}&category={{ $art['id'] }}">{{ $art['name'] }}</a><span class="whitespace-nowrap tabular-nums">{{ money($art['sum']) }}</span></p>
+                            @endforeach
+                        </li>
                     @endforeach
                 </ul>
             @endif
@@ -93,7 +103,7 @@
                 @foreach ($recent as $op)
                     <li class="flex items-start justify-between gap-3 px-4 py-3 text-sm">
                         <div class="min-w-0">
-                            <p class="truncate font-medium">{{ t('accounting.category.'.$op->category) }}@if ($op->counterparty) · {{ $op->counterparty }}@endif</p>
+                            <p class="truncate font-medium">{{ $op->categoryLabel() }}@if ($op->counterparty) · {{ $op->counterparty }}@endif</p>
                             <p class="truncate text-xs text-muted-foreground">{{ d($op->date) }} · {{ $op->account?->name }}@if ($op->period) · {{ $op->period }}@endif</p>
                         </div>
                         @include('accounting.partials.op-row', ['op' => $op])

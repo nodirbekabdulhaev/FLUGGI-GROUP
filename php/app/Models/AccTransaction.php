@@ -25,6 +25,20 @@ class AccTransaction extends Model
         return $this->belongsTo(AccAccount::class, 'account_id');
     }
 
+    /** Своя статья (если выбрана); category — её базовая категория. */
+    public function article(): BelongsTo
+    {
+        return $this->belongsTo(AccCategory::class, 'category_id');
+    }
+
+    /** Подпись для списков: статья с базовой категорией или только базовая категория. */
+    public function categoryLabel(): string
+    {
+        $base = t('accounting.category.'.$this->category);
+
+        return $this->category_id && $this->article ? $base.' — '.$this->article->name : $base;
+    }
+
     public function person(): BelongsTo
     {
         return $this->belongsTo(AccPerson::class, 'person_id');

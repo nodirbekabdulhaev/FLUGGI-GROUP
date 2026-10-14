@@ -47,6 +47,12 @@ final class Accounting
         return array_values(array_unique([...self::IN_CATEGORIES, ...self::OUT_CATEGORIES]));
     }
 
+    /** Базовые категории ручного ввода для направления — их же можно выбрать как «учитывать как» у своей статьи. */
+    public static function manual(string $direction): array
+    {
+        return $direction === 'IN' ? self::MANUAL_IN : self::MANUAL_OUT;
+    }
+
     /** @return array{ndflRate:string,inpsRate:string,inpsWithinNdfl:bool,itparkRate:string} */
     public static function settings(): array
     {

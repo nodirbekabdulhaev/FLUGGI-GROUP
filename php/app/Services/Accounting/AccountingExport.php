@@ -35,6 +35,7 @@ final class AccountingExport
             ['header' => t('accounting.fields.account'), 'width' => 24],
             ['header' => t('accounting.fields.direction')],
             ['header' => t('accounting.fields.category'), 'width' => 24],
+            ['header' => t('accounting.fields.article'), 'width' => 24],
             ['header' => t('accounting.fields.amount'), 'money' => true, 'width' => 16],
             ['header' => t('accounting.fields.currency')],
             ['header' => t('accounting.fields.counterparty'), 'width' => 28],
@@ -44,7 +45,7 @@ final class AccountingExport
             ['header' => t('accounting.fields.crmPayment')],
             ['header' => t('accounting.fields.createdBy'), 'width' => 20],
         ], $rows->map(fn ($r) => [
-            self::day($r->date), $r->account?->name, t('accounting.direction.'.$r->direction), t('accounting.category.'.$r->category),
+            self::day($r->date), $r->account?->name, t('accounting.direction.'.$r->direction), t('accounting.category.'.$r->category), $r->article?->name,
             self::num($r->direction === 'OUT' ? '-'.$r->amount : $r->amount), $r->account?->currency, $r->counterparty, $r->person?->full_name,
             $r->period, $r->description, $r->payment ? Numbers::payment($r->payment->number) : null, $r->createdBy?->full_name,
         ])->all());
@@ -89,12 +90,13 @@ final class AccountingExport
             ['header' => t('accounting.fields.date'), 'date' => true],
             ['header' => t('accounting.fields.account'), 'width' => 24],
             ['header' => t('accounting.fields.category'), 'width' => 22],
+            ['header' => t('accounting.fields.article'), 'width' => 22],
             ['header' => t('accounting.fields.counterparty'), 'width' => 28],
             ['header' => t('accounting.fields.amount'), 'money' => true, 'width' => 16],
             ['header' => t('accounting.fields.currency')],
             ['header' => t('accounting.taxes.amountUzs'), 'money' => true, 'width' => 16],
-        ], TaxesService::bankIncome($period)['rows']->map(fn ($r) => [
-            self::day($r->date), $r->account_name, t('accounting.category.'.$r->category), $r->counterparty, self::num($r->amount), $r->currency, self::num($r->uzs === null ? null : (string) $r->uzs),
+        ], TaxesService::bankIncome($period)['rows']->load('article')->map(fn ($r) => [
+            self::day($r->date), $r->account_name, t('accounting.category.'.$r->category), $r->article?->name, $r->counterparty, self::num($r->amount), $r->currency, self::num($r->uzs === null ? null : (string) $r->uzs),
         ])->all());
         self::audit('acc_tax_report', ['period' => $period]);
 

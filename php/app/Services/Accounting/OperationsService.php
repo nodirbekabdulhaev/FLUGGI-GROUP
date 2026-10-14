@@ -25,7 +25,7 @@ final class OperationsService
      */
     public static function query(array $f): Builder
     {
-        $q = AccTransaction::query()->with(['account', 'person', 'payment:id,number', 'createdBy:id,full_name']);
+        $q = AccTransaction::query()->with(['account', 'article', 'person', 'payment:id,number', 'createdBy:id,full_name']);
         if (! empty($f['account'])) {
             $q->where('account_id', $f['account']);
         }
@@ -33,7 +33,8 @@ final class OperationsService
             $q->where('direction', $f['direction']);
         }
         if (! empty($f['category'])) {
-            $q->where('category', $f['category']);
+            // Своя статья — по category_id; базовая категория — все её операции, включая статьи с этой базой
+            Str::isUuid($f['category']) ? $q->where('category_id', $f['category']) : $q->where('category', $f['category']);
         }
         if (! empty($f['period'])) {
             [$a, $b] = Accounting::monthDates($f['period']);
@@ -74,14 +75,21 @@ final class OperationsService
     }
 
     /**
-     * Приход или расход, введённый вручную.
+     * Приход или расход, введённый вручную. category — базовая категория ручного ввода либо id своей статьи
+     * (тогда в операцию пишется category = база статьи и category_id = статья).
      *
-     * @param  array{account_id:string,direction:string,category:string,amount:string,date:string,period:?string,counterparty:?string,description:?string,person_id:?string}  $d
+     * @param  array{account_id:string,direction:string,category:string,category_id?:?string,amount:string,date:string,period:?string,counterparty:?string,description:?string,person_id:?string}  $d
      */
     public static function create(array $d): AccTransaction
     {
-        $allowed = $d['direction'] === 'IN' ? Accounting::MANUAL_IN : Accounting::MANUAL_OUT;
-        if (! in_array($d['category'], $allowed, true)) {
+        $d['category_id'] = ($d['category_id'] ?? null) ?: null;
+        if (Str::isUuid($d['category'])) {
+            $d['category_id'] = $d['category'];
+        }
+        if ($d['category_id']) {
+            $d['category'] = CategoriesService::forOperation($d['category_id'], $d['direction'])->base;
+        }
+        if (! in_array($d['category'], Accounting::manual($d['direction']), true)) {
             throw new BusinessRule(t('accounting.errors.category'), ['category' => t('accounting.errors.category')]);
         }
         $cat = $d['category'];
@@ -108,8 +116,11 @@ final class OperationsService
         return DB::transaction(function () use ($d) {
             $acc = self::activeAccount($d['account_id'], 'account_id');
             self::assertDate($acc, $d['date'], 'date');
+            if ($d['category_id']) {
+                CategoriesService::forOperation($d['category_id'], $d['direction']);
+            }
             $row = AccTransaction::create([
-                'account_id' => $acc->id, 'direction' => $d['direction'], 'category' => $d['category'],
+                'account_id' => $acc->id, 'direction' => $d['direction'], 'category' => $d['category'], 'category_id' => $d['category_id'],
                 'amount' => (string) Accounting::dec($d['amount'])->toScale(2), 'date' => $d['date'], 'period' => $d['period'],
                 'counterparty' => $d['counterparty'], 'description' => $d['description'], 'person_id' => $d['person_id'],
                 'created_by_id' => access()->id(),
@@ -210,11 +221,14 @@ final class OperationsService
     private static function snapshot(AccTransaction $r): array
     {
         $out = [];
-        foreach (['account_id', 'direction', 'category', 'amount', 'date', 'period', 'counterparty', 'description', 'person_id'] as $k) {
+        foreach (['account_id', 'direction', 'category', 'category_id', 'amount', 'date', 'period', 'counterparty', 'description', 'person_id'] as $k) {
             $v = $r->getAttribute($k);
             if ($v !== null) {
                 $out[$k] = ['old' => null, 'new' => $k === 'date' ? $r->date->toDateString() : (string) $v];
             }
+        }
+        if ($r->category_id) {
+            $out['article'] = ['old' => null, 'new' => $r->article?->name];
         }
 
         return $out;
@@ -222,6 +236,8 @@ final class OperationsService
 
     private static function snapshotText(AccTransaction $r): string
     {
-        return "{$r->direction} {$r->category} {$r->amount} {$r->date->toDateString()}";
+        $article = $r->category_id ? ' «'.$r->article?->name.'»' : '';
+
+        return "{$r->direction} {$r->category}{$article} {$r->amount} {$r->date->toDateString()}";
     }
 }

@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\Accounting\AccountsController;
+use App\Http\Controllers\Accounting\BankImportController;
+use App\Http\Controllers\Accounting\CategoriesController;
 use App\Http\Controllers\Accounting\OperationsController;
 use App\Http\Controllers\Accounting\OverviewController;
 use App\Http\Controllers\Accounting\PayrollController;
@@ -9,7 +11,7 @@ use App\Http\Controllers\Accounting\SettingsController;
 use App\Http\Controllers\Accounting\TaxesController;
 use Illuminate\Support\Facades\Route;
 
-// Бухгалтерия: счета, операции, оплаты из CRM, люди и зарплата для налоговой, налоги, настройки ставок
+// Бухгалтерия: счета, операции, свои статьи прихода и расхода, загрузка банковской выписки, оплаты из CRM, люди и зарплата для налоговой, налоги, настройки ставок
 $read = 'perm:accounting.read';
 $manage = 'perm:accounting.manage';
 $export = [$read, 'perm:export.run'];
@@ -24,11 +26,25 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::delete('/operations/{id}', [OperationsController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('operations.destroy');
     Route::post('/import-crm', [OperationsController::class, 'importCrm'])->middleware($manage)->name('import');
 
+    Route::get('/bank-import', [BankImportController::class, 'show'])->middleware($manage)->name('bank');
+    Route::post('/bank-import', [BankImportController::class, 'upload'])->middleware($manage)->name('bank.upload');
+    Route::get('/bank-import/{token}', [BankImportController::class, 'preview'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('bank.preview');
+    Route::post('/bank-import/{token}/account', [BankImportController::class, 'account'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('bank.account');
+    Route::post('/bank-import/{token}/confirm', [BankImportController::class, 'confirm'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('bank.confirm');
+    Route::post('/bank-import/{token}/cancel', [BankImportController::class, 'cancel'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('bank.cancel');
+    Route::get('/bank-import/{token}/result', [BankImportController::class, 'result'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('bank.result');
+
     Route::get('/accounts', [AccountsController::class, 'index'])->middleware($read)->name('accounts');
     Route::post('/accounts', [AccountsController::class, 'store'])->middleware($manage)->name('accounts.store');
     Route::put('/accounts/{id}', [AccountsController::class, 'update'])->whereUuid('id')->middleware($manage)->name('accounts.update');
     Route::post('/accounts/{id}/active', [AccountsController::class, 'active'])->whereUuid('id')->middleware($manage)->name('accounts.active');
     Route::delete('/accounts/{id}', [AccountsController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('accounts.destroy');
+
+    Route::get('/categories', [CategoriesController::class, 'index'])->middleware($read)->name('categories');
+    Route::post('/categories', [CategoriesController::class, 'store'])->middleware($manage)->name('categories.store');
+    Route::put('/categories/{id}', [CategoriesController::class, 'update'])->whereUuid('id')->middleware($manage)->name('categories.update');
+    Route::post('/categories/{id}/active', [CategoriesController::class, 'active'])->whereUuid('id')->middleware($manage)->name('categories.active');
+    Route::delete('/categories/{id}', [CategoriesController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('categories.destroy');
 
     Route::get('/people', [PeopleController::class, 'index'])->middleware($read)->name('people');
     Route::post('/people', [PeopleController::class, 'store'])->middleware($manage)->name('people.store');

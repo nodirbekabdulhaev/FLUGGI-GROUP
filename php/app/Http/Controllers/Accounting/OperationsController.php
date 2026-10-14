@@ -3,28 +3,41 @@
 namespace App\Http\Controllers\Accounting;
 
 use App\Http\Controllers\Controller;
+use App\Models\AccCategory;
 use App\Models\AccPerson;
 use App\Services\Accounting\Accounting;
 use App\Services\Accounting\AccountingExport;
 use App\Services\Accounting\AccountsService;
+use App\Services\Accounting\CategoriesService;
 use App\Services\Accounting\CrmImportService;
 use App\Services\Accounting\OperationsService;
 use App\Services\Finance\Input;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** Операции по счетам: список с фильтрами, приход/расход/перевод, удаление с причиной, загрузка оплат CRM, выгрузка. */
 class OperationsController extends Controller
 {
+    /** Базовая категория или id своей статьи (статья проверяется в сервисе). */
+    private function categoryRule(): \Closure
+    {
+        return function (string $attribute, mixed $value, \Closure $fail) {
+            if (! is_string($value) || (! in_array($value, Accounting::categories(), true) && ! Str::isUuid($value))) {
+                $fail(t('accounting.errors.category'));
+            }
+        };
+    }
+
     private function filters(Request $request): array
     {
         return $request->validate([
             'account' => ['nullable', 'uuid'],
             'direction' => ['nullable', Rule::in(['IN', 'OUT'])],
-            'category' => ['nullable', Rule::in(Accounting::categories())],
+            'category' => ['nullable', $this->categoryRule()],
             'period' => ['nullable', 'regex:'.Accounting::PERIOD_RE],
             'from' => ['nullable', 'date_format:Y-m-d'],
             'to' => ['nullable', 'date_format:Y-m-d'],
@@ -52,6 +65,8 @@ class OperationsController extends Controller
             'items' => (clone $q)->paginate(50)->withQueryString(),
             'totals' => OperationsService::totals($q),
             'accounts' => AccountsService::list(),
+            'articles' => ['IN' => CategoriesService::options('IN'), 'OUT' => CategoriesService::options('OUT')],
+            'filterArticles' => AccCategory::orderBy('direction')->orderBy('sort')->orderBy('name')->get(),
             'people' => AccPerson::orderByDesc('is_active')->orderBy('full_name')->get(['id', 'full_name', 'is_active']),
             'prefill' => $prefill,
             'canManage' => access()->can('accounting.manage'),
@@ -65,7 +80,7 @@ class OperationsController extends Controller
         $data = $request->validate([
             'account_id' => ['required', 'uuid'],
             'direction' => ['required', Rule::in(['IN', 'OUT'])],
-            'category' => ['required', Rule::in(Accounting::categories())],
+            'category' => ['required', $this->categoryRule()],
             'amount' => ['required', Input::MONEY, 'not_regex:/^0+(\.0+)?$/'],
             'date' => ['required', 'date_format:Y-m-d'],
             'period' => ['nullable', 'regex:'.Accounting::PERIOD_RE],
