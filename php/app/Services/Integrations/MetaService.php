@@ -48,7 +48,12 @@ final class MetaService
         }
         $json = $res->json() ?? [];
         if (! $res->successful()) {
-            $message = $json['error']['message'] ?? 'HTTP '.$res->status();
+            // Полный текст ошибки Meta: пояснение для пользователя и коды — по ним видно точную причину
+            $e = (array) ($json['error'] ?? []);
+            $message = trim(implode(' — ', array_filter([
+                $e['message'] ?? 'HTTP '.$res->status(),
+                $e['error_user_msg'] ?? $e['error_user_title'] ?? null,
+            ]))).(isset($e['code']) ? ' (code '.$e['code'].(isset($e['error_subcode']) ? '/'.$e['error_subcode'] : '').')' : '');
             self::health($message);
             throw new BusinessRule('Meta: '.$message);
         }
