@@ -2,7 +2,9 @@
 @section('title', t('meetings.title'))
 @section('content')
     @include('crm.partials.errors')
-    <x-page-header :title="t('meetings.title')" :subtitle="t('meetings.subtitle')" />
+    <x-page-header :title="t('meetings.title')" :subtitle="t('meetings.subtitle')">
+        <a href="{{ route('crm.meetings.board') }}" class="btn btn-outline"><x-icon name="calendar" /> {{ t('meetings.slots') }}</a>
+    </x-page-header>
     <div class="mb-4 flex flex-wrap gap-2">
         @foreach (['upcoming', 'done', 'all'] as $v)
             <a href="{{ route('crm.meetings.index', ['view' => $v]) }}" @class(['btn btn-sm', 'btn-primary' => $view === $v, 'btn-outline' => $view !== $v])>{{ t('meetings.'.$v) }}</a>

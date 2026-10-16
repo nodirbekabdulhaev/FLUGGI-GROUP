@@ -136,7 +136,7 @@
             </div>
             <div x-show="tab === 'tasks'" x-cloak>@include('todos.partials.record-tasks', ['column' => 'lead_id', 'recordId' => $lead->id])</div>
             <div x-show="tab === 'activity'" x-cloak>@include('crm.partials.timeline')</div>
-            <div x-show="tab === 'meetings'" x-cloak>@include('crm.partials.meetings', ['target' => ['lead_id' => $lead->id], 'canCreate' => $open])</div>
+            <div x-show="tab === 'meetings'" x-cloak>@include('crm.partials.meetings', ['target' => ['lead_id' => $lead->id], 'ownerId' => $lead->owner_id, 'canCreate' => $open])</div>
             <div x-show="tab === 'comments'" x-cloak>@include('crm.partials.comments', ['target' => ['lead_id' => $lead->id]])</div>
             <div x-show="tab === 'history'" x-cloak>@include('crm.partials.history')</div>
             <div x-show="tab === 'docs'" x-cloak class="flex flex-wrap items-center gap-3 text-sm">

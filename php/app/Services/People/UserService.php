@@ -13,6 +13,7 @@ use App\Models\Role;
 use App\Models\Team;
 use App\Models\User;
 use App\Models\UserDirection;
+use App\Services\Crm\MeetingSlots;
 use App\Services\Projects\ProjectAccess;
 use App\Support\Audit;
 use App\Support\Outbox;
@@ -107,6 +108,8 @@ final class UserService
             $u = User::create([
                 'email' => $input['email'], 'full_name' => $input['full_name'], 'phone' => $input['phone'] ?? null,
                 'password_hash' => $hash, 'role_id' => $role->id, 'team_id' => $input['team_id'] ?? null, 'locale' => $input['locale'],
+                'meeting_participant' => (bool) ($input['meeting_participant'] ?? false),
+                'meeting_slots' => isset($input['meeting_slots']) ? json_encode(MeetingSlots::settings($input['meeting_slots'])) : null,
             ]);
             $specialties = $input['role_code'] === 'EXECUTOR' ? SpecialtySet::normalize($input['specialties'] ?? []) : [];
             Employee::create(['user_id' => $u->id, 'position' => $input['position'] ?? null, 'specialty' => $specialties[0] ?? null, 'specialties' => $specialties]);
@@ -115,7 +118,10 @@ final class UserService
             }
             Audit::log('user.create', 'user', $u->id, [
                 'email' => ['old' => null, 'new' => $u->email], 'role' => ['old' => null, 'new' => $input['role_code']], 'teamId' => ['old' => null, 'new' => $u->team_id],
-            ]);
+            ] + (! empty($input['meeting_participant']) ? [
+                'meetingParticipant' => ['old' => null, 'new' => true],
+                'meetingSlots' => ['old' => null, 'new' => self::slotsText(MeetingSlots::forUser($u))],
+            ] : []));
             Outbox::publish('user.created', ['userId' => $u->id, 'roleCode' => $input['role_code']]);
 
             return $u;
@@ -132,7 +138,15 @@ final class UserService
             'email' => $u->email, 'fullName' => $u->full_name, 'phone' => $u->phone, 'locale' => $u->locale, 'teamId' => $u->team_id,
             'role' => $u->role->code, 'position' => $u->employee?->position, 'specialty' => $u->employee?->specialty, 'specialties' => SpecialtySet::sorted($u->employee?->specialtyList()),
             'directions' => $u->directions->map(fn ($d) => $d->direction?->name)->sort()->implode(', '),
+            'meetingParticipant' => (bool) $u->meeting_participant,
+            'meetingSlots' => $u->meeting_participant || $u->meeting_slots ? self::slotsText(MeetingSlots::forUser($u)) : null,
         ];
+    }
+
+    /** «1,2,3,4,5,6 09:00–19:00 / 60» — для журнала изменений. */
+    private static function slotsText(array $s): string
+    {
+        return implode(',', $s['days']).' '.$s['from'].'–'.$s['to'].' / '.$s['slot'];
     }
 
     /** @param  array<string,mixed>  $input */
@@ -167,7 +181,10 @@ final class UserService
 
         return DB::transaction(function () use ($before, $input, $newRole, $roleChanged, $oldRole, $id) {
             $old = self::snapshot($before);
-            $data = array_intersect_key($input, array_flip(['email', 'full_name', 'phone', 'locale', 'team_id']));
+            $data = array_intersect_key($input, array_flip(['email', 'full_name', 'phone', 'locale', 'team_id', 'meeting_participant']));
+            if (array_key_exists('meeting_slots', $input)) {
+                $data['meeting_slots'] = json_encode(MeetingSlots::settings($input['meeting_slots']));
+            }
             if ($roleChanged) {
                 $data['role_id'] = Role::where('code', $newRole)->value('id');
             }

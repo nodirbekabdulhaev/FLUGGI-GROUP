@@ -5,6 +5,8 @@ namespace App\Http\Controllers\Crm;
 use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
 use App\Services\Crm\MeetingService;
+use App\Services\Crm\MeetingSlots;
+use App\Support\Format;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,6 +15,13 @@ use Illuminate\View\View;
 
 class MeetingController extends CrmController
 {
+    /** Участники (сотрудники с отметкой «Участвует во встречах») и ответственный за результат. */
+    private const PARTICIPANT_RULES = [
+        'participant_ids' => ['nullable', 'array', 'max:20'],
+        'participant_ids.*' => ['uuid', 'distinct'],
+        'manager_id' => ['nullable', 'uuid'],
+    ];
+
     public function __construct(private readonly MeetingService $meetings) {}
 
     /** Предстоящие (с сегодняшнего дня по Ташкенту, кроме проведённых и отменённых), проведённые, все. */
@@ -26,7 +35,7 @@ class MeetingController extends CrmController
             'date_to' => ['nullable', 'date_format:Y-m-d'],
         ]);
         $view = $f['view'] ?? 'upcoming';
-        $q = CrmAccess::meetings()->with(['lead', 'deal', 'client', 'manager', 'rop'])
+        $q = CrmAccess::meetings()->with(['lead', 'deal', 'client', 'manager', 'rop', 'participants'])
             ->when($view === 'upcoming', fn ($q) => $q->where('starts_at', '>=', MeetingService::todayStartUtc())->whereNotIn('status', ['DONE', 'CANCELLED']))
             ->when($view === 'done', fn ($q) => $q->where('status', 'DONE'))
             ->when($f['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
@@ -48,7 +57,7 @@ class MeetingController extends CrmController
             'type' => ['required', Rule::in(Crm::MEETING_TYPES)],
             'link' => ['nullable', 'string', 'max:500'],
             'comment' => ['nullable', 'string', 'max:2000'],
-        ]);
+        ] + self::PARTICIPANT_RULES);
         $data['starts_at'] = $this->localDateTime($data['starts_at']);
         $this->meetings->create($data);
 
@@ -57,7 +66,7 @@ class MeetingController extends CrmController
 
     public function update(Request $request, string $id): RedirectResponse|JsonResponse
     {
-        $meeting = MeetingService::find($id, 'meeting.update');
+        $meeting = MeetingService::find($id);
         $data = $this->check($request, [
             'starts_at' => ['nullable', 'date'],
             'duration_min' => ['nullable', 'integer', 'between:5,600'],
@@ -65,7 +74,7 @@ class MeetingController extends CrmController
             'link' => ['nullable', 'string', 'max:500'],
             'comment' => ['nullable', 'string', 'max:2000'],
             'status' => ['nullable', Rule::in(Crm::MEETING_EDIT_STATUSES)],
-        ]);
+        ] + self::PARTICIPANT_RULES);
         // Быстрые действия (подтвердить, отменить, не состоялась) присылают только статус
         $data = array_intersect_key($data, $request->all());
         foreach (['starts_at', 'duration_min', 'type'] as $k) {
@@ -83,10 +92,43 @@ class MeetingController extends CrmController
 
     public function complete(Request $request, string $id): RedirectResponse|JsonResponse
     {
-        $meeting = MeetingService::find($id, 'meeting.update');
+        $meeting = MeetingService::find($id);
         $result = $this->check($request, ['result' => ['required', 'string', 'max:4000']], ['result.required' => t('meetings.errors.resultRequired')])['result'];
         $this->meetings->complete($meeting, $result);
 
         return $this->done($request, t('crm.common.meetingDone'));
+    }
+
+    /** Слоты участников на день: свободно / занято (кем и какой встречей) — для формы назначения и переноса. */
+    public function slots(Request $request): JsonResponse
+    {
+        $f = $this->check($request, [
+            'date' => ['required', 'date_format:Y-m-d'],
+            'users' => ['nullable', 'array', 'max:20'],
+            'users.*' => ['uuid'],
+            'exclude' => ['nullable', 'uuid'],
+        ]);
+        if (! empty($f['exclude'])) {
+            MeetingService::find($f['exclude']);
+        }
+
+        return response()->json(['date' => $f['date'], 'users' => MeetingSlots::grid($f['date'], array_values($f['users'] ?? []), $f['exclude'] ?? null)]);
+    }
+
+    /** «Слоты»: все участники встреч на выбранный день — столбцы сотрудники, строки время. */
+    public function board(Request $request): View
+    {
+        $f = $this->check($request, ['date' => ['nullable', 'date_format:Y-m-d']]);
+        $date = $f['date'] ?? Format::today()->toDateString();
+        $grid = MeetingSlots::grid($date, MeetingSlots::participants()->pluck('id')->all());
+        $times = collect($grid)->flatMap(fn ($u) => array_column($u['slots'], 'time'))->unique()->sort()->values()->all();
+        $cells = [];
+        foreach ($grid as $u) {
+            foreach ($u['slots'] as $slot) {
+                $cells[$u['id']][$slot['time']] = $slot;
+            }
+        }
+
+        return view('crm.meetings.board', ['date' => $date, 'grid' => $grid, 'times' => $times, 'cells' => $cells]);
     }
 }

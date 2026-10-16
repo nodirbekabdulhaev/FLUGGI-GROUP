@@ -49,6 +49,8 @@ Route::name('crm.')->group(function () {
 
     // Встречи
     Route::get('/sales/meetings', [MeetingController::class, 'index'])->middleware('perm:meeting.read')->name('meetings.index');
+    Route::get('/sales/meetings/slots', [MeetingController::class, 'slots'])->middleware('perm:meeting.create|meeting.update')->name('meetings.slots');
+    Route::get('/sales/meetings/board', [MeetingController::class, 'board'])->middleware('perm:meeting.read')->name('meetings.board');
     Route::post('/sales/meetings', [MeetingController::class, 'store'])->middleware('perm:meeting.create')->name('meetings.store');
     Route::put('/sales/meetings/{id}', [MeetingController::class, 'update'])->whereUuid('id')->middleware('perm:meeting.update')->name('meetings.update');
     Route::post('/sales/meetings/{id}/complete', [MeetingController::class, 'complete'])->whereUuid('id')->middleware('perm:meeting.update')->name('meetings.complete');

@@ -112,6 +112,9 @@
     "taskDeadlineChanged": "Task deadline changed",
     "noDeadline": "no deadline",
     "taskOverdue": "Overdue by {days, plural, one {# day} other {# days}}",
-    "meetingCreated": "New meeting"
+    "meetingCreated": "New meeting",
+    "meetingAdded": "You were added to a meeting",
+    "meetingRescheduled": "Meeting rescheduled",
+    "meetingCancelled": "Meeting cancelled"
   }
 }

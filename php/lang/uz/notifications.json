@@ -112,6 +112,9 @@
     "taskDeadlineChanged": "Vazifa muddati oʻzgardi",
     "noDeadline": "muddatsiz",
     "taskOverdue": "Muddati {days} kunga oʻtdi",
-    "meetingCreated": "Yangi uchrashuv"
+    "meetingCreated": "Yangi uchrashuv",
+    "meetingAdded": "Sizni uchrashuvga qoʻshishdi",
+    "meetingRescheduled": "Uchrashuv koʻchirildi",
+    "meetingCancelled": "Uchrashuv bekor qilindi"
   }
 }

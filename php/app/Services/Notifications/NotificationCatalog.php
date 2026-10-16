@@ -66,6 +66,7 @@ final class NotificationCatalog
         'project.cancelled' => 'project.completed',
         'todo.recurring' => 'todo.due',
         'todo.overdue' => 'todo.due',
+        'meeting.changed' => 'meeting.created',
     ];
 
     public static function group(string $type): string

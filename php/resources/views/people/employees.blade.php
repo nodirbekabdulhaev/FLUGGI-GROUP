@@ -64,6 +64,7 @@
                         <div class="min-w-0 text-sm sm:w-44">
                             <p>{{ t('roles.'.$u->role->code) }}</p>
                             @if ($sub)<p class="text-xs text-muted-foreground">{{ $sub }}</p>@endif
+                            @if ($u->meeting_participant)<p class="flex items-center gap-1 text-xs text-accent"><x-icon name="calendar" class="size-3" /> {{ t('employees.meetingParticipant') }}</p>@endif
                             @if ($u->directions->isNotEmpty())<p class="text-xs text-muted-foreground">{{ $u->directions->map(fn ($dd) => $dd->direction?->name)->filter()->implode(', ') }}</p>@endif
                         </div>
                         <div class="text-sm text-muted-foreground sm:w-36">{{ $u->team?->name ?? '—' }}</div>

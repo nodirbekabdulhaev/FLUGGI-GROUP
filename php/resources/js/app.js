@@ -1,5 +1,6 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
+import meetingPlanner from './meeting-planner';
 
 /**
  * Общие помощники интерфейса. Страницы — серверные (Blade), Alpine добавляет интерактивность:
@@ -185,4 +186,5 @@ if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
 
 window.Alpine = Alpine;
 Alpine.plugin(collapse);
+Alpine.data('meetingPlanner', meetingPlanner);
 Alpine.start();

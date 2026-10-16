@@ -191,7 +191,8 @@
     "lossReason": "Reason",
     "number": "No.",
     "ownerAuto": "Automatic — the manager with the lightest workload",
-    "smmIdea": "SMM video"
+    "smmIdea": "SMM video",
+    "participants": "Meeting participants"
   },
   "common": {
     "more": "More fields",

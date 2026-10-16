@@ -112,6 +112,9 @@
     "taskDeadlineChanged": "Изменён дедлайн задачи",
     "noDeadline": "без срока",
     "taskOverdue": "Просрочено {days, plural, one {# день} few {# дня} many {# дней} other {# дня}}",
-    "meetingCreated": "Новая встреча"
+    "meetingCreated": "Новая встреча",
+    "meetingAdded": "Вас добавили во встречу",
+    "meetingRescheduled": "Встреча перенесена",
+    "meetingCancelled": "Встреча отменена"
   }
 }

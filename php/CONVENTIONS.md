@@ -68,7 +68,9 @@ lead.created {leadId, ownerId, teamId, createdById, budgetUzs}
 lead.assigned {leadId, ownerId, previousOwnerId}   lead.converted {leadId, dealId, clientId}   lead.closed {leadId, status}
 deal.created {dealId, ownerId, teamId, amountUzs}  deal.stage_changed {dealId, from, to}
 deal.lost {dealId, ownerId, teamId, amountUzs, reason}   deal.won {dealId, ownerId, teamId, amountUzs}
-meeting.created {meetingId, managerId, ropId, startsAt}   meeting.completed {meetingId, managerId, ropId}
+meeting.created {meetingId, managerId, ropId, startsAt, participantIds}   meeting.completed {meetingId, managerId, ropId, participantIds}
+meeting.rescheduled {meetingId, managerId, ropId, participantIds, startsAt, previousStartsAt}
+meeting.cancelled {meetingId, managerId, ropId, participantIds}   meeting.participants_added {meetingId, userIds, participantIds}
 proposal.approval_requested {proposalId, dealId, teamId}  proposal.sent {proposalId, dealId}  proposal.accepted {proposalId, dealId}
 contract.signed {contractId, dealId, managerId, teamId}
 payment.created {paymentId, dealId}

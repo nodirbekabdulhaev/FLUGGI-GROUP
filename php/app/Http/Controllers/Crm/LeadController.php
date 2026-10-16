@@ -76,7 +76,7 @@ class LeadController extends CrmController
             'activities' => TimelineService::activities($target),
             'history' => TimelineService::history($target),
             'comments' => TimelineService::comments($target),
-            'meetings' => CrmAccess::meetings()->where('lead_id', $lead->id)->with(['manager', 'rop', 'lead', 'deal'])->orderBy('starts_at')->get(),
+            'meetings' => CrmAccess::meetings()->where('lead_id', $lead->id)->with(['manager', 'rop', 'lead', 'deal', 'participants'])->orderBy('starts_at')->get(),
             'form' => $this->formOptions($lead->source_id, $lead->service_id, $lead->smm_idea_id),
             'owners' => Crm::assignableUsers(),
             'reasons' => Crm::options(LossReason::class),

@@ -81,8 +81,17 @@
     "teamHead": "Xodim boʻlimga rahbarlik qiladi. Avval boʻlimga boshqa rahbar tayinlang",
     "transferActive": "Faol xodimni tanlang",
     "transferNotFound": "Ish topshiriladigan xodim topilmadi",
-    "transferOther": "Boshqa xodimni tanlang"
+    "transferOther": "Boshqa xodimni tanlang",
+    "meetingDays": "Kamida bitta uchrashuv kunini tanlang",
+    "meetingRange": "«Gacha» vaqti «Dan»dan kamida bitta slotga keyin boʻlishi kerak"
   },
   "specialties": "Mutaxassisliklar",
-  "specialtiesHint": "Bir nechtasini tanlash mumkin: loyihaga qoʻshilganda ular uning lavozimlari boʻladi."
+  "specialtiesHint": "Bir nechtasini tanlash mumkin: loyihaga qoʻshilganda ular uning lavozimlari boʻladi.",
+  "meetingParticipant": "Uchrashuvlarda qatnashadi",
+  "meetingParticipantHint": "Xodimni uchrashuvlarga qoʻshish mumkin; uning oʻz slotlar jadvali bor.",
+  "meetingDays": "Uchrashuv kunlari",
+  "meetingFrom": "Dan",
+  "meetingTo": "Gacha",
+  "meetingSlot": "Slot davomiyligi",
+  "meetingTimeHint": "Toshkent vaqti."
 }

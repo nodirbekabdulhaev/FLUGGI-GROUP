@@ -38,6 +38,9 @@ final class NotificationEvents
         Outbox::on('task.deadline_changed', [self::class, 'taskDeadlineChanged']);
         Outbox::on('task.overdue', [self::class, 'taskOverdue']);
         Outbox::on('meeting.created', [self::class, 'meetingCreated']);
+        Outbox::on('meeting.participants_added', [self::class, 'meetingParticipantsAdded']);
+        Outbox::on('meeting.rescheduled', [self::class, 'meetingRescheduled']);
+        Outbox::on('meeting.cancelled', [self::class, 'meetingCancelled']);
     }
 
     /** 9 000 000 UZS — округление до сума. */
@@ -305,21 +308,56 @@ final class NotificationEvents
         );
     }
 
-    /** Шаг 6 сценария приёмки: РОП получает уведомление о новой встрече. */
-    public static function meetingCreated(array $e, array $meta): void
+    private static function meeting(array $e): ?Meeting
     {
-        $m = Meeting::with(['lead' => fn ($q) => $q->withTrashed(), 'deal' => fn ($q) => $q->withTrashed(), 'manager' => fn ($q) => $q->withTrashed()])
+        return Meeting::with(['lead' => fn ($q) => $q->withTrashed(), 'deal' => fn ($q) => $q->withTrashed(), 'manager' => fn ($q) => $q->withTrashed()])
             ->find($e['meetingId'] ?? null);
-        if (! $m) {
-            return;
-        }
+    }
+
+    /** Участники встречи из события (в старых событиях — только ответственный менеджер). */
+    private static function participants(array $e): array
+    {
+        return array_values(array_filter((array) ($e['participantIds'] ?? [$e['managerId'] ?? null])));
+    }
+
+    private static function meetingNotify(Meeting $m, array $to, string $type, string $titleKey, ?string $actorId): void
+    {
         $subject = $m->lead?->title ?? $m->deal?->title ?? '';
         Notifier::notify(
-            [$e['ropId'] ?? null, $e['managerId'] ?? null],
-            'meeting.created',
-            fn () => [t('notifications.events.meetingCreated'), dt($m->starts_at).' · '.$subject.' · '.($m->manager?->full_name ?? '')],
+            $to,
+            $type,
+            fn () => [t($titleKey), dt($m->starts_at).' · '.$subject.' · '.($m->manager?->full_name ?? '')],
             $m->lead_id ? '/sales/leads/'.$m->lead_id : '/sales/deals/'.$m->deal_id,
-            $meta['actorId'],
+            $actorId,
         );
+    }
+
+    /** Шаг 6 сценария приёмки: РОП и все участники получают уведомление о новой встрече. */
+    public static function meetingCreated(array $e, array $meta): void
+    {
+        if ($m = self::meeting($e)) {
+            self::meetingNotify($m, [$e['ropId'] ?? null, ...self::participants($e)], 'meeting.created', 'notifications.events.meetingCreated', $meta['actorId']);
+        }
+    }
+
+    public static function meetingParticipantsAdded(array $e, array $meta): void
+    {
+        if ($m = self::meeting($e)) {
+            self::meetingNotify($m, (array) ($e['userIds'] ?? []), 'meeting.created', 'notifications.events.meetingAdded', $meta['actorId']);
+        }
+    }
+
+    public static function meetingRescheduled(array $e, array $meta): void
+    {
+        if ($m = self::meeting($e)) {
+            self::meetingNotify($m, [$e['ropId'] ?? null, ...self::participants($e)], 'meeting.changed', 'notifications.events.meetingRescheduled', $meta['actorId']);
+        }
+    }
+
+    public static function meetingCancelled(array $e, array $meta): void
+    {
+        if ($m = self::meeting($e)) {
+            self::meetingNotify($m, [$e['ropId'] ?? null, ...self::participants($e)], 'meeting.changed', 'notifications.events.meetingCancelled', $meta['actorId']);
+        }
     }
 }

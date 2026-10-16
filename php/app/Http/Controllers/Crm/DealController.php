@@ -81,7 +81,7 @@ class DealController extends CrmController
             'activities' => TimelineService::activities($target),
             'history' => TimelineService::history($target),
             'comments' => TimelineService::comments($target),
-            'meetings' => CrmAccess::meetings()->where('deal_id', $deal->id)->with(['manager', 'rop', 'lead', 'deal'])->orderBy('starts_at')->get(),
+            'meetings' => CrmAccess::meetings()->where('deal_id', $deal->id)->with(['manager', 'rop', 'lead', 'deal', 'participants'])->orderBy('starts_at')->get(),
             'money' => access()->can('payment.read') ? DealService::money($deal) : null,
             'serviceOptions' => Crm::options(Service::class, $deal->service_id),
             'smmVideos' => SmmIdeaService::publishedOptions($deal->smm_idea_id),

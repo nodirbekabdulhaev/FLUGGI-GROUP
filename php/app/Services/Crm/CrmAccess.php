@@ -35,13 +35,23 @@ final class CrmAccess
         return access()->restrictOwned(Client::query(), $code);
     }
 
+    /**
+     * Встречи. OWN — где сотрудник ответственный (manager_id), участник, создатель или ведёт лид/сделку;
+     * TEAM — встречи отделов, свои и те, где он РОП или участник.
+     */
     public static function meetings(string $code = 'meeting.read'): Builder
     {
+        $participant = fn ($q, $uid) => $q->orWhereExists(fn ($e) => $e->selectRaw('1')->from('meeting_participants as mp')
+            ->whereColumn('mp.meeting_id', 'meetings.id')->where('mp.user_id', $uid));
+
         return access()->restrict(
             Meeting::query(),
             $code,
-            fn ($q, $uid) => $q->where('manager_id', $uid),
-            fn ($q, $teamIds, $uid) => $q->whereIn('team_id', $teamIds ?: ['-'])->orWhere('manager_id', $uid)->orWhere('rop_id', $uid),
+            fn ($q, $uid) => $participant($q->where('meetings.manager_id', $uid)->orWhere('meetings.created_by_id', $uid)
+                ->orWhereIn('meetings.lead_id', DB::table('leads')->where('owner_id', $uid)->select('id'))
+                ->orWhereIn('meetings.deal_id', DB::table('deals')->where('owner_id', $uid)->select('id')), $uid),
+            fn ($q, $teamIds, $uid) => $participant($q->whereIn('meetings.team_id', $teamIds ?: ['-'])
+                ->orWhere('meetings.manager_id', $uid)->orWhere('meetings.rop_id', $uid)->orWhere('meetings.created_by_id', $uid), $uid),
         );
     }
 

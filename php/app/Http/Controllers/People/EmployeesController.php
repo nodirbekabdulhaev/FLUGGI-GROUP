@@ -7,12 +7,14 @@ use App\Http\Controllers\Controller;
 use App\Models\Direction;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Crm\MeetingSlots;
 use App\Services\People\UserService;
 use App\Services\Projects\ProjectAccess;
 use App\Support\Lang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\ValidationException;
 use Illuminate\View\View;
 
 /** Команда: сотрудники, менеджеры, РОП, исполнители (ТЗ §4); управление учётными записями. */
@@ -73,7 +75,14 @@ class EmployeesController extends Controller
             'locale' => ['nullable', Rule::in(Lang::LOCALES)],
             'direction_ids' => ['nullable', 'array', 'max:20'],
             'direction_ids.*' => ['uuid'],
+            'meeting_participant' => ['nullable', 'boolean'],
+            'meeting_days' => ['nullable', 'array', 'max:7'],
+            'meeting_days.*' => ['integer', 'between:1,7', 'distinct'],
+            'meeting_from' => ['nullable', 'date_format:H:i'],
+            'meeting_to' => ['nullable', 'date_format:H:i'],
+            'meeting_slot' => ['nullable', 'integer', Rule::in(MeetingSlots::LENGTHS)],
         ]);
+        $this->meetingInput($request, $data);
         $role = $data['role_code'] ?? null;
         $data['phone'] = ($data['phone'] ?? null) ?: null;
         $data['position'] = ($data['position'] ?? null) ?: null;
@@ -94,6 +103,44 @@ class EmployeesController extends Controller
         }
 
         return $data;
+    }
+
+    /**
+     * «Участвует во встречах» и сетка слотов (дни, часы по Ташкенту, длина слота).
+     * Поля не переданы — без изменений; при включённой отметке нужны день и интервал не короче слота.
+     */
+    private function meetingInput(Request $request, array &$data): void
+    {
+        $fields = ['meeting_days', 'meeting_from', 'meeting_to', 'meeting_slot'];
+        $flag = $request->has('meeting_participant') ? (bool) ($data['meeting_participant'] ?? false) : null;
+        $slotsSent = $request->hasAny($fields);
+        foreach ($fields as $f) {
+            unset($data[$f]);
+        }
+        unset($data['meeting_participant']);
+        if ($flag !== null) {
+            $data['meeting_participant'] = $flag;
+        }
+        if (! $slotsSent) {
+            return;
+        }
+        $settings = MeetingSlots::settings([
+            'days' => array_map('intval', (array) $request->input('meeting_days', [])),
+            'from' => $request->input('meeting_from') ?: MeetingSlots::DEFAULTS['from'],
+            'to' => $request->input('meeting_to') ?: MeetingSlots::DEFAULTS['to'],
+            'slot' => (int) ($request->input('meeting_slot') ?: MeetingSlots::DEFAULTS['slot']),
+        ]);
+        if ($flag) {
+            if (! $settings['days']) {
+                throw ValidationException::withMessages(['meeting_days' => t('employees.errors.meetingDays')]);
+            }
+            [$fh, $fm] = array_map('intval', explode(':', $settings['from']));
+            [$th, $tm] = array_map('intval', explode(':', $settings['to']));
+            if ($th * 60 + $tm - ($fh * 60 + $fm) < $settings['slot']) {
+                throw ValidationException::withMessages(['meeting_to' => t('employees.errors.meetingRange')]);
+            }
+        }
+        $data['meeting_slots'] = $settings;
     }
 
     public function store(Request $request): RedirectResponse

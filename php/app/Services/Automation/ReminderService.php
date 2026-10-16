@@ -73,13 +73,15 @@ final class ReminderService
             }
         };
         $subject = fn (Meeting $m) => $m->lead?->title ?? $m->deal?->title ?? '';
+        // Напоминания о встрече — всем участникам (в прежних встречах участник — ответственный)
+        $people = fn (Meeting $m) => $m->participantIds() ?: [$m->manager_id];
 
         // Встреча завтра — один раз по каждой встрече
         $tomorrow = Tasks::companyDayStart(Tasks::addDays($today, 1));
         $rows = Meeting::with(['lead', 'deal'])->whereIn('status', ['SCHEDULED', 'CONFIRMED'])
             ->where('starts_at', '>=', self::ts($tomorrow))->where('starts_at', '<', self::ts($tomorrow->addDay()))->get();
         foreach ($rows as $m) {
-            $add('meeting.tomorrow', self::sendOnce('meeting.tomorrow', $m->id, [$m->manager_id], 'meeting.reminder',
+            $add('meeting.tomorrow', self::sendOnce('meeting.tomorrow', $m->id, $people($m), 'meeting.reminder',
                 fn () => [t('automation.remind.meetingTomorrow', ['time' => People::tashkentTime($m->starts_at)]), $subject($m)], self::meetingLink($m)));
         }
 
@@ -88,7 +90,7 @@ final class ReminderService
             ->where('starts_at', '>', self::ts($now))->where('starts_at', '<=', self::ts($now->addMinutes(30)))->get();
         foreach ($rows as $m) {
             $min = max(1, (int) round(($m->starts_at->getTimestamp() - $now->getTimestamp()) / 60));
-            $add('meeting.soon', self::sendOnce('meeting.soon', $m->id, [$m->manager_id, $m->rop_id], 'meeting.reminder',
+            $add('meeting.soon', self::sendOnce('meeting.soon', $m->id, [...$people($m), $m->rop_id], 'meeting.reminder',
                 fn () => [t('automation.remind.meetingSoon', ['min' => $min]), People::tashkentTime($m->starts_at).' · '.$subject($m)], self::meetingLink($m)));
         }
 

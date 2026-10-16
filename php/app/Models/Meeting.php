@@ -3,7 +3,9 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 /**
  * Встреча (ТЗ §13).
@@ -42,6 +44,18 @@ class Meeting extends Model
     public function rop(): BelongsTo
     {
         return $this->belongsTo(User::class, 'rop_id');
+    }
+
+    /** Участники встречи (meeting_participants); manager_id — ответственный за результат, всегда среди них. */
+    public function participants(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'meeting_participants', 'meeting_id', 'user_id')->withTrashed()->orderBy('full_name');
+    }
+
+    /** @return list<string> */
+    public function participantIds(): array
+    {
+        return DB::table('meeting_participants')->where('meeting_id', $this->id)->pluck('user_id')->all();
     }
 
     public function team(): BelongsTo

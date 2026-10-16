@@ -191,7 +191,8 @@
     "lossReason": "Причина",
     "number": "№",
     "ownerAuto": "Автоматически — менеджер с наименьшей нагрузкой",
-    "smmIdea": "Видео SMM"
+    "smmIdea": "Видео SMM",
+    "participants": "Участники встречи"
   },
   "common": {
     "more": "Ещё поля",

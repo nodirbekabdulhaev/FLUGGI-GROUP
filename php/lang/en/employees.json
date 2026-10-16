@@ -81,8 +81,17 @@
     "teamHead": "This employee leads a team. Assign another Sales head (ROP) to the team first",
     "transferActive": "Select an active employee",
     "transferNotFound": "Employee to transfer to not found",
-    "transferOther": "Select a different employee"
+    "transferOther": "Select a different employee",
+    "meetingDays": "Choose at least one meeting day",
+    "meetingRange": "«To» must be at least one slot later than «From»"
   },
   "specialties": "Specialties",
-  "specialtiesHint": "You can pick several: when added to a project they become the member’s positions."
+  "specialtiesHint": "You can pick several: when added to a project they become the member’s positions.",
+  "meetingParticipant": "Takes part in meetings",
+  "meetingParticipantHint": "The employee can be added to meetings and has their own slot grid.",
+  "meetingDays": "Meeting days",
+  "meetingFrom": "From",
+  "meetingTo": "To",
+  "meetingSlot": "Slot length",
+  "meetingTimeHint": "Tashkent time."
 }
