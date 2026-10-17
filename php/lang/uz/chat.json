@@ -1,0 +1,18 @@
+{
+  "title": "Chatlar",
+  "open": "Chatni ochish",
+  "openUnread": "Chatni ochish, oʻqilmagan: {count}",
+  "close": "Yopish",
+  "back": "Orqaga",
+  "newChat": "Yangi chat",
+  "searchPeople": "Xodimni topish",
+  "empty": "Hozircha yozishmalar yoʻq. Hamkasbingizga yozish uchun «+» tugmasini bosing.",
+  "firstMessage": "Birinchi xabarni yozing",
+  "message": "Xabar",
+  "placeholder": "Xabar…",
+  "send": "Yuborish",
+  "you": "Siz",
+  "errors": {
+    "self": "Oʻzingizga yozib boʻlmaydi"
+  }
+}

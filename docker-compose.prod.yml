@@ -1,0 +1,91 @@
+# Production на VPS (Beget VPS, Oracle Cloud, Hetzner). Запуск: docker compose -f docker-compose.prod.yml up -d --build
+# Переменные — из .env рядом с этим файлом (см. ENVIRONMENT.md).
+services:
+  mysql:
+    image: mysql:8.0
+    restart: unless-stopped
+    command:
+      [
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci',
+        '--log-bin-trust-function-creators=1',
+      ]
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?MYSQL_ROOT_PASSWORD обязателен}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-fluggi}
+      MYSQL_USER: ${MYSQL_USER:-fluggi}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD обязателен}
+      TZ: UTC
+    volumes:
+      - mysqldata:/var/lib/mysql
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -u$$MYSQL_USER -p$$MYSQL_PASSWORD']
+      interval: 5s
+      retries: 30
+
+  migrate:
+    build: .
+    command:
+      [
+        'sh',
+        '-c',
+        'cd packages/db && node_modules/.bin/prisma migrate deploy && (node_modules/.bin/prisma db execute --schema prisma/schema.prisma --file prisma/protect.sql || echo "⚠ триггеры защиты не созданы") && node_modules/.bin/tsx prisma/seed.ts',
+      ]
+    env_file: .env
+    environment:
+      SEED_DEMO: ${SEED_DEMO:-false}
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: 'no'
+
+  api:
+    build: .
+    command: ['node', 'apps/api/dist/main.js']
+    env_file: .env
+    environment:
+      OUTBOX_IN_API: 'false'
+      STORAGE_LOCAL_DIR: /data/storage
+    volumes:
+      - storage:/data/storage
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - '127.0.0.1:4000:4000'
+    healthcheck:
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "fetch('http://localhost:4000/api/v1/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 15s
+      retries: 5
+
+  worker:
+    build: .
+    command: ['node', 'apps/api/dist/worker.js']
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  web:
+    build: .
+    command: ['sh', '-c', 'cd apps/web && node_modules/.bin/next start -p 3000']
+    env_file: .env
+    environment:
+      API_INTERNAL_URL: http://api:4000
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - '127.0.0.1:3000:3000'
+
+volumes:
+  mysqldata:
+  storage:

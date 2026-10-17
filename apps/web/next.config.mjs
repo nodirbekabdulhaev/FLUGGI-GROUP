@@ -1,0 +1,61 @@
+// Обычный JavaScript, а не TypeScript, и плагин next-intl только при сборке: и чтение
+// next.config.ts, и плагин (он подключает @swc/core) требуют нативных модулей, которые не
+// запускаются на старых серверах (Ubuntu 18.04 у Beget). Для работы сайта они не нужны.
+
+const apiUrl = process.env.API_INTERNAL_URL ?? 'http://localhost:4000';
+const isDev = process.env.NODE_ENV !== 'production';
+
+const csp = [
+  "default-src 'self'",
+  `script-src 'self' 'unsafe-inline'${isDev ? " 'unsafe-eval'" : ''}`,
+  "style-src 'self' 'unsafe-inline'",
+  "img-src 'self' data: blob:",
+  "font-src 'self' data:",
+  "connect-src 'self'",
+  "frame-ancestors 'none'",
+  "base-uri 'self'",
+  "form-action 'self'",
+].join('; ');
+
+// Форма заявки /f/* встраивается на сайт компании (iframe) — только её разрешено показывать в рамке
+const formCsp = csp.replace("frame-ancestors 'none'", 'frame-ancestors *');
+
+/** @type {import('next').NextConfig} */
+const config = {
+  poweredByHeader: false,
+  reactStrictMode: true,
+  // Браузер ходит только на свой домен: /api/* проксируется в NestJS (cookie first-party, без CORS).
+  async rewrites() {
+    return [{ source: '/api/:path*', destination: `${apiUrl}/api/:path*` }];
+  },
+  async headers() {
+    return [
+      {
+        source: '/f/:path*',
+        headers: [
+          { key: 'Content-Security-Policy', value: formCsp },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+        ],
+      },
+      {
+        source: '/((?!f/).*)',
+        headers: [
+          { key: 'Content-Security-Policy', value: csp },
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          { key: 'X-Frame-Options', value: 'DENY' },
+          { key: 'Permissions-Policy', value: 'camera=(), microphone=(), geolocation=()' },
+        ],
+      },
+    ];
+  },
+};
+
+/** @param {string} phase */
+export default async function nextConfig(phase) {
+  if (phase === 'phase-production-server') return config;
+  // Плагин добавляет только настройку сборки (webpack alias для next-intl/config)
+  const { default: createNextIntlPlugin } = await import('next-intl/plugin');
+  return createNextIntlPlugin('./src/i18n/request.ts')(config);
+}
