@@ -36,6 +36,9 @@
             @if ($open && can('deal.create') && $canEdit)
                 <button type="button" class="btn btn-accent btn-sm" x-data x-on:click="$dispatch('open-modal', 'lead-convert')"><x-icon name="check" /> {{ t('leads.convert') }}</button>
             @endif
+            @if ($open && $canEdit)
+                <button type="button" class="btn btn-danger btn-sm" x-data x-on:click="$dispatch('open-modal', 'close-record')"><x-icon name="x" /> {{ t('leads.disqualify') }}</button>
+            @endif
             @if ($lead->deal_id)<a href="{{ route('crm.deals.show', $lead->deal_id) }}" class="btn btn-primary btn-sm">{{ t('leads.openDeal') }}</a>@endif
             @if ($canEdit)
                 <div class="relative" x-data="{ open: false }" x-on:click.outside="open = false">
@@ -45,9 +48,7 @@
                         @if (can('lead.assign') && $open && $owners)
                             <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted" x-on:click="open = false; $dispatch('open-modal', 'assign-record')"><x-icon name="user" /> {{ t('crm.common.assign') }}</button>
                         @endif
-                        @if ($open)
-                            <button type="button" class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm text-danger hover:bg-muted" x-on:click="open = false; $dispatch('open-modal', 'close-record')"><x-icon name="x" /> {{ t('crm.common.close') }}</button>
-                        @elseif ($lead->status !== 'CONVERTED')
+                        @if (! $open && $lead->status !== 'CONVERTED')
                             <form method="POST" action="{{ route('crm.leads.reopen', $lead->id) }}">@csrf
                                 <button class="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-muted"><x-icon name="refresh" /> {{ t('crm.common.reopen') }}</button>
                             </form>
@@ -151,7 +152,7 @@
             @include('crm.leads.form', ['lead' => $lead])
         </x-modal>
         @if ($open)
-            @include('crm.partials.close-modal', ['action' => route('crm.leads.close', $lead->id)])
+            @include('crm.partials.close-modal', ['action' => route('crm.leads.close', $lead->id), 'title' => t('leads.disqualifyTitle'), 'submit' => t('leads.disqualify')])
         @endif
     @endif
     @if (can('lead.assign') && $open && $owners)

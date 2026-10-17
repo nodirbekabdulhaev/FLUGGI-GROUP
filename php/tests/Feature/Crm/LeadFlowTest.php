@@ -89,6 +89,8 @@ class LeadFlowTest extends CrmTestCase
     public function test_close_requires_reason_and_comment_for_other(): void
     {
         $lead = $this->newLead($this->manager);
+        // Красная кнопка «Не квалифицирован» рядом с «Квалифицировать» — только у открытого лида
+        $this->actingAsUser($this->manager)->get("/sales/leads/{$lead->id}")->assertOk()->assertSee(t('leads.disqualify'))->assertSee(t('leads.disqualifyTitle'));
         $this->actingAsUser($this->manager)->post("/sales/leads/{$lead->id}/close", ['status' => 'LOST'])->assertSessionHasErrors('loss_reason_id');
         $this->actingAsUser($this->manager)->post("/sales/leads/{$lead->id}/close", ['status' => 'LOST', 'loss_reason_id' => $this->lossReason('OTHER')])
             ->assertSessionHasErrors('comment');
@@ -98,6 +100,7 @@ class LeadFlowTest extends CrmTestCase
         $lead->refresh();
         $this->assertSame('LOST', $lead->status);
         $this->assertSame('Слишком дорого', $lead->lossReason->name_ru);
+        $this->actingAsUser($this->manager)->get("/sales/leads/{$lead->id}")->assertOk()->assertDontSee(t('leads.disqualifyTitle'));
         $this->assertTrue(OutboxEvent::where('type', 'lead.closed')->exists());
         // Повторно закрыть нельзя; вернуть в работу — можно
         $this->actingAsUser($this->manager)->post("/sales/leads/{$lead->id}/close", ['status' => 'PAUSED'])->assertSessionHas('error');

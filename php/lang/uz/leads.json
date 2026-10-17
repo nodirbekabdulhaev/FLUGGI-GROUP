@@ -10,6 +10,8 @@
   "createHint": "Kontakt, manba va xizmat kifoya — qolganini keyinroq toʻldirish mumkin.",
   "editTitle": "Lidni tahrirlash",
   "convert": "Kvalifikatsiya qilish",
+  "disqualify": "Kvalifikatsiyadan o'tmadi",
+  "disqualifyTitle": "Lid kvalifikatsiyadan o'tmadi — sababini ko'rsating",
   "convertTitle": "Lid kvalifikatsiyasi",
   "convertHint": "Mijoz va bitim yaratiladi. Lid «Bitim» holatiga oʻtadi.",
   "existingClient": "Mavjud mijoz",

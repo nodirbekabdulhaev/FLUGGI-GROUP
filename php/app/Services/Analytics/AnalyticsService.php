@@ -200,12 +200,27 @@ final class AnalyticsService
         return $out;
     }
 
+    /** Неуспешная квалификация лида: «Потеряно», «Отказ», «Не отвечает» (причина — в аналитике потерь). */
+    public const LEAD_UNQUALIFIED = ['LOST', 'REJECTED', 'NO_RESPONSE'];
+
+    /** Итог квалификации лидов за период: квалифицировано / не квалифицировано / конверсия %. */
+    public function qualification(CarbonImmutable $from, CarbonImmutable $to): array
+    {
+        $a = Period::ts($from);
+        $b = Period::ts($to);
+        $ok = $this->leads()->where('leads.status', 'CONVERTED')->where('converted_at', '>=', $a)->where('converted_at', '<', $b)->count();
+        $bad = $this->leads()->whereIn('leads.status', self::LEAD_UNQUALIFIED)->where('closed_at', '>=', $a)->where('closed_at', '<', $b)->count();
+        $total = $ok + $bad;
+
+        return ['qualified' => $ok, 'unqualified' => $bad, 'rate' => $total ? round($ok * 100 / $total, 1) : null];
+    }
+
     /** Причины потерь (ТЗ §39): лиды и сделки, закрытые в периоде. */
     public function losses(CarbonImmutable $from, CarbonImmutable $to): array
     {
         $a = Period::ts($from);
         $b = Period::ts($to);
-        $leads = $this->leads()->whereIn('leads.status', ['LOST', 'REJECTED'])->where('closed_at', '>=', $a)->where('closed_at', '<', $b)
+        $leads = $this->leads()->whereIn('leads.status', self::LEAD_UNQUALIFIED)->where('closed_at', '>=', $a)->where('closed_at', '<', $b)
             ->groupBy('loss_reason_id')->selectRaw('loss_reason_id, COUNT(*) AS n')->pluck('n', 'loss_reason_id');
         $deals = $this->deals()->whereIn('deals.status', ['LOST', 'REJECTED'])->where('closed_at', '>=', $a)->where('closed_at', '<', $b)
             ->groupBy('loss_reason_id')->selectRaw('loss_reason_id, COUNT(*) AS n, SUM(amount_uzs) AS s')->get();

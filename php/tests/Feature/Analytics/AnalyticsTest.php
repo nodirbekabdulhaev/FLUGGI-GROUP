@@ -72,6 +72,10 @@ class AnalyticsTest extends TestCase
 
         $losses = $this->svc($this->ceo)->losses($from, $to);
         $this->assertSame([['id' => $reason->id, 'name' => $reason->name_ru, 'leads' => 1, 'deals' => 0, 'amount' => '0.00']], $losses);
+        $q = $this->svc($this->ceo)->qualification($from, $to);
+        $this->assertSame(1, $q['unqualified']);
+        $this->assertEquals(round($q['qualified'] * 100 / ($q['qualified'] + 1), 1), $q['rate']);
+        $this->actingAsUser($this->ceo)->get('/analytics?tab=losses')->assertOk()->assertSee(t('analytics.leadsUnqualified'));
 
         // Менеджер — только своё, РОП — свой отдел; фильтр по сотруднику не расширяет область
         $this->assertSame(3, $this->svc($this->manager)->sales($from, $to)['totals']['leads']);

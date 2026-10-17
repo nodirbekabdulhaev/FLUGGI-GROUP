@@ -10,6 +10,8 @@
   "createHint": "A contact, source and service are enough — the rest can be filled in later.",
   "editTitle": "Edit lead",
   "convert": "Qualify",
+  "disqualify": "Not qualified",
+  "disqualifyTitle": "Lead not qualified — specify the reason",
   "convertTitle": "Lead qualification",
   "convertHint": "A client and a deal will be created. The lead status will change to “Deal”.",
   "existingClient": "Existing client",

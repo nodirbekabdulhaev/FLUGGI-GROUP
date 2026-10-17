@@ -1,6 +1,6 @@
 {{-- Закрытие лида/сделки (ТЗ §7, §39): $action, $reasons --}}
 @php $reasonsMeta = \App\Models\LossReason::where('is_active', true)->pluck('requires_comment', 'id'); @endphp
-<x-modal name="close-record" :title="t('crm.common.closeTitle')" :open="$errors->any() && old('_form') === 'close'">
+<x-modal name="close-record" :title="$title ?? t('crm.common.closeTitle')" :open="$errors->any() && old('_form') === 'close'">
     <form method="POST" action="{{ $action }}" class="grid gap-4"
           x-data="{ status: @js(old('status', 'LOST')), reason: @js(old('loss_reason_id', '')), comment: @js(old('comment', '')), meta: @js($reasonsMeta) }">
         @csrf <input type="hidden" name="_form" value="close">
@@ -26,7 +26,7 @@
         </div>
         <div class="flex justify-end gap-2">
             <button type="button" class="btn btn-outline" x-on:click="$dispatch('close-modal', 'close-record')">{{ t('common.cancel') }}</button>
-            <button type="submit" class="btn btn-danger" :disabled="(['LOST','REJECTED'].includes(status) && !reason) || (meta[reason] && !comment.trim())">{{ t('crm.common.close') }}</button>
+            <button type="submit" class="btn btn-danger" :disabled="(['LOST','REJECTED'].includes(status) && !reason) || (meta[reason] && !comment.trim())">{{ $submit ?? t('crm.common.close') }}</button>
         </div>
     </form>
 </x-modal>

@@ -129,6 +129,11 @@
             </div>
         @endif
     @elseif ($tab === 'losses')
+        <div class="mb-4 grid gap-4 sm:grid-cols-3">
+            <x-stat :label="t('analytics.leadsQualified')" :value="(string) $qualification['qualified']" />
+            <x-stat :label="t('analytics.leadsUnqualified')" :value="(string) $qualification['unqualified']" />
+            <x-stat :label="t('analytics.qualificationRate')" :value="$qualification['rate'] === null ? '—' : $qualification['rate'].'%'" />
+        </div>
         <x-card :title="t('analytics.lossesTitle')" :subtitle="t('analytics.lossesText')">
             @if (! $data)
                 <x-empty :title="t('analytics.noLosses')" />

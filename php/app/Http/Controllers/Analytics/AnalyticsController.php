@@ -43,7 +43,9 @@ class AnalyticsController extends Controller
             ),
         };
 
-        return view('analytics.index', compact('tab', 'period', 'from', 'to', 'users', 'userId', 'data') + [
+        $qualification = $tab === 'losses' ? $svc->qualification($from, $to) : null;
+
+        return view('analytics.index', compact('tab', 'period', 'from', 'to', 'users', 'userId', 'data', 'qualification') + [
             'fromInput' => $request->query('from'), 'toInput' => $request->query('to'),
         ]);
     }
