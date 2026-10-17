@@ -1,6 +1,7 @@
 <?php
 
 use App\Auth\Access;
+use App\Support\Brand;
 use App\Support\Format;
 use App\Support\Lang;
 
@@ -9,6 +10,14 @@ if (! function_exists('t')) {
     function t(string $key, array $params = []): string
     {
         return Lang::get($key, $params);
+    }
+}
+
+if (! function_exists('brand')) {
+    /** Бренд интерфейса: brand()->name(), brand()->logo(), brand()->icon('favicon-32'). */
+    function brand(): Brand
+    {
+        return new Brand;
     }
 }
 

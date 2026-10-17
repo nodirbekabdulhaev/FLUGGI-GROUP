@@ -24,7 +24,7 @@
   "openInCrm": "CRM da ochish",
   "settingsSaved": "Bildirishnoma sozlamalari saqlandi",
   "testTitle": "Aloqani tekshirish",
-  "testBody": "Fluggi CRM bildirishnomalari Telegram ga kelmoqda ✅",
+  "testBody": "{app} bildirishnomalari Telegram ga kelmoqda ✅",
   "errors": {
     "notConfigured": "Telegram-bot sozlanmagan: CEO serverda TELEGRAM_BOT_TOKEN ni koʻrsatishi kerak",
     "noUsername": "Bot nomini olib boʻlmadi. TELEGRAM_BOT_USERNAME ni koʻrsating",
@@ -46,10 +46,10 @@
   },
   "botReplies": {
     "invalidCode": "Kod yaroqsiz yoki eskirgan. CRM profilida yangisini oling: «Telegram ni ulash».",
-    "linked": "✅ Telegram Fluggi CRM ga ulandi.\n<b>{name}</b>, bildirishnomalar shu yerga keladi. Ularni CRM profilida sozlash mumkin.\n\nOʻchirish: /stop",
+    "linked": "✅ Telegram {app} ga ulandi.\n<b>{name}</b>, bildirishnomalar shu yerga keladi. Ularni CRM profilida sozlash mumkin.\n\nOʻchirish: /stop",
     "stopped": "Bildirishnomalar oʻchirildi. Qayta ulash CRM profilida mumkin.",
     "notLinked": "Bu chat CRM ga ulanmagan.",
     "whoami": "Siz <b>{name}</b> sifatida ulangansiz. Bildirishnomalar avtomatik keladi.\nOʻchirish: /stop",
-    "hello": "Bu Fluggi CRM boti. Ulanish uchun CRM da «Profil → Telegram ni ulash» ni oching."
+    "hello": "Bu {app} boti. Ulanish uchun CRM da «Profil → Telegram ni ulash» ni oching."
   }
 }

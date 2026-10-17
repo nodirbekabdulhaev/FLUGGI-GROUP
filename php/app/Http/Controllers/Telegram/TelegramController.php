@@ -37,7 +37,7 @@ class TelegramController extends Controller
         if (! TelegramService::status($user)['linked']) {
             throw new BusinessRule(t('telegram.errors.linkFirst'));
         }
-        Notifier::notify([$user->id], 'test', fn () => [t('telegram.testTitle'), t('telegram.testBody')], '/profile', null, inApp: false);
+        Notifier::notify([$user->id], 'test', fn () => [t('telegram.testTitle'), t('telegram.testBody', ['app' => brand()->name()])], '/profile', null, inApp: false);
 
         return $request->expectsJson() ? response()->json(['queued' => true]) : back()->with('ok', t('telegram.testSent'));
     }

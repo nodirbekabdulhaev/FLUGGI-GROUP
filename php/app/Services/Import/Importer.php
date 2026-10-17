@@ -309,7 +309,7 @@ abstract class Importer
     public function template(): string
     {
         $book = new Spreadsheet;
-        $book->getProperties()->setCreator('Fluggi CRM');
+        $book->getProperties()->setCreator(brand()->name());
         $ws = $book->getActiveSheet();
         $ws->setTitle(self::sheetTitle(t('import.entities.'.static::entity())));
         $columns = $this->columns();

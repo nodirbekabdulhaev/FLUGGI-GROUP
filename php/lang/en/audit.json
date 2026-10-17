@@ -152,7 +152,9 @@
     "rates": "Piece rates updated"
   },
   "settings": {
-    "finance": "Finance settings updated"
+    "finance": "Finance settings updated",
+    "branding": "Brand changed (name, logo)",
+    "branding_reset": "Brand reset to default"
   },
   "kpi": {
     "target": "KPI target updated"

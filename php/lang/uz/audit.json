@@ -152,7 +152,9 @@
     "rates": "Ishbay stavkalar oʻzgartirildi"
   },
   "settings": {
-    "finance": "Moliyaviy sozlamalar oʻzgartirildi"
+    "finance": "Moliyaviy sozlamalar oʻzgartirildi",
+    "branding": "Brend oʻzgartirildi (nom, logotip)",
+    "branding_reset": "Brend standartga qaytarildi"
   },
   "kpi": {
     "target": "KPI maqsadi oʻzgartirildi"

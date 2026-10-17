@@ -24,7 +24,7 @@
   "openInCrm": "Open in CRM",
   "settingsSaved": "Notification settings saved",
   "testTitle": "Connection test",
-  "testBody": "Fluggi CRM notifications are arriving in Telegram ✅",
+  "testBody": "{app} notifications are arriving in Telegram ✅",
   "errors": {
     "notConfigured": "The Telegram bot is not configured: the CEO needs to set TELEGRAM_BOT_TOKEN on the server",
     "noUsername": "Couldn’t get the bot name. Set TELEGRAM_BOT_USERNAME",
@@ -46,10 +46,10 @@
   },
   "botReplies": {
     "invalidCode": "The code is invalid or expired. Get a new one in your CRM profile: “Connect Telegram”.",
-    "linked": "✅ Telegram is connected to Fluggi CRM.\n<b>{name}</b>, notifications will arrive here. You can configure them in your CRM profile.\n\nDisconnect: /stop",
+    "linked": "✅ Telegram is connected to {app}.\n<b>{name}</b>, notifications will arrive here. You can configure them in your CRM profile.\n\nDisconnect: /stop",
     "stopped": "Notifications are turned off. You can reconnect in your CRM profile.",
     "notLinked": "This chat is not connected to the CRM.",
     "whoami": "You are connected as <b>{name}</b>. Notifications arrive automatically.\nDisconnect: /stop",
-    "hello": "This is the Fluggi CRM bot. To connect, open “Profile → Connect Telegram” in the CRM."
+    "hello": "This is the {app} bot. To connect, open “Profile → Connect Telegram” in the CRM."
   }
 }

@@ -92,7 +92,7 @@ final class Sheet
     public static function xlsx(array $sheets): string
     {
         $book = new Spreadsheet;
-        $book->getProperties()->setCreator('Fluggi CRM');
+        $book->getProperties()->setCreator(brand()->name());
         foreach ($sheets as $s) {
             $s->addTo($book);
         }

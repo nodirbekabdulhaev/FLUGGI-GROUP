@@ -1,9 +1,9 @@
 @extends('layouts.guest')
-@section('title', t('auth.title'))
+@section('title', t('auth.title', ['app' => brand()->name()]))
 @section('content')
     <div class="mb-6 flex flex-col items-center text-center">
-        <img src="/icon.svg" alt="" class="mb-3 size-12">
-        <h1 class="text-xl font-semibold">{{ t('auth.title') }}</h1>
+        <img src="{{ brand()->logo() }}" alt="" class="mb-3 size-14 rounded-xl">
+        <h1 class="text-xl font-semibold">{{ t('auth.title', ['app' => brand()->name()]) }}</h1>
         <p class="mt-1 text-sm text-muted-foreground">{{ t('auth.subtitle') }}</p>
     </div>
     <form method="POST" action="{{ route('login') }}" class="card card-body space-y-4">

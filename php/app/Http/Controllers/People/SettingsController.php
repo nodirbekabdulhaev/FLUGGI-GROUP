@@ -22,6 +22,7 @@ class SettingsController extends Controller
         ['/settings/documents', 'tabDocuments', 'settings.manage', 'OWN'],
         ['/settings/integrations', 'tabIntegrations', 'settings.manage', 'OWN'],
         ['/settings/automation', 'tabAutomation', 'settings.manage', 'OWN'],
+        ['/settings/branding', 'tabBranding', 'settings.manage', 'ALL'],
         ['/settings/roles', 'tabRoles', 'role.manage', 'ALL'],
         ['/settings/audit', 'tabAudit', 'audit.read', 'ALL'],
     ];

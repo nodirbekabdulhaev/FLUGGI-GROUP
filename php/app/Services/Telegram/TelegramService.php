@@ -193,7 +193,7 @@ final class TelegramService
     /** Ответ бота на языке сотрудника (не подключён — язык системы). */
     private static function say(string $key, array $params = [], ?string $locale = null): string
     {
-        return Lang::get('telegram.botReplies.'.$key, $params, $locale ?? config('app.locale', 'ru'));
+        return Lang::get('telegram.botReplies.'.$key, $params + ['app' => TelegramClient::escape(brand()->name())], $locale ?? config('app.locale', 'ru'));
     }
 
     /** Обработка входящего сообщения боту (webhook). */

@@ -162,7 +162,7 @@ final class AccountantPackage
             ['Руководитель', $company['director'] ?: '—'],
             ['Бухгалтер', $company['accountant'] ?: '—'],
             ['Период', '01.01.'.$year.' — 31.12.'.$year],
-            ['Сформировано', Tasks::companyDate($now).' (Fluggi CRM)'],
+            ['Сформировано', Tasks::companyDate($now).' ('.brand()->name().')'],
             ['Валюта', 'UZS. Суммы в USD пересчитаны по курсу на дату операции (колонка «Курс»)'],
             [null, null],
             ['Как посчитано', null],
@@ -274,7 +274,7 @@ final class AccountantPackage
             $d(BigDecimal::of((string) ($projectExp[$p->id] ?? 0))), $p->completed_at && $p->completed_at->lt($toC) ? 'Да' : 'Нет'])->all());
 
         $book = new Spreadsheet;
-        $book->getProperties()->setCreator('Fluggi CRM');
+        $book->getProperties()->setCreator(brand()->name());
         foreach ($sheets as $i => $s) {
             // Лист «Пояснения» — без автофильтра и с жирными заголовками разделов
             $s->addTo($book, $i !== 0);

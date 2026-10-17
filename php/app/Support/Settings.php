@@ -27,6 +27,8 @@ final class Settings
             'address' => '', 'phone' => '', 'email' => '', 'website' => '', 'bank' => '', 'mfo' => '',
             'account' => '', 'oked' => '', 'vatCode' => '',
         ],
+        // Бренд интерфейса (App\Support\Brand): название, логотип (версия набора иконок в storage/app/branding), цвет
+        'branding' => ['name' => 'Fluggi CRM', 'shortName' => 'Fluggi', 'themeColor' => null, 'version' => null],
     ];
 
     /** @var array<string,array> */

@@ -36,7 +36,7 @@ class RouteAccessTest extends TestCase
             }
         }
         foreach ($public as $uri) {
-            $this->assertMatchesRegularExpression('#^(/|login|offline|up|hooks/.*|f/.*|storage/.*)$#', $uri, "Публичный маршрут: $uri");
+            $this->assertMatchesRegularExpression('#^(/|login|offline|up|hooks/.*|f/.*|storage/.*|brand/\{file\}|app-manifest)$#', $uri, "Публичный маршрут: $uri");
         }
     }
 }

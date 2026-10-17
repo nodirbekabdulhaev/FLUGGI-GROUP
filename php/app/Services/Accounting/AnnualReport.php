@@ -199,7 +199,7 @@ final class AnnualReport
         $b = self::balance($year);
         $money = fn ($v) => $v === null ? null : self::num($v);
 
-        $notes = new Sheet('Пояснения', [['header' => 'Годовой отчёт по данным бухгалтерии Fluggi CRM', 'width' => 60], ['header' => '', 'width' => 70]], array_values(array_filter([
+        $notes = new Sheet('Пояснения', [['header' => 'Годовой отчёт по данным бухгалтерии '.brand()->name(), 'width' => 60], ['header' => '', 'width' => 70]], array_values(array_filter([
             ['Организация', $company['legalName'] ?: ($company['name'] ?: '—')],
             ['ИНН (СТИР)', $company['inn'] ?: '—'],
             ['Год', (string) $year],
