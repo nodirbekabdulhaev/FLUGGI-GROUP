@@ -119,6 +119,7 @@ final class FilesService
                     abort(404);
                 }
             }
+            self::authorizeDocument($target);
         }
 
         $now = now();
@@ -192,12 +193,23 @@ final class FilesService
         return $query->orderByDesc('created_at')->get();
     }
 
+    /** Файлы договора, КП и оплаты меняет тот, кто ими управляет (РОП и выше), а не менеджер сделки. */
+    private static function authorizeDocument(array $target): void
+    {
+        foreach (['contract_id' => 'contract.update', 'proposal_id' => 'proposal.update', 'payment_id' => 'payment.create'] as $k => $perm) {
+            if (! empty($target[$k])) {
+                access()->authorize($perm);
+            }
+        }
+    }
+
     /** Удалить: файл сделки — с правом менять сделку; файл проекта — автор или руководитель проекта. */
     public static function remove(string $id): void
     {
         $f = StoredFile::findOrFail($id);
         if ($f->deal_id) {
             CrmAccess::deal($f->deal_id, 'deal.update');
+            self::authorizeDocument($f->only(['contract_id', 'proposal_id', 'payment_id']));
         } elseif ($f->project_id) {
             self::projectTarget($f->task_id ? null : $f->project_id, $f->task_id);
             if ($f->uploaded_by_id !== access()->id() && ! ProjectAccess::can($f->project_id, 'project.update')) {

@@ -51,7 +51,7 @@ class MoneyInputTest extends TestCase
     public function test_payment_and_expense_accept_spaces(): void
     {
         $deal = $this->deal($this->client($this->manager), $this->manager, '20000000');
-        $this->actingAsUser($this->manager)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '10 000 000,50', 'currency' => 'UZS', 'type' => 'PREPAYMENT', 'method' => 'BANK'])
+        $this->actingAsUser($this->rop)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '10 000 000,50', 'currency' => 'UZS', 'type' => 'PREPAYMENT', 'method' => 'BANK'])
             ->assertSessionHasNoErrors();
         $this->assertSame('10000000.50', (string) Payment::where('deal_id', $deal->id)->value('amount'));
 

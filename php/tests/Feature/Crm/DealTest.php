@@ -25,12 +25,17 @@ class DealTest extends CrmTestCase
     {
         $deal = $this->deal();
         $this->actingAsUser($this->manager)->postJson("/sales/deals/{$deal->id}/stage", ['stage' => 'PAID'])->assertStatus(422);
+        // КП и договор оформляет РОП: менеджеру — понятное сообщение, РОП — «сначала отправьте КП»
         $this->actingAsUser($this->manager)->postJson("/sales/deals/{$deal->id}/stage", ['stage' => 'PROPOSAL_SENT'])
+            ->assertStatus(422)->assertJson(['message' => t('deals.errors.proposalByRop')]);
+        $this->actingAsUser($this->rop)->postJson("/sales/deals/{$deal->id}/stage", ['stage' => 'PROPOSAL_SENT'])
             ->assertStatus(422)->assertJson(['message' => t('deals.errors.sendProposalFirst')]);
         // С отправленным КП — можно; дальше нужен договор
         DB::table('proposals')->insert($this->proposalRow($deal));
         $this->actingAsUser($this->manager)->postJson("/sales/deals/{$deal->id}/stage", ['stage' => 'NEGOTIATION'])->assertOk();
         $this->actingAsUser($this->manager)->postJson("/sales/deals/{$deal->id}/stage", ['stage' => 'CONTRACT'])
+            ->assertStatus(422)->assertJson(['message' => t('deals.errors.contractByRop')]);
+        $this->actingAsUser($this->rop)->postJson("/sales/deals/{$deal->id}/stage", ['stage' => 'CONTRACT'])
             ->assertStatus(422)->assertJson(['message' => t('deals.errors.createContractFirst')]);
         // Назад — без проверок
         $this->actingAsUser($this->manager)->post("/sales/deals/{$deal->id}/stage", ['stage' => 'NEED_DEFINED'])->assertSessionHasNoErrors();

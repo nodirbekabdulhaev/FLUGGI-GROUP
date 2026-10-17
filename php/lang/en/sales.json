@@ -94,7 +94,8 @@
     "removeItem": "Remove line item",
     "searchPlaceholder": "Name or client",
     "service": "Service",
-    "termPlaceholder": "e.g. 3 months"
+    "termPlaceholder": "e.g. 3 months",
+    "byRop": "Proposals are prepared and sent by the head of sales"
   },
   "contracts": {
     "title": "Contracts",
@@ -124,7 +125,8 @@
     "numberFrom": "{number} dated {date}",
     "searchPlaceholder": "Client or deal",
     "signedAt": "Signed",
-    "updated": "Contract updated"
+    "updated": "Contract updated",
+    "byRop": "Contracts are prepared by the head of sales"
   },
   "payments": {
     "title": "Payments",
@@ -158,7 +160,8 @@
     "updated": "Payment updated",
     "cancelConfirm": "Cancel the payment?",
     "payment": "Payment",
-    "refundOf": "for {number}"
+    "refundOf": "for {number}",
+    "byRop": "Payments are recorded and confirmed by the head of sales"
   },
   "money": {
     "contract": "Contracted",

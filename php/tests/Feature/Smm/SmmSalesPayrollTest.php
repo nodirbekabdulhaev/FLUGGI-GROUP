@@ -156,9 +156,10 @@ class SmmSalesPayrollTest extends SalesTestCase
         $this->put("/sales/deals/{$deal->id}", ['title' => 'Новое название', 'amount' => '9000000', 'currency' => 'UZS'])->assertSessionHasNoErrors();
         $this->assertSame($video->id, $deal->fresh()->smm_idea_id);
 
-        $this->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '9000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'CASH']);
+        // Оплату вносит и подтверждает РОП отдела сделки
+        $this->actingAsUser($this->rop)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '9000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'CASH']);
         $p = Payment::firstOrFail();
-        $this->actingAsUser($this->rop)->postJson("/finance/payments/{$p->id}/confirm")->assertOk();
+        $this->postJson("/finance/payments/{$p->id}/confirm")->assertOk();
         $c = Commission::where('payment_id', $p->id)->where('role', 'SMM')->firstOrFail();
         $this->assertSame($this->smm->id, $c->user_id);
         $this->assertSame('450000.00', (string) $c->amount_uzs);
@@ -197,7 +198,7 @@ class SmmSalesPayrollTest extends SalesTestCase
         $video = $this->idea();
         $deal = $this->deal();
         $deal->update(['smm_idea_id' => $video->id]);
-        $this->actingAsUser($this->manager)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '1000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'CASH']);
+        $this->actingAsUser($this->rop)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '1000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'CASH']);
         $p = Payment::firstOrFail();
         $this->actingAsUser($this->rop)->postJson("/finance/payments/{$p->id}/confirm")->assertOk();
         $this->assertSame('70000.00', (string) Commission::where('payment_id', $p->id)->where('role', 'SMM')->value('amount_uzs'));

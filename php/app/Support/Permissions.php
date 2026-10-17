@@ -108,6 +108,23 @@ final class Permissions
     /** Права только для роли CEO: удаление лидов, клиентов и проектов. Другим ролям не выдаются. */
     public const CEO_ONLY = ['lead.delete', 'client.delete', 'project.delete'];
 
+    /** Управление КП, договорами и оплатами (создание, правка, отправка, утверждение, подтверждение) — только РОП и CEO. */
+    public const ROP_UP = [
+        'proposal.create', 'proposal.update', 'proposal.send', 'proposal.approve',
+        'contract.create', 'contract.update',
+        'payment.create', 'payment.confirm', 'payment.refund',
+    ];
+
+    /** Право недоступно роли независимо от настроек (CEO_ONLY, ROP_UP). */
+    public static function forbiddenFor(string $code, ?string $roleCode): bool
+    {
+        if ($roleCode === null || $roleCode === 'CEO') {
+            return false;
+        }
+
+        return in_array($code, self::CEO_ONLY, true) || ($roleCode !== 'ROP' && in_array($code, self::ROP_UP, true));
+    }
+
     public const ROLE_NAMES = [
         'CEO' => 'CEO / Владелец',
         'ROP' => 'Руководитель отдела продаж',
@@ -153,9 +170,7 @@ final class Permissions
                 'client.read', 'client.create', 'client.update',
                 'deal.read', 'deal.create', 'deal.update', 'deal.change_stage',
                 'meeting.read', 'meeting.create', 'meeting.update',
-                'proposal.read', 'proposal.create', 'proposal.update', 'proposal.send',
-                'contract.read', 'contract.create', 'contract.update',
-                'payment.read', 'payment.create', 'project.read',
+                'proposal.read', 'contract.read', 'payment.read', 'project.read',
                 'task.read', 'task.create', 'task.update',
                 'commission.read', 'kpi.read', 'attendance.read', 'payroll.read', 'analytics.read',
             ]),
@@ -181,7 +196,7 @@ final class Permissions
     /** Есть ли право в карте прав, не ниже указанной области. */
     public static function has(array $map, string $code, string $minScope = 'OWN', ?string $roleCode = null): bool
     {
-        if ($roleCode !== null && $roleCode !== 'CEO' && in_array($code, self::CEO_ONLY, true)) {
+        if (self::forbiddenFor($code, $roleCode)) {
             return false;
         }
         $scope = $map[$code] ?? null;

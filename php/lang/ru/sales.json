@@ -94,7 +94,8 @@
     "removeItem": "Удалить позицию",
     "searchPlaceholder": "Название или клиент",
     "service": "Услуга",
-    "termPlaceholder": "напр. 3 месяца"
+    "termPlaceholder": "напр. 3 месяца",
+    "byRop": "КП оформляет и отправляет РОП отдела"
   },
   "contracts": {
     "title": "Договоры",
@@ -124,7 +125,8 @@
     "numberFrom": "{number} от {date}",
     "searchPlaceholder": "Клиент или сделка",
     "signedAt": "Подписан",
-    "updated": "Договор изменён"
+    "updated": "Договор изменён",
+    "byRop": "Договоры оформляет РОП отдела"
   },
   "payments": {
     "title": "Оплаты",
@@ -158,7 +160,8 @@
     "updated": "Оплата изменена",
     "cancelConfirm": "Отменить оплату?",
     "payment": "Оплата",
-    "refundOf": "к {number}"
+    "refundOf": "к {number}",
+    "byRop": "Оплаты вносит и подтверждает РОП отдела"
   },
   "money": {
     "contract": "По договорам",

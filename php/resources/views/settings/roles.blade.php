@@ -24,7 +24,7 @@
                     <p class="mb-2 text-xs font-medium uppercase tracking-wide text-muted-foreground">{{ \App\Support\Lang::has('permissionModules.'.$module) ? t('permissionModules.'.$module) : $module }}</p>
                     <div class="grid gap-2 sm:grid-cols-2">
                         @foreach ($codes as $code)
-                            @continue($role->code !== 'CEO' && in_array($code, \App\Support\Permissions::CEO_ONLY, true)) {{-- удаление лидов, клиентов, проектов — только CEO --}}
+                            @continue(\App\Support\Permissions::forbiddenFor($code, $role->code)) {{-- только CEO (удаление) или РОП и выше (КП, договоры, оплаты) --}}
                             <label class="flex items-center justify-between gap-3 text-sm">
                                 <span class="min-w-0 truncate" title="{{ $code }}">{{ \App\Support\Lang::has('settings.permissions.'.str_replace('.', '_', $code)) ? t('settings.permissions.'.str_replace('.', '_', $code)) : \App\Support\Permissions::ALL[$code] }}</span>
                                 <select name="permissions[{{ $code }}]" class="input h-8 w-28 shrink-0 text-xs" @disabled($locked)>

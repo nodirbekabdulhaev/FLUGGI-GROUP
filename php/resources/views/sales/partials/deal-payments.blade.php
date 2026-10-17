@@ -11,6 +11,8 @@
             <div>
                 <button type="button" class="btn btn-primary btn-sm" x-data x-on:click="$dispatch('open-modal', 'payment-new')"><x-icon name="plus" /> {{ t('sales.payments.new') }}</button>
             </div>
+        @elseif (in_array($deal->status, ['OPEN', 'WON'], true))
+            <p class="text-sm text-muted-foreground">{{ t('sales.payments.byRop') }}</p>
         @endif
         @if ($panel['items']->isEmpty())
             <x-empty icon="wallet" :title="t('sales.payments.empty')" />

@@ -9,6 +9,8 @@
             <div>
                 <button type="button" class="btn btn-primary btn-sm" x-data x-on:click="$dispatch('open-proposal', null)"><x-icon name="plus" /> {{ t('sales.proposals.new') }}</button>
             </div>
+        @elseif ($open)
+            <p class="text-sm text-muted-foreground">{{ t('sales.proposals.byRop') }}</p>
         @endif
         @if ($panel['items']->isEmpty())
             <x-empty icon="file" :title="t('sales.proposals.empty')" />

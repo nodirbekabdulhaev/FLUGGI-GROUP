@@ -26,7 +26,7 @@
                         <span class="min-w-0 flex-1 truncate">{{ $f->original_name }}</span>
                         <span class="text-xs text-muted-foreground">{{ t('sales.files.meta', ['size' => max(1, (int) round($f->size_bytes / 1024)), 'name' => $f->uploadedBy?->full_name ?? '—', 'date' => d($f->created_at)]) }}</span>
                         <a class="btn btn-ghost btn-icon" href="{{ route('sales.files.download', $f->id) }}" aria-label="{{ t('sales.files.download') }}"><x-icon name="download" /></a>
-                        @if (can('deal.update'))
+                        @if (can('deal.update') && (! $f->contract_id || can('contract.update')) && (! $f->proposal_id || can('proposal.update')) && (! $f->payment_id || can('payment.create')))
                             <form method="POST" action="{{ route('sales.files.destroy', $f->id) }}" data-confirm="{{ t('sales.files.deleteConfirm') }}">@csrf @method('DELETE')
                                 <button class="btn btn-ghost btn-icon" aria-label="{{ t('common.delete') }}"><x-icon name="trash" /></button>
                             </form>

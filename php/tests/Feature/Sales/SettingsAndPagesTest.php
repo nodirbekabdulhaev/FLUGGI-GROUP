@@ -18,7 +18,7 @@ class SettingsAndPagesTest extends SalesTestCase
     private function paidDeal(): Payment
     {
         $deal = $this->deal();
-        $this->actingAsUser($this->manager)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '9000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'CASH']);
+        $this->actingAsUser($this->rop)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '9000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'CASH']);
         $p = Payment::firstOrFail();
         $this->actingAsUser($this->rop)->postJson("/finance/payments/{$p->id}/confirm")->assertOk();
 
@@ -71,14 +71,15 @@ class SettingsAndPagesTest extends SalesTestCase
     {
         CommissionRule::create(['name' => 'Фикс', 'applies_to' => 'MANAGER', 'calc_type' => 'FIXED_PER_DEAL', 'value' => 500000, 'priority' => 100]);
         $deal = $this->deal();
-        $this->actingAsUser($this->manager);
+        $this->actingAsUser($this->rop);
         foreach (['PREPAYMENT', 'FINAL'] as $type) {
             $this->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '4500000', 'currency' => 'UZS', 'type' => $type, 'method' => 'CASH']);
         }
-        $this->actingAsUser($this->rop);
         foreach (Payment::orderBy('number')->get() as $p) {
             $this->postJson("/finance/payments/{$p->id}/confirm")->assertOk();
         }
+        // Комиссия — менеджеру сделки, хотя оплаты вносил РОП
+        $this->assertSame([$this->manager->id], Commission::where('role', 'MANAGER')->pluck('user_id')->all());
         $this->assertSame(['500000.00'], Commission::where('role', 'MANAGER')->pluck('amount_uzs')->map(fn ($v) => (string) $v)->all());
     }
 

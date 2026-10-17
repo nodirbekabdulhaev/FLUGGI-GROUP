@@ -73,10 +73,10 @@ abstract class SalesTestCase extends TestCase
         return $deal->fresh()->stage->code;
     }
 
-    /** КП → отправлено → принято → договор → подписан. */
-    protected function readyToPay(Deal $deal, string $amount = '9000000'): array
+    /** КП → отправлено → принято → договор → подписан. КП и договор оформляет РОП отдела сделки. */
+    protected function readyToPay(Deal $deal, string $amount = '9000000', ?User $by = null): array
     {
-        $this->actingAsUser($this->manager);
+        $this->actingAsUser($by ?? $this->rop);
         $this->post('/sales/proposals', ['deal_id' => $deal->id, 'title' => 'SMM', 'currency' => 'UZS',
             'items' => [['description' => 'SMM', 'quantity' => '1', 'unit_price' => $amount]]])->assertSessionHasNoErrors();
         $p = Proposal::where('deal_id', $deal->id)->latest('created_at')->first();

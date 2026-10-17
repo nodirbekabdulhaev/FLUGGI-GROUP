@@ -37,10 +37,8 @@ final class RoleService
     {
         $role = Role::findOrFail($roleId);
         $permissions = array_filter(array_intersect_key($permissions, Permissions::ALL), fn ($s) => in_array($s, Permissions::SCOPES, true));
-        if ($role->code !== 'CEO') {
-            // Удаление лидов, клиентов и проектов — только у CEO
-            $permissions = array_diff_key($permissions, array_flip(Permissions::CEO_ONLY));
-        }
+        // Удаление лидов, клиентов и проектов — только CEO; управление КП, договорами и оплатами — РОП и CEO
+        $permissions = array_filter($permissions, fn ($s, $c) => ! Permissions::forbiddenFor($c, $role->code), ARRAY_FILTER_USE_BOTH);
         if ($role->code === 'CEO') {
             $missing = array_filter(Permissions::CEO_LOCKED, fn ($c) => ($permissions[$c] ?? null) !== 'ALL');
             if ($missing) {

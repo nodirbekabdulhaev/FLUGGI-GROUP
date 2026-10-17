@@ -26,6 +26,11 @@ class RolesSeeder extends Seeder
             ->where('r.code', '<>', 'CEO')
             ->whereIn('rp.permission_id', $permissionIds->only(Permissions::CEO_ONLY)->values())
             ->delete();
+        // Управление КП, договорами и оплатами — только РОП и CEO
+        DB::table('role_permissions as rp')->join('roles as r', 'r.id', '=', 'rp.role_id')
+            ->whereNotIn('r.code', ['CEO', 'ROP'])
+            ->whereIn('rp.permission_id', $permissionIds->only(Permissions::ROP_UP)->values())
+            ->delete();
 
         foreach (Permissions::defaults() as $roleCode => $map) {
             $role = Role::firstOrCreate(['code' => $roleCode], ['name' => Permissions::ROLE_NAMES[$roleCode], 'is_system' => true]);

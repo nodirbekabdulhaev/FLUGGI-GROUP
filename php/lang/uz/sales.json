@@ -94,7 +94,8 @@
     "removeItem": "Pozitsiyani oʻchirish",
     "searchPlaceholder": "Nomi yoki mijoz",
     "service": "Xizmat",
-    "termPlaceholder": "masalan, 3 oy"
+    "termPlaceholder": "masalan, 3 oy",
+    "byRop": "TTni boʻlim ROPi rasmiylashtiradi va yuboradi"
   },
   "contracts": {
     "title": "Shartnomalar",
@@ -124,7 +125,8 @@
     "numberFrom": "{number}, {date}",
     "searchPlaceholder": "Mijoz yoki bitim",
     "signedAt": "Imzolangan",
-    "updated": "Shartnoma oʻzgartirildi"
+    "updated": "Shartnoma oʻzgartirildi",
+    "byRop": "Shartnomalarni boʻlim ROPi rasmiylashtiradi"
   },
   "payments": {
     "title": "Toʻlovlar",
@@ -158,7 +160,8 @@
     "updated": "Toʻlov oʻzgartirildi",
     "cancelConfirm": "Toʻlov bekor qilinsinmi?",
     "payment": "Toʻlov",
-    "refundOf": "{number} ga"
+    "refundOf": "{number} ga",
+    "byRop": "Toʻlovlarni boʻlim ROPi kiritadi va tasdiqlaydi"
   },
   "money": {
     "contract": "Shartnomalar boʻyicha",

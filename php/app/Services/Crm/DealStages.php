@@ -68,16 +68,27 @@ final class DealStages
                 throw new BusinessRule(t('deals.errors.amountRequired'), ['amount' => t('deals.errors.amountPositive')]);
             }
             if (! Proposal::where('deal_id', $deal->id)->whereIn('status', ['SENT', 'VIEWED', 'ACCEPTED'])->exists()) {
-                throw new BusinessRule(t('deals.errors.sendProposalFirst'));
+                throw new BusinessRule(t(self::canManage('proposal.send') ? 'deals.errors.sendProposalFirst' : 'deals.errors.proposalByRop'));
             }
         }
         if ($idx >= array_search('CONTRACT', self::CODES, true)
             && ! Contract::where('deal_id', $deal->id)->where('status', '<>', 'CANCELLED')->exists()) {
-            throw new BusinessRule(t('deals.errors.createContractFirst'));
+            throw new BusinessRule(t(self::canManage('contract.create') ? 'deals.errors.createContractFirst' : 'deals.errors.contractByRop'));
         }
         if ($idx >= array_search('AWAITING_PAYMENT', self::CODES, true)
             && ! Contract::where('deal_id', $deal->id)->where('status', 'SIGNED')->exists()) {
-            throw new BusinessRule(t('deals.errors.contractNotSigned'));
+            throw new BusinessRule(t(self::canManage('contract.update') ? 'deals.errors.contractNotSigned' : 'deals.errors.contractSignByRop'));
         }
+    }
+
+    /**
+     * Может ли текущий пользователь сам пройти «ворота» этапа. КП и договоры оформляет РОП:
+     * менеджеру вместо «отправьте КП» объясняем, что это делает РОП.
+     */
+    private static function canManage(string $permission): bool
+    {
+        $access = access(false);
+
+        return $access === null || $access->can($permission);
     }
 }

@@ -23,11 +23,13 @@ class DocumentsFilesTest extends SalesTestCase
             'account' => '20208000900123456001', 'phone' => '+998 90 000 00 00',
         ]));
         $deal = $this->deal('7500000');
-        $this->actingAsUser($this->manager);
+        // КП и договор оформляет РОП; менеджер сделки открывает документы
+        $this->actingAsUser($this->rop);
         $this->post('/sales/proposals', ['deal_id' => $deal->id, 'title' => 'Сайт', 'currency' => 'UZS', 'implementation_term' => '30 рабочих дней',
             'payment_terms' => '50% предоплата, 50% после сдачи', 'items' => [['description' => 'Лендинг', 'quantity' => 1, 'unit_price' => '7500000']]])->assertSessionHasNoErrors();
         $kp = Proposal::firstOrFail();
 
+        $this->actingAsUser($this->manager);
         $html = $this->get("/documents/proposals/{$kp->id}?format=html")->assertOk();
         $this->assertStringContainsString('text/html', $html->headers->get('Content-Type'));
         $html->assertSee('Коммерческое предложение')->assertSee('Лендинг')->assertSee('Семь миллионов пятьсот тысяч сумов 00 тийинов');
@@ -38,11 +40,13 @@ class DocumentsFilesTest extends SalesTestCase
         $this->assertStringStartsWith('PK', $docx->getContent());
         $this->get("/documents/proposals/{$kp->id}?format=exe")->assertStatus(422);
 
+        $this->actingAsUser($this->rop);
         $this->post("/sales/proposals/{$kp->id}/send");
         $this->post("/sales/proposals/{$kp->id}/accept");
         $this->post('/sales/contracts', ['deal_id' => $deal->id, 'proposal_id' => $kp->id, 'contract_date' => '2026-10-07', 'amount' => '7500000', 'currency' => 'UZS'])->assertSessionHasNoErrors();
         $c = Contract::firstOrFail();
         $number = Numbers::contract($c->number);
+        $this->actingAsUser($this->manager);
 
         $missing = $this->getJson("/documents/contracts/{$c->id}/check")->assertOk()->json('missing');
         $this->assertTrue(collect($missing)->contains(fn ($m) => str_contains($m, 'Юридическое название клиента')));

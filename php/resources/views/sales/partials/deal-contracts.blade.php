@@ -11,6 +11,8 @@
             <div>
                 <button type="button" class="btn btn-primary btn-sm" x-data x-on:click="$dispatch('open-modal', 'contract-new')"><x-icon name="plus" /> {{ t('sales.contracts.new') }}</button>
             </div>
+        @elseif ($deal->status === 'OPEN')
+            <p class="text-sm text-muted-foreground">{{ t('sales.contracts.byRop') }}</p>
         @endif
         @if ($panel['items']->isEmpty())
             <x-empty icon="file" :title="t('sales.contracts.empty')" />
