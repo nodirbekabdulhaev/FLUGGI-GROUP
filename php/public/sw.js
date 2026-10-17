@@ -2,7 +2,7 @@
  * Service worker Fluggi CRM (PWA). Страницы с данными не кэшируются — они всегда с сервера
  * (права и свежесть данных). Кэшируется только статика сборки и офлайн-страница.
  */
-const CACHE = 'fluggi-static-v1';
+const CACHE = 'fluggi-static-v2';
 const OFFLINE = '/offline';
 
 self.addEventListener('install', (event) => {
