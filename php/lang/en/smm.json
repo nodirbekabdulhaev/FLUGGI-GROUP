@@ -87,7 +87,8 @@
     "publishedAt": "Published at",
     "publishUrl": "Post link",
     "createdAt": "Created",
-    "rejectReason": "Rejection reason"
+    "rejectReason": "Rejection reason",
+    "videographer": "Videographer"
   },
   "history": {
     "created": "Idea created",
@@ -109,7 +110,8 @@
     "planned_publish_date": "Planned date",
     "published_at": "Published at",
     "publish_url": "Link",
-    "status": "Stage"
+    "status": "Stage",
+    "videographer": "Videographer"
   },
   "errors": {
     "assigneeRequired": "Choose the responsible SMM specialist",
@@ -124,7 +126,9 @@
     "needsApproval": "The idea must first be approved by the project manager and the CEO",
     "usedInLeads": "The video is used in leads or deals and cannot be deleted",
     "videoRequired": "Choose the video the client came from",
-    "videoNotPublished": "Only a published video can be chosen"
+    "videoNotPublished": "Only a published video can be chosen",
+    "videographerRequired": "Select a videographer — without one the video cannot be moved to “Shooting”",
+    "videographerInvalid": "Only an active employee with the “Videographer” or “Mobilographer” specialty can be the videographer"
   },
   "notify": {
     "created": "New video idea to approve",
@@ -132,6 +136,12 @@
     "approved": "Video idea approved — ready to shoot",
     "rejected": "Video idea rejected",
     "assigned": "You are assigned to a video",
-    "moved": "Video: {status}"
-  }
+    "moved": "Video: {status}",
+    "videographerAssigned": "You are assigned as the videographer of a video"
+  },
+  "allVideographers": "All videographers",
+  "noVideographer": "— not selected —",
+  "videographerShort": "Videographer",
+  "videographerHint": "A videographer or mobilographer. Required for the “Shooting” stage; the published video counts for them too.",
+  "askShooting": "Who is shooting the video?"
 }

@@ -10,6 +10,7 @@
     <p class="mt-0.5 text-xs text-muted-foreground">{{ SmmIdeaService::code($idea) }}</p>
     <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
         <span class="flex items-center gap-1"><x-icon name="user" class="size-3" />{{ $idea->assignee?->full_name }}</span>
+        @if ($idea->videographer)<span class="flex items-center gap-1" title="{{ t('smm.fields.videographer') }}"><x-icon name="eye" class="size-3" />{{ $idea->videographer->full_name }}</span>@endif
         @if ($status === 'PUBLISHED' && $idea->published_at)
             <span class="flex items-center gap-1"><x-icon name="play" class="size-3" /> {{ dt($idea->published_at) }}</span>
         @elseif ($idea->planned_publish_date)

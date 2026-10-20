@@ -15,6 +15,7 @@ use App\Services\Finance\Period;
 use App\Services\Smm\SmmIdeaService;
 use App\Services\Smm\SmmPayroll;
 use App\Support\Audit;
+use App\Support\Outbox;
 use Brick\Math\BigDecimal;
 use Brick\Math\RoundingMode;
 use Carbon\CarbonImmutable;
@@ -228,7 +229,7 @@ final class PeopleService
 
     public static function list(string $dateFrom, string $dateTo, ?string $userId = null): Collection
     {
-        return self::attendanceQuery($dateFrom, $dateTo, $userId)->with(['user:id,full_name', 'editedBy:id,full_name'])
+        return self::attendanceQuery($dateFrom, $dateTo, $userId)->with(['user:id,full_name', 'editedBy:id,full_name', 'approvedBy:id,full_name'])
             ->join('users', 'users.id', '=', 'attendance.user_id')->orderByDesc('attendance.date')->orderBy('users.full_name')
             ->select('attendance.*')->limit(2000)->get();
     }
@@ -253,7 +254,8 @@ final class PeopleService
                 'dayOff' => $count('DAY_OFF'),
                 'vacation' => $count('VACATION'),
                 'sick' => $count('SICK'),
-                'workHours' => number_format($mine->sum('work_minutes') / 60, 1, '.', ''),
+                'workHours' => number_format($mine->reject(fn ($r) => $r->notCounted())->sum('work_minutes') / 60, 1, '.', ''),
+                'pending' => $mine->filter(fn ($r) => $r->auto_checkout && $r->approval_status === 'PENDING')->count(),
             ];
         })->all();
     }
@@ -293,12 +295,20 @@ final class PeopleService
                 'status' => $status, 'check_in' => $checkIn, 'check_out' => $checkOut, 'late_minutes' => $late,
                 'work_minutes' => People::workMinutes($checkIn, $checkOut), 'comment' => $input['comment'] ?? null, 'edited_by_id' => access()->id(),
             ];
+            // Исправление дня без отметки ухода тем, кто утверждает такие дни, — это и есть решение по нему
+            $decided = $before?->auto_checkout && $before->approval_status === 'PENDING' && AttendanceCheckout::canApprove();
+            if ($decided) {
+                $data += ['approval_status' => in_array($status, ['PRESENT', 'LATE'], true) ? 'APPROVED' : 'REJECTED', 'approved_by_id' => access()->id(), 'approved_at' => now()];
+            }
             $row = $before ? tap($before)->update($data) : Attendance::create(['user_id' => $user->id, 'date' => $input['date']] + $data);
             Audit::log('attendance.update', 'attendance', $row->id, [
                 'status' => ['old' => $old['status'], 'new' => $status],
                 'checkIn' => ['old' => $old['in'], 'new' => $input['check_in'] ?? null],
                 'checkOut' => ['old' => $old['out'], 'new' => $input['check_out'] ?? null],
-            ]);
+            ] + ($decided ? ['approval' => ['old' => 'PENDING', 'new' => $data['approval_status']]] : []));
+            if ($decided) {
+                Outbox::publish('attendance.checkout_decided', ['attendanceId' => $row->id, 'userId' => $row->user_id, 'status' => $data['approval_status'], 'reason' => $input['comment'] ?? null], access()->id());
+            }
 
             return $row;
         });
@@ -332,6 +342,7 @@ final class PeopleService
      * Рабочие дни — по графику сотрудника (с даты приёма до даты увольнения; в текущем месяце — по сегодня).
      * За день засчитывается не больше нормы графика: полдня = 50 %. Выходной (DAY_OFF) в норму не входит;
      * прогул, отпуск, больничный и день без отметки — 0. Нет графика — null (оклад начисляется полностью).
+     * Уход не отмечен (auto_checkout): пока CEO не утвердил день — 0, отклонён — прогул (0), утверждён — как обычно.
      */
     public static function attendancePct(User $user, string $period): ?string
     {
@@ -374,7 +385,8 @@ final class PeopleService
                 continue;
             }
             $plan += $daily;
-            if ($row && in_array($row->status, ['PRESENT', 'LATE'], true)) {
+            // День без отметки ухода (закрыт автоматически) засчитывается только после утверждения CEO
+            if ($row && in_array($row->status, ['PRESENT', 'LATE'], true) && ! $row->notCounted()) {
                 $worked += min((int) $row->work_minutes, $daily);
             }
         }

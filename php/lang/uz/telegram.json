@@ -50,6 +50,11 @@
     "stopped": "Bildirishnomalar oʻchirildi. Qayta ulash CRM profilida mumkin.",
     "notLinked": "Bu chat CRM ga ulanmagan.",
     "whoami": "Siz <b>{name}</b> sifatida ulangansiz. Bildirishnomalar avtomatik keladi.\nOʻchirish: /stop",
-    "hello": "Bu {app} boti. Ulanish uchun CRM da «Profil → Telegram ni ulash» ni oching."
+    "hello": "Bu {app} boti. Ulanish uchun CRM da «Profil → Telegram ni ulash» ni oching.",
+    "callbackNotLinked": "Bu chat CRMga ulanmagan — amal bajarilmadi.",
+    "callbackUnknown": "Tugma eskirgan.",
+    "callbackForbidden": "Huquq yetarli emas — amal bajarilmadi.",
+    "callbackNotFound": "Yozuv topilmadi.",
+    "callbackFailed": "Amalni bajarib boʻlmadi. CRMni oching."
   }
 }

@@ -3,9 +3,9 @@
 @section('content')
     @php
         use App\Services\Smm\SmmIdeaService;
-        $base = array_filter(['assignee_id' => $f['assignee_id'] ?? null, 'month' => $f['month'] ?? null, 'q' => $f['q'] ?? null]);
+        $base = array_filter(['assignee_id' => $f['assignee_id'] ?? null, 'videographer_id' => $f['videographer_id'] ?? null, 'month' => $f['month'] ?? null, 'q' => $f['q'] ?? null]);
         $qs = fn (array $over) => '/smm?'.http_build_query(array_filter(array_merge($base, $over), fn ($v) => $v !== null && $v !== ''));
-        $filtered = ($f['assignee_id'] ?? null) || ($f['month'] ?? null) || ($f['q'] ?? null) || ($f['status'] ?? null);
+        $filtered = ($f['assignee_id'] ?? null) || ($f['videographer_id'] ?? null) || ($f['month'] ?? null) || ($f['q'] ?? null) || ($f['status'] ?? null);
     @endphp
     <x-page-header :title="t('smm.title')" :subtitle="t('smm.subtitle')">
         @if ($canCreate)
@@ -28,6 +28,10 @@
         <select name="assignee_id" class="input sm:w-56" aria-label="{{ t('smm.fields.assignee') }}">
             <option value="">{{ t('smm.allAssignees') }}</option>
             @foreach ($assignees as $u)<option value="{{ $u->id }}" @selected(($f['assignee_id'] ?? '') === $u->id)>{{ $u->full_name }}</option>@endforeach
+        </select>
+        <select name="videographer_id" class="input sm:w-56" aria-label="{{ t('smm.fields.videographer') }}">
+            <option value="">{{ t('smm.allVideographers') }}</option>
+            @foreach ($videographers as $u)<option value="{{ $u->id }}" @selected(($f['videographer_id'] ?? '') === $u->id)>{{ $u->full_name }}</option>@endforeach
         </select>
         <input type="month" name="month" value="{{ $f['month'] ?? '' }}" class="input sm:w-44" aria-label="{{ t('smm.month') }}" title="{{ t('smm.monthHint') }}">
         <div class="flex gap-2">
@@ -54,6 +58,8 @@
                     <x-select name="assignee_id" :label="t('smm.fields.assignee')" :options="$assignees->pluck('full_name', 'id')->all()" :value="$defaultAssignee"
                               :placeholder="t('crm.common.select')" :required="! $defaultAssignee" />
                     <x-field name="planned_publish_date" type="date" :label="t('smm.fields.plannedDate')" />
+                    <x-select name="videographer_id" :label="t('smm.fields.videographer')" :options="$videographers->pluck('full_name', 'id')->all()"
+                              :placeholder="t('smm.noVideographer')" :hint="t('smm.videographerHint')" />
                 </div>
                 <p class="text-xs text-muted-foreground">{{ t('smm.approvalHint') }}</p>
                 <div class="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">

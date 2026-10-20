@@ -40,6 +40,12 @@ class SmmIdea extends Model
         return $this->belongsTo(User::class, 'assignee_id');
     }
 
+    /** Видеограф: опубликованный ролик засчитывается и ему (план роликов в зарплате). */
+    public function videographer(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'videographer_id');
+    }
+
     public function pmApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pm_approved_by_id');

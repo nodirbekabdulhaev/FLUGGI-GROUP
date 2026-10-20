@@ -57,7 +57,7 @@ class AutomationTest extends TestCase
     public function test_manual_run_reports_and_settings_rights(): void
     {
         $this->actingAsUser($this->ceo)->get('/settings/automation')->assertOk()->assertSee(t('automation.jobs.overdue-tasks.label'))->assertSee('Новые лиды: 0');
-        $this->assertSame(['overdue-tasks', 'smart-reminders', 'follow-ups', 'daily-report', 'absences', 'weekly-report', 'recurring-todos', 'client-health', 'payroll'], Scheduler::names());
+        $this->assertSame(['overdue-tasks', 'smart-reminders', 'follow-ups', 'daily-report', 'absences', 'attendance-checkout', 'weekly-report', 'recurring-todos', 'client-health', 'payroll'], Scheduler::names());
         $this->actingAsUser($this->rop)->get('/settings/automation')->assertForbidden();
         $this->actingAsUser($this->manager)->postJson('/automation/jobs/daily-report/run')->assertForbidden();
         $this->actingAsUser($this->ceo)->postJson('/automation/jobs/unknown/run')->assertNotFound();

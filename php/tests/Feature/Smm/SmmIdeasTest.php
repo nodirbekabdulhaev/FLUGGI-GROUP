@@ -25,6 +25,8 @@ class SmmIdeasTest extends TestCase
 
     private User $smm;
 
+    private User $videographer;
+
     protected function setUp(): void
     {
         parent::setUp();
@@ -34,6 +36,7 @@ class SmmIdeasTest extends TestCase
         DB::table('user_directions')->insert(['user_id' => $this->pm->id, 'direction_id' => Direction::where('code', 'MEDIA')->value('id')]);
         $this->pmOther = $this->user('PROJECT_MANAGER');
         $this->smm = $this->user('EXECUTOR', employee: ['specialty' => 'SMM']);
+        $this->videographer = $this->user('EXECUTOR', employee: ['specialties' => ['VIDEOGRAPHER']]);
     }
 
     private function createIdea(?User $as = null, array $data = []): SmmIdea
@@ -145,7 +148,7 @@ class SmmIdeasTest extends TestCase
 
         Outbox::processBatch();
         $this->assertTrue(Notification::where('type', 'smm.idea_approved')->where('user_id', $this->smm->id)->exists());
-        $this->actingAsUser($this->smm)->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING'])->assertOk();
+        $this->actingAsUser($this->smm)->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING', 'videographer_id' => $this->videographer->id])->assertOk();
     }
 
     public function test_ceo_approval_is_enough_without_project_managers(): void
@@ -192,7 +195,7 @@ class SmmIdeasTest extends TestCase
     {
         $idea = $this->approved();
         $this->actingAsUser($this->smm);
-        $this->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING'])->assertOk();
+        $this->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING', 'videographer_id' => $this->videographer->id])->assertOk();
         $this->postJson("/smm/{$idea->id}/move", ['status' => 'EDITING'])->assertOk();
         $this->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING'])->assertOk(); // назад — можно
         $this->postJson("/smm/{$idea->id}/move", ['status' => 'SCHEDULED'])->assertStatus(422)->assertJsonPath('errors.planned_publish_date.0', t('smm.errors.plannedDateRequired'));
@@ -253,7 +256,7 @@ class SmmIdeasTest extends TestCase
     public function test_pages_render_in_all_languages(): void
     {
         $idea = $this->approved();
-        $this->actingAsUser($this->smm)->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING'])->assertOk();
+        $this->actingAsUser($this->smm)->postJson("/smm/{$idea->id}/move", ['status' => 'SHOOTING', 'videographer_id' => $this->videographer->id])->assertOk();
         $rejected = $this->createIdea(data: ['title' => 'Отклонённая идея']);
         $this->actingAsUser($this->ceo)->post("/smm/{$rejected->id}/reject", ['reason' => 'Дорого']);
         foreach (['uz', 'ru', 'en'] as $locale) {

@@ -10,11 +10,12 @@ use App\Support\Outbox;
  * Подписчики событий SMM → уведомления (in-app и Telegram через Notifier, с учётом личных настроек):
  *  - новая идея (и повторная отправка) — проект-менеджерам SMM и CEO на утверждение;
  *  - утверждена / отклонена — ответственному и автору;
- *  - смена этапа или ответственного другим сотрудником — ответственному и автору.
+ *  - смена этапа или ответственного другим сотрудником — ответственному и автору;
+ *  - назначен видеограф — видеографу.
  */
 final class SmmEvents
 {
-    public const TYPES = ['smm.idea_created', 'smm.idea_approved', 'smm.idea_rejected', 'smm.idea_status_changed'];
+    public const TYPES = ['smm.idea_created', 'smm.idea_approved', 'smm.idea_rejected', 'smm.idea_status_changed', 'smm.videographer_assigned'];
 
     public static function register(): void
     {
@@ -22,6 +23,16 @@ final class SmmEvents
         Outbox::on('smm.idea_approved', [self::class, 'approved']);
         Outbox::on('smm.idea_rejected', [self::class, 'rejected']);
         Outbox::on('smm.idea_status_changed', [self::class, 'statusChanged']);
+        Outbox::on('smm.videographer_assigned', [self::class, 'videographerAssigned']);
+    }
+
+    public static function videographerAssigned(array $e, array $meta): void
+    {
+        $idea = self::idea($e['ideaId'] ?? null);
+        if (! $idea || $idea->trashed() || $idea->videographer_id !== ($e['videographerId'] ?? null)) {
+            return;
+        }
+        Notifier::notify([$idea->videographer_id], 'smm.videographer_assigned', fn () => [t('smm.notify.videographerAssigned'), self::subject($idea)], self::link($idea), $meta['actorId']);
     }
 
     private static function idea(?string $id): ?SmmIdea

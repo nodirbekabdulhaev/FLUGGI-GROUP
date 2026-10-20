@@ -29,6 +29,9 @@ final class Settings
         ],
         // Бренд интерфейса (App\Support\Brand): название, логотип (версия набора иконок в storage/app/branding), цвет
         'branding' => ['name' => 'Fluggi CRM', 'shortName' => 'Fluggi', 'themeColor' => null, 'version' => null],
+        // Забытая отметка ухода (App\Services\People\AttendanceCheckout): напоминание через N минут после конца графика,
+        // авто-уход по концу графика через M минут после конца графика (день уходит на утверждение CEO)
+        'attendance' => ['checkoutControl' => true, 'reminderGraceMinutes' => 15, 'autoCheckoutDelayMinutes' => 120],
     ];
 
     /** @var array<string,array> */
@@ -56,6 +59,11 @@ final class Settings
     public static function automation(): array
     {
         return self::get('automation');
+    }
+
+    public static function attendance(): array
+    {
+        return self::get('attendance');
     }
 
     public static function company(): array

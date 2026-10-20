@@ -87,7 +87,8 @@
     "publishedAt": "Eʼlon qilingan sana va vaqt",
     "publishUrl": "Postga havola",
     "createdAt": "Yaratilgan",
-    "rejectReason": "Rad etish sababi"
+    "rejectReason": "Rad etish sababi",
+    "videographer": "Videograf"
   },
   "history": {
     "created": "Gʻoya yaratildi",
@@ -109,7 +110,8 @@
     "planned_publish_date": "Rejadagi sana",
     "published_at": "Eʼlon qilingan",
     "publish_url": "Havola",
-    "status": "Bosqich"
+    "status": "Bosqich",
+    "videographer": "Videograf"
   },
   "errors": {
     "assigneeRequired": "Masʼul SMM mutaxassisini tanlang",
@@ -124,7 +126,9 @@
     "needsApproval": "Avval gʻoyani loyiha menejeri va CEO tasdiqlashi kerak",
     "usedInLeads": "Rolik lidlar yoki bitimlarda koʻrsatilgan — oʻchirib boʻlmaydi",
     "videoRequired": "Mijoz kelgan rolikni tanlang",
-    "videoNotPublished": "Faqat eʼlon qilingan rolikni tanlash mumkin"
+    "videoNotPublished": "Faqat eʼlon qilingan rolikni tanlash mumkin",
+    "videographerRequired": "Videografni tanlang — usiz rolikni «Suratga olish» bosqichiga oʻtkazib boʻlmaydi",
+    "videographerInvalid": "Videograf sifatida faqat «Videograf» yoki «Mobilograf» mutaxassisligidagi faol xodimni tanlash mumkin"
   },
   "notify": {
     "created": "Tasdiqlash uchun yangi rolik gʻoyasi",
@@ -132,6 +136,12 @@
     "approved": "Rolik gʻoyasi tasdiqlandi — suratga olish mumkin",
     "rejected": "Rolik gʻoyasi rad etildi",
     "assigned": "Siz rolik uchun masʼul etib tayinlandingiz",
-    "moved": "Rolik: {status}"
-  }
+    "moved": "Rolik: {status}",
+    "videographerAssigned": "Siz rolik videografi etib tayinlandingiz"
+  },
+  "allVideographers": "Barcha videograflar",
+  "noVideographer": "— tanlanmagan —",
+  "videographerShort": "Videograf",
+  "videographerHint": "Videograf yoki mobilograf. «Suratga olish» bosqichi uchun majburiy; eʼlon qilingan rolik unga ham hisoblanadi.",
+  "askShooting": "Rolikni kim suratga oladi?"
 }

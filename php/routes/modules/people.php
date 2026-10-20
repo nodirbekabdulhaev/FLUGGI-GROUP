@@ -30,6 +30,10 @@ Route::get('/attendance', [AttendanceController::class, 'index'])->middleware('p
 Route::post('/attendance/check-in', [AttendanceController::class, 'checkIn'])->middleware('auth.only')->name('attendance.check-in');
 Route::post('/attendance/check-out', [AttendanceController::class, 'checkOut'])->middleware('auth.only')->name('attendance.check-out');
 Route::put('/attendance', [AttendanceController::class, 'upsert'])->middleware('perm:attendance.manage')->name('attendance.upsert');
+// Не отмечен уход: утверждение CEO (attendance.manage на всю компанию) и настройки контроля ухода
+Route::post('/attendance/{id}/approve', [AttendanceController::class, 'approve'])->where('id', $uuid)->middleware('perm:attendance.manage,ALL')->name('attendance.approve');
+Route::post('/attendance/{id}/reject', [AttendanceController::class, 'reject'])->where('id', $uuid)->middleware('perm:attendance.manage,ALL')->name('attendance.reject');
+Route::put('/attendance/settings', [AttendanceController::class, 'settings'])->middleware('perm:attendance.manage|settings.manage,ALL')->name('attendance.settings');
 
 Route::get('/finance/payroll', [PayrollController::class, 'index'])->middleware('perm:payroll.read')->name('payroll');
 Route::put('/finance/payroll/salaries', [PayrollController::class, 'salaries'])->middleware('perm:payroll.manage,ALL')->name('payroll.salaries');

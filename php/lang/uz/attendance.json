@@ -50,5 +50,47 @@
     "notTrackedUser": "Davomat faqat menejerlar va savdo boʻlimi rahbarlari uchun yuritiladi",
     "outBeforeIn": "Ketish vaqti kelishdan oldin"
   },
-  "statusLabel": "Holat"
+  "statusLabel": "Holat",
+  "checkout": {
+    "remindTitle": "Siz ketishni belgilamadingiz",
+    "remindBody": "Jadval boʻyicha ish kuni {end} da tugadi. CRMda ketishni belgilang — aks holda kun avtomatik yopiladi va CEO tasdigʻiga yuboriladi.",
+    "autoTitle": "{name} {date} kuni ketishni belgilamadi. {end} gacha hisoblandi. Kunni tasdiqlang",
+    "autoBody": "Agar xodim haqiqatan ishlagan boʻlsa — «Tasdiqlash» tugmasini bosing. Rad etish yoki ketish vaqtini tuzatish CRMda.",
+    "autoOwnTitle": "Siz {date} kuni ketishni belgilamadingiz. {end} gacha hisoblandi",
+    "autoOwnBody": "Kun jadval tugashi boʻyicha avtomatik yopildi va CEO tasdigʻini kutmoqda. Tasdiqlanmaguncha u maoshga kirmaydi.",
+    "approvedTitle": "{date} kuni tasdiqlandi: {end} gacha hisoblandi",
+    "rejectedTitle": "{date} kuni rad etildi — ishga kelmagan deb hisoblandi",
+    "tgApproved": "Tasdiqlandi: {name}, {date}",
+    "approve": "Tasdiqlash",
+    "reject": "Rad etish",
+    "rejectSubmit": "Kunni rad etish",
+    "reason": "Sabab",
+    "reasonHint": "Ixtiyoriy",
+    "tab": "Ketish belgilanmagan — tasdiqlash uchun",
+    "banner": "{count, plural, other {# kun}} ketish belgisiz tasdiqlashni kutmoqda",
+    "emptyTitle": "Tasdiqlash uchun kunlar yoʻq",
+    "emptyText": "Bu yerda xodim ketishni belgilamagan va kun avtomatik yopilgan kunlar chiqadi.",
+    "hint": "Ketish belgilanmagan — kun jadval tugashi boʻyicha yopildi. «Tasdiqlash» — xodim ishlagan (ketish vaqtini tuzatish mumkin), «Rad etish» — ishga kelmagan. Qaror chiqquncha kun maoshga kirmaydi.",
+    "countedUntil": "{end} gacha hisoblandi",
+    "hoursShort": "soat",
+    "state": {
+      "PENDING": "Ketish belgilanmagan · tasdiq kutilmoqda",
+      "APPROVED": "Ketish belgilanmagan · tasdiqlandi",
+      "REJECTED": "Ketish belgilanmagan · rad etildi"
+    },
+    "decidedBy": "Qaror: {name}",
+    "approvedOk": "Kun tasdiqlandi",
+    "rejectedOk": "Kun rad etildi",
+    "settingsSaved": "Sozlamalar saqlandi",
+    "settingsTitle": "Ketish nazorati",
+    "enabled": "Ketish haqida eslatish va kunni avtomatik yopish",
+    "reminderGrace": "Eslatma, daqiqadan keyin",
+    "reminderGraceHint": "Jadval boʻyicha ish kuni tugagandan keyin — «Siz ketishni belgilamadingiz» bildirishnomasi.",
+    "autoDelay": "Avtomatik ketish, daqiqadan keyin",
+    "autoDelayHint": "Jadval tugagandan keyin ketish jadval tugash vaqtiga qoʻyiladi va kun CEO tasdigʻiga yuboriladi. Dam olish kuni yoki jadvalsiz — 23:59 da.",
+    "errors": {
+      "decided": "Bu kun boʻyicha qaror allaqachon qabul qilingan",
+      "delayBeforeReminder": "Avtomatik ketish eslatmadan oldin boʻlishi mumkin emas"
+    }
+  }
 }

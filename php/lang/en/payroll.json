@@ -56,12 +56,16 @@
   "baseManualHint": "The salary is calculated from attendance. A manual change applies to this month only; the 100% salary is changed in the “Salaries” block.",
   "videosOf": "{published} of {target} videos ({pct}%)",
   "smmTitle": "SMM: salary and video plan",
-  "smmHint": "Executors with an SMM specialty. Monthly salary = salary at 100% × published / video plan (capped at 100%). Piece-rate pay for projects stays as is.",
+  "smmHint": "Executors with an SMM specialty. Monthly salary = salary at 100% × published / video plan (capped at 100%); a video counts for both the assignee and the videographer. Piece-rate pay for projects stays as is.",
   "smmEmpty": "No active executors with an SMM specialty",
   "smmSalary": "Salary at 100%",
   "smmTarget": "Videos per month",
   "smmSalaryFor": "Salary at 100%: {name}",
   "smmTargetFor": "Videos per month: {name}",
   "smmColumns": "Left — salary at 100% of the plan, right — videos per month. Empty plan — no salary is accrued.",
-  "smmSaved": "Video plan saved. Recalculate the month to apply it"
+  "smmSaved": "Video plan saved. Recalculate the month to apply it",
+  "pendingCheckouts": "{count, plural, one {# day} other {# days}} without check-out not approved yet — they are not counted in the salary. Approve them and recalculate the month.",
+  "pendingCheckoutsOpen": "To approval",
+  "pendingDays": "unapproved days without check-out: {count}",
+  "smmCounts": "{period}: assignee — {assignee}, videographer — {videographer}"
 }

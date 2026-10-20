@@ -25,6 +25,7 @@ class IdeasController extends Controller
             'view' => ['nullable', Rule::in(['kanban', 'list'])],
             'status' => ['nullable', Rule::in(SmmIdeaService::STATUSES)],
             'assignee_id' => ['nullable', 'uuid'],
+            'videographer_id' => ['nullable', 'uuid'],
             'month' => ['nullable', 'regex:/^\d{4}-(0[1-9]|1[0-2])$/'],
             'q' => ['nullable', 'string', 'max:100'],
         ]);
@@ -47,6 +48,7 @@ class IdeasController extends Controller
             'items' => $items,
             'hidden' => $hidden,
             'assignees' => SmmAccess::assignees(),
+            'videographers' => SmmAccess::videographers(),
             'canCreate' => access()->can('smm.create'),
             'defaultAssignee' => SmmAccess::isSmmExecutor(access()->user) ? access()->id() : null,
         ]);
@@ -59,6 +61,7 @@ class IdeasController extends Controller
         return view('smm.show', [
             'idea' => $idea,
             'assignees' => SmmAccess::assignees($idea->assignee_id),
+            'videographers' => SmmAccess::videographers($idea->videographer_id),
             'pmRequired' => SmmAccess::projectManagerIds() !== [],
         ]);
     }
@@ -70,11 +73,12 @@ class IdeasController extends Controller
             'scenario' => ['sometimes', 'nullable', 'string', 'max:20000'],
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'assignee_id' => ['sometimes', 'nullable', 'uuid'],
+            'videographer_id' => ['sometimes', 'nullable', 'uuid'],
             'planned_publish_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'published_at' => ['sometimes', 'nullable', 'date_format:Y-m-d\TH:i'],
             'publish_url' => ['sometimes', 'nullable', 'url', 'max:500'],
         ], [], [
-            'title' => t('smm.fields.title'), 'scenario' => t('smm.fields.scenario'), 'assignee_id' => t('smm.fields.assignee'),
+            'title' => t('smm.fields.title'), 'scenario' => t('smm.fields.scenario'), 'assignee_id' => t('smm.fields.assignee'), 'videographer_id' => t('smm.fields.videographer'),
             'planned_publish_date' => t('smm.fields.plannedDate'), 'published_at' => t('smm.fields.publishedAt'), 'publish_url' => t('smm.fields.publishUrl'),
         ]);
         if (array_key_exists('published_at', $data)) {
@@ -101,17 +105,20 @@ class IdeasController extends Controller
     /** Перемещение (Kanban — JSON, карточка и телефон — форма). */
     public function move(Request $request, string $id): RedirectResponse|JsonResponse
     {
+        SmmAccess::authorize();
         $data = $request->validate([
             'status' => ['required', Rule::in(SmmIdeaService::STATUSES)],
             'before_id' => ['nullable', 'uuid'],
             'planned_publish_date' => ['nullable', 'date_format:Y-m-d'],
             'published_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
             'publish_url' => ['nullable', 'url', 'max:500'],
-        ], [], ['planned_publish_date' => t('smm.fields.plannedDate'), 'published_at' => t('smm.fields.publishedAt'), 'publish_url' => t('smm.fields.publishUrl')]);
+            'videographer_id' => ['nullable', 'uuid'],
+        ], [], ['videographer_id' => t('smm.fields.videographer'), 'planned_publish_date' => t('smm.fields.plannedDate'), 'published_at' => t('smm.fields.publishedAt'), 'publish_url' => t('smm.fields.publishUrl')]);
         $idea = SmmIdeaService::move($id, $data['status'], $data['before_id'] ?? null, [
             'planned_publish_date' => $data['planned_publish_date'] ?? null,
             'published_at' => Format::fromLocalInput($data['published_at'] ?? null),
             'publish_url' => $data['publish_url'] ?? null,
+            'videographer_id' => $data['videographer_id'] ?? null,
         ]);
         if ($request->expectsJson()) {
             return response()->json(['ok' => true, 'status' => $idea->status, 'message' => t('smm.moved')]);
@@ -141,6 +148,7 @@ class IdeasController extends Controller
 
     public function comment(Request $request, string $id): RedirectResponse
     {
+        SmmAccess::authorize();
         $data = $request->validate(['body' => ['required', 'string', 'max:5000']], [], ['body' => t('smm.comment')]);
         SmmIdeaService::comment($id, trim($data['body']));
 

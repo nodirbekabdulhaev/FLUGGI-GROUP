@@ -50,6 +50,11 @@
     "stopped": "Notifications are turned off. You can reconnect in your CRM profile.",
     "notLinked": "This chat is not connected to the CRM.",
     "whoami": "You are connected as <b>{name}</b>. Notifications arrive automatically.\nDisconnect: /stop",
-    "hello": "This is the {app} bot. To connect, open “Profile → Connect Telegram” in the CRM."
+    "hello": "This is the {app} bot. To connect, open “Profile → Connect Telegram” in the CRM.",
+    "callbackNotLinked": "This chat is not linked to the CRM — nothing was done.",
+    "callbackUnknown": "This button is out of date.",
+    "callbackForbidden": "Not enough rights — nothing was done.",
+    "callbackNotFound": "Record not found.",
+    "callbackFailed": "The action failed. Please open the CRM."
   }
 }

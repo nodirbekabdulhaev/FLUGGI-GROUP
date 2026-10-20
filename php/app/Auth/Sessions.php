@@ -58,6 +58,16 @@ final class Sessions
             $session->update(['last_seen_at' => $now, 'expires_at' => $now->copy()->addDays(self::ttlDays())]);
         }
 
+        return self::accessFor($user, $session->id);
+    }
+
+    /**
+     * Права пользователя без веб-сессии (действие из Telegram по привязанному чату).
+     * $sessionId = '' — в журнале аудита сессия не указывается.
+     */
+    public static function accessFor(User $user, string $sessionId = ''): Access
+    {
+        $user->loadMissing(['role', 'team']);
         $permissions = DB::table('role_permissions as rp')
             ->join('permissions as p', 'p.id', '=', 'rp.permission_id')
             ->where('rp.role_id', $user->role_id)
@@ -67,7 +77,7 @@ final class Sessions
 
         return new Access(
             user: $user,
-            sessionId: $session->id,
+            sessionId: $sessionId,
             roleCode: $user->role->code,
             roleName: $user->role->name,
             permissions: $permissions,

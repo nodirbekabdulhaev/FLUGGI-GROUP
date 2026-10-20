@@ -33,7 +33,7 @@ final class TelegramSender
 
         return DB::transaction(function () use ($limit, $appUrl) {
             $rows = DB::select(
-                "SELECT d.id, d.title, d.body, d.link, d.attempts, u.telegram_chat_id, u.locale
+                "SELECT d.id, d.title, d.body, d.link, d.buttons, d.attempts, u.telegram_chat_id, u.locale
                  FROM notification_deliveries d JOIN users u ON u.id = d.user_id
                  WHERE d.status = 'PENDING' AND d.next_attempt_at <= UTC_TIMESTAMP(3)
                  ORDER BY d.created_at LIMIT ".$limit.' '.DbSupport::lockRows(),
@@ -52,7 +52,8 @@ final class TelegramSender
                     $d->link ? '<a href="'.$appUrl.$d->link.'">'.Lang::get('telegram.openInCrm', [], $locale).'</a>' : null,
                 ]));
                 try {
-                    TelegramClient::sendMessage($d->telegram_chat_id, $text);
+                    $keyboard = $d->buttons ? json_decode($d->buttons, true) : null;
+                    TelegramClient::sendMessage($d->telegram_chat_id, $text, is_array($keyboard) && $keyboard ? $keyboard : null);
                     $q->update(['status' => 'SENT', 'sent_at' => now(), 'attempts' => $d->attempts + 1]);
                 } catch (Throwable $e) {
                     $attempts = $d->attempts + 1;

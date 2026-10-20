@@ -15,6 +15,12 @@
                 <button class="btn btn-primary"><x-icon name="refresh" /> {{ t('payroll.calculate') }}</button></form>
         @endif
     </x-page-header>
+    @if ($pendingCheckouts)
+        <div class="mb-4 flex flex-wrap items-center gap-2 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm" role="alert">
+            <x-icon name="alert" /> <span class="min-w-0 flex-1">{{ t('payroll.pendingCheckouts', ['count' => array_sum($pendingCheckouts)]) }}</span>
+            @if ($canApproveDays)<a href="/attendance?tab=approval" class="btn btn-outline btn-sm">{{ t('payroll.pendingCheckoutsOpen') }}</a>@endif
+        </div>
+    @endif
     <div class="card" x-data="{ selected: [] }">
         @if ($manage && $entries->isNotEmpty())
             <div class="flex flex-wrap items-center gap-3 border-b bg-muted/40 px-4 py-2 text-sm" x-show="selected.length" x-cloak>
@@ -41,7 +47,8 @@
                 @foreach ($entries as $e)
                     <tr>
                         @if ($manage)<td><input type="checkbox" value="{{ $e->id }}" x-model="selected" aria-label="{{ t('payroll.select', ['name' => $e->user?->full_name]) }}"></td>@endif
-                        <td><span class="font-medium">{{ $e->user?->full_name }}</span><span class="block text-xs text-muted-foreground">{{ $e->period }}@if ($e->kpi_pct !== null) · {{ t('payroll.kpi') }} {{ $e->kpi_pct }}%@endif</span></td>
+                        <td><span class="font-medium">{{ $e->user?->full_name }}</span><span class="block text-xs text-muted-foreground">{{ $e->period }}@if ($e->kpi_pct !== null) · {{ t('payroll.kpi') }} {{ $e->kpi_pct }}%@endif</span>
+                            @if ($n = $pendingCheckouts[$e->user_id] ?? 0)<span class="mt-1 block text-xs text-warning">⚠ {{ t('payroll.pendingDays', ['count' => $n]) }}</span>@endif</td>
                         <td class="whitespace-nowrap text-right tabular-nums">
                             @if (PeopleService::hasFixedSalary($e->user?->role?->code ?? '') || $e->videos_target !== null)
                                 {{ money($e->base_salary) }}
@@ -110,7 +117,9 @@
                         @foreach ($videoPlans as $u)
                             <div class="flex flex-col gap-2 py-2 sm:flex-row sm:items-center sm:justify-between">
                                 <div class="min-w-0"><span class="font-medium">{{ $u->full_name }}</span>
-                                    <span class="block text-xs text-muted-foreground">{{ collect($u->employee->specialtyList())->map(fn ($s) => t('specialties.'.$s))->implode(', ') }}</span></div>
+                                    <span class="block text-xs text-muted-foreground">{{ collect($u->employee->specialtyList())->map(fn ($s) => t('specialties.'.$s))->implode(', ') }}</span>
+                                    @php($vc = $videoCounts[$u->id] ?? ['assignee' => 0, 'videographer' => 0])
+                                    <span class="block text-xs text-muted-foreground">{{ t('payroll.smmCounts', ['period' => $period, 'assignee' => $vc['assignee'], 'videographer' => $vc['videographer']]) }}</span></div>
                                 <div class="grid grid-cols-[1fr_6rem] gap-2 sm:w-auto">
                                     <input name="plans[{{ $u->id }}][salary]" inputmode="decimal" data-money class="input w-full text-right tabular-nums sm:w-44"
                                            value="{{ old('plans.'.$u->id.'.salary', $u->employee?->base_salary !== null ? $num($u->employee->base_salary) : '') }}"

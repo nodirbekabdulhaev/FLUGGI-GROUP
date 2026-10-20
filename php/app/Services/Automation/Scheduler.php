@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\WorkSchedule;
 use App\Services\Analytics\ClientInsights;
 use App\Services\Notifications\Notifier;
+use App\Services\People\AttendanceCheckout;
 use App\Services\Todos\RecurringTodoService;
 use App\Support\Lang;
 use App\Support\Settings;
@@ -43,6 +44,7 @@ final class Scheduler
             ['name' => 'follow-ups', 'due' => self::dailyAt('09:00')],
             ['name' => 'daily-report', 'due' => self::dailyAt('18:00')],
             ['name' => 'absences', 'due' => self::dailyAt('20:00')],
+            ['name' => AttendanceCheckout::JOB, 'due' => self::every(5)],
             ['name' => 'weekly-report', 'due' => self::weeklyAt(1, '09:00')],
             ['name' => 'recurring-todos', 'due' => self::dailyAt('07:00')],
             ['name' => 'client-health', 'due' => self::dailyAt('06:00')],
@@ -133,6 +135,7 @@ final class Scheduler
             'follow-ups' => FollowUpService::notifyDue($now),
             'daily-report' => self::dailyReport($now),
             'absences' => self::absences($now),
+            AttendanceCheckout::JOB => AttendanceCheckout::run($now),
             'weekly-report' => self::weeklyReport($now),
             'recurring-todos' => RecurringTodoService::generate($now),
             'client-health' => self::clientHealth($now),

@@ -2,6 +2,8 @@
 
 namespace App\Services\Telegram;
 
+use App\Auth\Access;
+use App\Auth\Sessions;
 use App\Exceptions\BusinessRule;
 use App\Models\Setting;
 use App\Models\TelegramLinkToken;
@@ -11,6 +13,7 @@ use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 use Throwable;
 
 /**
@@ -28,6 +31,18 @@ final class TelegramService
     public const CHECK_EVERY_SECONDS = 300;
 
     public const STALE_SECONDS = 900;
+
+    /** @var array<string, callable(string):string> префикс callback_data → обработчик (ответ — текст всплывающего сообщения) */
+    private static array $callbacks = [];
+
+    /**
+     * Обработчик нажатий inline-кнопок с callback_data «<префикс>:<аргумент>». Выполняется с правами
+     * сотрудника, к которому привязан чат (App\Auth\Sessions::accessFor) — как действие в CRM.
+     */
+    public static function onCallback(string $prefix, callable $handler): void
+    {
+        self::$callbacks[$prefix] = $handler;
+    }
 
     private static function hash(string $token): string
     {
@@ -196,9 +211,81 @@ final class TelegramService
         return Lang::get('telegram.botReplies.'.$key, $params + ['app' => TelegramClient::escape(brand()->name())], $locale ?? config('app.locale', 'ru'));
     }
 
+    private static function answer(string $callbackId, string $text): void
+    {
+        try {
+            TelegramClient::answerCallbackQuery($callbackId, $text);
+        } catch (Throwable $e) {
+            Log::warning('Telegram answerCallbackQuery: '.$e->getMessage());
+        }
+    }
+
+    /**
+     * Нажатие inline-кнопки. Кто нажал — по from.id (это и есть id личного чата с ботом): чат должен быть
+     * привязан к активному сотруднику, права — его права в CRM; иначе действие не выполняется.
+     */
+    private static function handleCallback(array $cq): void
+    {
+        $callbackId = (string) ($cq['id'] ?? '');
+        $fromId = (string) ($cq['from']['id'] ?? '');
+        $data = (string) ($cq['data'] ?? '');
+        if ($callbackId === '') {
+            return;
+        }
+        $user = $fromId !== '' ? User::with(['role', 'team'])->where('telegram_chat_id', $fromId)->where('status', 'ACTIVE')->first() : null;
+        if (! $user) {
+            self::answer($callbackId, self::say('callbackNotLinked'));
+
+            return;
+        }
+        $locale = in_array($user->locale, Lang::LOCALES, true) ? $user->locale : Lang::FALLBACK;
+        [$prefix, $arg] = array_pad(explode(':', $data, 2), 2, '');
+        $handler = self::$callbacks[$prefix] ?? null;
+        if (! $handler) {
+            self::answer($callbackId, self::say('callbackUnknown', [], $locale));
+
+            return;
+        }
+        $previousAccess = app()->bound(Access::class) ? app(Access::class) : null;
+        $previousLocale = app()->getLocale();
+        app()->instance(Access::class, Sessions::accessFor($user));
+        app()->setLocale($locale);
+        $done = false;
+        try {
+            $text = $handler($arg);
+            $done = true;
+        } catch (HttpException $e) {
+            $text = self::say($e->getStatusCode() === 404 ? 'callbackNotFound' : 'callbackForbidden', [], $locale);
+        } catch (BusinessRule $e) {
+            $text = $e->getMessage();
+        } catch (Throwable $e) {
+            Log::error('Telegram callback '.$prefix.': '.$e->getMessage());
+            $text = self::say('callbackFailed', [], $locale);
+        } finally {
+            $previousAccess ? app()->instance(Access::class, $previousAccess) : app()->forgetInstance(Access::class);
+            app()->setLocale($previousLocale);
+        }
+        self::answer($callbackId, strip_tags($text));
+        // Выполнено — кнопку убираем, чтобы не нажимать повторно
+        $chatId = (string) ($cq['message']['chat']['id'] ?? '');
+        $messageId = (int) ($cq['message']['message_id'] ?? 0);
+        if ($done && $chatId !== '' && $messageId > 0) {
+            try {
+                TelegramClient::clearKeyboard($chatId, $messageId);
+            } catch (Throwable $e) {
+                Log::warning('Telegram editMessageReplyMarkup: '.$e->getMessage());
+            }
+        }
+    }
+
     /** Обработка входящего сообщения боту (webhook). */
     public static function handleUpdate(array $update): void
     {
+        if (is_array($update['callback_query'] ?? null)) {
+            self::handleCallback($update['callback_query']);
+
+            return;
+        }
         $msg = $update['message'] ?? null;
         if (! is_array($msg) || ! is_string($msg['text'] ?? null) || ($msg['chat']['type'] ?? null) !== 'private') {
             return;

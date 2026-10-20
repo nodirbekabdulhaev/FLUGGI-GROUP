@@ -29,7 +29,8 @@ return [
         ['key' => 'projectsCompleted', 'href' => '/projects/completed', 'any' => ['project.read']],
     ]],
     ['key' => 'tasks', 'href' => '/tasks', 'icon' => 'check', 'any' => ['task.read']],
-    ['key' => 'smm', 'href' => '/smm', 'icon' => 'play', 'any' => ['smm.read'], 'gate' => [SmmAccess::class, 'allowed']],
+    // SMM: право smm.read (исполнителю — SMM-специальность) или назначенные идеи видеографа — SmmAccess::allowed()
+    ['key' => 'smm', 'href' => '/smm', 'icon' => 'play', 'gate' => [SmmAccess::class, 'allowed']],
     ['key' => 'todos', 'href' => '/todos', 'icon' => 'list'],
     ['key' => 'team', 'icon' => 'users', 'children' => [
         ['key' => 'employees', 'href' => '/team/employees', 'any' => ['employee.read']],

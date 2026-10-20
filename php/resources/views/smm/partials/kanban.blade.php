@@ -3,6 +3,7 @@
     use App\Services\Smm\SmmIdeaService;
     $cards = $items->mapWithKeys(fn ($i) => [$i->id => [
         'status' => $i->status, 'planned' => $i->planned_publish_date?->format('Y-m-d'), 'url' => $i->publish_url,
+        'videographer' => $i->videographer_id,
     ]]);
     $rejected = $items->where('status', 'REJECTED')->sortByDesc('rejected_at');
 @endphp
@@ -47,7 +48,16 @@
     <div x-show="ask" x-cloak class="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" x-on:keydown.escape.window="ask = null">
         <div class="absolute inset-0 bg-black/40" x-on:click="ask = null"></div>
         <form class="relative grid w-full max-w-md gap-4 rounded-t-xl bg-surface p-4 shadow-xl sm:rounded-xl sm:p-5" x-on:submit.prevent="confirm()">
-            <h2 class="font-semibold" x-text="ask && ask.status === 'SCHEDULED' ? @js(t('smm.askScheduled')) : @js(t('smm.askPublished'))"></h2>
+            <h2 class="font-semibold" x-text="ask && ask.status === 'SHOOTING' ? @js(t('smm.askShooting')) : (ask && ask.status === 'SCHEDULED' ? @js(t('smm.askScheduled')) : @js(t('smm.askPublished')))"></h2>
+            <template x-if="ask && ask.status === 'SHOOTING'">
+                <div>
+                    <label class="label" for="smm-ask-videographer">{{ t('smm.fields.videographer') }}<span class="text-danger"> *</span></label>
+                    <select id="smm-ask-videographer" class="input" x-model="ask.videographer" required>
+                        <option value="">{{ t('crm.common.select') }}</option>
+                        @foreach ($videographers as $v)<option value="{{ $v->id }}">{{ $v->full_name }}</option>@endforeach
+                    </select>
+                </div>
+            </template>
             <template x-if="ask && ask.status === 'SCHEDULED'">
                 <div>
                     <label class="label" for="smm-ask-date">{{ t('smm.fields.plannedDate') }}<span class="text-danger"> *</span></label>
@@ -92,8 +102,8 @@
         request(id, status, beforeId = null) {
             const card = cfg.cards[id];
             if (!card) return;
-            if (status !== card.status && ((status === 'SCHEDULED' && !card.planned) || status === 'PUBLISHED')) {
-                this.ask = { id, status, beforeId, date: card.planned || '', publishedAt: cfg.now, url: card.url || '' };
+            if (status !== card.status && ((status === 'SCHEDULED' && !card.planned) || status === 'PUBLISHED' || (status === 'SHOOTING' && !card.videographer))) {
+                this.ask = { id, status, beforeId, date: card.planned || '', publishedAt: cfg.now, url: card.url || '', videographer: '' };
                 return;
             }
             this.send(id, { status, before_id: beforeId });
@@ -102,6 +112,7 @@
             const a = this.ask;
             const body = { status: a.status, before_id: a.beforeId };
             if (a.status === 'SCHEDULED') body.planned_publish_date = a.date;
+            if (a.status === 'SHOOTING') body.videographer_id = a.videographer || null;
             if (a.status === 'PUBLISHED') { body.published_at = a.publishedAt || null; if (a.url) body.publish_url = a.url; }
             this.ask = null;
             this.send(a.id, body);

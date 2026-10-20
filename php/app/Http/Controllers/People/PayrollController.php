@@ -6,7 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\PayrollEntry;
 use App\Services\Finance\Input;
 use App\Services\Finance\Period;
+use App\Services\People\AttendanceCheckout;
 use App\Services\People\PeopleService;
+use App\Services\Smm\SmmIdeaService;
 use App\Services\Smm\SmmPayroll;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\RedirectResponse;
@@ -20,10 +22,16 @@ class PayrollController extends Controller
     {
         $period = Period::month($request->query('period'));
         $manage = access()->can('payroll.manage', 'ALL');
-        $data = ['period' => $period, 'manage' => $manage, 'entries' => PeopleService::payroll($period)];
+        $entries = PeopleService::payroll($period);
+        // Дни без отметки ухода, ещё не утверждённые CEO, в оклад пока не входят — предупреждение в строке
+        $pending = array_intersect_key(AttendanceCheckout::pendingByUser($period), $entries->pluck('user_id')->flip()->all());
+        $data = ['period' => $period, 'manage' => $manage, 'entries' => $entries, 'pendingCheckouts' => $pending,
+            'canApproveDays' => AttendanceCheckout::canApprove()];
         if ($manage) {
             $data['salaries'] = PeopleService::salaries();
             $data['videoPlans'] = SmmPayroll::plans();
+            // Опубликовано за месяц: как ответственный и как видеограф
+            $data['videoCounts'] = SmmIdeaService::publishedBreakdown($data['videoPlans']->pluck('id')->all(), $period);
         }
         if ($manage && ($id = $request->query('edit'))) {
             $data['editing'] = PayrollEntry::with(['user.role', 'user.employee'])->findOrFail($id);

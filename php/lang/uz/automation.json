@@ -69,6 +69,10 @@
     "payroll": {
       "label": "Ish haqini dastlabki hisoblash",
       "schedule": "oyning 1-sanasi 09:00"
+    },
+    "attendance-checkout": {
+      "label": "Ketish belgilanmagan: eslatma va avtomatik ketish",
+      "schedule": "har 5 daqiqada"
     }
   },
   "payroll": {

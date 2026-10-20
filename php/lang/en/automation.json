@@ -69,6 +69,10 @@
     "payroll": {
       "label": "Preliminary payroll calculation",
       "schedule": "on the 1st at 09:00"
+    },
+    "attendance-checkout": {
+      "label": "Missed check-out: reminder and auto check-out",
+      "schedule": "every 5 minutes"
     }
   },
   "payroll": {

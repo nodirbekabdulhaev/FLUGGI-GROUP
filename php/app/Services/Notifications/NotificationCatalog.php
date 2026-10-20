@@ -51,10 +51,14 @@ final class NotificationCatalog
         'report.daily' => ['CEO', 'ROP'],
         'report.weekly' => ['CEO'],
         'payroll.calculated' => ['CEO'],
+        // Посещаемость: «Вы не отметили уход» и день, закрытый автоматически (сотруднику и CEO на утверждение)
+        'attendance.no_checkout' => ['MANAGER', 'ROP'],
+        'attendance.auto_checkout' => ['MANAGER', 'ROP', 'CEO'],
         'smm.idea_created' => ['CEO', 'PROJECT_MANAGER'],
         'smm.idea_approved' => ['EXECUTOR', 'PROJECT_MANAGER'],
         'smm.idea_rejected' => ['EXECUTOR', 'PROJECT_MANAGER'],
         'smm.idea_status_changed' => ['EXECUTOR', 'PROJECT_MANAGER'],
+        'smm.videographer_assigned' => ['EXECUTOR', 'PROJECT_MANAGER'],
         // Партнёр (второй CEO) обычно с ролью CEO; уведомление о решении приходит ему при любой роли
         'partner.payout_requested' => ['CEO'],
         'partner.payout_decided' => ['CEO'],
@@ -67,6 +71,7 @@ final class NotificationCatalog
         'todo.recurring' => 'todo.due',
         'todo.overdue' => 'todo.due',
         'meeting.changed' => 'meeting.created',
+        'attendance.checkout_decided' => 'attendance.auto_checkout',
     ];
 
     public static function group(string $type): string

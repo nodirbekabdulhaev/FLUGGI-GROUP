@@ -13,12 +13,17 @@ use Symfony\Component\HttpKernel\Exception\HttpException;
 /**
  * Доступ к разделу SMM. Права: smm.read / smm.create / smm.approve. Исполнитель видит раздел,
  * только если среди его специальностей есть SMM-видео (SMM, видеограф, монтажёр, мобилограф, брендфейс);
- * с областью OWN — идеи, где он ответственный или автор. Чужая идея — 404.
+ * с областью OWN — идеи, где он ответственный, автор или видеограф. Чужая идея — 404.
+ * Сотрудник, назначенный видеографом, видит назначенные ему идеи (просмотр, комментарии, «Съёмка → Монтаж»),
+ * даже если раздел SMM ему иначе недоступен (нет права smm.read или SMM-специальности).
  */
 final class SmmAccess
 {
     /** Специальности исполнителей, которые делают ролики. */
     public const SPECIALTIES = ['SMM', 'VIDEOGRAPHER', 'EDITOR', 'MOBILOGRAPHER', 'BRANDFACE'];
+
+    /** Специальности, из которых выбирают видеографа идеи. */
+    public const VIDEOGRAPHER_SPECIALTIES = ['VIDEOGRAPHER', 'MOBILOGRAPHER'];
 
     /** Направление, проект-менеджеры которого утверждают идеи. */
     public const DIRECTION = 'MEDIA';
@@ -33,18 +38,8 @@ final class SmmAccess
         return $user->role?->code === 'EXECUTOR' && array_intersect($user->employee?->specialtyList() ?? [], self::SPECIALTIES) !== [];
     }
 
-    /** Право на раздел: smm.read и (для исполнителя) SMM-специальность — иначе 403. */
-    public static function authorize(string $code = 'smm.read'): void
-    {
-        $access = access();
-        $access->authorize($code);
-        if ($access->roleCode === 'EXECUTOR' && ! self::isSmmExecutor($access->user)) {
-            throw new HttpException(403);
-        }
-    }
-
-    /** Может ли текущий пользователь открыть раздел (для меню и ссылок). */
-    public static function allowed(): bool
+    /** Обычный доступ к разделу: smm.read и (для исполнителя) SMM-специальность. */
+    private static function sectionAccess(): bool
     {
         $access = access(false);
         if (! $access || ! $access->can('smm.read')) {
@@ -54,16 +49,49 @@ final class SmmAccess
         return $access->roleCode !== 'EXECUTOR' || self::isSmmExecutor($access->user);
     }
 
-    /** Идеи в зоне видимости: OWN — свои (ответственный или автор), TEAM — ещё и сотрудников своих отделов. */
+    /** Доступ только как видеограф: раздел иначе закрыт, но есть назначенные идеи. */
+    public static function videographerOnly(): bool
+    {
+        $access = access(false);
+
+        return $access && ! self::sectionAccess() && SmmIdea::where('videographer_id', $access->id())->exists();
+    }
+
+    /** Право на раздел: smm.read и (для исполнителя) SMM-специальность — иначе 403. Видеографу — просмотр своих идей. */
+    public static function authorize(string $code = 'smm.read'): void
+    {
+        $access = access();
+        if ($code === 'smm.read' && self::videographerOnly()) {
+            return;
+        }
+        $access->authorize($code);
+        if ($access->roleCode === 'EXECUTOR' && ! self::isSmmExecutor($access->user)) {
+            throw new HttpException(403);
+        }
+    }
+
+    /** Может ли текущий пользователь открыть раздел (для меню и ссылок). */
+    public static function allowed(): bool
+    {
+        return self::sectionAccess() || self::videographerOnly();
+    }
+
+    /**
+     * Идеи в зоне видимости: OWN — свои (ответственный, автор или видеограф), TEAM — ещё и сотрудников своих отделов;
+     * только видеограф — назначенные ему.
+     */
     public static function ideas(): Builder
     {
         self::authorize();
+        if (self::videographerOnly()) {
+            return SmmIdea::query()->where('videographer_id', access()->id());
+        }
 
         return access()->restrict(
             SmmIdea::query(),
             'smm.read',
-            fn ($q, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid),
-            fn ($q, $teamIds, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)
+            fn ($q, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)->orWhere('videographer_id', $uid),
+            fn ($q, $teamIds, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)->orWhere('videographer_id', $uid)
                 ->orWhereIn('assignee_id', fn ($u) => $u->select('id')->from('users')->whereIn('team_id', $teamIds ?: ['-'])),
         );
     }
@@ -104,6 +132,21 @@ final class SmmAccess
             ->whereHas('role', fn ($r) => $r->where('code', 'EXECUTOR'))
             ->whereHas('employee', fn ($e) => $e->withSpecialty(self::SPECIALTIES))
             ->exists();
+    }
+
+    /** Кого можно выбрать видеографом: активные сотрудники со специальностью «Видеограф» или «Мобилограф». */
+    public static function videographers(?string $keepId = null): Collection
+    {
+        return User::query()->where(fn ($q) => $q
+            ->where(fn ($w) => $w->where('status', 'ACTIVE')->whereHas('employee', fn ($e) => $e->withSpecialty(self::VIDEOGRAPHER_SPECIALTIES)))
+            ->when($keepId, fn ($w) => $w->orWhere('id', $keepId)))
+            ->orderBy('full_name')->get(['id', 'full_name']);
+    }
+
+    public static function isVideographer(string $userId): bool
+    {
+        return User::whereKey($userId)->where('status', 'ACTIVE')
+            ->whereHas('employee', fn ($e) => $e->withSpecialty(self::VIDEOGRAPHER_SPECIALTIES))->exists();
     }
 
     /**

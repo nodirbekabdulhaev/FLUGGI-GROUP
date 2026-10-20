@@ -43,14 +43,27 @@ final class TelegramClient
         return $data['result'] ?? null;
     }
 
-    public static function sendMessage(string $chatId, string $html): mixed
+    /** @param  list<list<array{text:string,callback_data:string}>>|null  $keyboard  inline-кнопки */
+    public static function sendMessage(string $chatId, string $html, ?array $keyboard = null): mixed
     {
         return self::call('sendMessage', [
             'chat_id' => $chatId,
             'text' => $html,
             'parse_mode' => 'HTML',
             'disable_web_page_preview' => true,
-        ]);
+        ] + ($keyboard ? ['reply_markup' => ['inline_keyboard' => $keyboard]] : []));
+    }
+
+    /** Ответ на нажатие inline-кнопки (всплывающий текст). */
+    public static function answerCallbackQuery(string $callbackId, string $text, bool $alert = false): mixed
+    {
+        return self::call('answerCallbackQuery', ['callback_query_id' => $callbackId, 'text' => mb_substr($text, 0, 200), 'show_alert' => $alert]);
+    }
+
+    /** Убрать inline-кнопки у сообщения (действие выполнено). */
+    public static function clearKeyboard(string $chatId, int $messageId): mixed
+    {
+        return self::call('editMessageReplyMarkup', ['chat_id' => $chatId, 'message_id' => $messageId, 'reply_markup' => ['inline_keyboard' => []]]);
     }
 
     /** @return array{username:string} */
@@ -69,7 +82,7 @@ final class TelegramClient
         return self::call('setWebhook', [
             'url' => $url,
             'secret_token' => $secret,
-            'allowed_updates' => ['message'],
+            'allowed_updates' => ['message', 'callback_query'],
             'drop_pending_updates' => false,
         ]);
     }

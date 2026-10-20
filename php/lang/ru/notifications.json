@@ -83,11 +83,16 @@
       "idea_created": "SMM: новая идея ролика",
       "idea_approved": "SMM: идея утверждена",
       "idea_rejected": "SMM: идея отклонена",
-      "idea_status_changed": "SMM: смена этапа ролика"
+      "idea_status_changed": "SMM: смена этапа ролика",
+      "videographer_assigned": "SMM: вы видеограф ролика"
     },
     "partner": {
       "payout_requested": "Партнёр: заявка на выплату",
       "payout_decided": "Партнёр: решение по выплате"
+    },
+    "attendance": {
+      "no_checkout": "Вы не отметили уход",
+      "auto_checkout": "Уход не отмечен — день на утверждении"
     }
   },
   "events": {

@@ -18,6 +18,10 @@
         $work = ['APPROVED', 'SHOOTING', 'EDITING', 'SCHEDULED', 'PUBLISHED'];
         $moveTargets = $idea->status === 'PUBLISHED' ? ['APPROVED', 'SHOOTING', 'EDITING', 'SCHEDULED']
             : (in_array($idea->status, $work, true) ? array_values(array_diff($work, [$idea->status])) : []);
+        // Видеограф (не ответственный и без права утверждать) переводит только «Съёмка → Монтаж»
+        if ($idea->can_move && ! $idea->can_edit && $idea->videographer_id === access()->id()) {
+            $moveTargets = $idea->status === 'SHOOTING' ? ['EDITING'] : [];
+        }
     @endphp
     <x-page-header :title="$idea->title" :subtitle="$idea->code().' · '.t('smm.authorOn', ['name' => $idea->author?->full_name, 'date' => dt($idea->created_at)])" back="/smm">
         <button type="button" class="btn btn-outline btn-sm" x-data x-on:click="$dispatch('open-modal', 'record-task')"><x-icon name="list" /> {{ t('todos.assignTask') }}</button>
@@ -36,6 +40,8 @@
                         <x-field name="notes" type="textarea" rows="3" :label="t('smm.fields.notes')" :value="$idea->notes" maxlength="5000" />
                         <div class="grid gap-4 sm:grid-cols-2">
                             <x-select name="assignee_id" :label="t('smm.fields.assignee')" :options="$assignees->pluck('full_name', 'id')->all()" :value="$idea->assignee_id" />
+                            <x-select name="videographer_id" :label="t('smm.fields.videographer')" :options="$videographers->pluck('full_name', 'id')->all()" :value="$idea->videographer_id"
+                                      :placeholder="t('smm.noVideographer')" :hint="t('smm.videographerHint')" />
                             <x-field name="planned_publish_date" type="date" :label="t('smm.fields.plannedDate')" :value="$idea->planned_publish_date?->format('Y-m-d')" :required="$idea->status === 'SCHEDULED'" />
                             @if ($idea->status === 'PUBLISHED')
                                 <x-field name="published_at" type="datetime-local" :label="t('smm.fields.publishedAt')" :value="Format::toLocalInput($idea->published_at)" />
@@ -106,6 +112,7 @@
             <x-card :title="t('smm.details')">
                 <dl class="grid gap-2 text-sm">
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.assignee') }}</dt><dd class="text-right">{{ $idea->assignee?->full_name }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.videographer') }}</dt><dd class="text-right">{{ $idea->videographer?->full_name ?? '—' }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.author') }}</dt><dd class="text-right">{{ $idea->author?->full_name }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.plannedDate') }}</dt><dd>{{ d($idea->planned_publish_date) }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.publishedAt') }}</dt><dd>{{ dt($idea->published_at) }}</dd></div>
@@ -165,6 +172,16 @@
                         <select name="status" class="input" x-model="to" aria-label="{{ t('smm.moveTo') }}">
                             @foreach ($moveTargets as $to)<option value="{{ $to }}">{{ t('smm.status.'.$to) }}</option>@endforeach
                         </select>
+                        @if (! $idea->videographer_id)
+                            <div x-show="to === 'SHOOTING'" x-cloak>
+                                <label class="label" for="move-videographer">{{ t('smm.fields.videographer') }}<span class="text-danger"> *</span></label>
+                                <select id="move-videographer" name="videographer_id" class="input" x-bind:disabled="to !== 'SHOOTING'">
+                                    <option value="">{{ t('crm.common.select') }}</option>
+                                    @foreach ($videographers as $v)<option value="{{ $v->id }}" @selected(old('videographer_id') === $v->id)>{{ $v->full_name }}</option>@endforeach
+                                </select>
+                                @error('videographer_id')<p class="error">{{ $message }}</p>@enderror
+                            </div>
+                        @endif
                         <div x-show="to === 'SCHEDULED'" x-cloak>
                             <x-field name="planned_publish_date" type="date" id="move-planned" :label="t('smm.fields.plannedDate')" :value="$idea->planned_publish_date?->format('Y-m-d')" x-bind:disabled="to !== 'SCHEDULED'" />
                         </div>

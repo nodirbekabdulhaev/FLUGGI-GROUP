@@ -83,11 +83,16 @@
       "idea_created": "SMM: new video idea",
       "idea_approved": "SMM: idea approved",
       "idea_rejected": "SMM: idea rejected",
-      "idea_status_changed": "SMM: video stage changed"
+      "idea_status_changed": "SMM: video stage changed",
+      "videographer_assigned": "SMM: you are the videographer of a video"
     },
     "partner": {
       "payout_requested": "Partner: payout request",
       "payout_decided": "Partner: payout decision"
+    },
+    "attendance": {
+      "no_checkout": "You have not checked out",
+      "auto_checkout": "No check-out — day awaiting approval"
     }
   },
   "events": {

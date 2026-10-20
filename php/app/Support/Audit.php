@@ -25,7 +25,7 @@ final class Audit
             'changes' => $changes,
             'ip' => $request?->ip(),
             'user_agent' => $request ? mb_substr((string) $request->userAgent(), 0, 500) : null,
-            'session_id' => $access?->sessionId,
+            'session_id' => $access?->sessionId ?: null,
         ]);
     }
 

@@ -23,6 +23,8 @@ use Illuminate\Support\Facades\DB;
  *  - Съёмка → монтаж → запланировано (нужна дата публикации) → опубликовано: только после утверждения;
  *    двигают ответственный, проект-менеджер и CEO (вперёд и назад). Вернуть из «Опубликовано» — только CEO.
  *  - Отклонённую идею автор или ответственный может отправить на утверждение заново (подписи сбрасываются).
+ *  - Видеограф (специальность «Видеограф» или «Мобилограф») обязателен для перехода в «Съёмка»; выбирают автор,
+ *    ответственный, проект-менеджер или CEO. Опубликованный ролик засчитывается в план роликов и ответственному, и видеографу.
  * Каждое изменение — в истории идеи (только добавление) и в журнале аудита.
  */
 final class SmmIdeaService
@@ -39,7 +41,7 @@ final class SmmIdeaService
     public const WORK = ['SHOOTING', 'EDITING', 'SCHEDULED', 'PUBLISHED'];
 
     /** Поля, изменения которых видны в истории. */
-    public const TRACKED = ['title', 'scenario', 'notes', 'assignee_id', 'planned_publish_date', 'published_at', 'publish_url'];
+    public const TRACKED = ['title', 'scenario', 'notes', 'assignee_id', 'videographer_id', 'planned_publish_date', 'published_at', 'publish_url'];
 
     public const COLORS = [
         'IDEA' => 'gray', 'APPROVED' => 'blue', 'SHOOTING' => 'yellow', 'EDITING' => 'yellow',
@@ -54,13 +56,14 @@ final class SmmIdeaService
     /**
      * Список и Kanban: фильтры — статус, ответственный, месяц (дата публикации, плановая дата или дата создания, по Ташкенту), поиск.
      *
-     * @param  array{status?:?string, assignee_id?:?string, month?:?string, q?:?string}  $f
+     * @param  array{status?:?string, assignee_id?:?string, videographer_id?:?string, month?:?string, q?:?string}  $f
      */
     public static function list(array $f): Collection
     {
-        $q = SmmAccess::ideas()->with(['assignee:id,full_name', 'author:id,full_name'])->withCount('comments')
+        $q = SmmAccess::ideas()->with(['assignee:id,full_name', 'author:id,full_name', 'videographer:id,full_name'])->withCount('comments')
             ->when($f['status'] ?? null, fn ($q, $v) => $q->where('status', $v))
             ->when($f['assignee_id'] ?? null, fn ($q, $v) => $q->where('assignee_id', $v))
+            ->when($f['videographer_id'] ?? null, fn ($q, $v) => $q->where('videographer_id', $v))
             ->when($f['q'] ?? null, fn ($q, $v) => $q->where(fn ($w) => $w->where('title', 'like', '%'.$v.'%')->orWhere('scenario', 'like', '%'.$v.'%')));
         if ($month = $f['month'] ?? null) {
             ['from' => $from, 'to' => $to] = People::monthRange($month);
@@ -85,7 +88,9 @@ final class SmmIdeaService
         foreach ($ideas as $i) {
             $mine = $i->assignee_id === $access->id() || $i->author_id === $access->id();
             $i->setAttribute('can_edit', $mine || $approve);
-            $i->setAttribute('can_move', $i->status === 'PUBLISHED' ? $ceo : ($i->assignee_id === $access->id() || $approve));
+            // Видеограф переводит ролик из «Съёмка» в «Монтаж»
+            $i->setAttribute('can_move', $i->status === 'PUBLISHED' ? $ceo
+                : ($i->assignee_id === $access->id() || $approve || ($i->status === 'SHOOTING' && $i->videographer_id === $access->id())));
             $i->setAttribute('can_approve', $approve && $i->status === 'IDEA'
                 && (SmmAccess::approverSlot() === 'ceo' ? ! $i->ceo_approved_by_id : ! $i->pm_approved_by_id));
             $i->setAttribute('can_reject', $approve && in_array($i->status, ['IDEA', 'APPROVED'], true));
@@ -97,7 +102,7 @@ final class SmmIdeaService
     public static function get(string $id): SmmIdea
     {
         $idea = SmmAccess::idea($id);
-        $idea->load(['assignee:id,full_name', 'author:id,full_name', 'pmApprovedBy:id,full_name', 'ceoApprovedBy:id,full_name', 'rejectedBy:id,full_name']);
+        $idea->load(['assignee:id,full_name', 'author:id,full_name', 'videographer:id,full_name', 'pmApprovedBy:id,full_name', 'ceoApprovedBy:id,full_name', 'rejectedBy:id,full_name']);
         self::decorate(collect([$idea]));
         $idea->setRelation('comments', SmmIdeaComment::with('author:id,full_name')->where('idea_id', $id)->orderBy('created_at')->get());
         $idea->setRelation('history', SmmIdeaHistory::with('user:id,full_name')->where('idea_id', $id)->orderByDesc('created_at')->orderByDesc('id')->get());
@@ -130,8 +135,10 @@ final class SmmIdeaService
         if (! SmmAccess::isAssignable($assigneeId)) {
             throw new BusinessRule(t('smm.errors.assigneeInvalid'), ['assignee_id' => t('smm.errors.assigneeInvalid')]);
         }
+        $videographerId = ($input['videographer_id'] ?? null) ?: null;
+        self::assertVideographer($videographerId);
 
-        return DB::transaction(function () use ($input, $access, $assigneeId) {
+        return DB::transaction(function () use ($input, $access, $assigneeId, $videographerId) {
             $last = SmmIdea::where('status', 'IDEA')->max('sort_order');
             $idea = SmmIdea::create([
                 'title' => $input['title'],
@@ -140,15 +147,20 @@ final class SmmIdeaService
                 'status' => 'IDEA',
                 'author_id' => $access->id(),
                 'assignee_id' => $assigneeId,
+                'videographer_id' => $videographerId,
                 'planned_publish_date' => $input['planned_publish_date'] ?? null,
                 'sort_order' => Tasks::sortBetween($last === null ? null : (float) $last, null),
             ]);
             $idea->refresh();
-            self::log($idea, 'created', [
+            self::log($idea, 'created', array_filter([
                 'title' => ['old' => null, 'new' => $idea->title],
                 'assignee' => ['old' => null, 'new' => self::userName($assigneeId)],
-            ]);
+                'videographer' => $videographerId ? ['old' => null, 'new' => self::userName($videographerId)] : null,
+            ]));
             Outbox::publish('smm.idea_created', ['ideaId' => $idea->id, 'authorId' => $access->id(), 'assigneeId' => $assigneeId]);
+            if ($videographerId) {
+                Outbox::publish('smm.videographer_assigned', ['ideaId' => $idea->id, 'videographerId' => $videographerId, 'previousId' => null]);
+            }
 
             return $idea;
         });
@@ -157,6 +169,34 @@ final class SmmIdeaService
     private static function userName(?string $id): ?string
     {
         return $id ? User::withTrashed()->whereKey($id)->value('full_name') : null;
+    }
+
+    /** Видеограф — активный сотрудник со специальностью «Видеограф» или «Мобилограф». */
+    private static function assertVideographer(?string $userId): void
+    {
+        if ($userId !== null && ! SmmAccess::isVideographer($userId)) {
+            throw new BusinessRule(t('smm.errors.videographerInvalid'), ['videographer_id' => t('smm.errors.videographerInvalid')]);
+        }
+    }
+
+    /** assignee_id / videographer_id в истории — имена сотрудников. */
+    private static function namedChanges(array $changes): array
+    {
+        foreach (['assignee_id' => 'assignee', 'videographer_id' => 'videographer'] as $field => $label) {
+            if (isset($changes[$field])) {
+                $changes[$label] = ['old' => self::userName($changes[$field]['old']), 'new' => self::userName($changes[$field]['new'])];
+                unset($changes[$field]);
+            }
+        }
+
+        return $changes;
+    }
+
+    private static function publishVideographer(SmmIdea $idea, ?array $diff): void
+    {
+        if ($diff && ($diff['new'] ?? null)) {
+            Outbox::publish('smm.videographer_assigned', ['ideaId' => $idea->id, 'videographerId' => $diff['new'], 'previousId' => $diff['old'] ?? null]);
+        }
     }
 
     private static function assertCanEdit(SmmIdea $idea): void
@@ -174,7 +214,7 @@ final class SmmIdeaService
     {
         $idea = SmmAccess::idea($id);
         self::assertCanEdit($idea);
-        $data = array_intersect_key($input, array_flip(['title', 'scenario', 'notes', 'assignee_id', 'planned_publish_date', 'publish_url', 'published_at']));
+        $data = array_intersect_key($input, array_flip(['title', 'scenario', 'notes', 'assignee_id', 'videographer_id', 'planned_publish_date', 'publish_url', 'published_at']));
         if (array_key_exists('title', $data) && ! filled($data['title'])) {
             unset($data['title']);
         }
@@ -183,6 +223,17 @@ final class SmmIdeaService
                 unset($data['assignee_id']);
             } elseif (! SmmAccess::isAssignable($data['assignee_id'])) {
                 throw new BusinessRule(t('smm.errors.assigneeInvalid'), ['assignee_id' => t('smm.errors.assigneeInvalid')]);
+            }
+        }
+        if (array_key_exists('videographer_id', $data)) {
+            $data['videographer_id'] = $data['videographer_id'] ?: null;
+            if ($data['videographer_id'] === $idea->videographer_id) {
+                unset($data['videographer_id']);
+            } elseif ($data['videographer_id'] === null && in_array($idea->status, self::WORK, true)) {
+                // Ролик уже снимают — без видеографа нельзя
+                throw new BusinessRule(t('smm.errors.videographerRequired'), ['videographer_id' => t('smm.errors.videographerRequired')]);
+            } else {
+                self::assertVideographer($data['videographer_id']);
             }
         }
         if ($idea->status === 'SCHEDULED' && array_key_exists('planned_publish_date', $data) && ! $data['planned_publish_date']) {
@@ -199,14 +250,13 @@ final class SmmIdeaService
             $idea->refresh();
             $changes = Audit::diff($old, self::comparable($idea), self::TRACKED);
             if ($changes) {
-                if (isset($changes['assignee_id'])) {
-                    $changes['assignee'] = ['old' => self::userName($changes['assignee_id']['old']), 'new' => self::userName($changes['assignee_id']['new'])];
-                    unset($changes['assignee_id']);
-                }
+                $videographer = $changes['videographer_id'] ?? null;
+                $changes = self::namedChanges($changes);
                 self::log($idea, 'updated', $changes);
                 if (isset($changes['assignee'])) {
                     Outbox::publish('smm.idea_status_changed', ['ideaId' => $idea->id, 'from' => $idea->status, 'to' => $idea->status, 'assigned' => true]);
                 }
+                self::publishVideographer($idea, $videographer);
             }
 
             return $idea;
@@ -221,6 +271,7 @@ final class SmmIdeaService
             'scenario' => $idea->scenario,
             'notes' => $idea->notes,
             'assignee_id' => $idea->assignee_id,
+            'videographer_id' => $idea->videographer_id,
             'planned_publish_date' => $idea->planned_publish_date?->format('Y-m-d'),
             'published_at' => $idea->published_at ? Format::dateTime($idea->published_at) : null,
             'publish_url' => $idea->publish_url,
@@ -282,7 +333,7 @@ final class SmmIdeaService
     /**
      * Перемещение по этапам (Kanban, «Переместить в» на телефоне).
      *
-     * @param  array{planned_publish_date?:?string, published_at?:?CarbonImmutable, publish_url?:?string}  $extra
+     * @param  array{planned_publish_date?:?string, published_at?:?CarbonImmutable, publish_url?:?string, videographer_id?:?string}  $extra
      */
     public static function move(string $id, string $to, ?string $beforeId = null, array $extra = []): SmmIdea
     {
@@ -311,12 +362,25 @@ final class SmmIdeaService
         } elseif (in_array($from, ['IDEA', 'REJECTED'], true)) {
             throw new BusinessRule(t('smm.errors.needsApproval'));
         } else {
-            // APPROVED / SHOOTING / EDITING / SCHEDULED → APPROVED / SHOOTING / EDITING / SCHEDULED / PUBLISHED
-            abort_unless($idea->assignee_id === $uid || $approver, 403);
+            // APPROVED / SHOOTING / EDITING / SCHEDULED → APPROVED / SHOOTING / EDITING / SCHEDULED / PUBLISHED;
+            // видеограф — только «Съёмка → Монтаж»
+            abort_unless($idea->assignee_id === $uid || $approver
+                || ($idea->videographer_id === $uid && $from === 'SHOOTING' && $to === 'EDITING'), 403);
         }
 
         $data = ['status' => $to, 'sort_order' => self::positionIn($to, $beforeId, $idea->id)];
         if ($from !== $to) {
+            if ($to === 'SHOOTING') {
+                // Снимать без видеографа нельзя: выбрать при переносе или заранее в карточке
+                $videographer = ($extra['videographer_id'] ?? null) ?: $idea->videographer_id;
+                if (! $videographer) {
+                    throw new BusinessRule(t('smm.errors.videographerRequired'), ['videographer_id' => t('smm.errors.videographerRequired')]);
+                }
+                if ($videographer !== $idea->videographer_id) {
+                    self::assertVideographer($videographer);
+                    $data['videographer_id'] = $videographer;
+                }
+            }
             if ($to === 'SCHEDULED') {
                 $date = ($extra['planned_publish_date'] ?? null) ?: $idea->planned_publish_date?->format('Y-m-d');
                 if (! $date) {
@@ -345,10 +409,11 @@ final class SmmIdeaService
             if ($from === $to) {
                 return $idea;
             }
-            $changes = ['status' => ['old' => $from, 'new' => $to]]
-                + (Audit::diff($old, self::comparable($idea), ['planned_publish_date', 'published_at', 'publish_url']) ?? []);
+            $diff = Audit::diff($old, self::comparable($idea), ['videographer_id', 'planned_publish_date', 'published_at', 'publish_url']) ?? [];
+            $changes = ['status' => ['old' => $from, 'new' => $to]] + self::namedChanges($diff);
             self::log($idea, $to === 'IDEA' ? 'resubmitted' : 'status', $changes);
             Outbox::publish('smm.idea_status_changed', ['ideaId' => $idea->id, 'from' => $from, 'to' => $to]);
+            self::publishVideographer($idea, $diff['videographer_id'] ?? null);
 
             return $idea;
         });
@@ -433,12 +498,38 @@ final class SmmIdeaService
         return $ideaId;
     }
 
-    /** Опубликовано роликов сотрудником за месяц (по Ташкенту). */
+    /**
+     * Опубликовано роликов сотрудником за месяц (по Ташкенту): он ответственный или видеограф ролика.
+     * Ролик, где сотрудник и ответственный, и видеограф, считается один раз.
+     */
     public static function publishedCount(string $userId, string $period): int
     {
         ['from' => $from, 'to' => $to] = People::monthRange($period);
 
-        return SmmIdea::where('assignee_id', $userId)->where('status', 'PUBLISHED')
+        return SmmIdea::where(fn ($q) => $q->where('assignee_id', $userId)->orWhere('videographer_id', $userId))->where('status', 'PUBLISHED')
             ->where('published_at', '>=', $from)->where('published_at', '<', $to)->count();
+    }
+
+    /**
+     * Опубликовано за месяц по ролям: user_id → [assignee — как ответственный, videographer — как видеограф].
+     *
+     * @param  list<string>  $userIds
+     * @return array<string, array{assignee:int, videographer:int}>
+     */
+    public static function publishedBreakdown(array $userIds, string $period): array
+    {
+        if (! $userIds) {
+            return [];
+        }
+        ['from' => $from, 'to' => $to] = People::monthRange($period);
+        $base = fn () => SmmIdea::where('status', 'PUBLISHED')->where('published_at', '>=', $from)->where('published_at', '<', $to);
+        $byAssignee = $base()->whereIn('assignee_id', $userIds)->groupBy('assignee_id')->selectRaw('assignee_id AS u, COUNT(*) AS n')->pluck('n', 'u');
+        $byVideographer = $base()->whereIn('videographer_id', $userIds)->groupBy('videographer_id')->selectRaw('videographer_id AS u, COUNT(*) AS n')->pluck('n', 'u');
+        $out = [];
+        foreach ($userIds as $id) {
+            $out[$id] = ['assignee' => (int) ($byAssignee[$id] ?? 0), 'videographer' => (int) ($byVideographer[$id] ?? 0)];
+        }
+
+        return $out;
     }
 }
