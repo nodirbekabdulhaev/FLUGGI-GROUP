@@ -1,0 +1,100 @@
+<?php
+
+namespace App\Services\Telegram;
+
+use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Http;
+
+/** Тонкий клиент Telegram Bot API (Laravel HTTP client, без сторонних библиотек). */
+final class TelegramClient
+{
+    public const API_BASE = 'https://api.telegram.org';
+
+    public static function configured(): bool
+    {
+        return (bool) config('fluggi.telegram.token');
+    }
+
+    /** Имя бота из .env (без @). */
+    public static function configuredUsername(): ?string
+    {
+        $name = ltrim(trim((string) config('fluggi.telegram.username')), '@');
+
+        return $name !== '' ? $name : null;
+    }
+
+    /**
+     * @throws TelegramApiError
+     * @throws ConnectionException
+     */
+    public static function call(string $method, array $body = [], int $timeout = 15): mixed
+    {
+        $token = config('fluggi.telegram.token');
+        if (! $token) {
+            throw new TelegramApiError(0, t('telegram.problems.notConfigured'));
+        }
+        $res = Http::timeout($timeout)->acceptJson()->asJson()
+            ->post(self::API_BASE.'/bot'.$token.'/'.$method, $body ?: (object) []);
+        $data = $res->json() ?? [];
+        if (! $res->successful() || empty($data['ok'])) {
+            throw new TelegramApiError($res->status(), (string) ($data['description'] ?? $res->reason()), $data['parameters']['retry_after'] ?? null);
+        }
+
+        return $data['result'] ?? null;
+    }
+
+    /** @param  list<list<array{text:string,callback_data:string}>>|null  $keyboard  inline-кнопки */
+    public static function sendMessage(string $chatId, string $html, ?array $keyboard = null): mixed
+    {
+        return self::call('sendMessage', [
+            'chat_id' => $chatId,
+            'text' => $html,
+            'parse_mode' => 'HTML',
+            'disable_web_page_preview' => true,
+        ] + ($keyboard ? ['reply_markup' => ['inline_keyboard' => $keyboard]] : []));
+    }
+
+    /** Ответ на нажатие inline-кнопки (всплывающий текст). */
+    public static function answerCallbackQuery(string $callbackId, string $text, bool $alert = false): mixed
+    {
+        return self::call('answerCallbackQuery', ['callback_query_id' => $callbackId, 'text' => mb_substr($text, 0, 200), 'show_alert' => $alert]);
+    }
+
+    /** Убрать inline-кнопки у сообщения (действие выполнено). */
+    public static function clearKeyboard(string $chatId, int $messageId): mixed
+    {
+        return self::call('editMessageReplyMarkup', ['chat_id' => $chatId, 'message_id' => $messageId, 'reply_markup' => ['inline_keyboard' => []]]);
+    }
+
+    /** @return array{username:string} */
+    public static function getMe(): array
+    {
+        return (array) self::call('getMe');
+    }
+
+    public static function getWebhookInfo(): array
+    {
+        return (array) self::call('getWebhookInfo');
+    }
+
+    public static function setWebhook(string $url, string $secret): mixed
+    {
+        return self::call('setWebhook', [
+            'url' => $url,
+            'secret_token' => $secret,
+            'allowed_updates' => ['message', 'callback_query'],
+            'drop_pending_updates' => false,
+        ]);
+    }
+
+    public static function deleteWebhook(): mixed
+    {
+        return self::call('deleteWebhook');
+    }
+
+    /** Экранирование для parse_mode=HTML. */
+    public static function escape(string $text): string
+    {
+        return str_replace(['&', '<', '>'], ['&amp;', '&lt;', '&gt;'], $text);
+    }
+}

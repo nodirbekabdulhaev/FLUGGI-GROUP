@@ -1,0 +1,57 @@
+{
+  "title": "KPI",
+  "subtitle": "Monthly employee metrics and target achievement",
+  "groups": {
+    "MANAGER": "Managers",
+    "ROP": "Sales heads (ROP)",
+    "EXECUTOR": "Executors"
+  },
+  "period": "Month",
+  "empty": "No data",
+  "emptyText": "Metrics will appear once employees have leads, payments or tasks.",
+  "employee": "Employee",
+  "kpi": "KPI",
+  "noTargets": "No targets set",
+  "setTargets": "Targets",
+  "targetsTitle": "Targets for {period}: {name}",
+  "targetsSaved": "Targets saved",
+  "targetsHint": "Empty field — no target. KPI achievement is the average across the set targets.",
+  "metric": {
+    "REVENUE": "Revenue",
+    "ORDERS": "Orders",
+    "LEADS": "Leads",
+    "MEETINGS": "Meetings",
+    "TASKS": "Completed tasks"
+  },
+  "m": {
+    "leads": "Leads",
+    "processedLeads": "Processed",
+    "meetings": "Meetings",
+    "proposals": "Proposals",
+    "contracts": "Contracts",
+    "payments": "Payments",
+    "orders": "Orders",
+    "revenue": "Revenue",
+    "avgCheck": "Average deal size",
+    "conversion": "Conversion",
+    "teamRevenue": "Team sales",
+    "managers": "Managers",
+    "plan": "Plan",
+    "planPct": "Plan achievement",
+    "margin": "Margin",
+    "projects": "Projects",
+    "overdue": "Overdue",
+    "overdueTasks": "overdue tasks",
+    "overdueProjects": "overdue projects",
+    "tasks": "Tasks",
+    "done": "Completed",
+    "overdueCount": "Overdue",
+    "avgHours": "Avg. time, h",
+    "completion": "% completed",
+    "reworks": "Reworks"
+  },
+  "errors": {
+    "ownTargets": "Your own targets are set by your manager",
+    "value": "Invalid target value"
+  }
+}

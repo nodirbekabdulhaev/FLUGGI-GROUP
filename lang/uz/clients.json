@@ -1,0 +1,30 @@
+{
+  "title": "Mijozlar",
+  "subtitle": "Bitimlar mavjud boʻlgan kompaniyalar va shaxslar",
+  "add": "Mijoz qoʻshish",
+  "emptyTitle": "Hozircha mijozlar yoʻq",
+  "emptyText": "Mijozlar lid kvalifikatsiyasida yoki qoʻlda yaratiladi.",
+  "emptyFiltered": "Mijozlar topilmadi",
+  "search": "Nomi, telefon, kontakt",
+  "createTitle": "Yangi mijoz",
+  "editTitle": "Mijozni tahrirlash",
+  "deals": "Mijoz bitimlari",
+  "contacts": "Kontaktlar",
+  "addContact": "Kontakt qoʻshish",
+  "primary": "Asosiy",
+  "dealsCount": "{count} ta bitim · {open} tasi jarayonda",
+  "newDeal": "Yangi bitim",
+  "noDeals": "Hozircha bitimlar yoʻq",
+  "noContacts": "Hozircha kontaktlar yoʻq",
+  "contact": "Kontakt",
+  "createSubmit": "Mijoz yaratish",
+  "errors": {
+    "account": "Hisob raqami — 20 ta raqam",
+    "contactInDeal": "Kontakt bitimda koʻrsatilgan — avval uni u yerda almashtiring",
+    "contactName": "Ismni kiriting",
+    "inn": "STIR — 9 ta raqam, JShShIR — 14 ta raqam",
+    "mfo": "MFO — 5 ta raqam",
+    "nameRequired": "Nomini kiriting"
+  },
+  "deleteConfirm": "«{name}» mijozi oʻchirilsinmi? U bilan birga lidlar ({leads}), bitimlar ({deals}) va loyihalar ({projects}) ham oʻchiriladi. Toʻlovlar, shartnomalar va tarix saqlanib qoladi."
+}

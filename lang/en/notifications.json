@@ -1,0 +1,125 @@
+{
+  "title": "Notifications",
+  "subtitle": "Events for your leads, deals and meetings",
+  "readAll": "Mark all as read",
+  "empty": "No notifications",
+  "emptyText": "New leads, meetings and other events will appear here.",
+  "open": "Open",
+  "tgOn": "✓ Notifications are also sent to Telegram {username}. Choose which ones in your profile, under “Notification settings”.",
+  "tgOff": "Telegram is not connected — notifications arrive only here.",
+  "tgProblem": "The Telegram bot is not working: {problem}",
+  "tgNotConfigured": "The Telegram bot is not configured on the server (TELEGRAM_BOT_TOKEN in .env).",
+  "tgSetup": "Connect in your profile →",
+  "types": {
+    "lead": {
+      "created": "New lead",
+      "assigned": "Lead assigned to you",
+      "large": "Large lead",
+      "inbound_repeat": "Repeat request from a client"
+    },
+    "deal": {
+      "created": "New deal",
+      "large": "Large deal",
+      "large_lost": "Large client lost"
+    },
+    "meeting": {
+      "created": "New meeting",
+      "reminder": "Meeting tomorrow / in 30 minutes"
+    },
+    "client": {
+      "no_contact": "Client not called for 3 days / client not responding",
+      "risk": "Client at risk"
+    },
+    "proposal": {
+      "approval": "Proposal awaiting approval",
+      "reminder": "Proposal sent 2 days ago"
+    },
+    "contract": {
+      "reminder": "Contract not signed",
+      "signed": "Contract signed"
+    },
+    "payment": {
+      "paid": "Payment received",
+      "overdue": "Payment overdue"
+    },
+    "plan": {
+      "achieved": "Monthly plan achieved"
+    },
+    "project": {
+      "created": "New project",
+      "member_added": "You were added to a project",
+      "ending": "Project ends in 3 days",
+      "overdue": "Overdue project",
+      "completed": "Project completed"
+    },
+    "task": {
+      "assigned": "New task",
+      "deadline_changed": "Deadline changed",
+      "review": "Task in review",
+      "returned": "Task returned / accepted",
+      "overdue": "Overdue task"
+    },
+    "followup": {
+      "due": "Client follow-up"
+    },
+    "todo": {
+      "assigned": "A to-do or a task from a card was assigned to you",
+      "due": "To-do due / recurring task"
+    },
+    "chat": {
+      "message": "Chat message"
+    },
+    "social": {
+      "message": "Instagram: Direct and comments"
+    },
+    "report": {
+      "daily": "Daily report",
+      "weekly": "Weekly report"
+    },
+    "payroll": {
+      "calculated": "Preliminary payroll calculation"
+    },
+    "smm": {
+      "idea_created": "SMM: new video idea",
+      "idea_approved": "SMM: idea approved",
+      "idea_rejected": "SMM: idea rejected",
+      "idea_status_changed": "SMM: video stage changed",
+      "videographer_assigned": "SMM: you are the videographer of a video"
+    },
+    "partner": {
+      "payout_requested": "Partner: payout request",
+      "payout_decided": "Partner: payout decision"
+    },
+    "attendance": {
+      "no_checkout": "You have not checked out",
+      "auto_checkout": "No check-out — day awaiting approval"
+    }
+  },
+  "events": {
+    "leadCreated": "New lead",
+    "leadLarge": "Large lead",
+    "leadAssigned": "Lead assigned to you",
+    "dealCreated": "New deal",
+    "dealLarge": "Large deal",
+    "dealLargeLost": "Large client lost",
+    "proposalApproval": "Proposal for approval",
+    "contractSigned": "Contract signed",
+    "paymentPaid": "Payment received",
+    "projectCreated": "New project",
+    "projectCreatedBody": "{project} — assign executors",
+    "projectMemberAdded": "You were added to a project",
+    "projectCompleted": "Project completed",
+    "projectCancelled": "Project cancelled",
+    "taskAssigned": "New task",
+    "taskReview": "Task in review",
+    "taskAccepted": "Task accepted",
+    "taskReturned": "Task returned for rework",
+    "taskDeadlineChanged": "Task deadline changed",
+    "noDeadline": "no deadline",
+    "taskOverdue": "Overdue by {days, plural, one {# day} other {# days}}",
+    "meetingCreated": "New meeting",
+    "meetingAdded": "You were added to a meeting",
+    "meetingRescheduled": "Meeting rescheduled",
+    "meetingCancelled": "Meeting cancelled"
+  }
+}
