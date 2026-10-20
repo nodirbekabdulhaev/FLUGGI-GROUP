@@ -1,0 +1,125 @@
+{
+  "title": "Bildirishnomalar",
+  "subtitle": "Lidlaringiz, bitimlaringiz va uchrashuvlaringiz boʻyicha voqealar",
+  "readAll": "Barchasini oʻqilgan deb belgilash",
+  "empty": "Bildirishnomalar yoʻq",
+  "emptyText": "Bu yerda yangi lidlar, uchrashuvlar va boshqa voqealar paydo boʻladi.",
+  "open": "Ochish",
+  "tgOn": "✓ Bildirishnomalar Telegram {username} ga ham yuboriladi. Qaysilari — profildagi «Bildirishnoma sozlamalari» boʻlimida.",
+  "tgOff": "Telegram ulanmagan — bildirishnomalar faqat shu yerga keladi.",
+  "tgProblem": "Telegram-bot ishlamayapti: {problem}",
+  "tgNotConfigured": "Telegram-bot serverda sozlanmagan (.env dagi TELEGRAM_BOT_TOKEN).",
+  "tgSetup": "Profilda ulash →",
+  "types": {
+    "lead": {
+      "created": "Yangi lid",
+      "assigned": "Sizga lid biriktirildi",
+      "large": "Yirik lid",
+      "inbound_repeat": "Mijozning takroriy arizasi"
+    },
+    "deal": {
+      "created": "Yangi bitim",
+      "large": "Yirik bitim",
+      "large_lost": "Yirik mijozni yoʻqotish"
+    },
+    "meeting": {
+      "created": "Yangi uchrashuv",
+      "reminder": "Uchrashuv ertaga / 30 daqiqadan soʻng"
+    },
+    "client": {
+      "no_contact": "Mijozga 3 kun qoʻngʻiroq qilinmadi / mijoz javob bermayapti",
+      "risk": "Mijoz xavf zonasida"
+    },
+    "proposal": {
+      "approval": "TT kelishuvda",
+      "reminder": "TT 2 kun oldin yuborilgan"
+    },
+    "contract": {
+      "reminder": "Shartnoma imzolanmagan",
+      "signed": "Shartnoma imzolandi"
+    },
+    "payment": {
+      "paid": "Toʻlov qabul qilindi",
+      "overdue": "Toʻlov muddati oʻtdi"
+    },
+    "plan": {
+      "achieved": "Oylik rejaga erishish"
+    },
+    "project": {
+      "created": "Yangi loyiha",
+      "member_added": "Sizni loyihaga qoʻshishdi",
+      "ending": "Loyiha 3 kundan soʻng tugaydi",
+      "overdue": "Muddati oʻtgan loyiha",
+      "completed": "Loyiha yakunlandi"
+    },
+    "task": {
+      "assigned": "Yangi vazifa",
+      "deadline_changed": "Muddat oʻzgarishi",
+      "review": "Vazifa tekshiruvda",
+      "returned": "Vazifa qaytarildi / qabul qilindi",
+      "overdue": "Muddati oʻtgan vazifa"
+    },
+    "followup": {
+      "due": "Mijoz bilan takroriy aloqa"
+    },
+    "todo": {
+      "assigned": "Sizga ish yoki kartochkadan vazifa topshirildi",
+      "due": "Ish muddati / muntazam vazifa"
+    },
+    "chat": {
+      "message": "Chatdagi xabar"
+    },
+    "social": {
+      "message": "Instagram: Direkt va izohlar"
+    },
+    "report": {
+      "daily": "Kunlik hisobot",
+      "weekly": "Haftalik hisobot"
+    },
+    "payroll": {
+      "calculated": "Ish haqining dastlabki hisobi"
+    },
+    "smm": {
+      "idea_created": "SMM: yangi rolik gʻoyasi",
+      "idea_approved": "SMM: gʻoya tasdiqlandi",
+      "idea_rejected": "SMM: gʻoya rad etildi",
+      "idea_status_changed": "SMM: rolik bosqichi oʻzgardi",
+      "videographer_assigned": "SMM: siz rolik videografisiz"
+    },
+    "partner": {
+      "payout_requested": "Hamkor: toʻlov soʻrovi",
+      "payout_decided": "Hamkor: toʻlov boʻyicha qaror"
+    },
+    "attendance": {
+      "no_checkout": "Siz ketishni belgilamadingiz",
+      "auto_checkout": "Ketish belgilanmagan — kun tasdiqlashda"
+    }
+  },
+  "events": {
+    "leadCreated": "Yangi lid",
+    "leadLarge": "Yirik lid",
+    "leadAssigned": "Sizga lid biriktirildi",
+    "dealCreated": "Yangi bitim",
+    "dealLarge": "Yirik bitim",
+    "dealLargeLost": "Yirik mijozni yoʻqotish",
+    "proposalApproval": "TT kelishuvga",
+    "contractSigned": "Shartnoma imzolandi",
+    "paymentPaid": "Toʻlov qabul qilindi",
+    "projectCreated": "Yangi loyiha",
+    "projectCreatedBody": "{project} — ijrochilarni tayinlang",
+    "projectMemberAdded": "Sizni loyihaga qoʻshishdi",
+    "projectCompleted": "Loyiha yakunlandi",
+    "projectCancelled": "Loyiha bekor qilindi",
+    "taskAssigned": "Yangi vazifa",
+    "taskReview": "Vazifa tekshiruvda",
+    "taskAccepted": "Vazifa qabul qilindi",
+    "taskReturned": "Vazifa qayta ishlashga qaytarildi",
+    "taskDeadlineChanged": "Vazifa muddati oʻzgardi",
+    "noDeadline": "muddatsiz",
+    "taskOverdue": "Muddati {days} kunga oʻtdi",
+    "meetingCreated": "Yangi uchrashuv",
+    "meetingAdded": "Sizni uchrashuvga qoʻshishdi",
+    "meetingRescheduled": "Uchrashuv koʻchirildi",
+    "meetingCancelled": "Uchrashuv bekor qilindi"
+  }
+}

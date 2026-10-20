@@ -1,0 +1,69 @@
+{
+  "title": "My partner income",
+  "subtitle": "{name} — {pct}% of each project's net profit",
+  "subtitleNone": "Partner share of project net profit",
+  "notConfigured": "No partner assigned",
+  "configure": "Assign in Settings → Finance",
+  "totals": {
+    "share": "Partner share",
+    "net": "Projects net profit",
+    "paid": "Paid",
+    "requested": "Awaiting approval",
+    "remaining": "Remaining to pay"
+  },
+  "pendingTitle": "Payout requests: {count}",
+  "pendingText": "Approve a payout after the money has been handed to the partner.",
+  "pendingWait": "Awaiting the CEO's decision.",
+  "col": {
+    "project": "Project",
+    "amount": "Amount",
+    "requestedBy": "Requested by",
+    "comment": "Comment",
+    "status": "Status",
+    "revenue": "Price",
+    "netProfit": "Net profit",
+    "share": "Partner share",
+    "paid": "Paid",
+    "remaining": "Remaining",
+    "date": "Date",
+    "decidedBy": "Decision"
+  },
+  "approveConfirm": "Approve payout of {amount}?",
+  "approve": "Approve",
+  "reject": "Reject",
+  "projectsTitle": "Share by project",
+  "projectsText": "{pct}% of project net profit; on a loss the share is 0.",
+  "noProjects": "No projects yet",
+  "onApproval": "awaiting approval",
+  "request": "Request payout",
+  "total": "Total",
+  "historyTitle": "Payout history",
+  "noPayouts": "No payouts yet",
+  "status": {
+    "REQUESTED": "Awaiting approval",
+    "APPROVED": "Paid",
+    "REJECTED": "Rejected"
+  },
+  "requestTitle": "Partner payout request",
+  "remainingHint": "You can request at most",
+  "cancel": "Cancel",
+  "send": "Send for approval",
+  "rejectTitle": "Reject payout",
+  "rejectReason": "Rejection reason",
+  "requested": "Request sent to the CEO for approval",
+  "approved": "Payout approved",
+  "rejected": "Payout rejected",
+  "errors": {
+    "partnerUser": "Select an active employee",
+    "notConfigured": "No partner is assigned in finance settings",
+    "amount": "Enter an amount greater than zero",
+    "overRemaining": "The amount exceeds the remaining payout ({amount})",
+    "decided": "This request has already been decided",
+    "reason": "Enter the rejection reason"
+  },
+  "notify": {
+    "requested": "Partner payout request: {name}",
+    "approved": "Partner payout approved",
+    "rejected": "Partner payout rejected"
+  }
+}

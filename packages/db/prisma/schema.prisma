@@ -1,0 +1,2086 @@
+// Fluggi OS — схема БД. Изменения только через миграции (prisma migrate).
+// Описание таблиц: DATABASE.md
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = []
+  // native — машина сборки; debian-openssl-* — Linux-серверы (VPS, Docker, виртуальный хостинг Beget)
+  binaryTargets   = ["native", "debian-openssl-3.0.x", "debian-openssl-1.1.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// ─────────────────────────────── Enums ───────────────────────────────
+
+enum RoleCode {
+  CEO
+  ROP
+  MANAGER
+  EXECUTOR
+  HR_ADMIN
+  PROJECT_MANAGER
+}
+
+enum PermissionScope {
+  OWN
+  TEAM
+  ALL
+}
+
+enum UserStatus {
+  ACTIVE
+  BLOCKED
+}
+
+enum Locale {
+  ru
+  uz
+  en
+}
+
+enum ExecutorSpecialty {
+  SMM
+  DESIGNER
+  VIDEOGRAPHER
+  EDITOR
+  TARGETOLOGIST
+  DEVELOPER
+  PHOTOGRAPHER
+  COPYWRITER
+  MOBILOGRAPHER
+  BRANDFACE
+}
+
+// ──────────────────────── Пользователи и доступ ────────────────────────
+
+model User {
+  id               String     @id @default(uuid()) @db.Char(36)
+  email            String     @unique
+  phone            String?    @db.Text
+  passwordHash     String     @map("password_hash") @db.Text
+  fullName         String     @map("full_name") @db.Text
+  roleId           String     @map("role_id") @db.Char(36)
+  teamId           String?    @map("team_id") @db.Char(36)
+  status           UserStatus @default(ACTIVE)
+  locale           Locale     @default(ru)
+  telegramChatId   String?    @unique @map("telegram_chat_id")
+  telegramUsername String?    @map("telegram_username") @db.Text
+  failedLoginCount Int        @default(0) @map("failed_login_count")
+  lockedUntil      DateTime?  @map("locked_until")
+  lastLoginAt      DateTime?  @map("last_login_at")
+  createdAt        DateTime   @default(now()) @map("created_at")
+  updatedAt        DateTime   @updatedAt @map("updated_at")
+  deletedAt        DateTime?  @map("deleted_at")
+
+  role          Role            @relation(fields: [roleId], references: [id])
+  team          Team?           @relation("TeamMembers", fields: [teamId], references: [id])
+  headedTeams   Team[]          @relation("TeamHead")
+  directions    UserDirection[]
+  leadForms     LeadForm[]      @relation("LeadFormOwner")
+  socialThreads SocialThread[]  @relation("SocialThreadOwner")
+  socialReplies SocialMessage[] @relation("SocialMessageAuthor")
+  employee      Employee?
+  sessions      Session[]
+  auditLogs     AuditLog[]
+
+  ownedLeads       Lead[]         @relation("LeadOwner")
+  createdLeads     Lead[]         @relation("LeadCreator")
+  ownedClients     Client[]       @relation("ClientOwner")
+  ownedDeals       Deal[]         @relation("DealOwner")
+  createdDeals     Deal[]         @relation("DealCreator")
+  managedMeetings  Meeting[]      @relation("MeetingManager")
+  ropMeetings      Meeting[]      @relation("MeetingRop")
+  activities       Activity[]
+  comments         Comment[]
+  stageChanges     StageHistory[]
+  notifications    Notification[]
+  exchangeRatesSet ExchangeRate[]
+
+  proposalsManaged  Proposal[]        @relation("ProposalManager")
+  proposalsApproved Proposal[]        @relation("ProposalApprover")
+  proposalVersions  ProposalVersion[]
+  contractsCreated  Contract[]
+  paymentsCreated   Payment[]         @relation("PaymentCreator")
+  paymentsConfirmed Payment[]         @relation("PaymentConfirmer")
+  projectsAsRop     Project[]         @relation("ProjectRop")
+  projectsAsManager Project[]         @relation("ProjectManager")
+  commissions       Commission[]      @relation("CommissionUser")
+  filesUploaded     StoredFile[]
+
+  projectMemberships ProjectMember[]     @relation("ProjectMemberUser")
+  projectAssignments ProjectMember[]     @relation("ProjectMemberAssigner")
+  tasksAssigned      Task[]              @relation("TaskAssignee")
+  tasksCreated       Task[]              @relation("TaskCreator")
+  taskStatusChanges  TaskStatusHistory[]
+  taskComments       TaskComment[]
+
+  expensesCreated     Expense[]    @relation("ExpenseCreator")
+  expensesPaid        Expense[]    @relation("ExpensePayee")
+  commissionsApproved Commission[] @relation("CommissionApprover")
+  commissionsPaidOut  Commission[] @relation("CommissionPayer")
+
+  kpiTargets       KpiTarget[]    @relation("KpiTargetUser")
+  kpiTargetsSet    KpiTarget[]    @relation("KpiTargetSetter")
+  attendance       Attendance[]   @relation("AttendanceUser")
+  attendanceEdited Attendance[]   @relation("AttendanceEditor")
+  payroll          PayrollEntry[] @relation("PayrollUser")
+
+  todosOwned       Todo[]               @relation("TodoOwner")
+  workRates        EmployeeRate[]
+  costLines        ProjectCostLine[]
+  otherIncomes     OtherIncome[]
+  todosCreated     Todo[]               @relation("TodoCreator")
+  recurringOwned   RecurringTodo[]      @relation("RecurringOwner")
+  recurringCreated RecurringTodo[]      @relation("RecurringCreator")
+  chatMemberships  ConversationMember[]
+  chatMessages     ChatMessage[]
+  payrollApproved  PayrollEntry[]       @relation("PayrollApprover")
+
+  telegramLinkTokens   TelegramLinkToken[]
+  notificationSettings NotificationSetting[]
+  deliveries           NotificationDelivery[]
+  followUpsOwned       FollowUp[]             @relation("FollowUpOwner")
+  followUpsCompleted   FollowUp[]             @relation("FollowUpCompleter")
+
+  @@index([roleId])
+  @@index([teamId])
+  @@index([status])
+  @@map("users")
+}
+
+model Role {
+  id        String   @id @default(uuid()) @db.Char(36)
+  code      RoleCode @unique
+  name      String   @db.Text
+  isSystem  Boolean  @default(true) @map("is_system")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users       User[]
+  permissions RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id          String @id @default(uuid()) @db.Char(36)
+  code        String @unique
+  module      String @db.Text
+  description String @db.Text
+
+  roles RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  roleId       String          @map("role_id") @db.Char(36)
+  permissionId String          @map("permission_id") @db.Char(36)
+  scope        PermissionScope
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@map("role_permissions")
+}
+
+/// Отдел продаж. Отделов может быть несколько, у каждого свой РОП (head).
+model Team {
+  id        String    @id @default(uuid()) @db.Char(36)
+  name      String    @unique
+  headId    String?   @map("head_id") @db.Char(36)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  head    User?  @relation("TeamHead", fields: [headId], references: [id])
+  members User[] @relation("TeamMembers")
+
+  leads    Lead[]
+  clients  Client[]
+  deals    Deal[]
+  meetings Meeting[]
+
+  @@index([headId])
+  @@map("teams")
+}
+
+/// HR-данные сотрудника. Отделены от users, чтобы не попадать в CRM-выборки.
+model Employee {
+  id             String             @id @default(uuid()) @db.Char(36)
+  userId         String             @unique @map("user_id") @db.Char(36)
+  position       String?            @db.Text
+  specialty      ExecutorSpecialty?
+  /// Оклад (ТЗ §32). Виден только CEO и самому сотруднику — через модуль зарплаты.
+  baseSalary     Decimal?           @map("base_salary") @db.Decimal(18, 2)
+  /// KPI-бонус при выполнении KPI на 100% (сум); за месяц начисляется пропорционально, до 120%.
+  kpiBonusTarget Decimal?           @map("kpi_bonus_target") @db.Decimal(18, 2)
+  /// Индивидуальный график; иначе — график роли.
+  scheduleId     String?            @map("schedule_id") @db.Char(36)
+  hiredAt        DateTime?          @map("hired_at") @db.Date
+  firedAt        DateTime?          @map("fired_at") @db.Date
+  createdAt      DateTime           @default(now()) @map("created_at")
+  updatedAt      DateTime           @updatedAt @map("updated_at")
+
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  schedule WorkSchedule? @relation(fields: [scheduleId], references: [id])
+
+  @@map("employees")
+}
+
+model Session {
+  id         String    @id @default(uuid()) @db.Char(36)
+  userId     String    @map("user_id") @db.Char(36)
+  /// SHA-256 от токена из cookie. Сам токен в БД не хранится.
+  tokenHash  String    @unique @map("token_hash")
+  ip         String?   @db.Text
+  userAgent  String?   @map("user_agent") @db.Text
+  createdAt  DateTime  @default(now()) @map("created_at")
+  lastSeenAt DateTime  @default(now()) @map("last_seen_at")
+  expiresAt  DateTime  @map("expires_at")
+  revokedAt  DateTime? @map("revoked_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// ──────────────────────── Аудит и события ────────────────────────
+
+/// Append-only: UPDATE и DELETE запрещены триггером в БД (см. миграцию init).
+model AuditLog {
+  id         String   @id @default(uuid()) @db.Char(36)
+  actorId    String?  @map("actor_id") @db.Char(36)
+  action     String   @db.Text
+  entityType String   @map("entity_type")
+  entityId   String?  @map("entity_id") @db.Char(36)
+  /// { field: { old, new } }
+  changes    Json?
+  ip         String?  @db.Text
+  userAgent  String?  @map("user_agent") @db.Text
+  sessionId  String?  @map("session_id") @db.Char(36)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([entityType, entityId])
+  @@index([actorId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Transactional outbox: событие пишется в той же транзакции, что и изменение данных,
+/// worker доставляет его подписчикам (уведомления, Telegram, пересчёты).
+model OutboxEvent {
+  id          String    @id @default(uuid()) @db.Char(36)
+  type        String    @db.Text
+  payload     Json
+  actorId     String?   @map("actor_id") @db.Char(36)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  availableAt DateTime  @default(now()) @map("available_at")
+  processedAt DateTime? @map("processed_at")
+  attempts    Int       @default(0)
+  lastError   String?   @map("last_error") @db.Text
+
+  @@index([processedAt, availableAt])
+  @@map("outbox_events")
+}
+
+// ═══════════════════════════════ Phase 2 — CRM ═══════════════════════════════
+
+enum Currency {
+  UZS
+  USD
+}
+
+enum Priority {
+  LOW
+  MEDIUM
+  HIGH
+  URGENT
+}
+
+enum ScoreLevel {
+  LOW
+  MEDIUM
+  HIGH
+  HOT
+}
+
+enum CompanySize {
+  SOLO
+  SMALL
+  MEDIUM
+  LARGE
+}
+
+/// Итоговое состояние лида; этап воронки хранится отдельно (stage).
+enum LeadStatus {
+  OPEN
+  CONVERTED
+  LOST
+  REJECTED
+  PAUSED
+  NO_RESPONSE
+}
+
+enum DealStatus {
+  OPEN
+  WON
+  LOST
+  REJECTED
+  PAUSED
+  NO_RESPONSE
+}
+
+enum StageEntity {
+  LEAD
+  DEAL
+}
+
+enum ClientType {
+  COMPANY
+  PERSON
+}
+
+enum ClientHealth {
+  HEALTHY
+  ATTENTION
+  RISK
+  LOST
+}
+
+enum MeetingType {
+  ONLINE
+  OFFLINE
+  PHONE
+  TELEGRAM
+  GOOGLE_MEET
+  ZOOM
+}
+
+enum MeetingStatus {
+  SCHEDULED
+  CONFIRMED
+  DONE
+  RESCHEDULED
+  CANCELLED
+  NO_SHOW
+}
+
+enum PricingType {
+  FIXED
+  MONTHLY
+  HOURLY
+  CUSTOM
+}
+
+// ─────────────────────────────── Справочники ───────────────────────────────
+
+/// Каталог услуг (ТЗ §61).
+model Service {
+  id          String      @id @default(uuid()) @db.Char(36)
+  code        String      @unique
+  nameRu      String      @map("name_ru") @db.Text
+  nameUz      String?     @map("name_uz") @db.Text
+  nameEn      String?     @map("name_en") @db.Text
+  description String?     @db.Text
+  basePrice   Decimal?    @map("base_price") @db.Decimal(18, 2)
+  minPrice    Decimal?    @map("min_price") @db.Decimal(18, 2)
+  currency    Currency    @default(UZS)
+  pricingType PricingType @default(FIXED) @map("pricing_type")
+  /// Направление бизнеса (IT, Медиа, Маркетинг) — для разграничения проектов
+  directionId String?     @map("direction_id") @db.Char(36)
+  isActive    Boolean     @default(true) @map("is_active")
+  sort        Int         @default(0)
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  direction        Direction?        @relation(fields: [directionId], references: [id])
+  leads            Lead[]
+  deals            Deal[]
+  proposalItems    ProposalItem[]
+  projectTemplates ProjectTemplate[]
+  tariffs          Tariff[]
+
+  @@map("services")
+}
+
+model LeadSource {
+  id        String   @id @default(uuid()) @db.Char(36)
+  code      String   @unique
+  nameRu    String   @map("name_ru") @db.Text
+  nameUz    String?  @map("name_uz") @db.Text
+  nameEn    String?  @map("name_en") @db.Text
+  isActive  Boolean  @default(true) @map("is_active")
+  sort      Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  leads   Lead[]
+  clients Client[]
+
+  @@map("lead_sources")
+}
+
+model LossReason {
+  id              String   @id @default(uuid()) @db.Char(36)
+  code            String   @unique
+  nameRu          String   @map("name_ru") @db.Text
+  nameUz          String?  @map("name_uz") @db.Text
+  nameEn          String?  @map("name_en") @db.Text
+  /// «Другая причина» — комментарий обязателен.
+  requiresComment Boolean  @default(false) @map("requires_comment")
+  isActive        Boolean  @default(true) @map("is_active")
+  sort            Int      @default(0)
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  leads Lead[]
+  deals Deal[]
+
+  @@map("loss_reasons")
+}
+
+/// Этапы воронки (ТЗ §7). code фиксирован и используется бизнес-правилами;
+/// название, порядок, вероятность и цвет редактируются.
+model DealStage {
+  id          String      @id @default(uuid()) @db.Char(36)
+  code        String      @unique
+  entity      StageEntity
+  nameRu      String      @map("name_ru") @db.Text
+  nameUz      String?     @map("name_uz") @db.Text
+  nameEn      String?     @map("name_en") @db.Text
+  sort        Int
+  /// Вероятность закрытия, % — для взвешенного прогноза (ТЗ §40).
+  probability Int         @default(0)
+  color       String      @default("#71717a")
+  createdAt   DateTime    @default(now()) @map("created_at")
+  updatedAt   DateTime    @updatedAt @map("updated_at")
+
+  leads    Lead[]
+  deals    Deal[]
+  fromHist StageHistory[] @relation("FromStage")
+  toHist   StageHistory[] @relation("ToStage")
+
+  @@map("deal_stages")
+}
+
+/// Курс валюты к UZS на дату. Суммы фиксируют курс в момент сохранения.
+model ExchangeRate {
+  id        String   @id @default(uuid()) @db.Char(36)
+  date      DateTime @db.Date
+  currency  Currency
+  rateToUzs Decimal  @map("rate_to_uzs") @db.Decimal(18, 6)
+  setById   String?  @map("set_by_id") @db.Char(36)
+  createdAt DateTime @default(now()) @map("created_at")
+
+  setBy User? @relation(fields: [setById], references: [id])
+
+  @@unique([date, currency])
+  @@map("exchange_rates")
+}
+
+// ─────────────────────────────── CRM ───────────────────────────────
+
+/// Лид (ТЗ §8): входящий запрос до квалификации. После квалификации
+/// конвертируется в клиента + сделку (docs/BUSINESS_RULES.md §2).
+model Lead {
+  id            String       @id @default(uuid()) @db.Char(36)
+  number        Int          @unique @default(autoincrement())
+  title         String       @db.Text
+  contactName   String?      @map("contact_name") @db.Text
+  companyName   String?      @map("company_name") @db.Text
+  phone         String?      @db.Text
+  telegram      String?      @db.Text
+  whatsapp      String?      @db.Text
+  instagram     String?      @db.Text
+  email         String?      @db.Text
+  website       String?      @db.Text
+  city          String?      @db.Text
+  country       String?      @db.Text
+  sourceId      String       @map("source_id") @db.Char(36)
+  ownerId       String       @map("owner_id") @db.Char(36)
+  teamId        String?      @map("team_id") @db.Char(36)
+  serviceId     String?      @map("service_id") @db.Char(36)
+  budget        Decimal?     @db.Decimal(18, 2)
+  currency      Currency     @default(UZS)
+  budgetUzs     Decimal?     @map("budget_uzs") @db.Decimal(18, 2)
+  desiredDate   DateTime?    @map("desired_date") @db.Date
+  priority      Priority     @default(MEDIUM)
+  companySize   CompanySize? @map("company_size")
+  /// Интерес клиента 1–5 (оценка менеджера).
+  interest      Int?
+  stageId       String       @map("stage_id") @db.Char(36)
+  status        LeadStatus   @default(OPEN)
+  score         Int          @default(0)
+  scoreLevel    ScoreLevel   @default(LOW) @map("score_level")
+  nextContactAt DateTime?    @map("next_contact_at")
+  lastContactAt DateTime?    @map("last_contact_at")
+  comment       String?      @db.Text
+  clientId      String?      @map("client_id") @db.Char(36)
+  dealId        String?      @unique @map("deal_id") @db.Char(36)
+  convertedAt   DateTime?    @map("converted_at")
+  lossReasonId  String?      @map("loss_reason_id") @db.Char(36)
+  lossComment   String?      @map("loss_comment") @db.Text
+  closedAt      DateTime?    @map("closed_at")
+  createdById   String       @map("created_by_id") @db.Char(36)
+  createdAt     DateTime     @default(now()) @map("created_at")
+  updatedAt     DateTime     @updatedAt @map("updated_at")
+  deletedAt     DateTime?    @map("deleted_at")
+
+  source     LeadSource  @relation(fields: [sourceId], references: [id])
+  owner      User        @relation("LeadOwner", fields: [ownerId], references: [id])
+  team       Team?       @relation(fields: [teamId], references: [id])
+  service    Service?    @relation(fields: [serviceId], references: [id])
+  stage      DealStage   @relation(fields: [stageId], references: [id])
+  client     Client?     @relation(fields: [clientId], references: [id])
+  deal       Deal?       @relation("LeadDeal", fields: [dealId], references: [id])
+  lossReason LossReason? @relation(fields: [lossReasonId], references: [id])
+  createdBy  User        @relation("LeadCreator", fields: [createdById], references: [id])
+
+  meetings        Meeting[]
+  activities      Activity[]
+  comments        Comment[]
+  todos           Todo[]
+  stageHistory    StageHistory[]
+  formSubmissions FormSubmission[]
+  socialThreads   SocialThread[]
+
+  @@index([ownerId])
+  @@index([teamId])
+  @@index([status, stageId])
+  @@index([sourceId])
+  @@index([createdAt])
+  @@map("leads")
+}
+
+model Client {
+  id         String       @id @default(uuid()) @db.Char(36)
+  number     Int          @unique @default(autoincrement())
+  name       String       @db.Text
+  type       ClientType   @default(COMPANY)
+  industry   String?      @db.Text
+  phone      String?      @db.Text
+  email      String?      @db.Text
+  telegram   String?      @db.Text
+  website    String?      @db.Text
+  city       String?      @db.Text
+  country    String?      @db.Text
+  ownerId    String       @map("owner_id") @db.Char(36)
+  teamId     String?      @map("team_id") @db.Char(36)
+  sourceId   String?      @map("source_id") @db.Char(36)
+  health     ClientHealth @default(HEALTHY)
+  comment    String?      @db.Text
+  /// Реквизиты для договора (юр. название, ИНН, банк, МФО, р/с, подписант)
+  requisites Json?
+  createdAt  DateTime     @default(now()) @map("created_at")
+  updatedAt  DateTime     @updatedAt @map("updated_at")
+  deletedAt  DateTime?    @map("deleted_at")
+
+  owner  User        @relation("ClientOwner", fields: [ownerId], references: [id])
+  team   Team?       @relation(fields: [teamId], references: [id])
+  source LeadSource? @relation(fields: [sourceId], references: [id])
+
+  contacts   Contact[]
+  leads      Lead[]
+  deals      Deal[]
+  meetings   Meeting[]
+  activities Activity[]
+  comments   Comment[]
+  proposals  Proposal[]
+  contracts  Contract[]
+  payments   Payment[]
+  projects   Project[]
+
+  otherIncomes OtherIncome[]
+  todos        Todo[]
+  followUps    FollowUp[]
+
+  @@index([ownerId])
+  @@index([teamId])
+  @@map("clients")
+}
+
+model Contact {
+  id        String   @id @default(uuid()) @db.Char(36)
+  clientId  String   @map("client_id") @db.Char(36)
+  fullName  String   @map("full_name") @db.Text
+  position  String?  @db.Text
+  phone     String?  @db.Text
+  telegram  String?  @db.Text
+  whatsapp  String?  @db.Text
+  instagram String?  @db.Text
+  email     String?  @db.Text
+  isPrimary Boolean  @default(false) @map("is_primary")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  client Client @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  deals  Deal[]
+
+  @@index([clientId])
+  @@map("contacts")
+}
+
+model Deal {
+  id                  String     @id @default(uuid()) @db.Char(36)
+  number              Int        @unique @default(autoincrement())
+  title               String     @db.Text
+  clientId            String     @map("client_id") @db.Char(36)
+  contactId           String?    @map("contact_id") @db.Char(36)
+  ownerId             String     @map("owner_id") @db.Char(36)
+  teamId              String?    @map("team_id") @db.Char(36)
+  serviceId           String?    @map("service_id") @db.Char(36)
+  amount              Decimal    @db.Decimal(18, 2)
+  currency            Currency   @default(UZS)
+  exchangeRate        Decimal    @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs           Decimal    @map("amount_uzs") @db.Decimal(18, 2)
+  stageId             String     @map("stage_id") @db.Char(36)
+  status              DealStatus @default(OPEN)
+  probabilityOverride Int?       @map("probability_override")
+  expectedCloseDate   DateTime?  @map("expected_close_date") @db.Date
+  isRepeat            Boolean    @default(false) @map("is_repeat")
+  lossReasonId        String?    @map("loss_reason_id") @db.Char(36)
+  lossComment         String?    @map("loss_comment") @db.Text
+  wonAt               DateTime?  @map("won_at")
+  closedAt            DateTime?  @map("closed_at")
+  createdById         String     @map("created_by_id") @db.Char(36)
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt @map("updated_at")
+  deletedAt           DateTime?  @map("deleted_at")
+
+  client     Client      @relation(fields: [clientId], references: [id])
+  contact    Contact?    @relation(fields: [contactId], references: [id])
+  owner      User        @relation("DealOwner", fields: [ownerId], references: [id])
+  team       Team?       @relation(fields: [teamId], references: [id])
+  service    Service?    @relation(fields: [serviceId], references: [id])
+  stage      DealStage   @relation(fields: [stageId], references: [id])
+  lossReason LossReason? @relation(fields: [lossReasonId], references: [id])
+  createdBy  User        @relation("DealCreator", fields: [createdById], references: [id])
+  lead       Lead?       @relation("LeadDeal")
+
+  meetings     Meeting[]
+  activities   Activity[]
+  comments     Comment[]
+  stageHistory StageHistory[]
+  proposals    Proposal[]
+  contracts    Contract[]
+  payments     Payment[]
+  project      Project?
+  commissions  Commission[]
+  files        StoredFile[]
+
+  todos           Todo[]
+  followUpResults FollowUp[] @relation("FollowUpDeal")
+
+  @@index([ownerId])
+  @@index([teamId])
+  @@index([clientId])
+  @@index([status, stageId])
+  @@map("deals")
+}
+
+/// История переходов по воронке (ТЗ §7). Append-only.
+model StageHistory {
+  id          String   @id @default(uuid()) @db.Char(36)
+  leadId      String?  @map("lead_id") @db.Char(36)
+  dealId      String?  @map("deal_id") @db.Char(36)
+  fromStageId String?  @map("from_stage_id") @db.Char(36)
+  toStageId   String   @map("to_stage_id") @db.Char(36)
+  changedById String   @map("changed_by_id") @db.Char(36)
+  /// Сколько секунд запись провела на предыдущем этапе.
+  durationSec Int?     @map("duration_sec")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  lead      Lead?      @relation(fields: [leadId], references: [id])
+  deal      Deal?      @relation(fields: [dealId], references: [id])
+  fromStage DealStage? @relation("FromStage", fields: [fromStageId], references: [id])
+  toStage   DealStage  @relation("ToStage", fields: [toStageId], references: [id])
+  changedBy User       @relation(fields: [changedById], references: [id])
+
+  @@index([leadId])
+  @@index([dealId])
+  @@map("stage_history")
+}
+
+/// Бизнес-таймлайн (ТЗ §12). Append-only: изменение и удаление запрещены триггером.
+model Activity {
+  id        String   @id @default(uuid()) @db.Char(36)
+  type      String   @db.Text
+  actorId   String?  @map("actor_id") @db.Char(36)
+  leadId    String?  @map("lead_id") @db.Char(36)
+  dealId    String?  @map("deal_id") @db.Char(36)
+  clientId  String?  @map("client_id") @db.Char(36)
+  meetingId String?  @map("meeting_id") @db.Char(36)
+  projectId String?  @map("project_id") @db.Char(36)
+  taskId    String?  @map("task_id") @db.Char(36)
+  payload   Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  actor   User?    @relation(fields: [actorId], references: [id])
+  lead    Lead?    @relation(fields: [leadId], references: [id])
+  deal    Deal?    @relation(fields: [dealId], references: [id])
+  client  Client?  @relation(fields: [clientId], references: [id])
+  meeting Meeting? @relation(fields: [meetingId], references: [id])
+  project Project? @relation(fields: [projectId], references: [id])
+  task    Task?    @relation(fields: [taskId], references: [id])
+
+  @@index([projectId, createdAt])
+  @@index([taskId, createdAt])
+  @@index([leadId, createdAt])
+  @@index([dealId, createdAt])
+  @@index([clientId, createdAt])
+  @@map("activities")
+}
+
+model Comment {
+  id        String    @id @default(uuid()) @db.Char(36)
+  authorId  String    @map("author_id") @db.Char(36)
+  body      String    @db.Text
+  leadId    String?   @map("lead_id") @db.Char(36)
+  dealId    String?   @map("deal_id") @db.Char(36)
+  clientId  String?   @map("client_id") @db.Char(36)
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  author User    @relation(fields: [authorId], references: [id])
+  lead   Lead?   @relation(fields: [leadId], references: [id])
+  deal   Deal?   @relation(fields: [dealId], references: [id])
+  client Client? @relation(fields: [clientId], references: [id])
+
+  @@index([leadId])
+  @@index([dealId])
+  @@index([clientId])
+  @@map("comments")
+}
+
+/// Встреча (ТЗ §13).
+model Meeting {
+  id          String        @id @default(uuid()) @db.Char(36)
+  leadId      String?       @map("lead_id") @db.Char(36)
+  dealId      String?       @map("deal_id") @db.Char(36)
+  clientId    String?       @map("client_id") @db.Char(36)
+  managerId   String        @map("manager_id") @db.Char(36)
+  ropId       String?       @map("rop_id") @db.Char(36)
+  teamId      String?       @map("team_id") @db.Char(36)
+  startsAt    DateTime      @map("starts_at")
+  durationMin Int           @default(60) @map("duration_min")
+  type        MeetingType
+  link        String?       @db.Text
+  status      MeetingStatus @default(SCHEDULED)
+  comment     String?       @db.Text
+  result      String?       @db.Text
+  createdById String        @map("created_by_id") @db.Char(36)
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  lead       Lead?      @relation(fields: [leadId], references: [id])
+  deal       Deal?      @relation(fields: [dealId], references: [id])
+  client     Client?    @relation(fields: [clientId], references: [id])
+  manager    User       @relation("MeetingManager", fields: [managerId], references: [id])
+  rop        User?      @relation("MeetingRop", fields: [ropId], references: [id])
+  team       Team?      @relation(fields: [teamId], references: [id])
+  activities Activity[]
+
+  @@index([managerId, startsAt])
+  @@index([teamId, startsAt])
+  @@index([leadId])
+  @@index([dealId])
+  @@map("meetings")
+}
+
+/// In-app уведомления. Telegram-доставка — Phase 7.
+model Notification {
+  id        String    @id @default(uuid()) @db.Char(36)
+  userId    String    @map("user_id") @db.Char(36)
+  type      String    @db.Text
+  title     String    @db.Text
+  body      String?   @db.Text
+  link      String?   @db.Text
+  readAt    DateTime? @map("read_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+/// Ключи идемпотентности: повторный POST с тем же ключом не создаёт дубль.
+model IdempotencyKey {
+  key        String   @id
+  userId     String   @map("user_id") @db.Char(36)
+  route      String   @db.Text
+  statusCode Int      @map("status_code")
+  response   Json
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("idempotency_keys")
+}
+
+// ═══════════════════════════ Phase 3 — Продажи ═══════════════════════════
+
+enum ProposalStatus {
+  DRAFT
+  SENT
+  VIEWED
+  IN_APPROVAL
+  ACCEPTED
+  REJECTED
+  EXPIRED
+}
+
+enum ContractStatus {
+  DRAFT
+  SENT
+  IN_APPROVAL
+  SIGNED
+  CANCELLED
+}
+
+enum PaymentType {
+  PREPAYMENT
+  PARTIAL
+  FULL
+  FINAL
+  REFUND
+}
+
+enum PaymentMethod {
+  CASH
+  BANK
+  CARD
+  TRANSFER
+  OTHER
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+enum ProjectStatus {
+  NEW
+  PLANNING
+  IN_PROGRESS
+  REVIEW
+  WAITING_CLIENT
+  PAUSED
+  COMPLETED
+  CANCELLED
+}
+
+enum TaskStatus {
+  TODO
+  IN_PROGRESS
+  REVIEW
+  DONE
+  BLOCKED
+  CANCELLED
+}
+
+enum ProjectMemberStatus {
+  ACTIVE
+  DONE
+  REMOVED
+}
+
+enum KpiMetric {
+  REVENUE
+  ORDERS
+  LEADS
+  MEETINGS
+  TASKS
+}
+
+enum AttendanceStatus {
+  PRESENT
+  LATE
+  ABSENT
+  DAY_OFF
+  VACATION
+  SICK
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+}
+
+enum NotificationChannel {
+  IN_APP
+  TELEGRAM
+}
+
+enum DeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
+enum FollowUpKind {
+  CONTACT
+  NEW_PROJECT
+  REPEAT_SALE
+}
+
+enum FollowUpStatus {
+  PENDING
+  DONE
+  SKIPPED
+}
+
+enum ExpenseScope {
+  PROJECT
+  COMPANY
+}
+
+enum CommissionRoleTarget {
+  MANAGER
+  ROP
+}
+
+enum CommissionCalcType {
+  PERCENT_OF_PAYMENT
+  PERCENT_OF_PROFIT
+  FIXED_PER_DEAL
+}
+
+enum CommissionStatus {
+  ACCRUED
+  APPROVED
+  PAID
+  CANCELLED
+}
+
+enum FileCategory {
+  PROPOSAL
+  CONTRACT
+  PAYMENT
+  PHOTO
+  VIDEO
+  DESIGN
+  DOCUMENT
+  OTHER
+}
+
+/// Коммерческое предложение (ТЗ §15). Каждое сохранение создаёт версию (§16).
+model Proposal {
+  id                 String         @id @default(uuid()) @db.Char(36)
+  number             Int            @unique @default(autoincrement())
+  dealId             String         @map("deal_id") @db.Char(36)
+  clientId           String         @map("client_id") @db.Char(36)
+  managerId          String         @map("manager_id") @db.Char(36)
+  title              String         @db.Text
+  description        String?        @db.Text
+  status             ProposalStatus @default(DRAFT)
+  currency           Currency       @default(UZS)
+  subtotal           Decimal        @default(0) @db.Decimal(18, 2)
+  discountAmount     Decimal        @default(0) @map("discount_amount") @db.Decimal(18, 2)
+  total              Decimal        @default(0) @db.Decimal(18, 2)
+  exchangeRate       Decimal        @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  totalUzs           Decimal        @default(0) @map("total_uzs") @db.Decimal(18, 2)
+  implementationTerm String?        @map("implementation_term") @db.Text
+  paymentTerms       String?        @map("payment_terms") @db.Text
+  validUntil         DateTime?      @map("valid_until") @db.Date
+  currentVersion     Int            @default(1) @map("current_version")
+  approvedById       String?        @map("approved_by_id") @db.Char(36)
+  approvedAt         DateTime?      @map("approved_at")
+  sentAt             DateTime?      @map("sent_at")
+  viewedAt           DateTime?      @map("viewed_at")
+  acceptedAt         DateTime?      @map("accepted_at")
+  rejectedAt         DateTime?      @map("rejected_at")
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+
+  deal       Deal              @relation(fields: [dealId], references: [id])
+  client     Client            @relation(fields: [clientId], references: [id])
+  manager    User              @relation("ProposalManager", fields: [managerId], references: [id])
+  approvedBy User?             @relation("ProposalApprover", fields: [approvedById], references: [id])
+  items      ProposalItem[]
+  versions   ProposalVersion[]
+  contracts  Contract[]
+  files      StoredFile[]
+
+  @@index([dealId])
+  @@index([status])
+  @@map("proposals")
+}
+
+model ProposalItem {
+  id          String  @id @default(uuid()) @db.Char(36)
+  proposalId  String  @map("proposal_id") @db.Char(36)
+  serviceId   String? @map("service_id") @db.Char(36)
+  /// Тариф услуги (эконом / стандарт / премиум): цена и состав работ
+  tariffId    String? @map("tariff_id") @db.Char(36)
+  description String  @db.Text
+  quantity    Decimal @db.Decimal(12, 2)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(18, 2)
+  discountPct Decimal @default(0) @map("discount_pct") @db.Decimal(5, 2)
+  total       Decimal @db.Decimal(18, 2)
+  sort        Int     @default(0)
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  service  Service? @relation(fields: [serviceId], references: [id])
+  tariff   Tariff?  @relation(fields: [tariffId], references: [id])
+
+  @@index([proposalId])
+  @@map("proposal_items")
+}
+
+/// Неизменяемый снимок КП на момент сохранения.
+model ProposalVersion {
+  id         String   @id @default(uuid()) @db.Char(36)
+  proposalId String   @map("proposal_id") @db.Char(36)
+  version    Int
+  snapshot   Json
+  total      Decimal  @db.Decimal(18, 2)
+  currency   Currency
+  authorId   String   @map("author_id") @db.Char(36)
+  comment    String?  @db.Text
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  proposal Proposal @relation(fields: [proposalId], references: [id], onDelete: Cascade)
+  author   User     @relation(fields: [authorId], references: [id])
+
+  @@unique([proposalId, version])
+  @@map("proposal_versions")
+}
+
+/// Договор (ТЗ §17). Не удаляется — только отменяется.
+model Contract {
+  id           String         @id @default(uuid()) @db.Char(36)
+  number       Int            @unique @default(autoincrement())
+  dealId       String         @map("deal_id") @db.Char(36)
+  clientId     String         @map("client_id") @db.Char(36)
+  proposalId   String?        @map("proposal_id") @db.Char(36)
+  contractDate DateTime       @map("contract_date") @db.Date
+  amount       Decimal        @db.Decimal(18, 2)
+  currency     Currency       @default(UZS)
+  exchangeRate Decimal        @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs    Decimal        @map("amount_uzs") @db.Decimal(18, 2)
+  status       ContractStatus @default(DRAFT)
+  signedAt     DateTime?      @map("signed_at")
+  comment      String?        @db.Text
+  createdById  String         @map("created_by_id") @db.Char(36)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+
+  deal      Deal         @relation(fields: [dealId], references: [id])
+  client    Client       @relation(fields: [clientId], references: [id])
+  proposal  Proposal?    @relation(fields: [proposalId], references: [id])
+  createdBy User         @relation(fields: [createdById], references: [id])
+  payments  Payment[]
+  files     StoredFile[]
+
+  @@index([dealId])
+  @@index([status])
+  @@map("contracts")
+}
+
+/// Оплата (ТЗ §18). Не удаляется: ошибочная — CANCELLED, возврат — отдельная запись REFUND.
+model Payment {
+  id            String        @id @default(uuid()) @db.Char(36)
+  number        Int           @unique @default(autoincrement())
+  dealId        String        @map("deal_id") @db.Char(36)
+  clientId      String        @map("client_id") @db.Char(36)
+  contractId    String?       @map("contract_id") @db.Char(36)
+  projectId     String?       @map("project_id") @db.Char(36)
+  refundOfId    String?       @map("refund_of_id") @db.Char(36)
+  amount        Decimal       @db.Decimal(18, 2)
+  currency      Currency      @default(UZS)
+  exchangeRate  Decimal       @default(1) @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs     Decimal       @map("amount_uzs") @db.Decimal(18, 2)
+  type          PaymentType
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  dueDate       DateTime?     @map("due_date") @db.Date
+  paidAt        DateTime?     @map("paid_at")
+  comment       String?       @db.Text
+  confirmedById String?       @map("confirmed_by_id") @db.Char(36)
+  confirmedAt   DateTime?     @map("confirmed_at")
+  createdById   String        @map("created_by_id") @db.Char(36)
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+
+  deal        Deal         @relation(fields: [dealId], references: [id])
+  client      Client       @relation(fields: [clientId], references: [id])
+  contract    Contract?    @relation(fields: [contractId], references: [id])
+  project     Project?     @relation(fields: [projectId], references: [id])
+  refundOf    Payment?     @relation("Refunds", fields: [refundOfId], references: [id])
+  refunds     Payment[]    @relation("Refunds")
+  confirmedBy User?        @relation("PaymentConfirmer", fields: [confirmedById], references: [id])
+  createdBy   User         @relation("PaymentCreator", fields: [createdById], references: [id])
+  commissions Commission[]
+  files       StoredFile[]
+
+  @@index([dealId])
+  @@index([status, paidAt])
+  @@map("payments")
+}
+
+/// Проект (ТЗ §20). Создаётся автоматически при первой подтверждённой оплате сделки (Rule 3).
+/// Управление проектом (команда, задачи, Kanban) — Phase 4.
+model Project {
+  id          String        @id @default(uuid()) @db.Char(36)
+  number      Int           @unique @default(autoincrement())
+  name        String        @db.Text
+  clientId    String        @map("client_id") @db.Char(36)
+  dealId      String        @unique @map("deal_id") @db.Char(36)
+  price       Decimal       @db.Decimal(18, 2)
+  currency    Currency      @default(UZS)
+  priceUzs    Decimal       @map("price_uzs") @db.Decimal(18, 2)
+  ropId       String        @map("rop_id") @db.Char(36)
+  managerId   String        @map("manager_id") @db.Char(36)
+  teamId      String?       @map("team_id") @db.Char(36)
+  status      ProjectStatus @default(NEW)
+  priority    Priority      @default(MEDIUM)
+  startDate   DateTime?     @map("start_date") @db.Date
+  deadline    DateTime?     @db.Date
+  description String?       @db.Text
+  templateId  String?       @map("template_id") @db.Char(36)
+  /// Направление бизнеса — из услуги сделки; проект-менеджер видит проекты своих направлений
+  directionId String?       @map("direction_id") @db.Char(36)
+  completedAt DateTime?     @map("completed_at")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+  deletedAt   DateTime?     @map("deleted_at")
+
+  client       Client            @relation(fields: [clientId], references: [id])
+  deal         Deal              @relation(fields: [dealId], references: [id])
+  rop          User              @relation("ProjectRop", fields: [ropId], references: [id])
+  manager      User              @relation("ProjectManager", fields: [managerId], references: [id])
+  template     ProjectTemplate?  @relation(fields: [templateId], references: [id])
+  direction    Direction?        @relation(fields: [directionId], references: [id])
+  payments     Payment[]
+  members      ProjectMember[]
+  tasks        Task[]
+  activities   Activity[]
+  files        StoredFile[]
+  costLines    ProjectCostLine[]
+  otherIncomes OtherIncome[]
+  expenses     Expense[]
+
+  followUps FollowUp[]
+
+  @@index([ropId])
+  @@index([managerId])
+  @@index([status])
+  @@map("projects")
+}
+
+/// Команда проекта (ТЗ §21). РОП и менеджер проекта хранятся в самом проекте.
+model ProjectMember {
+  id           String              @id @default(uuid()) @db.Char(36)
+  projectId    String              @map("project_id") @db.Char(36)
+  userId       String              @map("user_id") @db.Char(36)
+  role         ExecutorSpecialty?
+  workloadPct  Int?                @map("workload_pct")
+  deadline     DateTime?           @db.Date
+  status       ProjectMemberStatus @default(ACTIVE)
+  assignedById String              @map("assigned_by_id") @db.Char(36)
+  assignedAt   DateTime            @default(now()) @map("assigned_at")
+  updatedAt    DateTime            @updatedAt @map("updated_at")
+
+  project    Project @relation(fields: [projectId], references: [id])
+  user       User    @relation("ProjectMemberUser", fields: [userId], references: [id])
+  assignedBy User    @relation("ProjectMemberAssigner", fields: [assignedById], references: [id])
+
+  @@unique([projectId, userId])
+  @@index([userId, status])
+  @@map("project_members")
+}
+
+/// Задача проекта (ТЗ §22). Исполнитель назначается всегда (ТЗ §77, Rule 5): задача из шаблона,
+/// для роли которой в команде ещё нет исполнителя, назначается на РОП проекта до появления исполнителя.
+model Task {
+  id                String             @id @default(uuid()) @db.Char(36)
+  number            Int                @unique @default(autoincrement())
+  projectId         String             @map("project_id") @db.Char(36)
+  title             String             @db.Text
+  description       String?            @db.Text
+  assigneeId        String             @map("assignee_id") @db.Char(36)
+  creatorId         String             @map("creator_id") @db.Char(36)
+  templateRole      ExecutorSpecialty? @map("template_role")
+  priority          Priority           @default(MEDIUM)
+  status            TaskStatus         @default(TODO)
+  startDate         DateTime?          @map("start_date") @db.Date
+  deadline          DateTime?
+  progressPct       Int                @default(0) @map("progress_pct")
+  sortOrder         Float              @default(0) @map("sort_order")
+  startedAt         DateTime?          @map("started_at")
+  completedAt       DateTime?          @map("completed_at")
+  reworkCount       Int                @default(0) @map("rework_count")
+  overdueNotifiedAt DateTime?          @map("overdue_notified_at")
+  createdAt         DateTime           @default(now()) @map("created_at")
+  updatedAt         DateTime           @updatedAt @map("updated_at")
+  deletedAt         DateTime?          @map("deleted_at")
+
+  project    Project             @relation(fields: [projectId], references: [id])
+  assignee   User                @relation("TaskAssignee", fields: [assigneeId], references: [id])
+  creator    User                @relation("TaskCreator", fields: [creatorId], references: [id])
+  history    TaskStatusHistory[]
+  comments   TaskComment[]
+  activities Activity[]
+  files      StoredFile[]
+
+  @@index([projectId, status, sortOrder])
+  @@index([assigneeId, status])
+  @@index([deadline])
+  @@map("tasks")
+}
+
+/// История статусов задачи — только добавление (триггер в БД).
+model TaskStatusHistory {
+  id          String      @id @default(uuid()) @db.Char(36)
+  taskId      String      @map("task_id") @db.Char(36)
+  fromStatus  TaskStatus? @map("from_status")
+  toStatus    TaskStatus  @map("to_status")
+  changedById String      @map("changed_by_id") @db.Char(36)
+  createdAt   DateTime    @default(now()) @map("created_at")
+
+  task      Task @relation(fields: [taskId], references: [id])
+  changedBy User @relation(fields: [changedById], references: [id])
+
+  @@index([taskId, createdAt])
+  @@map("task_status_history")
+}
+
+model TaskComment {
+  id        String    @id @default(uuid()) @db.Char(36)
+  taskId    String    @map("task_id") @db.Char(36)
+  authorId  String    @map("author_id") @db.Char(36)
+  body      String    @db.Text
+  createdAt DateTime  @default(now()) @map("created_at")
+  updatedAt DateTime  @updatedAt @map("updated_at")
+  deletedAt DateTime? @map("deleted_at")
+
+  task   Task @relation(fields: [taskId], references: [id])
+  author User @relation(fields: [authorId], references: [id])
+
+  @@index([taskId, createdAt])
+  @@map("task_comments")
+}
+
+/// Шаблон проекта (ТЗ §62): набор задач, создаваемых по услуге сделки.
+model ProjectTemplate {
+  id          String   @id @default(uuid()) @db.Char(36)
+  name        String   @db.Text
+  serviceId   String?  @map("service_id") @db.Char(36)
+  description String?  @db.Text
+  isActive    Boolean  @default(true) @map("is_active")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  service  Service?       @relation(fields: [serviceId], references: [id])
+  tasks    TaskTemplate[]
+  projects Project[]
+
+  @@index([serviceId])
+  @@map("project_templates")
+}
+
+model TaskTemplate {
+  id                String             @id @default(uuid()) @db.Char(36)
+  projectTemplateId String             @map("project_template_id") @db.Char(36)
+  title             String             @db.Text
+  description       String?            @db.Text
+  role              ExecutorSpecialty?
+  startOffsetDays   Int                @default(0) @map("start_offset_days")
+  durationDays      Int                @default(1) @map("duration_days")
+  priority          Priority           @default(MEDIUM)
+  sort              Int                @default(0)
+
+  template ProjectTemplate @relation(fields: [projectTemplateId], references: [id], onDelete: Cascade)
+
+  @@index([projectTemplateId])
+  @@map("task_templates")
+}
+
+/// Расход (ТЗ §26): проектный уменьшает прибыль проекта, расход компании — операционную прибыль.
+model Expense {
+  id           String       @id @default(uuid()) @db.Char(36)
+  number       Int          @unique @default(autoincrement())
+  scope        ExpenseScope
+  projectId    String?      @map("project_id") @db.Char(36)
+  /// Код категории из справочника finance_categories
+  category     String
+  amount       Decimal      @db.Decimal(18, 2)
+  currency     Currency     @default(UZS)
+  exchangeRate Decimal      @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs    Decimal      @map("amount_uzs") @db.Decimal(18, 2)
+  expenseDate  DateTime     @map("expense_date") @db.Date
+  payeeUserId  String?      @map("payee_user_id") @db.Char(36)
+  description  String?      @db.Text
+  createdById  String       @map("created_by_id") @db.Char(36)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  updatedAt    DateTime     @updatedAt @map("updated_at")
+  deletedAt    DateTime?    @map("deleted_at")
+
+  categoryRef FinanceCategory  @relation(fields: [category], references: [code])
+  costLine    ProjectCostLine?
+  project     Project?         @relation(fields: [projectId], references: [id])
+  payee       User?            @relation("ExpensePayee", fields: [payeeUserId], references: [id])
+  createdBy   User             @relation("ExpenseCreator", fields: [createdById], references: [id])
+
+  @@index([projectId])
+  @@index([scope, expenseDate])
+  @@map("expenses")
+}
+
+/// Цель сотрудника на месяц (ТЗ §31).
+model KpiTarget {
+  id          String    @id @default(uuid()) @db.Char(36)
+  userId      String    @map("user_id") @db.Char(36)
+  /// YYYY-MM
+  period      String
+  metric      KpiMetric
+  targetValue Decimal   @map("target_value") @db.Decimal(18, 2)
+  /// Валюта цели по выручке; для штучных метрик — UZS (не используется).
+  currency    Currency  @default(UZS)
+  setById     String    @map("set_by_id") @db.Char(36)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user  User @relation("KpiTargetUser", fields: [userId], references: [id])
+  setBy User @relation("KpiTargetSetter", fields: [setById], references: [id])
+
+  @@unique([userId, period, metric])
+  @@index([period])
+  @@map("kpi_targets")
+}
+
+/// Рабочий график (ТЗ §36): для роли или для отдельных сотрудников.
+model WorkSchedule {
+  id           String    @id @default(uuid()) @db.Char(36)
+  name         String    @db.Text
+  /// График роли по умолчанию; null — назначается сотрудникам вручную.
+  roleCode     RoleCode? @map("role_code")
+  /// HH:MM по Ташкенту
+  startTime    String    @map("start_time") @db.Text
+  endTime      String    @map("end_time") @db.Text
+  /// Рабочие дни ISO: 1 — понедельник … 7 — воскресенье
+  workDays     Json      @map("work_days")
+  /// Сколько минут опоздания не считается опозданием
+  graceMinutes Int       @default(0) @map("grace_minutes")
+  isActive     Boolean   @default(true) @map("is_active")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  employees Employee[]
+
+  @@map("work_schedules")
+}
+
+/// Посещаемость (ТЗ §35): одна запись на сотрудника в день.
+model Attendance {
+  id          String           @id @default(uuid()) @db.Char(36)
+  userId      String           @map("user_id") @db.Char(36)
+  date        DateTime         @db.Date
+  checkIn     DateTime?        @map("check_in")
+  checkOut    DateTime?        @map("check_out")
+  status      AttendanceStatus
+  lateMinutes Int              @default(0) @map("late_minutes")
+  workMinutes Int              @default(0) @map("work_minutes")
+  comment     String?          @db.Text
+  /// Кто внёс/исправил вручную (null — отметка самого сотрудника)
+  editedById  String?          @map("edited_by_id") @db.Char(36)
+  createdAt   DateTime         @default(now()) @map("created_at")
+  updatedAt   DateTime         @updatedAt @map("updated_at")
+
+  user     User  @relation("AttendanceUser", fields: [userId], references: [id])
+  editedBy User? @relation("AttendanceEditor", fields: [editedById], references: [id])
+
+  @@unique([userId, date])
+  @@index([date])
+  @@map("attendance")
+}
+
+/// Зарплата за месяц (ТЗ §32). Комиссия хранится отдельно и только суммируется сюда.
+model PayrollEntry {
+  id           String        @id @default(uuid()) @db.Char(36)
+  userId       String        @map("user_id") @db.Char(36)
+  /// YYYY-MM
+  period       String
+  baseSalary   Decimal       @default(0) @map("base_salary") @db.Decimal(18, 2)
+  /// Сдельно: начисления по проектам (расходы «Исполнитель» на сотрудника) за месяц
+  pieceRate    Decimal       @default(0) @map("piece_rate") @db.Decimal(18, 2)
+  kpiBonus     Decimal       @default(0) @map("kpi_bonus") @db.Decimal(18, 2)
+  commission   Decimal       @default(0) @db.Decimal(18, 2)
+  otherBonus   Decimal       @default(0) @map("other_bonus") @db.Decimal(18, 2)
+  penalty      Decimal       @default(0) @db.Decimal(18, 2)
+  finalSalary  Decimal       @default(0) @map("final_salary") @db.Decimal(18, 2)
+  /// Выполнение KPI на момент расчёта, % (справочно для KPI-бонуса)
+  kpiPct       Decimal?      @map("kpi_pct") @db.Decimal(8, 2)
+  status       PayrollStatus @default(DRAFT)
+  comment      String?       @db.Text
+  approvedById String?       @map("approved_by_id") @db.Char(36)
+  approvedAt   DateTime?     @map("approved_at")
+  paidAt       DateTime?     @map("paid_at")
+  createdAt    DateTime      @default(now()) @map("created_at")
+  updatedAt    DateTime      @updatedAt @map("updated_at")
+
+  user       User  @relation("PayrollUser", fields: [userId], references: [id])
+  approvedBy User? @relation("PayrollApprover", fields: [approvedById], references: [id])
+
+  @@unique([userId, period])
+  @@index([period])
+  @@map("payroll_entries")
+}
+
+/// Одноразовый код привязки Telegram (ТЗ §53): /start <код> в боте связывает чат с аккаунтом.
+model TelegramLinkToken {
+  id        String    @id @default(uuid()) @db.Char(36)
+  tokenHash String    @unique @map("token_hash")
+  userId    String    @map("user_id") @db.Char(36)
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("telegram_link_tokens")
+}
+
+/// Индивидуальные настройки уведомлений (ТЗ §14). Нет строки — уведомление включено.
+model NotificationSetting {
+  userId    String              @map("user_id") @db.Char(36)
+  eventType String              @map("event_type")
+  channel   NotificationChannel
+  enabled   Boolean
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([userId, eventType, channel])
+  @@map("notification_settings")
+}
+
+/// Доставка во внешний канал (Telegram) с повторами и журналом (ТЗ §53).
+model NotificationDelivery {
+  id            String              @id @default(uuid()) @db.Char(36)
+  userId        String              @map("user_id") @db.Char(36)
+  channel       NotificationChannel
+  type          String              @db.Text
+  title         String              @db.Text
+  body          String?             @db.Text
+  link          String?             @db.Text
+  status        DeliveryStatus      @default(PENDING)
+  attempts      Int                 @default(0)
+  lastError     String?             @map("last_error") @db.Text
+  nextAttemptAt DateTime            @default(now()) @map("next_attempt_at")
+  sentAt        DateTime?           @map("sent_at")
+  createdAt     DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([status, nextAttemptAt])
+  @@map("notification_deliveries")
+}
+
+/// Журнал умных напоминаний (ТЗ §41): ключ не даёт напомнить дважды об одном и том же.
+model ReminderLog {
+  id        String   @id @default(uuid()) @db.Char(36)
+  kind      String
+  dedupeKey String   @unique @map("dedupe_key")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([kind, createdAt])
+  @@map("reminder_log")
+}
+
+/// Повторный контакт после завершения проекта (ТЗ §38).
+model FollowUp {
+  id            String         @id @default(uuid()) @db.Char(36)
+  clientId      String         @map("client_id") @db.Char(36)
+  projectId     String?        @map("project_id") @db.Char(36)
+  ownerId       String         @map("owner_id") @db.Char(36)
+  kind          FollowUpKind
+  dueDate       DateTime       @map("due_date") @db.Date
+  status        FollowUpStatus @default(PENDING)
+  result        String?        @db.Text
+  resultDealId  String?        @map("result_deal_id") @db.Char(36)
+  notifiedAt    DateTime?      @map("notified_at")
+  completedAt   DateTime?      @map("completed_at")
+  completedById String?        @map("completed_by_id") @db.Char(36)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+
+  client      Client   @relation(fields: [clientId], references: [id])
+  project     Project? @relation(fields: [projectId], references: [id])
+  owner       User     @relation("FollowUpOwner", fields: [ownerId], references: [id])
+  completedBy User?    @relation("FollowUpCompleter", fields: [completedById], references: [id])
+  resultDeal  Deal?    @relation("FollowUpDeal", fields: [resultDealId], references: [id])
+
+  @@index([status, dueDate])
+  @@index([ownerId, status])
+  @@map("follow_ups")
+}
+
+/// Системные настройки (порог крупной сделки, интервалы follow-up и т.п.).
+model Setting {
+  key         String   @id
+  value       Json
+  updatedById String?  @map("updated_by_id") @db.Char(36)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("settings")
+}
+
+/// Запуски планировщика (ТЗ §55): уникальный слот — задача выполняется один раз даже при нескольких worker'ах.
+model JobRun {
+  id         String    @id @default(uuid()) @db.Char(36)
+  job        String
+  slot       String
+  startedAt  DateTime  @default(now()) @map("started_at")
+  finishedAt DateTime? @map("finished_at")
+  error      String?   @db.Text
+  result     Json?
+
+  @@unique([job, slot])
+  @@index([job, startedAt])
+  @@map("job_runs")
+}
+
+/// Правила комиссий (ТЗ §33–34) — данные, а не код.
+model CommissionRule {
+  id         String               @id @default(uuid()) @db.Char(36)
+  name       String               @db.Text
+  appliesTo  CommissionRoleTarget @map("applies_to")
+  userId     String?              @map("user_id") @db.Char(36)
+  calcType   CommissionCalcType   @map("calc_type")
+  value      Decimal              @db.Decimal(18, 4)
+  /// { all|any: [{ metric, op, value }] } — см. @fluggi/domain commission
+  conditions Json?
+  priority   Int                  @default(0)
+  isActive   Boolean              @default(true) @map("is_active")
+  createdAt  DateTime             @default(now()) @map("created_at")
+  updatedAt  DateTime             @updatedAt @map("updated_at")
+
+  commissions Commission[]
+
+  @@index([appliesTo, isActive])
+  @@map("commission_rules")
+}
+
+model Commission {
+  id            String               @id @default(uuid()) @db.Char(36)
+  userId        String               @map("user_id") @db.Char(36)
+  paymentId     String               @map("payment_id") @db.Char(36)
+  dealId        String               @map("deal_id") @db.Char(36)
+  ruleId        String               @map("rule_id") @db.Char(36)
+  role          CommissionRoleTarget
+  /// YYYY-MM по дате оплаты (Ташкент)
+  period        String
+  baseAmountUzs Decimal              @map("base_amount_uzs") @db.Decimal(18, 2)
+  rate          Decimal              @db.Decimal(18, 4)
+  amountUzs     Decimal              @map("amount_uzs") @db.Decimal(18, 2)
+  status        CommissionStatus     @default(ACCRUED)
+  calcSnapshot  Json                 @map("calc_snapshot")
+  approvedById  String?              @map("approved_by_id") @db.Char(36)
+  approvedAt    DateTime?            @map("approved_at")
+  paidById      String?              @map("paid_by_id") @db.Char(36)
+  paidAt        DateTime?            @map("paid_at")
+  createdAt     DateTime             @default(now()) @map("created_at")
+  updatedAt     DateTime             @updatedAt @map("updated_at")
+
+  user       User           @relation("CommissionUser", fields: [userId], references: [id])
+  approvedBy User?          @relation("CommissionApprover", fields: [approvedById], references: [id])
+  paidBy     User?          @relation("CommissionPayer", fields: [paidById], references: [id])
+  payment    Payment        @relation(fields: [paymentId], references: [id])
+  deal       Deal           @relation(fields: [dealId], references: [id])
+  rule       CommissionRule @relation(fields: [ruleId], references: [id])
+
+  @@unique([paymentId, userId, role])
+  @@index([userId, period])
+  @@map("commissions")
+}
+
+/// Метаданные файлов. Содержимое — в хранилище (локальная папка или S3), не в БД (ТЗ §52).
+model StoredFile {
+  id           String       @id @default(uuid()) @db.Char(36)
+  storageKey   String       @unique @map("storage_key")
+  originalName String       @map("original_name") @db.Text
+  mimeType     String       @map("mime_type") @db.Text
+  sizeBytes    Int          @map("size_bytes")
+  checksum     String       @db.Text
+  category     FileCategory @default(DOCUMENT)
+  uploadedById String       @map("uploaded_by_id") @db.Char(36)
+  dealId       String?      @map("deal_id") @db.Char(36)
+  proposalId   String?      @map("proposal_id") @db.Char(36)
+  contractId   String?      @map("contract_id") @db.Char(36)
+  paymentId    String?      @map("payment_id") @db.Char(36)
+  projectId    String?      @map("project_id") @db.Char(36)
+  taskId       String?      @map("task_id") @db.Char(36)
+  createdAt    DateTime     @default(now()) @map("created_at")
+  deletedAt    DateTime?    @map("deleted_at")
+
+  uploadedBy User      @relation(fields: [uploadedById], references: [id])
+  deal       Deal?     @relation(fields: [dealId], references: [id])
+  proposal   Proposal? @relation(fields: [proposalId], references: [id])
+  contract   Contract? @relation(fields: [contractId], references: [id])
+  payment    Payment?  @relation(fields: [paymentId], references: [id])
+  project    Project?  @relation(fields: [projectId], references: [id])
+  task       Task?     @relation(fields: [taskId], references: [id])
+
+  @@index([dealId])
+  @@index([contractId])
+  @@index([projectId])
+  @@index([taskId])
+  @@map("files")
+}
+
+// ─────────────────────────── Личные дела и регулярные задачи ───────────────────────────
+
+enum TodoKind {
+  TASK
+  CALL
+  EMAIL
+  MEETING
+  PAYMENT
+  REPORT
+}
+
+enum TodoStatus {
+  OPEN
+  DONE
+  CANCELLED
+}
+
+enum RecurrenceFrequency {
+  MONTHLY
+  QUARTERLY
+  YEARLY
+}
+
+/// Личное дело сотрудника (не проектная задача): звонок, письмо, отчёт, платёж.
+model Todo {
+  id           String     @id @default(uuid()) @db.Char(36)
+  number       Int        @unique @default(autoincrement())
+  title        String     @db.Text
+  description  String?    @db.Text
+  kind         TodoKind   @default(TASK)
+  priority     Priority   @default(MEDIUM)
+  status       TodoStatus @default(OPEN)
+  ownerId      String     @map("owner_id") @db.Char(36)
+  creatorId    String     @map("creator_id") @db.Char(36)
+  dueAt        DateTime?  @map("due_at")
+  clientId     String?    @map("client_id") @db.Char(36)
+  dealId       String?    @map("deal_id") @db.Char(36)
+  leadId       String?    @map("lead_id") @db.Char(36)
+  recurringId  String?    @map("recurring_id") @db.Char(36)
+  /// Срок по правилу (дата) — защита от повторного создания
+  recurringDue DateTime?  @map("recurring_due") @db.Date
+  completedAt  DateTime?  @map("completed_at")
+  createdAt    DateTime   @default(now()) @map("created_at")
+  updatedAt    DateTime   @updatedAt @map("updated_at")
+  deletedAt    DateTime?  @map("deleted_at")
+
+  owner     User           @relation("TodoOwner", fields: [ownerId], references: [id])
+  creator   User           @relation("TodoCreator", fields: [creatorId], references: [id])
+  client    Client?        @relation(fields: [clientId], references: [id])
+  deal      Deal?          @relation(fields: [dealId], references: [id])
+  lead      Lead?          @relation(fields: [leadId], references: [id])
+  recurring RecurringTodo? @relation(fields: [recurringId], references: [id])
+
+  @@unique([recurringId, recurringDue])
+  @@index([ownerId, status, dueAt])
+  @@map("todos")
+}
+
+/// Правило регулярного дела: ежемесячно / ежеквартально / ежегодно в заданный день.
+model RecurringTodo {
+  id               String              @id @default(uuid()) @db.Char(36)
+  title            String              @db.Text
+  description      String?             @db.Text
+  kind             TodoKind            @default(REPORT)
+  priority         Priority            @default(HIGH)
+  ownerId          String              @map("owner_id") @db.Char(36)
+  createdById      String              @map("created_by_id") @db.Char(36)
+  frequency        RecurrenceFrequency
+  dayOfMonth       Int                 @map("day_of_month")
+  /// Для ежегодных — месяц 1–12; для ежеквартальных — месяц квартала 1–3 (1 = январь/апрель/июль/октябрь)
+  month            Int?
+  /// За сколько дней до срока дело появляется в списке
+  remindDaysBefore Int                 @default(3) @map("remind_days_before")
+  isActive         Boolean             @default(true) @map("is_active")
+  createdAt        DateTime            @default(now()) @map("created_at")
+  updatedAt        DateTime            @updatedAt @map("updated_at")
+  deletedAt        DateTime?           @map("deleted_at")
+
+  owner     User   @relation("RecurringOwner", fields: [ownerId], references: [id])
+  createdBy User   @relation("RecurringCreator", fields: [createdById], references: [id])
+  todos     Todo[]
+
+  @@index([ownerId])
+  @@map("recurring_todos")
+}
+
+// ─────────────────────────── Чат сотрудников ───────────────────────────
+
+model Conversation {
+  id            String   @id @default(uuid()) @db.Char(36)
+  /// Личная переписка двух сотрудников: «меньший_id:больший_id»
+  directKey     String?  @unique @map("direct_key")
+  lastMessageAt DateTime @default(now()) @map("last_message_at")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  members  ConversationMember[]
+  messages ChatMessage[]
+
+  @@index([lastMessageAt])
+  @@map("conversations")
+}
+
+model ConversationMember {
+  conversationId String    @map("conversation_id") @db.Char(36)
+  userId         String    @map("user_id") @db.Char(36)
+  lastReadAt     DateTime  @default(now()) @map("last_read_at")
+  /// Когда отправили уведомление в Telegram о непрочитанных — не чаще одного до прочтения
+  notifiedAt     DateTime? @map("notified_at")
+  joinedAt       DateTime  @default(now()) @map("joined_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  user         User         @relation(fields: [userId], references: [id])
+
+  @@id([conversationId, userId])
+  @@index([userId])
+  @@map("conversation_members")
+}
+
+model ChatMessage {
+  id             String   @id @default(uuid()) @db.Char(36)
+  conversationId String   @map("conversation_id") @db.Char(36)
+  authorId       String   @map("author_id") @db.Char(36)
+  body           String   @db.Text
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  conversation Conversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  author       User         @relation(fields: [authorId], references: [id])
+
+  @@index([conversationId, createdAt])
+  @@map("chat_messages")
+}
+
+// ─────────────────────────── Категории доходов и расходов ───────────────────────────
+
+enum FinanceCategoryKind {
+  EXPENSE
+  INCOME
+}
+
+/// Редактируемый справочник категорий (CEO). Код не меняется — на него ссылаются записи.
+model FinanceCategory {
+  id          String              @id @default(uuid()) @db.Char(36)
+  code        String              @unique
+  kind        FinanceCategoryKind
+  name        String              @db.Text
+  /// Подсказка бухгалтеру: счёт НСБУ №21 (9130, 9410, 9420…)
+  accountHint String?             @map("account_hint") @db.Text
+  /// Накладные (аренда, офис): делятся на проекты месяца
+  isOverhead  Boolean             @default(false) @map("is_overhead")
+  isActive    Boolean             @default(true) @map("is_active")
+  sort        Int                 @default(0)
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  expenses     Expense[]
+  otherIncomes OtherIncome[]
+
+  @@map("finance_categories")
+}
+
+/// Прочие поступления (не оплаты клиентов): возврат от поставщика, партнёрские, проценты банка…
+model OtherIncome {
+  id           String    @id @default(uuid()) @db.Char(36)
+  number       Int       @unique @default(autoincrement())
+  category     String
+  amount       Decimal   @db.Decimal(18, 2)
+  currency     Currency  @default(UZS)
+  exchangeRate Decimal   @map("exchange_rate") @db.Decimal(18, 6)
+  amountUzs    Decimal   @map("amount_uzs") @db.Decimal(18, 2)
+  incomeDate   DateTime  @map("income_date") @db.Date
+  projectId    String?   @map("project_id") @db.Char(36)
+  clientId     String?   @map("client_id") @db.Char(36)
+  description  String?   @db.Text
+  createdById  String    @map("created_by_id") @db.Char(36)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+  deletedAt    DateTime? @map("deleted_at")
+
+  categoryRef FinanceCategory @relation(fields: [category], references: [code])
+  project     Project?        @relation(fields: [projectId], references: [id])
+  client      Client?         @relation(fields: [clientId], references: [id])
+  createdBy   User            @relation(fields: [createdById], references: [id])
+
+  @@index([incomeDate])
+  @@map("other_incomes")
+}
+
+// ─────────────────────────── Тарифы и себестоимость ───────────────────────────
+
+/// Единица работы исполнителя (рилс, обложка, карусель, сторис…) с базовой ставкой.
+model WorkItem {
+  id          String             @id @default(uuid()) @db.Char(36)
+  code        String             @unique
+  name        String             @db.Text
+  unit        String             @default("шт")
+  specialty   ExecutorSpecialty?
+  defaultRate Decimal            @default(0) @map("default_rate") @db.Decimal(18, 2)
+  currency    Currency           @default(UZS)
+  isActive    Boolean            @default(true) @map("is_active")
+  sort        Int                @default(0)
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  rates       EmployeeRate[]
+  tariffItems TariffItem[]
+  costLines   ProjectCostLine[]
+
+  @@map("work_items")
+}
+
+/// Личная ставка сотрудника за единицу работы («договор сдельный» в карточке сотрудника).
+model EmployeeRate {
+  userId     String   @map("user_id") @db.Char(36)
+  workItemId String   @map("work_item_id") @db.Char(36)
+  rate       Decimal  @db.Decimal(18, 2)
+  currency   Currency @default(UZS)
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  user     User     @relation(fields: [userId], references: [id])
+  workItem WorkItem @relation(fields: [workItemId], references: [id])
+
+  @@id([userId, workItemId])
+  @@map("employee_rates")
+}
+
+/// Тариф услуги: эконом / стандарт / премиум — цена продажи и состав работ.
+model Tariff {
+  id          String   @id @default(uuid()) @db.Char(36)
+  serviceId   String   @map("service_id") @db.Char(36)
+  name        String   @db.Text
+  description String?  @db.Text
+  price       Decimal  @db.Decimal(18, 2)
+  currency    Currency @default(UZS)
+  isActive    Boolean  @default(true) @map("is_active")
+  sort        Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  service       Service           @relation(fields: [serviceId], references: [id])
+  items         TariffItem[]
+  proposalItems ProposalItem[]
+  costLines     ProjectCostLine[]
+
+  @@index([serviceId])
+  @@map("tariffs")
+}
+
+enum TariffItemKind {
+  /// Сдельно: единица работы × количество × ставка исполнителя
+  PIECE
+  /// Фиксированная оплата исполнителю за проект (веб-разработчик и т.п.)
+  FIXED
+}
+
+model TariffItem {
+  id         String             @id @default(uuid()) @db.Char(36)
+  tariffId   String             @map("tariff_id") @db.Char(36)
+  kind       TariffItemKind
+  workItemId String?            @map("work_item_id") @db.Char(36)
+  quantity   Decimal            @default(1) @db.Decimal(12, 2)
+  /// FIXED: кто получает и сколько
+  specialty  ExecutorSpecialty?
+  amount     Decimal?           @db.Decimal(18, 2)
+  currency   Currency           @default(UZS)
+  label      String?            @db.Text
+  sort       Int                @default(0)
+
+  tariff    Tariff            @relation(fields: [tariffId], references: [id], onDelete: Cascade)
+  workItem  WorkItem?         @relation(fields: [workItemId], references: [id])
+  costLines ProjectCostLine[]
+
+  @@index([tariffId])
+  @@map("tariff_items")
+}
+
+enum CostLineStatus {
+  PLANNED
+  ACCRUED
+  CANCELLED
+}
+
+/// Плановая себестоимость проекта по тарифу: что и кому заплатить. «Начислить» → расход проекта.
+model ProjectCostLine {
+  id           String             @id @default(uuid()) @db.Char(36)
+  projectId    String             @map("project_id") @db.Char(36)
+  tariffId     String?            @map("tariff_id") @db.Char(36)
+  tariffItemId String?            @map("tariff_item_id") @db.Char(36)
+  kind         TariffItemKind
+  workItemId   String?            @map("work_item_id") @db.Char(36)
+  specialty    ExecutorSpecialty?
+  label        String             @db.Text
+  quantity     Decimal            @db.Decimal(12, 2)
+  rate         Decimal            @db.Decimal(18, 2)
+  currency     Currency           @default(UZS)
+  assigneeId   String?            @map("assignee_id") @db.Char(36)
+  status       CostLineStatus     @default(PLANNED)
+  expenseId    String?            @unique @map("expense_id") @db.Char(36)
+  createdAt    DateTime           @default(now()) @map("created_at")
+  updatedAt    DateTime           @updatedAt @map("updated_at")
+
+  project    Project     @relation(fields: [projectId], references: [id])
+  tariff     Tariff?     @relation(fields: [tariffId], references: [id])
+  tariffItem TariffItem? @relation(fields: [tariffItemId], references: [id])
+  workItem   WorkItem?   @relation(fields: [workItemId], references: [id])
+  assignee   User?       @relation(fields: [assigneeId], references: [id])
+  expense    Expense?    @relation(fields: [expenseId], references: [id])
+
+  @@index([projectId])
+  @@map("project_cost_lines")
+}
+
+/// Направление бизнеса группы: IT, Медиа (SMM, брендинг, продакшн), Маркетинг.
+model Direction {
+  id        String   @id @default(uuid()) @db.Char(36)
+  code      String   @unique
+  name      String   @db.Text
+  sort      Int      @default(0)
+  isActive  Boolean  @default(true) @map("is_active")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  services Service[]
+  projects Project[]
+  users    UserDirection[]
+
+  @@map("directions")
+}
+
+/// Зона ответственности сотрудника (проект-менеджер): видит и ведёт проекты этих направлений.
+model UserDirection {
+  userId      String @map("user_id") @db.Char(36)
+  directionId String @map("direction_id") @db.Char(36)
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  direction Direction @relation(fields: [directionId], references: [id], onDelete: Cascade)
+
+  @@id([userId, directionId])
+  @@map("user_directions")
+}
+
+// ─────────────────────────── Интеграции: формы сайта, Instagram, таргет ───────────────────────────
+
+/// Форма заявки для сайта (WordPress и др.): встраивается кодом, заявки становятся лидами.
+model LeadForm {
+  id             String    @id @default(uuid()) @db.Char(36)
+  /// Публичный ключ в ссылке и коде встраивания
+  key            String    @unique
+  name           String    @db.Text
+  title          String    @db.Text
+  description    String?   @db.Text
+  buttonText     String    @default("Отправить") @map("button_text")
+  successMessage String    @default("Спасибо! Мы свяжемся с вами в ближайшее время.") @map("success_message")
+  /// [{ key, label, type: text|phone|email|textarea|select, required, options? }]
+  fields         Json
+  serviceId      String?   @map("service_id") @db.Char(36)
+  sourceId       String?   @map("source_id") @db.Char(36)
+  /// Ответственный за заявки; иначе — менеджер отдела с наименьшей нагрузкой
+  ownerId        String?   @map("owner_id") @db.Char(36)
+  teamId         String?   @map("team_id") @db.Char(36)
+  isActive       Boolean   @default(true) @map("is_active")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  deletedAt      DateTime? @map("deleted_at")
+
+  owner       User?            @relation("LeadFormOwner", fields: [ownerId], references: [id])
+  submissions FormSubmission[]
+
+  @@map("lead_forms")
+}
+
+enum IntakeResult {
+  LEAD_CREATED
+  DUPLICATE
+  SPAM
+}
+
+/// Заявка с формы (журнал): данные, UTM, страница; ссылка на созданный или найденный лид.
+model FormSubmission {
+  id        String       @id @default(uuid()) @db.Char(36)
+  formId    String       @map("form_id") @db.Char(36)
+  leadId    String?      @map("lead_id") @db.Char(36)
+  data      Json
+  utm       Json?
+  page      String?      @db.Text
+  ip        String?      @db.Text
+  result    IntakeResult
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  form LeadForm @relation(fields: [formId], references: [id])
+  lead Lead?    @relation(fields: [leadId], references: [id])
+
+  @@index([formId, createdAt])
+  @@map("form_submissions")
+}
+
+enum SocialChannel {
+  INSTAGRAM_DM
+  INSTAGRAM_COMMENT
+  FACEBOOK_COMMENT
+}
+
+/// Переписка из соцсетей: Директ Instagram или комментарии одного человека.
+model SocialThread {
+  id            String        @id @default(uuid()) @db.Char(36)
+  channel       SocialChannel
+  /// ID собеседника в Instagram/Facebook (IGSID / user id)
+  peerId        String        @map("peer_id")
+  peerName      String?       @map("peer_name") @db.Text
+  peerUsername  String?       @map("peer_username") @db.Text
+  leadId        String?       @map("lead_id") @db.Char(36)
+  ownerId       String?       @map("owner_id") @db.Char(36)
+  teamId        String?       @map("team_id") @db.Char(36)
+  unread        Int           @default(0)
+  lastMessageAt DateTime      @default(now()) @map("last_message_at")
+  createdAt     DateTime      @default(now()) @map("created_at")
+
+  lead     Lead?           @relation(fields: [leadId], references: [id])
+  owner    User?           @relation("SocialThreadOwner", fields: [ownerId], references: [id])
+  messages SocialMessage[]
+
+  @@unique([channel, peerId])
+  @@index([ownerId, lastMessageAt])
+  @@map("social_threads")
+}
+
+model SocialMessage {
+  id         String   @id @default(uuid()) @db.Char(36)
+  threadId   String   @map("thread_id") @db.Char(36)
+  /// IN — от клиента, OUT — ответ из CRM или из приложения Instagram
+  direction  String   @db.Text
+  /// mid сообщения или id комментария в Meta (защита от дублей)
+  externalId String?  @unique @map("external_id")
+  text       String   @db.Text
+  /// Пост/реклама, к которой оставлен комментарий
+  mediaId    String?  @map("media_id") @db.Text
+  authorId   String?  @map("author_id") @db.Char(36)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  thread SocialThread @relation(fields: [threadId], references: [id], onDelete: Cascade)
+  author User?        @relation("SocialMessageAuthor", fields: [authorId], references: [id])
+
+  @@index([threadId, createdAt])
+  @@map("social_messages")
+}

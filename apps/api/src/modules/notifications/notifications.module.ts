@@ -1,0 +1,12 @@
+import { Module } from '@nestjs/common';
+import { NotificationEvents } from './notification-events';
+import { NotificationsController } from './notifications.controller';
+import { NotificationsService } from './notifications.service';
+
+/** Контроллер + подписчики событий. Подключается и в API, и в worker (там контроллер не используется). */
+@Module({
+  controllers: [NotificationsController],
+  providers: [NotificationsService, NotificationEvents],
+  exports: [NotificationsService],
+})
+export class NotificationsModule {}
