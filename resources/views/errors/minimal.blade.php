@@ -8,7 +8,7 @@
 </head>
 <body class="flex min-h-screen items-center justify-center px-4">
     <div class="text-center">
-        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white">F</div>
+        <img src="{{ asset('img/logo-64.png') }}" alt="FLUGGI" class="mx-auto mb-4 h-12 w-12 rounded-xl">
         <div class="text-5xl font-semibold tracking-tight text-slate-300">@yield('code')</div>
         <div class="mt-2 text-lg font-medium">@yield('message')</div>
         <div class="mt-6 flex justify-center gap-2">

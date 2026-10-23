@@ -70,7 +70,7 @@ class ScheduleController extends Controller
                 try {
                     $this->svc->create($data + ['weekday' => $d, 'is_active' => true]);
                 } catch (ValidationException $e) {
-                    $day = Schedule::WEEKDAYS[$d];
+                    $day = __(Schedule::WEEKDAYS[$d]);
                     foreach ($e->errors()['conflict'] ?? [] as $m) {
                         $messages[] = "{$day}: {$m}";
                     }
@@ -122,7 +122,7 @@ class ScheduleController extends Controller
         $out = [];
         foreach ($d['weekdays'] as $day) {
             foreach ($this->svc->conflicts($d + ['weekday' => $day], $d['except'] ?? null) as $c) {
-                $out[] = Schedule::WEEKDAYS[$day].': '.$c['message'];
+                $out[] = __(Schedule::WEEKDAYS[$day]).': '.$c['message'];
             }
         }
 

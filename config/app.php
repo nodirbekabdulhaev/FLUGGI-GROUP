@@ -67,6 +67,8 @@ return [
 
     /** Public demo mode: one-click role login, banner, destructive actions blocked, nightly data reset. */
     'demo' => (bool) env('DEMO_MODE', false),
+    /** Language of demo-data dictionaries (statuses, sources, courses…): ru | uz */
+    'demo_locale' => env('DEMO_LOCALE', 'ru'),
 
     'timezone' => env('APP_TIMEZONE', 'Asia/Tashkent'),
 

@@ -54,6 +54,10 @@ class DemoSeeder extends Seeder
             $this->seedAll($org);
         });
 
+        if (config('app.demo_locale') === 'uz') {
+            Tenant::run($org, fn () => $this->localizeUz());
+        }
+
         AuditLog::$enabled = true;
         $this->command?->table(['Роль', 'Логин', 'Пароль'], [
             ['Super Admin', 'admin@demo.uz', self::PASSWORD], ['Директор', 'director@demo.uz', self::PASSWORD],
@@ -133,7 +137,7 @@ class DemoSeeder extends Seeder
             $course = $courses[$i];
             $group = Group::create([
                 'branch_id' => $branch->id, 'course_id' => $course->id, 'teacher_id' => $teachers[$i]->id, 'room_id' => $branchRooms[intdiv($i, 2) % 3]->id,
-                'name' => mb_strtoupper(mb_substr(str_replace(' ', '', $course->name), 0, 4)).'-'.(10 + $i), 'max_students' => 15,
+                'name' => mb_strtoupper(mb_substr(\Illuminate\Support\Str::ascii(str_replace(' ', '', $course->name)), 0, 4)).'-'.(10 + $i), 'max_students' => 15,
                 'start_date' => $start->toDateString(), 'end_date' => $start->copy()->addMonths($course->duration_months)->toDateString(),
                 'status' => $i === 9 ? 'enrolling' : 'active',
             ]);
@@ -274,5 +278,38 @@ class DemoSeeder extends Seeder
 
         // a couple of bell notifications
         app(\App\Services\NotificationService::class)->system('Добро пожаловать в FLUGGI EDU ERP', 'Загружены demo-данные: 100 учеников, 10 групп, оплаты, посещаемость и лиды.', '/dashboard');
+    }
+
+    /** Uzbek (Latin) demo content: dictionaries, courses, texts. Enabled with DEMO_LOCALE=uz. */
+    private function localizeUz(): void
+    {
+        $map = fn (string $model, array $pairs, string $col = 'name') => collect($pairs)->each(fn ($uz, $ru) => $model::where($col, $ru)->update([$col => $uz]));
+
+        $map(LeadSource::class, ['Website' => 'Veb-sayt', 'Рекомендация' => 'Tavsiya', 'Звонок' => 'Qo‘ng‘iroq', 'Офлайн' => 'Oflayn', 'Другое' => 'Boshqa']);
+        foreach (['new' => 'Yangi', 'in_work' => 'Jarayonda', 'contacted' => 'Bog‘lanildi', 'interested' => 'Qiziqmoqda', 'trial_booked' => 'Sinovga yozildi',
+            'trial_attended' => 'Sinov darsiga keldi', 'paid' => 'To‘lov qildi', 'no_answer' => 'Javob bermayapti', 'thinking' => 'O‘ylab ko‘rmoqda',
+            'rescheduled' => 'Ko‘chirdi', 'no_show' => 'Kelmadi', 'lost' => 'Rad etdi', 'converted' => 'O‘quvchi'] as $slug => $uz) {
+            LeadStatus::where('slug', $slug)->update(['name' => $uz]);
+        }
+        $map(PaymentMethod::class, ['Наличные' => 'Naqd', 'Перевод' => 'O‘tkazma', 'Другое' => 'Boshqa']);
+        $map(ExpenseCategory::class, ['Аренда' => 'Ijara', 'Зарплата' => 'Oylik', 'Реклама' => 'Reklama', 'Коммунальные' => 'Kommunal', 'Канцелярия' => 'Kanselyariya',
+            'Оборудование' => 'Jihozlar', 'Ремонт' => 'Ta’mirlash', 'Прочее' => 'Boshqa']);
+        $map(\App\Models\ExpulsionReason::class, ['Дорого' => 'Qimmat', 'Нет времени' => 'Vaqt yo‘q', 'Переезд' => 'Ko‘chib ketdi', 'Не понравился преподаватель' => 'O‘qituvchi yoqmadi',
+            'Не получил результат' => 'Natija olmadi', 'Смена курса' => 'Kursni almashtirdi', 'Смена центра' => 'Markazni almashtirdi', 'Неизвестно' => 'Noma’lum', 'Другое' => 'Boshqa']);
+        $map(Subject::class, ['Английский язык' => 'Ingliz tili', 'Математика' => 'Matematika', 'IT / Программирование' => 'IT / Dasturlash', 'Русский язык' => 'Rus tili', 'Подготовка к экзаменам' => 'Imtihonlarga tayyorlov']);
+        $map(Course::class, ['Русский для всех' => 'Rus tili — hamma uchun', 'Олимпиадная математика' => 'Olimpiada matematikasi']);
+        Course::query()->get()->each(fn ($c) => $c->update(['description' => 'Demo kurs: '.$c->name]));
+        Group::query()->get()->each(fn ($g) => $g->update(['name' => preg_replace('/^[^-]+/', mb_strtoupper(mb_substr(str_replace([' ', '—'], '', \Illuminate\Support\Str::ascii(Course::find($g->course_id)->name)), 0, 4)), $g->name)]));
+        Employee::where('position', 'Администратор')->update(['position' => 'Administrator']);
+        Employee::where('position', 'Хозяйственный отдел')->update(['position' => 'Xo‘jalik bo‘limi']);
+        Lead::where('comment', 'Просит перезвонить вечером')->update(['comment' => 'Kechqurun qayta qo‘ng‘iroq qilishni so‘radi']);
+        \Illuminate\Support\Facades\DB::table('student_parents')->where('relation', 'Отец')->update(['relation' => 'Ota']);
+        \Illuminate\Support\Facades\DB::table('student_parents')->where('relation', 'Мать')->update(['relation' => 'Ona']);
+        \App\Models\Payment::where('comment', 'Возврат за пропущенное занятие')->update(['comment' => 'Qoldirilgan dars uchun qaytarish']);
+        Lesson::where('cancel_reason', 'Болезнь преподавателя')->update(['cancel_reason' => 'O‘qituvchi kasal']);
+        Expense::query()->get()->each(fn ($e) => $e->update(['description' => ExpenseCategory::find($e->category_id)?->name.' — demo']));
+        \App\Models\Notification::query()->delete();
+        app(\App\Services\NotificationService::class)->system('FLUGGI EDU ERP ga xush kelibsiz', 'Demo-ma’lumotlar yuklandi: 100 o‘quvchi, 10 guruh, to‘lovlar, davomat va lidlar.', '/dashboard');
+        User::query()->update(['locale' => 'uz']);
     }
 }

@@ -50,13 +50,13 @@ class ScheduleService
         foreach ($q->get() as $s) {
             $slot = substr($s->start_time, 0, 5).'–'.substr($s->end_time, 0, 5);
             if (! empty($d['teacher_id']) && $s->teacher_id == $d['teacher_id']) {
-                $out[] = ['type' => 'teacher', 'message' => "Преподаватель {$s->teacher?->full_name} уже занят: {$slot}, группа {$s->group?->name}"];
+                $out[] = ['type' => 'teacher', 'message' => __("Преподаватель :name уже занят: :slot, группа :group", ["name" => $s->teacher?->full_name, "slot" => $slot, "group" => $s->group?->name])];
             }
             if (! empty($d['room_id']) && $s->room_id == $d['room_id']) {
-                $out[] = ['type' => 'room', 'message' => "Аудитория {$s->room?->name} занята: {$slot}, группа {$s->group?->name}"];
+                $out[] = ['type' => 'room', 'message' => __("Аудитория :name занята: :slot, группа :group", ["name" => $s->room?->name, "slot" => $slot, "group" => $s->group?->name])];
             }
             if (! empty($d['group_id']) && $s->group_id == $d['group_id']) {
-                $out[] = ['type' => 'group', 'message' => "У группы {$s->group?->name} уже есть занятие: {$slot}"];
+                $out[] = ['type' => 'group', 'message' => __("У группы :group уже есть занятие: :slot", ["group" => $s->group?->name, "slot" => $slot])];
             }
         }
 
@@ -81,13 +81,13 @@ class ScheduleService
         foreach ($q->get() as $l) {
             $slot = substr($l->start_time, 0, 5).'–'.substr($l->end_time, 0, 5);
             if (! empty($d['teacher_id']) && $l->teacher_id == $d['teacher_id']) {
-                $out[] = ['type' => 'teacher', 'message' => "Преподаватель {$l->teacher?->full_name} занят: {$slot}, {$l->group?->name}"];
+                $out[] = ['type' => 'teacher', 'message' => __("Преподаватель :name занят: :slot, :group", ["name" => $l->teacher?->full_name, "slot" => $slot, "group" => $l->group?->name])];
             }
             if (! empty($d['room_id']) && $l->room_id == $d['room_id']) {
-                $out[] = ['type' => 'room', 'message' => "Аудитория {$l->room?->name} занята: {$slot}, {$l->group?->name}"];
+                $out[] = ['type' => 'room', 'message' => __("Аудитория :name занята: :slot, :group", ["name" => $l->room?->name, "slot" => $slot, "group" => $l->group?->name])];
             }
             if (! empty($d['group_id']) && $l->group_id == $d['group_id']) {
-                $out[] = ['type' => 'group', 'message' => "У группы {$l->group?->name} уже есть занятие: {$slot}"];
+                $out[] = ['type' => 'group', 'message' => __("У группы :group уже есть занятие: :slot", ["group" => $l->group?->name, "slot" => $slot])];
             }
         }
 

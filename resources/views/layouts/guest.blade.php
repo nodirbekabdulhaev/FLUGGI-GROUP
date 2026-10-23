@@ -4,13 +4,13 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>@yield('title', 'FLUGGI EDU ERP')</title>
-    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
+    <link rel="icon" href="{{ asset('img/logo-64.png') }}" type="image/png">
     <link rel="stylesheet" href="{{ asset_v('css/app.css') }}">
 </head>
 <body class="min-h-screen">
 <div class="mx-auto flex min-h-screen max-w-md flex-col justify-center px-4 py-10">
     <div class="mb-6 text-center">
-        <div class="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-brand-600 text-lg font-bold text-white">F</div>
+        <img src="{{ asset('img/logo-192.png') }}" alt="FLUGGI" class="mx-auto mb-3 h-16 w-16 rounded-2xl shadow-lg">
         <h1 class="text-xl font-semibold">FLUGGI EDU ERP</h1>
     </div>
     <div class="card card-body">@yield('content')</div>

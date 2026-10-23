@@ -17,10 +17,10 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
     <meta name="csrf-token" content="{{ csrf_token() }}">
-    <meta name="theme-color" content="#4f46e5">
+    <meta name="theme-color" content="#244b74">
     <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
-    <link rel="icon" href="{{ asset('icons/icon.svg') }}" type="image/svg+xml">
-    <link rel="apple-touch-icon" href="{{ asset('icons/icon.svg') }}">
+    <link rel="icon" href="{{ asset('img/logo-64.png') }}" type="image/png">
+    <link rel="apple-touch-icon" href="{{ asset('img/logo-192.png') }}">
     <title>@yield('title', 'Dashboard') — {{ $currentOrg->name ?? 'FLUGGI EDU' }}</title>
     <link rel="stylesheet" href="{{ asset_v('css/app.css') }}">
     <script defer src="{{ asset('vendor/alpine.min.js') }}"></script>
@@ -33,7 +33,7 @@
 <aside :class="menu ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'"
        class="fixed inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-slate-200 bg-white transition-transform dark:border-slate-800 dark:bg-slate-900">
     <div class="flex h-14 shrink-0 items-center gap-2 px-4">
-        @if($currentOrg?->logo_path)<img src="{{ route('files.show', ['logo', 0]) }}" alt="" class="h-8 w-8 rounded-lg object-cover">@else<div class="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-600 text-sm font-bold text-white">F</div>@endif
+        @if($currentOrg?->logo_path)<img src="{{ route('files.show', ['logo', 0]) }}" alt="" class="h-8 w-8 rounded-lg object-cover">@else<img src="{{ asset('img/logo-64.png') }}" alt="FLUGGI" class="h-8 w-8 rounded-lg">@endif
         <div class="min-w-0"><div class="truncate text-sm font-semibold leading-tight">{{ $currentOrg->name ?? 'FLUGGI EDU' }}</div><div class="text-[10px] uppercase tracking-wider text-slate-400">EDU ERP</div></div>
         <button class="ml-auto lg:hidden" @click="menu = false"><x-icon name="x" /></button>
     </div>

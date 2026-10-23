@@ -1,5 +1,5 @@
 @extends('layouts.app')
-@section('title', 'Dashboard')
+@section('title', __('Dashboard'))
 @section('content')
 @php $f = $data['funnel']; $pct = fn($v) => $v === null ? '—' : $v.'%'; @endphp
 
@@ -55,10 +55,10 @@
         @endforeach
         </div>
         <dl class="mt-4 grid grid-cols-2 gap-2 text-xs">
-            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">Contact rate</dt><dd class="text-sm font-semibold">{{ $pct($f['contact_rate']) }}</dd></div>
-            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">Booking rate</dt><dd class="text-sm font-semibold">{{ $pct($f['booking_rate']) }}</dd></div>
-            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">Show-up rate</dt><dd class="text-sm font-semibold">{{ $pct($f['show_rate']) }}</dd></div>
-            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">Conversion</dt><dd class="text-sm font-semibold">{{ $pct($f['conversion_rate']) }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">{{ __('Contact rate') }}</dt><dd class="text-sm font-semibold">{{ $pct($f['contact_rate']) }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">{{ __('Booking rate') }}</dt><dd class="text-sm font-semibold">{{ $pct($f['booking_rate']) }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">{{ __('Show-up rate') }}</dt><dd class="text-sm font-semibold">{{ $pct($f['show_rate']) }}</dd></div>
+            <div class="rounded-lg bg-slate-50 p-2 dark:bg-slate-800"><dt class="text-slate-500">{{ __('Conversion') }}</dt><dd class="text-sm font-semibold">{{ $pct($f['conversion_rate']) }}</dd></div>
         </dl>
     </div>
     @endif
@@ -115,9 +115,9 @@
     const grid = dark ? '#1e293b' : '#e2e8f0', txt = dark ? '#94a3b8' : '#64748b';
     const fmt = v => new Intl.NumberFormat('ru-RU').format(v);
     const datasets = @json($showFinance)
-        ? [{ label: @json(__('Выручка')), data: s.revenue, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.12)', fill: true, tension: .3 },
+        ? [{ label: @json(__('Выручка')), data: s.revenue, borderColor: '#2c7387', backgroundColor: 'rgba(44,115,135,.14)', fill: true, tension: .3 },
            { label: @json(__('Расходы')), data: s.expenses, borderColor: '#e11d48', backgroundColor: 'transparent', tension: .3 }]
-        : [{ label: @json(__('Лиды')), data: s.leads, borderColor: '#4f46e5', backgroundColor: 'rgba(79,70,229,.12)', fill: true, tension: .3 }];
+        : [{ label: @json(__('Лиды')), data: s.leads, borderColor: '#2c7387', backgroundColor: 'rgba(44,115,135,.14)', fill: true, tension: .3 }];
     new Chart(document.getElementById('mainChart'), {
         type: 'line', data: { labels: s.labels, datasets },
         options: { responsive: true, maintainAspectRatio: false, interaction: { mode: 'index', intersect: false },
