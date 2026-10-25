@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Smm;
 
 use App\Http\Controllers\Controller;
 use App\Services\Smm\SmmAccess;
+use App\Services\Smm\SmmFinance;
 use App\Services\Smm\SmmIdeaService;
 use App\Services\Smm\SmmPublicationService;
+use App\Services\Smm\SmmVideoPay;
 use App\Support\Format;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -58,11 +60,18 @@ class IdeasController extends Controller
     public function show(string $id): View
     {
         $idea = SmmIdeaService::get($id);
+        // Суммы начислений за ролик в истории — только тем, у кого есть доступ к SMM «Финансы»
+        if (! SmmFinance::allowed()) {
+            $idea->setRelation('history', $idea->history->reject(fn ($h) => str_starts_with($h->action, 'pay_'))->values());
+        }
 
         return view('smm.show', [
             'idea' => $idea,
             'assignees' => SmmAccess::assignees($idea->assignee_id),
             'videographers' => SmmAccess::videographers($idea->videographer_id),
+            'editors' => SmmAccess::editors($idea->editor_id),
+            // «Начислено: Видеограф X — 50 000» после публикации: все — с доступом к SMM «Финансы», иначе — только своё
+            'accruals' => SmmVideoPay::forIdea($idea->id)->filter(fn ($a) => SmmFinance::allowed() || $a->user_id === access()->id())->values(),
             'pmRequired' => SmmAccess::projectManagerIds() !== [],
             'publication' => SmmPublicationService::for($idea),
             'canPublish' => SmmPublicationService::canEdit($idea),
@@ -78,11 +87,13 @@ class IdeasController extends Controller
             'notes' => ['sometimes', 'nullable', 'string', 'max:5000'],
             'assignee_id' => ['sometimes', 'nullable', 'uuid'],
             'videographer_id' => ['sometimes', 'nullable', 'uuid'],
+            'editor_id' => ['sometimes', 'nullable', 'uuid'],
             'planned_publish_date' => ['sometimes', 'nullable', 'date_format:Y-m-d'],
             'published_at' => ['sometimes', 'nullable', 'date_format:Y-m-d\TH:i'],
             'publish_url' => ['sometimes', 'nullable', 'url', 'max:500'],
         ], [], [
             'title' => t('smm.fields.title'), 'scenario' => t('smm.fields.scenario'), 'assignee_id' => t('smm.fields.assignee'), 'videographer_id' => t('smm.fields.videographer'),
+            'editor_id' => t('smm.fields.editor'),
             'planned_publish_date' => t('smm.fields.plannedDate'), 'published_at' => t('smm.fields.publishedAt'), 'publish_url' => t('smm.fields.publishUrl'),
         ]);
         if (array_key_exists('published_at', $data)) {

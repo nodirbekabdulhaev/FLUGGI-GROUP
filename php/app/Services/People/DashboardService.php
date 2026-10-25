@@ -7,6 +7,7 @@ use App\Domain\Tasks;
 use App\Services\Finance\FinanceService;
 use App\Services\Finance\Period;
 use App\Services\Projects\ProjectAccess;
+use App\Services\Smm\SmmVideoPay;
 use Brick\Math\BigDecimal;
 use Illuminate\Support\Facades\DB;
 
@@ -126,6 +127,8 @@ final class DashboardService
         // Сдельно: начисления по проектам за период
         $piece = (string) (DB::table('expenses')->where('payee_user_id', $access->id())->where('category', 'EXECUTOR')->whereNull('deleted_at')
             ->where('expense_date', '>=', $period['fromDate'])->where('expense_date', '<', $period['toDate'])->sum('amount_uzs') ?: '0');
+        // За опубликованные ролики SMM (видеограф, монтажёр) — действующие начисления месяца
+        $smmVideo = SmmVideoPay::byUser($month, [$access->id()])[$access->id()]['sum'] ?? '0.00';
         $bonusTarget = $employee?->kpi_bonus_target !== null ? (string) BigDecimal::of($employee->kpi_bonus_target)->toScale(2) : null;
         $bonus = People::kpiBonusFor($bonusTarget, $me['kpiPct']);
         // Оклад — только у менеджеров и РОП
@@ -140,7 +143,8 @@ final class DashboardService
             'commissionUzs' => (string) BigDecimal::of($commission)->toScale(2),
             'baseSalary' => $base,
             'pieceRateUzs' => (string) BigDecimal::of($piece)->toScale(2),
-            'expectedUzs' => People::finalSalary(['baseSalary' => $base ?? '0', 'pieceRate' => $piece, 'kpiBonus' => $bonus, 'commission' => $commission, 'otherBonus' => '0', 'penalty' => '0']),
+            'smmVideoUzs' => $smmVideo,
+            'expectedUzs' => People::finalSalary(['baseSalary' => $base ?? '0', 'pieceRate' => BigDecimal::of($piece)->plus($smmVideo), 'kpiBonus' => $bonus, 'commission' => $commission, 'otherBonus' => '0', 'penalty' => '0']),
         ];
     }
 }

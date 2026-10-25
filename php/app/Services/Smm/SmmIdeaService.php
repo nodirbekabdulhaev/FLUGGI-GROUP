@@ -25,6 +25,8 @@ use Illuminate\Support\Facades\DB;
  *  - Отклонённую идею автор или ответственный может отправить на утверждение заново (подписи сбрасываются).
  *  - Видеограф (специальность «Видеограф» или «Мобилограф») обязателен для перехода в «Съёмка»; выбирают автор,
  *    ответственный, проект-менеджер или CEO. Опубликованный ролик засчитывается в план роликов и ответственному, и видеографу.
+ *  - Монтажёр (специальность «Монтажёр», необязательно) — выбирают те же, кто правит идею.
+ *  - Опубликовано / снято с публикации / сменился видеограф или монтажёр — начисления за ролик (SmmVideoPay::sync).
  * Каждое изменение — в истории идеи (только добавление) и в журнале аудита.
  */
 final class SmmIdeaService
@@ -41,7 +43,7 @@ final class SmmIdeaService
     public const WORK = ['SHOOTING', 'EDITING', 'SCHEDULED', 'PUBLISHED'];
 
     /** Поля, изменения которых видны в истории. */
-    public const TRACKED = ['title', 'scenario', 'notes', 'assignee_id', 'videographer_id', 'planned_publish_date', 'published_at', 'publish_url'];
+    public const TRACKED = ['title', 'scenario', 'notes', 'assignee_id', 'videographer_id', 'editor_id', 'planned_publish_date', 'published_at', 'publish_url'];
 
     public const COLORS = [
         'IDEA' => 'gray', 'APPROVED' => 'blue', 'SHOOTING' => 'yellow', 'EDITING' => 'yellow',
@@ -102,7 +104,7 @@ final class SmmIdeaService
     public static function get(string $id): SmmIdea
     {
         $idea = SmmAccess::idea($id);
-        $idea->load(['assignee:id,full_name', 'author:id,full_name', 'videographer:id,full_name', 'pmApprovedBy:id,full_name', 'ceoApprovedBy:id,full_name', 'rejectedBy:id,full_name']);
+        $idea->load(['assignee:id,full_name', 'author:id,full_name', 'videographer:id,full_name', 'editor:id,full_name', 'pmApprovedBy:id,full_name', 'ceoApprovedBy:id,full_name', 'rejectedBy:id,full_name']);
         self::decorate(collect([$idea]));
         $idea->setRelation('comments', SmmIdeaComment::with('author:id,full_name')->where('idea_id', $id)->orderBy('created_at')->get());
         $idea->setRelation('history', SmmIdeaHistory::with('user:id,full_name')->where('idea_id', $id)->orderByDesc('created_at')->orderByDesc('id')->get());
@@ -179,10 +181,18 @@ final class SmmIdeaService
         }
     }
 
-    /** assignee_id / videographer_id в истории — имена сотрудников. */
+    /** Монтажёр — активный сотрудник со специальностью «Монтажёр». */
+    private static function assertEditor(?string $userId): void
+    {
+        if ($userId !== null && ! SmmAccess::isEditor($userId)) {
+            throw new BusinessRule(t('smm.errors.editorInvalid'), ['editor_id' => t('smm.errors.editorInvalid')]);
+        }
+    }
+
+    /** assignee_id / videographer_id / editor_id в истории — имена сотрудников. */
     private static function namedChanges(array $changes): array
     {
-        foreach (['assignee_id' => 'assignee', 'videographer_id' => 'videographer'] as $field => $label) {
+        foreach (['assignee_id' => 'assignee', 'videographer_id' => 'videographer', 'editor_id' => 'editor'] as $field => $label) {
             if (isset($changes[$field])) {
                 $changes[$label] = ['old' => self::userName($changes[$field]['old']), 'new' => self::userName($changes[$field]['new'])];
                 unset($changes[$field]);
@@ -214,7 +224,7 @@ final class SmmIdeaService
     {
         $idea = SmmAccess::idea($id);
         self::assertCanEdit($idea);
-        $data = array_intersect_key($input, array_flip(['title', 'scenario', 'notes', 'assignee_id', 'videographer_id', 'planned_publish_date', 'publish_url', 'published_at']));
+        $data = array_intersect_key($input, array_flip(['title', 'scenario', 'notes', 'assignee_id', 'videographer_id', 'editor_id', 'planned_publish_date', 'publish_url', 'published_at']));
         if (array_key_exists('title', $data) && ! filled($data['title'])) {
             unset($data['title']);
         }
@@ -234,6 +244,14 @@ final class SmmIdeaService
                 throw new BusinessRule(t('smm.errors.videographerRequired'), ['videographer_id' => t('smm.errors.videographerRequired')]);
             } else {
                 self::assertVideographer($data['videographer_id']);
+            }
+        }
+        if (array_key_exists('editor_id', $data)) {
+            $data['editor_id'] = $data['editor_id'] ?: null;
+            if ($data['editor_id'] === $idea->editor_id) {
+                unset($data['editor_id']);
+            } else {
+                self::assertEditor($data['editor_id']);
             }
         }
         if ($idea->status === 'SCHEDULED' && array_key_exists('planned_publish_date', $data) && ! $data['planned_publish_date']) {
@@ -257,6 +275,8 @@ final class SmmIdeaService
                     Outbox::publish('smm.idea_status_changed', ['ideaId' => $idea->id, 'from' => $idea->status, 'to' => $idea->status, 'assigned' => true]);
                 }
                 self::publishVideographer($idea, $videographer);
+                // Сменился видеограф/монтажёр или дата публикации опубликованного ролика — начисления за ролик
+                SmmVideoPay::sync($idea);
             }
 
             return $idea;
@@ -272,6 +292,7 @@ final class SmmIdeaService
             'notes' => $idea->notes,
             'assignee_id' => $idea->assignee_id,
             'videographer_id' => $idea->videographer_id,
+            'editor_id' => $idea->editor_id,
             'planned_publish_date' => $idea->planned_publish_date?->format('Y-m-d'),
             'published_at' => $idea->published_at ? Format::dateTime($idea->published_at) : null,
             'publish_url' => $idea->publish_url,
@@ -414,6 +435,8 @@ final class SmmIdeaService
             self::log($idea, $to === 'IDEA' ? 'resubmitted' : 'status', $changes);
             Outbox::publish('smm.idea_status_changed', ['ideaId' => $idea->id, 'from' => $from, 'to' => $to]);
             self::publishVideographer($idea, $diff['videographer_id'] ?? null);
+            // «Опубликовано» — начисления видеографу и монтажёру; возврат из «Опубликовано» — сторно
+            SmmVideoPay::sync($idea);
 
             return $idea;
         });
@@ -461,6 +484,7 @@ final class SmmIdeaService
         DB::transaction(function () use ($idea) {
             self::log($idea, 'deleted', ['title' => ['old' => $idea->title, 'new' => null]]);
             $idea->delete();
+            SmmVideoPay::sync($idea);
         });
     }
 

@@ -32,6 +32,9 @@ final class Settings
         // Забытая отметка ухода (App\Services\People\AttendanceCheckout): напоминание через N минут после конца графика,
         // авто-уход по концу графика через M минут после конца графика (день уходит на утверждение CEO)
         'attendance' => ['checkoutControl' => true, 'reminderGraceMinutes' => 15, 'autoCheckoutDelayMinutes' => 120],
+        // Оплата за опубликованный ролик SMM по роли (App\Services\Smm\SmmVideoPay), UZS; 0 — не начисляется.
+        // payAssignee — платить ставку SMM-специалисту (ответственному), если он сам снимает или монтирует ролик
+        'smm' => ['rateVideographer' => '0', 'rateMobilographer' => '0', 'rateEditor' => '0', 'payAssignee' => false],
     ];
 
     /** @var array<string,array> */
@@ -64,6 +67,11 @@ final class Settings
     public static function attendance(): array
     {
         return self::get('attendance');
+    }
+
+    public static function smm(): array
+    {
+        return self::get('smm');
     }
 
     public static function company(): array

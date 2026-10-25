@@ -14,6 +14,7 @@ use App\Models\WorkSchedule;
 use App\Services\Finance\Period;
 use App\Services\Smm\SmmIdeaService;
 use App\Services\Smm\SmmPayroll;
+use App\Services\Smm\SmmVideoPay;
 use App\Support\Audit;
 use App\Support\Outbox;
 use Brick\Math\BigDecimal;
@@ -446,7 +447,8 @@ final class PeopleService
      * Расчёт месяца: черновики для всех активных сотрудников (кроме CEO). Комиссия — сумма утверждённых
      * и выплаченных комиссий месяца; оклад (менеджер и РОП) — оклад при 100 % × посещаемость, SMM-исполнитель с планом
      * роликов — оклад при 100 % × доля опубликованных роликов (не больше 100 %); сдельно — начисления
-     * «Исполнитель» по проектам; KPI-бонус — «бонус при 100%» × KPI (до 120%); бонусы и штрафы вносятся
+     * «Исполнитель» по проектам; за ролики SMM — действующие начисления видеографу/монтажёру за месяц публикации
+     * (App\Services\Smm\SmmVideoPay), входят в начислено так же, как сдельно; KPI-бонус — «бонус при 100%» × KPI (до 120%); бонусы и штрафы вносятся
      * вручную и при пересчёте сохраняются. Утверждённые строки не пересчитываются.
      */
     public static function calculate(string $period): void
@@ -458,8 +460,9 @@ final class PeopleService
         $piece = DB::table('expenses')->whereNull('deleted_at')->where('category', 'EXECUTOR')->whereNotNull('payee_user_id')
             ->where('expense_date', '>=', $d1)->where('expense_date', '<', $d2)->groupBy('payee_user_id')
             ->select('payee_user_id', DB::raw('SUM(amount_uzs) s'))->pluck('s', 'payee_user_id');
+        $videos = SmmVideoPay::byUser($period);
 
-        DB::transaction(function () use ($users, $period, $kpi, $piece) {
+        DB::transaction(function () use ($users, $period, $kpi, $piece, $videos) {
             foreach ($users as $u) {
                 $existing = PayrollEntry::where('user_id', $u->id)->where('period', $period)->lockForUpdate()->first();
                 if ($existing && $existing->status !== 'DRAFT') {
@@ -484,13 +487,14 @@ final class PeopleService
                 $parts = [
                     'base_salary' => $base,
                     'piece_rate' => self::dec($piece[$u->id] ?? 0),
+                    'smm_video_pay' => self::dec($videos[$u->id]['sum'] ?? 0),
                     'kpi_bonus' => $target !== null ? People::kpiBonusFor((string) $target, $pct) : self::dec($existing?->kpi_bonus),
                     'commission' => self::dec(self::commissionOf($u->id, $period)),
                     'other_bonus' => self::dec($existing?->other_bonus),
                     'penalty' => self::dec($existing?->penalty),
                 ];
                 $data = $parts + ['final_salary' => self::final($parts), 'kpi_pct' => $pct, 'base_full' => $full, 'attendance_pct' => $attendancePct,
-                    'videos_published' => $videosPublished, 'videos_target' => $videosTarget];
+                    'videos_published' => $videosPublished, 'videos_target' => $videosTarget, 'smm_video_count' => isset($videos[$u->id]) ? $videos[$u->id]['count'] : null];
                 $existing ? $existing->update($data) : PayrollEntry::create(['user_id' => $u->id, 'period' => $period] + $data);
             }
             Audit::log('payroll.calculate', 'payroll', null, ['period' => ['old' => null, 'new' => $period]]);
@@ -499,8 +503,9 @@ final class PeopleService
 
     private static function final(array $p): string
     {
+        // За ролики SMM — сдельная оплата: в итог входит вместе со «Сдельно»
         return People::finalSalary([
-            'baseSalary' => $p['base_salary'], 'pieceRate' => $p['piece_rate'], 'kpiBonus' => $p['kpi_bonus'],
+            'baseSalary' => $p['base_salary'], 'pieceRate' => BigDecimal::of($p['piece_rate'])->plus($p['smm_video_pay'] ?? '0'), 'kpiBonus' => $p['kpi_bonus'],
             'commission' => $p['commission'], 'otherBonus' => $p['other_bonus'], 'penalty' => $p['penalty'],
         ]);
     }
@@ -519,6 +524,7 @@ final class PeopleService
         $parts = [
             'base_salary' => self::dec($input['base_salary'] ?? $e->base_salary),
             'piece_rate' => self::dec($e->piece_rate),
+            'smm_video_pay' => self::dec($e->smm_video_pay),
             // Новый «бонус при 100%» сразу пересчитывает KPI-бонус месяца (если сумму не ввели вручную)
             'kpi_bonus' => isset($input['kpi_bonus']) ? self::dec($input['kpi_bonus'])
                 : ($hasTarget && $input['kpi_bonus_target'] !== null ? People::kpiBonusFor($input['kpi_bonus_target'], $e->kpi_pct === null ? null : (string) $e->kpi_pct) : self::dec($e->kpi_bonus)),

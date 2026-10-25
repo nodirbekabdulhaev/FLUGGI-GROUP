@@ -149,7 +149,8 @@
     "update": "Executor work item updated"
   },
   "employee": {
-    "rates": "Piece rates updated"
+    "rates": "Piece rates updated",
+    "smm_video_rate_update": "Personal SMM per-video rate updated"
   },
   "settings": {
     "finance": "Finance settings updated",
@@ -213,5 +214,12 @@
     "update": "To-do updated",
     "status": "To-do status changed",
     "delete": "To-do deleted"
+  },
+  "smm": {
+    "video_accrued": "SMM video pay accrued",
+    "video_reversed": "SMM video pay reversed",
+    "video_rates_update": "SMM per-video rates updated",
+    "expense_create": "SMM expense added",
+    "expense_delete": "SMM expense deleted"
   }
 }

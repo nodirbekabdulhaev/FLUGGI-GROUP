@@ -47,6 +47,18 @@ class SmmIdea extends Model
         return $this->belongsTo(User::class, 'videographer_id');
     }
 
+    /** Монтажёр (необязательно): за опубликованный ролик — ставка «Монтажёр». */
+    public function editor(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'editor_id');
+    }
+
+    /** Начисления за ролик (видеограф, монтажёр), включая сторно. */
+    public function videoAccruals(): HasMany
+    {
+        return $this->hasMany(SmmVideoAccrual::class, 'idea_id');
+    }
+
     public function pmApprovedBy(): BelongsTo
     {
         return $this->belongsTo(User::class, 'pm_approved_by_id');

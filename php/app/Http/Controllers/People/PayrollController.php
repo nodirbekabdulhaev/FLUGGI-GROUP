@@ -10,6 +10,7 @@ use App\Services\People\AttendanceCheckout;
 use App\Services\People\PeopleService;
 use App\Services\Smm\SmmIdeaService;
 use App\Services\Smm\SmmPayroll;
+use App\Services\Smm\SmmVideoPay;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -26,7 +27,9 @@ class PayrollController extends Controller
         // Дни без отметки ухода, ещё не утверждённые CEO, в оклад пока не входят — предупреждение в строке
         $pending = array_intersect_key(AttendanceCheckout::pendingByUser($period), $entries->pluck('user_id')->flip()->all());
         $data = ['period' => $period, 'manage' => $manage, 'entries' => $entries, 'pendingCheckouts' => $pending,
-            'canApproveDays' => AttendanceCheckout::canApprove()];
+            'canApproveDays' => AttendanceCheckout::canApprove(),
+            // За ролики SMM: «2 × 50 000» по действующим начислениям (если совпадают с суммой в строке)
+            'videoParts' => SmmVideoPay::byUser($period, $entries->pluck('user_id')->all())];
         if ($manage) {
             $data['salaries'] = PeopleService::salaries();
             $data['videoPlans'] = SmmPayroll::plans();

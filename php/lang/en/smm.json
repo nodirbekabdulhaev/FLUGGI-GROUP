@@ -19,7 +19,8 @@
   "reset": "Reset",
   "views": {
     "kanban": "Kanban",
-    "list": "List"
+    "list": "List",
+    "finance": "Finance"
   },
   "kanbanHint": "Drag a card to another stage. Shooting starts only after approval by the project manager and the CEO",
   "hiddenOld": "{count} older published and rejected — see the list or pick a month",
@@ -88,7 +89,8 @@
     "publishUrl": "Post link",
     "createdAt": "Created",
     "rejectReason": "Rejection reason",
-    "videographer": "Videographer"
+    "videographer": "Videographer",
+    "editor": "Editor"
   },
   "history": {
     "created": "Idea created",
@@ -113,7 +115,9 @@
     "tg_media": "Telegram version of the video uploaded",
     "tg_media_removed": "Telegram version of the video removed",
     "tg_published": "Published to the Telegram channel",
-    "tg_failed": "Telegram channel publishing failed"
+    "tg_failed": "Telegram channel publishing failed",
+    "pay_accrued": "Video pay accrued",
+    "pay_reversed": "Video pay reversed"
   },
   "historyFields": {
     "title": "Title",
@@ -129,7 +133,12 @@
     "igStatus": "Auto-publishing",
     "scheduledAt": "Publish time",
     "channel": "Telegram channel",
-    "targets": "Publish to"
+    "targets": "Publish to",
+    "editor": "Editor",
+    "payee": "Payee",
+    "amount": "Amount",
+    "period": "Month",
+    "reason": "Reason"
   },
   "errors": {
     "assigneeRequired": "Choose the responsible SMM specialist",
@@ -146,7 +155,8 @@
     "videoRequired": "Choose the video the client came from",
     "videoNotPublished": "Only a published video can be chosen",
     "videographerRequired": "Select a videographer — without one the video cannot be moved to “Shooting”",
-    "videographerInvalid": "Only an active employee with the “Videographer” or “Mobilographer” specialty can be the videographer"
+    "videographerInvalid": "Only an active employee with the “Videographer” or “Mobilographer” specialty can be the videographer",
+    "editorInvalid": "Only an active employee with the Editor specialty can be the editor"
   },
   "notify": {
     "created": "New video idea to approve",
@@ -320,6 +330,95 @@
       "photoTooLarge": "The Telegram bot can send photos up to {mb} MB; make the photo smaller or untick Telegram",
       "versionType": "The Telegram version must be an MP4 or MOV video",
       "versionNeedsVideo": "Upload the original video first"
+    }
+  },
+  "noEditor": "No editor",
+  "editorHint": "Optional: an employee with the Editor specialty. A published video earns them the editor rate.",
+  "finance": {
+    "title": "SMM — finance",
+    "subtitle": "What our own SMM costs: pay for SMM specialists, videographers and editors, other expenses and the result",
+    "toPayroll": "Monthly payroll",
+    "cost": "SMM cost for the month",
+    "costHint": "People {people} + other {other}",
+    "videos": "Videos published",
+    "perVideo": "Cost per video: {amount}",
+    "noVideos": "No videos this month",
+    "revenue": "Revenue from SMM video",
+    "revenueHint": "Leads: {leads} · deals won: {won}",
+    "roi": "ROI",
+    "roiHint": "(revenue − cost) / cost",
+    "peopleTitle": "SMM pay by employee",
+    "peopleHint": "Salary by video plan, per-video pay (videographer, editor), SMM sales bonus",
+    "peopleEmpty": "No SMM pay for this month",
+    "peopleEmptyHint": "Set the salary and video plan in Payroll and the per-video rates on the right",
+    "person": "Employee",
+    "fixed": "Salary",
+    "fixedPlan": "by plan, month not calculated",
+    "videoPay": "Per-video pay",
+    "bonus": "SMM sales bonus",
+    "total": "Total",
+    "paid": "Paid",
+    "remaining": "Remaining",
+    "totalRow": "People total",
+    "notCalculated": "Payroll not calculated",
+    "payHint": "Pay out in the monthly Payroll: calculate → approve → pay. \"Paid\" means payroll rows with the Paid status.",
+    "otherTitle": "Other SMM expenses",
+    "otherHint": "Props, studio, ads and more — included in the monthly SMM cost",
+    "otherEmpty": "No other expenses this month",
+    "otherTotal": "Other total",
+    "addExpense": "Add expense",
+    "deleteExpense": "Delete expense",
+    "deleteConfirm": "Delete the expense? The linked accounting operation will be deleted too.",
+    "date": "Date",
+    "category": "Category",
+    "amount": "Amount, UZS",
+    "comment": "Comment",
+    "categories": {
+      "PROPS": "Props",
+      "STUDIO": "Studio",
+      "ADS": "Ads",
+      "OTHER": "Other"
+    },
+    "toAccounting": "Record in Accounting",
+    "toAccountingHint": "An expense operation on the chosen account (in UZS)",
+    "account": "Account",
+    "article": "Expense article",
+    "noAccounts": "No active UZS accounts — add one in Accounting",
+    "inAccounting": "in Accounting: {account}",
+    "expenseAdded": "Expense added",
+    "expenseDeleted": "Expense deleted",
+    "expenseDeletedReason": "SMM expense deleted",
+    "ratesTitle": "Per-video rates",
+    "ratesHint": "For each published video, UZS; 0 — not paid",
+    "ratesNote": "The amount is fixed at publication: a new rate applies to the next videos. A personal rate is set in the employee card (Rates).",
+    "ratesSaved": "Per-video rates saved",
+    "payAssignee": "Pay the per-video rate to the SMM manager if they shoot it themselves",
+    "payAssigneeHint": "Off: if the idea assignee is also the videographer or editor, no rate is paid (the work is part of their salary)",
+    "personalList": "Personal rates",
+    "personalRate": "SMM per-video rate",
+    "personalRateHint": "Empty — the role rate from SMM → Finance: videographer {videographer}, mobilographer {mobilographer}, editor {editor}",
+    "personalRateField": "Personal per-video rate, UZS",
+    "personalRateSaved": "Per-video rate saved",
+    "asRole": "Role rate",
+    "accrued": "Accrued",
+    "accruedLine": "{role} {name} — {amount}",
+    "roles": {
+      "VIDEOGRAPHER": "Videographer",
+      "MOBILOGRAPHER": "Mobilographer",
+      "EDITOR": "Editor"
+    },
+    "reverse": {
+      "unpublished": "Video unpublished",
+      "deleted": "Idea deleted",
+      "videographer_changed": "Videographer changed",
+      "editor_changed": "Editor changed",
+      "period_changed": "Publication date moved to another month"
+    },
+    "errors": {
+      "accountRequired": "Choose an account to record in Accounting",
+      "accountInvalid": "An active UZS account is required",
+      "amountPositive": "The amount must be greater than zero",
+      "accountingLinked": "The expense is recorded in Accounting — only someone with Accounting rights can delete it"
     }
   }
 }

@@ -111,6 +111,7 @@
     "accounting_manage": "Бухгалтерия: ведение",
     "smm_read": "SMM: просмотр идей роликов",
     "smm_create": "SMM: создание идей",
-    "smm_approve": "SMM: утверждение идей"
+    "smm_approve": "SMM: утверждение идей",
+    "smm_finance": "SMM: финансы (оплата SMM, ставки за ролик, расходы)"
   }
 }

@@ -77,7 +77,7 @@ final class SmmAccess
     }
 
     /**
-     * Идеи в зоне видимости: OWN — свои (ответственный, автор или видеограф), TEAM — ещё и сотрудников своих отделов;
+     * Идеи в зоне видимости: OWN — свои (ответственный, автор, видеограф или монтажёр), TEAM — ещё и сотрудников своих отделов;
      * только видеограф — назначенные ему.
      */
     public static function ideas(): Builder
@@ -90,8 +90,8 @@ final class SmmAccess
         return access()->restrict(
             SmmIdea::query(),
             'smm.read',
-            fn ($q, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)->orWhere('videographer_id', $uid),
-            fn ($q, $teamIds, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)->orWhere('videographer_id', $uid)
+            fn ($q, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)->orWhere('videographer_id', $uid)->orWhere('editor_id', $uid),
+            fn ($q, $teamIds, $uid) => $q->where('assignee_id', $uid)->orWhere('author_id', $uid)->orWhere('videographer_id', $uid)->orWhere('editor_id', $uid)
                 ->orWhereIn('assignee_id', fn ($u) => $u->select('id')->from('users')->whereIn('team_id', $teamIds ?: ['-'])),
         );
     }
@@ -147,6 +147,20 @@ final class SmmAccess
     {
         return User::whereKey($userId)->where('status', 'ACTIVE')
             ->whereHas('employee', fn ($e) => $e->withSpecialty(self::VIDEOGRAPHER_SPECIALTIES))->exists();
+    }
+
+    /** Кого можно выбрать монтажёром: активные сотрудники со специальностью «Монтажёр». */
+    public static function editors(?string $keepId = null): Collection
+    {
+        return User::query()->where(fn ($q) => $q
+            ->where(fn ($w) => $w->where('status', 'ACTIVE')->whereHas('employee', fn ($e) => $e->withSpecialty(['EDITOR'])))
+            ->when($keepId, fn ($w) => $w->orWhere('id', $keepId)))
+            ->orderBy('full_name')->get(['id', 'full_name']);
+    }
+
+    public static function isEditor(string $userId): bool
+    {
+        return User::whereKey($userId)->where('status', 'ACTIVE')->whereHas('employee', fn ($e) => $e->withSpecialty(['EDITOR']))->exists();
     }
 
     /**

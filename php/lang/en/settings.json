@@ -111,6 +111,7 @@
     "accounting_manage": "Accounting: manage",
     "smm_read": "SMM: view video ideas",
     "smm_create": "SMM: create ideas",
-    "smm_approve": "SMM: approve ideas"
+    "smm_approve": "SMM: approve ideas",
+    "smm_finance": "SMM: finance (SMM pay, per-video rates, expenses)"
   }
 }

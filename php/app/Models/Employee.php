@@ -19,6 +19,7 @@ class Employee extends Model
         'base_salary' => 'decimal:2',
         'kpi_bonus_target' => 'decimal:2',
         'video_target' => 'integer',
+        'smm_video_rate' => 'decimal:2',
         'hired_at' => 'date',
         'fired_at' => 'date',
         'created_at' => 'datetime',

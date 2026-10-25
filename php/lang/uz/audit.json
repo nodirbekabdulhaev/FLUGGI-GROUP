@@ -149,7 +149,8 @@
     "update": "Ijrochi ishi oʻzgartirildi"
   },
   "employee": {
-    "rates": "Ishbay stavkalar oʻzgartirildi"
+    "rates": "Ishbay stavkalar oʻzgartirildi",
+    "smm_video_rate_update": "SMM videosi uchun shaxsiy stavka oʻzgartirildi"
   },
   "settings": {
     "finance": "Moliyaviy sozlamalar oʻzgartirildi",
@@ -213,5 +214,12 @@
     "update": "Ish oʻzgartirildi",
     "status": "Ish holati oʻzgartirildi",
     "delete": "Ish oʻchirildi"
+  },
+  "smm": {
+    "video_accrued": "SMM videosi uchun hisoblandi",
+    "video_reversed": "SMM videosi hisobi bekor qilindi",
+    "video_rates_update": "SMM video stavkalari oʻzgartirildi",
+    "expense_create": "SMM xarajati qoʻshildi",
+    "expense_delete": "SMM xarajati oʻchirildi"
   }
 }

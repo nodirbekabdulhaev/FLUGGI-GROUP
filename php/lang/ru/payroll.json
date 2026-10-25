@@ -67,5 +67,9 @@
   "pendingCheckouts": "{count, plural, one {# день} few {# дня} many {# дней} other {# дня}} без отметки ухода ещё не утверждены — в оклад они пока не входят. Утвердите и пересчитайте месяц.",
   "pendingCheckoutsOpen": "На утверждение",
   "pendingDays": "не утверждено дней без ухода: {count}",
-  "smmCounts": "{period}: ответственный — {assignee}, видеограф — {videographer}"
+  "smmCounts": "{period}: ответственный — {assignee}, видеограф — {videographer}",
+  "smmVideo": "За ролики SMM",
+  "smmVideoHint": "Начисления за опубликованные ролики SMM (видеограф, монтажёр) за месяц публикации",
+  "smmVideoOf": "{parts}",
+  "smmVideoCount": "Роликов: {count}"
 }

@@ -58,5 +58,6 @@
   "pmCompleted": "Completed in period",
   "pmTasksOpen": "Open tasks",
   "pmTasksToday": "Tasks for today",
-  "pmTasksOverdue": "Overdue tasks"
+  "pmTasksOverdue": "Overdue tasks",
+  "smmVideo": "SMM videos"
 }

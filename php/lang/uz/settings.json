@@ -111,6 +111,7 @@
     "accounting_manage": "Buxgalteriya: yuritish",
     "smm_read": "SMM: rolik gʻoyalarini koʻrish",
     "smm_create": "SMM: gʻoya yaratish",
-    "smm_approve": "SMM: gʻoyalarni tasdiqlash"
+    "smm_approve": "SMM: gʻoyalarni tasdiqlash",
+    "smm_finance": "SMM: moliya (SMM toʻlovlari, video stavkalari, xarajatlar)"
   }
 }

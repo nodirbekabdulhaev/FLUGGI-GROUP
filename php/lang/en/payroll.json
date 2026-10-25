@@ -67,5 +67,9 @@
   "pendingCheckouts": "{count, plural, one {# day} other {# days}} without check-out not approved yet — they are not counted in the salary. Approve them and recalculate the month.",
   "pendingCheckoutsOpen": "To approval",
   "pendingDays": "unapproved days without check-out: {count}",
-  "smmCounts": "{period}: assignee — {assignee}, videographer — {videographer}"
+  "smmCounts": "{period}: assignee — {assignee}, videographer — {videographer}",
+  "smmVideo": "SMM videos",
+  "smmVideoHint": "Accruals for SMM videos published in the month (videographer, editor)",
+  "smmVideoOf": "{parts}",
+  "smmVideoCount": "Videos: {count}"
 }

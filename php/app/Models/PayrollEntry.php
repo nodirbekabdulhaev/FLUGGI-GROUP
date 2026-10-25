@@ -18,6 +18,8 @@ class PayrollEntry extends Model
         'videos_published' => 'integer',
         'videos_target' => 'integer',
         'piece_rate' => 'decimal:2',
+        'smm_video_pay' => 'decimal:2',
+        'smm_video_count' => 'integer',
         'kpi_bonus' => 'decimal:2',
         'commission' => 'decimal:2',
         'other_bonus' => 'decimal:2',

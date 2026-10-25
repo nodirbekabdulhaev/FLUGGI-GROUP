@@ -40,7 +40,7 @@
                 <thead><tr>
                     @if ($manage)<th class="w-10"><input type="checkbox" aria-label="{{ t('payroll.selectAll') }}" @change="selected = $event.target.checked ? @js($entries->pluck('id')) : []"></th>@endif
                     <th>{{ t('payroll.employee') }}</th>
-                    @foreach (['base', 'pieceRate', 'kpiBonus', 'commission', 'otherBonus', 'penalty', 'final'] as $k)<th class="text-right">{{ t('payroll.'.$k) }}</th>@endforeach
+                    @foreach (['base', 'pieceRate', 'smmVideo', 'kpiBonus', 'commission', 'otherBonus', 'penalty', 'final'] as $k)<th class="text-right">{{ t('payroll.'.$k) }}</th>@endforeach
                     <th>{{ t('payroll.statusLabel') }}</th>@if ($manage)<th></th>@endif
                 </tr></thead>
                 <tbody>
@@ -63,6 +63,17 @@
                             @endif
                         </td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ (float) $e->piece_rate ? money($e->piece_rate) : '—' }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">
+                            @if ((float) $e->smm_video_pay)
+                                {{ money($e->smm_video_pay) }}
+                                @php($vp = $videoParts[$e->user_id] ?? null)
+                                <span class="block text-xs text-muted-foreground">{{ $vp && BigDecimal::of($vp['sum'])->isEqualTo((string) $e->smm_video_pay)
+                                    ? t('payroll.smmVideoOf', ['parts' => \App\Services\Smm\SmmVideoPay::partsText($vp['parts'])])
+                                    : t('payroll.smmVideoCount', ['count' => (int) $e->smm_video_count]) }}</span>
+                            @else
+                                —
+                            @endif
+                        </td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->kpi_bonus) }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->commission) }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->other_bonus) }}</td>
@@ -152,6 +163,9 @@
                     @endif
                     <x-field name="kpi_bonus_target" inputmode="decimal" data-money :label="t('payroll.kpiBonusTarget')" :hint="t('payroll.kpiBonusTargetHint')" :value="$editing->user->employee?->kpi_bonus_target !== null ? $num($editing->user->employee->kpi_bonus_target) : null" />
                     <x-field name="kpi_bonus" inputmode="decimal" data-money :label="t('payroll.kpiBonus').($editing->kpi_pct !== null ? ' (KPI '.$editing->kpi_pct.'%)' : '')" :hint="t('payroll.kpiBonusAutoHint')" :value="$num($editing->kpi_bonus)" />
+                    @if ((float) $editing->smm_video_pay)
+                        <x-field name="smm_video_view" :label="t('payroll.smmVideo')" :hint="t('payroll.smmVideoHint')" :value="money($editing->smm_video_pay)" disabled />
+                    @endif
                     <x-field name="commission_view" :label="t('payroll.commission')" :value="money($editing->commission)" disabled />
                     <x-field name="other_bonus" inputmode="decimal" data-money :label="t('payroll.otherBonus')" :value="$num($editing->other_bonus)" />
                     <x-field name="penalty" inputmode="decimal" data-money :label="t('payroll.penalty')" :value="$num($editing->penalty)" />

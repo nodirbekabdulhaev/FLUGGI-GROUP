@@ -112,6 +112,10 @@ final class SmmTargets
             if ($data) {
                 $idea->update($data);
             }
+            // Первая успешная автопубликация — начисления за ролик видеографу и монтажёру
+            if ($from !== 'PUBLISHED') {
+                SmmVideoPay::sync($idea);
+            }
             $changes = array_filter([
                 'status' => $from !== 'PUBLISHED' ? ['old' => $from, 'new' => 'PUBLISHED'] : null,
                 'publish_url' => isset($data['publish_url']) && $data['publish_url'] !== $oldUrl ? ['old' => $oldUrl, 'new' => $data['publish_url']] : null,

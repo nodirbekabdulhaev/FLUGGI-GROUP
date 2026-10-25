@@ -136,6 +136,7 @@
     @if (isset($ratesFor) && view()->exists('sales.partials.employee-rates'))
         <x-modal name="emp-rates" :title="t('rates.title', ['name' => $ratesFor->full_name])" size="max-w-2xl" :open="true">
             @include('sales.partials.employee-rates', ['user' => $ratesFor])
+            @include('smm.partials.personal-rate', ['user' => $ratesFor])
         </x-modal>
     @endif
     @if (session('tempPassword'))

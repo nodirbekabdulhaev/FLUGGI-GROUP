@@ -26,6 +26,7 @@
             <p class="-mt-1 text-xs text-muted-foreground">{{ $k['bonusTarget'] ? t('dash.kpiBonusHint', ['amount' => money($k['bonusTarget'])]) : t('dash.kpiBonusNotSet') }}</p>
             <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('dash.commissionMonth') }}</dt><dd class="tabular-nums">{{ money($k['commissionUzs']) }}</dd></div>
             @if ((float) $k['pieceRateUzs'])<div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('dash.pieceRate') }}</dt><dd class="tabular-nums">{{ money($k['pieceRateUzs']) }}</dd></div>@endif
+            @if ((float) ($k['smmVideoUzs'] ?? 0))<div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('dash.smmVideo') }}</dt><dd class="tabular-nums">{{ money($k['smmVideoUzs']) }}</dd></div>@endif
             @if ($k['baseSalary'])<div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('dash.baseSalary') }}</dt><dd class="tabular-nums">{{ money($k['baseSalary']) }}</dd></div>@endif
             <div class="mt-1 flex justify-between gap-3 border-t pt-2"><dt class="font-medium">{{ t('dash.expectedPay') }}</dt><dd class="font-semibold tabular-nums">{{ money($k['expectedUzs']) }}</dd></div>
         </dl>

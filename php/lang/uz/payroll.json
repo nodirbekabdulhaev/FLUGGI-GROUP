@@ -67,5 +67,9 @@
   "pendingCheckouts": "{count, plural, other {# kun}} ketish belgisiz hali tasdiqlanmagan — ular hozircha maoshga kirmaydi. Tasdiqlang va oyni qayta hisoblang.",
   "pendingCheckoutsOpen": "Tasdiqlashga",
   "pendingDays": "ketish belgisiz tasdiqlanmagan kunlar: {count}",
-  "smmCounts": "{period}: masʼul — {assignee}, videograf — {videographer}"
+  "smmCounts": "{period}: masʼul — {assignee}, videograf — {videographer}",
+  "smmVideo": "SMM videolari uchun",
+  "smmVideoHint": "Eʼlon oyida eʼlon qilingan SMM videolari uchun hisoblar (videograf, montajchi)",
+  "smmVideoOf": "{parts}",
+  "smmVideoCount": "Videolar: {count}"
 }

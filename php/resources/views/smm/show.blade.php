@@ -43,6 +43,8 @@
                             <x-select name="assignee_id" :label="t('smm.fields.assignee')" :options="$assignees->pluck('full_name', 'id')->all()" :value="$idea->assignee_id" />
                             <x-select name="videographer_id" :label="t('smm.fields.videographer')" :options="$videographers->pluck('full_name', 'id')->all()" :value="$idea->videographer_id"
                                       :placeholder="t('smm.noVideographer')" :hint="t('smm.videographerHint')" />
+                            <x-select name="editor_id" :label="t('smm.fields.editor')" :options="$editors->pluck('full_name', 'id')->all()" :value="$idea->editor_id"
+                                      :placeholder="t('smm.noEditor')" :hint="t('smm.editorHint')" />
                             <x-field name="planned_publish_date" type="date" :label="t('smm.fields.plannedDate')" :value="$idea->planned_publish_date?->format('Y-m-d')" :required="$idea->status === 'SCHEDULED'" />
                             @if ($idea->status === 'PUBLISHED')
                                 <x-field name="published_at" type="datetime-local" :label="t('smm.fields.publishedAt')" :value="Format::toLocalInput($idea->published_at)" />
@@ -117,9 +119,14 @@
                 <dl class="grid gap-2 text-sm">
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.assignee') }}</dt><dd class="text-right">{{ $idea->assignee?->full_name }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.videographer') }}</dt><dd class="text-right">{{ $idea->videographer?->full_name ?? '—' }}</dd></div>
+                    <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.editor') }}</dt><dd class="text-right">{{ $idea->editor?->full_name ?? '—' }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.author') }}</dt><dd class="text-right">{{ $idea->author?->full_name }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.plannedDate') }}</dt><dd>{{ d($idea->planned_publish_date) }}</dd></div>
                     <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.publishedAt') }}</dt><dd>{{ dt($idea->published_at) }}</dd></div>
+                    @foreach ($accruals as $a)
+                        <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.finance.accrued') }}</dt>
+                            <dd class="text-right">{{ t('smm.finance.accruedLine', ['role' => t('smm.finance.roles.'.$a->role), 'name' => $a->user?->full_name, 'amount' => money($a->amount_uzs)]) }}</dd></div>
+                    @endforeach
                     @if ($idea->publish_url)
                         <div class="flex justify-between gap-3"><dt class="text-muted-foreground">{{ t('smm.fields.publishUrl') }}</dt>
                             <dd class="min-w-0 truncate"><a href="{{ $idea->publish_url }}" class="link" target="_blank" rel="noopener noreferrer">{{ $idea->publish_url }}</a></dd></div>

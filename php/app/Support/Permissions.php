@@ -96,6 +96,7 @@ final class Permissions
         'smm.read' => 'SMM: просмотр идей роликов',
         'smm.create' => 'SMM: создание идей',
         'smm.approve' => 'SMM: утверждение идей',
+        'smm.finance' => 'SMM: финансы (оплата SMM, ставки за ролик, расходы)',
 
         'analytics.read' => 'Аналитика',
         'export.run' => 'Экспорт',

@@ -19,7 +19,8 @@
   "reset": "Tozalash",
   "views": {
     "kanban": "Kanban",
-    "list": "Roʻyxat"
+    "list": "Roʻyxat",
+    "finance": "Moliya"
   },
   "kanbanHint": "Kartochkani boshqa bosqichga torting. Suratga olish — faqat loyiha menejeri va CEO tasdiqlaganidan keyin",
   "hiddenOld": "yana {count} ta eski eʼlon qilingan va rad etilgan — roʻyxatda yoki oy boʻyicha",
@@ -88,7 +89,8 @@
     "publishUrl": "Postga havola",
     "createdAt": "Yaratilgan",
     "rejectReason": "Rad etish sababi",
-    "videographer": "Videograf"
+    "videographer": "Videograf",
+    "editor": "Montajchi"
   },
   "history": {
     "created": "Gʻoya yaratildi",
@@ -113,7 +115,9 @@
     "tg_media": "Telegram uchun video versiyasi yuklandi",
     "tg_media_removed": "Telegram uchun video versiyasi oʻchirildi",
     "tg_published": "Telegram-kanalda eʼlon qilindi",
-    "tg_failed": "Telegram-kanalga eʼlon qilishda xato"
+    "tg_failed": "Telegram-kanalga eʼlon qilishda xato",
+    "pay_accrued": "Video uchun hisoblandi",
+    "pay_reversed": "Video uchun hisoblash bekor qilindi"
   },
   "historyFields": {
     "title": "Nomi",
@@ -129,7 +133,12 @@
     "igStatus": "Avtomatik eʼlon",
     "scheduledAt": "Eʼlon vaqti",
     "channel": "Telegram-kanal",
-    "targets": "Qayerga eʼlon qilinadi"
+    "targets": "Qayerga eʼlon qilinadi",
+    "editor": "Montajchi",
+    "payee": "Kimga",
+    "amount": "Summa",
+    "period": "Oy",
+    "reason": "Sabab"
   },
   "errors": {
     "assigneeRequired": "Masʼul SMM mutaxassisini tanlang",
@@ -146,7 +155,8 @@
     "videoRequired": "Mijoz kelgan rolikni tanlang",
     "videoNotPublished": "Faqat eʼlon qilingan rolikni tanlash mumkin",
     "videographerRequired": "Videografni tanlang — usiz rolikni «Suratga olish» bosqichiga oʻtkazib boʻlmaydi",
-    "videographerInvalid": "Videograf sifatida faqat «Videograf» yoki «Mobilograf» mutaxassisligidagi faol xodimni tanlash mumkin"
+    "videographerInvalid": "Videograf sifatida faqat «Videograf» yoki «Mobilograf» mutaxassisligidagi faol xodimni tanlash mumkin",
+    "editorInvalid": "Montajchi sifatida faqat «Montajchi» mutaxassisligidagi faol xodimni tanlash mumkin"
   },
   "notify": {
     "created": "Tasdiqlash uchun yangi rolik gʻoyasi",
@@ -320,6 +330,95 @@
       "photoTooLarge": "Telegram-bot {mb} MB gacha rasm yubora oladi; rasmni kichraytiring yoki Telegram belgisini olib tashlang",
       "versionType": "Telegram uchun versiya — MP4 yoki MOV video",
       "versionNeedsVideo": "Avval asl videoni yuklang"
+    }
+  },
+  "noEditor": "Montajchisiz",
+  "editorHint": "Ixtiyoriy: «Montajchi» mutaxassisligidagi xodim. Eʼlon qilingan video uchun unga montajchi stavkasi hisoblanadi.",
+  "finance": {
+    "title": "SMM — moliya",
+    "subtitle": "Oʻz SMMimiz qanchaga tushadi: SMM mutaxassislari, videograflar va montajchilarga toʻlov, boshqa xarajatlar va natija",
+    "toPayroll": "Oylik maosh",
+    "cost": "Oylik SMM xarajatlari",
+    "costHint": "Xodimlar {people} + boshqa {other}",
+    "videos": "Eʼlon qilingan videolar",
+    "perVideo": "Bitta video narxi: {amount}",
+    "noVideos": "Bu oyda videolar yoʻq",
+    "revenue": "«SMM video»dan tushum",
+    "revenueHint": "Lidlar: {leads} · yutilgan bitimlar: {won}",
+    "roi": "ROI",
+    "roiHint": "(tushum − xarajatlar) / xarajatlar",
+    "peopleTitle": "Xodimlar boʻyicha SMM toʻlovi",
+    "peopleHint": "Videolar rejasi boʻyicha oklad, videolar uchun toʻlov (videograf, montajchi), savdodan SMM bonusi",
+    "peopleEmpty": "Bu oy uchun SMM hisob-kitoblari yoʻq",
+    "peopleEmptyHint": "«Maosh» boʻlimida oklad va videolar rejasini, oʻngda esa video stavkalarini belgilang",
+    "person": "Xodim",
+    "fixed": "Oklad",
+    "fixedPlan": "reja boʻyicha, oy hisoblanmagan",
+    "videoPay": "Videolar uchun",
+    "bonus": "Savdodan SMM bonusi",
+    "total": "Jami",
+    "paid": "Toʻlangan",
+    "remaining": "Qoldiq",
+    "totalRow": "Xodimlar boʻyicha jami",
+    "notCalculated": "Maosh hisoblanmagan",
+    "payHint": "Toʻlov — oylik «Maosh» boʻlimida: hisoblash → tasdiqlash → toʻlash. «Toʻlangan» — «Toʻlangan» holatidagi maosh qatorlari.",
+    "otherTitle": "Boshqa SMM xarajatlari",
+    "otherHint": "Rekvizit, studiya, reklama va boshqalar — oylik SMM xarajatlariga kiradi",
+    "otherEmpty": "Bu oy boshqa xarajatlar yoʻq",
+    "otherTotal": "Boshqalar jami",
+    "addExpense": "Xarajat qoʻshish",
+    "deleteExpense": "Xarajatni oʻchirish",
+    "deleteConfirm": "Xarajat oʻchirilsinmi? Buxgalteriyadagi bogʻliq operatsiya ham oʻchiriladi.",
+    "date": "Sana",
+    "category": "Turkum",
+    "amount": "Summa, UZS",
+    "comment": "Izoh",
+    "categories": {
+      "PROPS": "Rekvizit",
+      "STUDIO": "Studiya",
+      "ADS": "Reklama",
+      "OTHER": "Boshqa"
+    },
+    "toAccounting": "Buxgalteriyaga yozish",
+    "toAccountingHint": "Tanlangan hisob boʻyicha xarajat operatsiyasi (soʻmda)",
+    "account": "Hisob",
+    "article": "Xarajat moddasi",
+    "noAccounts": "Soʻmdagi faol hisoblar yoʻq — Buxgalteriyada hisob qoʻshing",
+    "inAccounting": "Buxgalteriyada: {account}",
+    "expenseAdded": "Xarajat qoʻshildi",
+    "expenseDeleted": "Xarajat oʻchirildi",
+    "expenseDeletedReason": "SMM xarajati oʻchirildi",
+    "ratesTitle": "Video uchun stavkalar",
+    "ratesHint": "Har bir eʼlon qilingan video uchun, UZS; 0 — hisoblanmaydi",
+    "ratesNote": "Summa eʼlon paytida qayd etiladi: yangi stavka keyingi videolarga amal qiladi. Shaxsiy stavka — xodim kartasida («Stavkalar»).",
+    "ratesSaved": "Video stavkalari saqlandi",
+    "payAssignee": "SMM-menejer oʻzi suratga olsa, unga video stavkasini toʻlash",
+    "payAssigneeHint": "Oʻchiq: agar gʻoya masʼuli oʻzi videograf yoki montajchi boʻlsa, stavka hisoblanmaydi (ish uning okladiga kiradi)",
+    "personalList": "Shaxsiy stavkalar",
+    "personalRate": "SMM video stavkasi",
+    "personalRateHint": "Boʻsh — SMM → «Moliya»dagi rol stavkasi: videograf {videographer}, mobilograf {mobilographer}, montajchi {editor}",
+    "personalRateField": "Video uchun shaxsiy stavka, UZS",
+    "personalRateSaved": "Video stavkasi saqlandi",
+    "asRole": "Rol boʻyicha",
+    "accrued": "Hisoblandi",
+    "accruedLine": "{role} {name} — {amount}",
+    "roles": {
+      "VIDEOGRAPHER": "Videograf",
+      "MOBILOGRAPHER": "Mobilograf",
+      "EDITOR": "Montajchi"
+    },
+    "reverse": {
+      "unpublished": "Video eʼlondan olindi",
+      "deleted": "Gʻoya oʻchirildi",
+      "videographer_changed": "Videograf almashdi",
+      "editor_changed": "Montajchi almashdi",
+      "period_changed": "Eʼlon sanasi oʻzgardi (boshqa oy)"
+    },
+    "errors": {
+      "accountRequired": "Buxgalteriyaga yozish uchun hisobni tanlang",
+      "accountInvalid": "Soʻmdagi faol hisob kerak",
+      "amountPositive": "Summa noldan katta boʻlishi kerak",
+      "accountingLinked": "Xarajat Buxgalteriyaga yozilgan — uni Buxgalteriya huquqiga ega xodim oʻchira oladi"
     }
   }
 }

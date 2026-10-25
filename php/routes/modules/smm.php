@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Smm\FinanceController;
 use App\Http\Controllers\Smm\IdeasController;
 use App\Http\Controllers\Smm\PublicationController;
 use App\Http\Controllers\Smm\VideoPlanController;
@@ -8,6 +9,16 @@ use Illuminate\Support\Facades\Route;
 // Раздел «SMM» — собственный видеоконтент компании. Исполнителю без SMM-специальности — 403 (App\Services\Smm\SmmAccess).
 // Просмотр, перенос и комментарии открыты и видеографу идеи без права smm.read — проверка в SmmAccess::authorize().
 $uuid = '[0-9a-fA-F-]{36}';
+
+// SMM → «Финансы»: право smm.finance или управление зарплатой всей компании (повторная проверка — SmmFinance::authorize())
+Route::middleware('perm:smm.finance|payroll.manage,ALL')->group(function () use ($uuid) {
+    Route::get('/smm/finance', [FinanceController::class, 'index'])->name('smm.finance');
+    Route::put('/smm/finance/rates', [FinanceController::class, 'rates'])->name('smm.finance.rates');
+    Route::post('/smm/finance/expenses', [FinanceController::class, 'storeExpense'])->name('smm.finance.expenses.store');
+    Route::delete('/smm/finance/expenses/{id}', [FinanceController::class, 'destroyExpense'])->where('id', $uuid)->name('smm.finance.expenses.destroy');
+});
+// Личная ставка за ролик SMM — в окне «Ставки» карточки сотрудника
+Route::put('/team/employees/{id}/smm-rate', [FinanceController::class, 'personalRate'])->where('id', $uuid)->middleware('perm:payroll.manage,ALL')->name('smm.finance.personal-rate');
 
 Route::get('/smm', [IdeasController::class, 'index'])->middleware('auth.only')->name('smm.index');
 Route::post('/smm', [IdeasController::class, 'store'])->middleware('perm:smm.create')->name('smm.store');

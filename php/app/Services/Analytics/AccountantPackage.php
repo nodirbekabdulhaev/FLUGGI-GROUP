@@ -248,9 +248,9 @@ final class AccountantPackage
             $num($e->amount), $e->currency, $num($e->amount_uzs), $e->createdBy?->full_name])->all());
         $sheets[] = new Sheet('Зарплата', [
             ['header' => 'Месяц'], ['header' => 'Сотрудник', 'width' => 24], ['header' => 'Оклад', 'money' => true], ['header' => 'Сдельно', 'money' => true],
-            ['header' => 'KPI-бонус', 'money' => true], ['header' => 'Комиссия', 'money' => true], ['header' => 'Бонус', 'money' => true], ['header' => 'Штраф', 'money' => true],
+            ['header' => 'За ролики SMM', 'money' => true, 'width' => 16], ['header' => 'KPI-бонус', 'money' => true], ['header' => 'Комиссия', 'money' => true], ['header' => 'Бонус', 'money' => true], ['header' => 'Штраф', 'money' => true],
             ['header' => 'Итого начислено', 'money' => true, 'width' => 16], ['header' => 'Статус'], ['header' => 'Выплачено', 'date' => true],
-        ], $payroll->map(fn ($p) => [$p->period, $p->user?->full_name, $num($p->base_salary), $num($p->piece_rate), $num($p->kpi_bonus), $num($p->commission),
+        ], $payroll->map(fn ($p) => [$p->period, $p->user?->full_name, $num($p->base_salary), $num($p->piece_rate), $num($p->smm_video_pay), $num($p->kpi_bonus), $num($p->commission),
             $num($p->other_bonus), $num($p->penalty), $num($p->final_salary), ['DRAFT' => 'Черновик', 'APPROVED' => 'Утверждена', 'PAID' => 'Выплачена'][$p->status] ?? $p->status,
             $local($p->paid_at)])->all());
         $sheets[] = new Sheet('Комиссии', [

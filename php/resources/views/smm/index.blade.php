@@ -13,7 +13,8 @@
         @endif
     </x-page-header>
 
-    <x-tabs :items="[$qs(['view' => 'kanban']) => t('smm.views.kanban'), $qs(['view' => 'list', 'status' => $f['status'] ?? null]) => t('smm.views.list')]"
+    <x-tabs :items="[$qs(['view' => 'kanban']) => t('smm.views.kanban'), $qs(['view' => 'list', 'status' => $f['status'] ?? null]) => t('smm.views.list')]
+                     + (\App\Services\Smm\SmmFinance::allowed() ? ['/smm/finance' => t('smm.views.finance')] : [])"
             :active="$view === 'kanban' ? $qs(['view' => 'kanban']) : $qs(['view' => 'list', 'status' => $f['status'] ?? null])" />
 
     <form method="GET" class="mb-4 grid gap-3 sm:flex sm:flex-wrap sm:items-end">
