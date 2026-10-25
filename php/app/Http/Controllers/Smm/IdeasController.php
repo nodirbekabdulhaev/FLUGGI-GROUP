@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Smm;
 use App\Http\Controllers\Controller;
 use App\Services\Smm\SmmAccess;
 use App\Services\Smm\SmmIdeaService;
+use App\Services\Smm\SmmPublicationService;
 use App\Support\Format;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
@@ -63,6 +64,8 @@ class IdeasController extends Controller
             'assignees' => SmmAccess::assignees($idea->assignee_id),
             'videographers' => SmmAccess::videographers($idea->videographer_id),
             'pmRequired' => SmmAccess::projectManagerIds() !== [],
+            'publication' => SmmPublicationService::for($idea),
+            'canPublish' => SmmPublicationService::canEdit($idea),
         ]);
     }
 

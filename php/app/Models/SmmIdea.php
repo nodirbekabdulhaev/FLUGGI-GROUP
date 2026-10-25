@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Support\Format;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 /**
@@ -69,6 +70,12 @@ class SmmIdea extends Model
     public function history(): HasMany
     {
         return $this->hasMany(SmmIdeaHistory::class, 'idea_id');
+    }
+
+    /** Автопубликация в Instagram (одна на идею). */
+    public function publication(): HasOne
+    {
+        return $this->hasOne(SmmPublication::class, 'idea_id');
     }
 
     /** V-00001 */

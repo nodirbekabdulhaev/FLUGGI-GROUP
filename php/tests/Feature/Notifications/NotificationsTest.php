@@ -92,7 +92,7 @@ class NotificationsTest extends TestCase
             $this->actingAsUser($this->manager)->get('/notifications')->assertOk()->assertSee('Мой')->assertDontSee('Чужой')
                 ->assertSee(Lang::get('notifications.title', [], $loc));
         }
-        $this->getJson('/notifications/unread-count')->assertExactJson(['count' => 1]);
+        $this->getJson('/notifications/unread-count')->assertJsonPath('count', 1)->assertJsonPath('latest.title', 'Мой');
         $this->postJson('/notifications/'.$foreign->id.'/read')->assertNoContent();
         $this->assertNull($foreign->fresh()->read_at);
         $this->get('/notifications/'.$foreign->id.'/open')->assertNotFound();
@@ -100,7 +100,7 @@ class NotificationsTest extends TestCase
         $this->assertNotNull($mine->fresh()->read_at);
         Notification::create(['user_id' => $this->manager->id, 'type' => 'x', 'title' => 'Ещё']);
         $this->post('/notifications/read-all')->assertRedirect();
-        $this->getJson('/notifications/unread-count')->assertExactJson(['count' => 0]);
+        $this->getJson('/notifications/unread-count')->assertExactJson(['count' => 0, 'latest' => null]);
         $this->assertNull($foreign->fresh()->read_at);
     }
 

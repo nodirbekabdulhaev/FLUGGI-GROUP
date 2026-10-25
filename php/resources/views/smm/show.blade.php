@@ -11,6 +11,7 @@
             }
             return match ($field) {
                 'status' => t('smm.status.'.$v),
+                'igStatus' => t('smm.ig.status.'.$v),
                 'planned_publish_date' => d((string) $v),
                 default => Str::limit((string) $v, 300),
             };
@@ -59,6 +60,9 @@
                     @if ($idea->notes)<p class="mt-4 whitespace-pre-wrap text-sm text-muted-foreground">{{ $idea->notes }}</p>@endif
                 @endif
             </x-card>
+
+            {{-- Автопубликация в Instagram --}}
+            @include('smm.partials.instagram', ['idea' => $idea, 'p' => $publication, 'canPublish' => $canPublish])
 
             {{-- Задачи по идее --}}
             <x-card :title="t('todos.tasksBlock')" id="tasks">

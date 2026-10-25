@@ -7,13 +7,16 @@ use App\Models\NotificationDelivery;
 use App\Models\NotificationSetting;
 use App\Models\Team;
 use App\Models\User;
+use App\Services\Push\WebPush;
 use App\Support\Lang;
 use Illuminate\Support\Str;
 
 /**
- * Уведомление пользователям (ТЗ §14, §53): in-app и Telegram с учётом личных настроек.
- * Дубли получателей и «сам себе» отсекаются. В Telegram — только если бот настроен
- * и сотрудник подключил чат; отправку делает очередь notification_deliveries (cron, с повторами).
+ * Уведомление пользователям (ТЗ §14, §53): in-app, Web Push и Telegram.
+ * In-app (со звуком в интерфейсе) и push приходят всегда — выключить их в CRM нельзя (требование владельца);
+ * личные настройки отключают только Telegram. Дубли получателей и «сам себе» отсекаются.
+ * Telegram — если бот настроен и сотрудник подключил чат; push — если заданы ключи VAPID и браузер
+ * сотрудника подписан. Отправку делает очередь notification_deliveries (cron, с повторами).
  *
  * Текст строится на языке получателя: $content — fn (string $locale): array{0: string, 1: ?string}
  * (заголовок и текст) или готовая пара [заголовок, текст].
@@ -39,6 +42,8 @@ final class Notifier
             ->map(fn ($r) => $r->user_id.':'.$r->channel)->flip();
         $users = User::whereIn('id', $ids)->where('status', 'ACTIVE')->get(['id', 'telegram_chat_id', 'locale']);
         $telegramOn = (bool) config('fluggi.telegram.token');
+        // Push — для того же, что видно в колокольчике, и для сообщений чата (у чата свой счётчик); не для проверки Telegram
+        $pushTo = ($inApp || $type === 'chat.message') ? array_flip(WebPush::subscribedUserIds($users->pluck('id')->all())) : [];
 
         $texts = [];
         $render = function (string $locale) use (&$texts, $content): array {
@@ -62,13 +67,19 @@ final class Notifier
         foreach ($users as $u) {
             $locale = in_array($u->locale, Lang::LOCALES, true) ? $u->locale : Lang::FALLBACK;
             [$title, $body] = $render($locale);
-            if ($inApp && ! $off->has($u->id.':IN_APP')) {
+            if ($inApp) {
                 $notes[] = ['id' => (string) Str::uuid(), 'user_id' => $u->id, 'type' => $type, 'title' => $title,
                     'body' => $body, 'link' => $link, 'created_at' => $now->format('Y-m-d H:i:s.v')];
             }
             if ($telegramOn && $u->telegram_chat_id && ! $off->has($u->id.':TELEGRAM')) {
                 $deliveries[] = ['id' => (string) Str::uuid(), 'user_id' => $u->id, 'channel' => 'TELEGRAM', 'type' => $type,
                     'title' => $title, 'body' => $body, 'link' => $link, 'buttons' => $buttons ? json_encode(self::buttons($buttons, $locale)) : null,
+                    'status' => 'PENDING', 'attempts' => 0,
+                    'next_attempt_at' => $now->format('Y-m-d H:i:s.v'), 'created_at' => $now->format('Y-m-d H:i:s.v')];
+            }
+            if (isset($pushTo[$u->id])) {
+                $deliveries[] = ['id' => (string) Str::uuid(), 'user_id' => $u->id, 'channel' => 'PUSH', 'type' => $type,
+                    'title' => $title, 'body' => $body, 'link' => $link, 'buttons' => null,
                     'status' => 'PENDING', 'attempts' => 0,
                     'next_attempt_at' => $now->format('Y-m-d H:i:s.v'), 'created_at' => $now->format('Y-m-d H:i:s.v')];
             }

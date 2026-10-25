@@ -62,6 +62,17 @@ Cron рассылает уведомления и Telegram, отмечает п�
 cd ~/crm.fluggi.uz/fluggi && php8.2 artisan config:cache && php8.2 artisan fluggi:telegram-webhook
 ```
 
+## 5. Уведомления со звуком (Web Push) и автопубликация в Instagram
+
+Ключи Web Push (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`) создаёт `fluggi:install` (и `update.sh`) один раз, если их нет
+в `.env`; вручную — `php8.2 artisan fluggi:webpush-keys && php8.2 artisan config:cache`. Ключи не менять: при смене
+все браузеры придётся подписать заново. Нужен HTTPS. На iPhone push работает в приложении с главного экрана (iOS 16.4+).
+
+Автопубликация в Instagram использует `META_PAGE_ACCESS_TOKEN` с правами `instagram_basic`, `instagram_content_publish`,
+`pages_read_engagement`; проверка — «Настройки → Интеграции → Проверить доступ к публикации». Файлы роликов хранятся
+в `storage/app/smm-media` и удаляются сразу после публикации. Большие видео загружаются частями по 4 МБ — достаточно
+`post_max_size` ≥ 8M (значение по умолчанию на Beget).
+
 ## Обновление
 
 ```bash

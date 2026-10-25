@@ -43,22 +43,21 @@
 <x-card :title="t('telegram.settingsTitle')" :subtitle="t('telegram.settingsText')" :padding="false">
     <div class="overflow-x-auto" x-data="notificationSettings">
         <table class="table">
-            <thead><tr><th>{{ t('telegram.event') }}</th><th class="w-24 text-center">{{ t('telegram.inApp') }}</th><th class="w-24 text-center">Telegram</th></tr></thead>
+            <thead><tr><th>{{ t('telegram.event') }}</th><th class="w-24 text-center">Telegram</th></tr></thead>
             <tbody>
                 @foreach ($tgSettings as $s)
                     <tr>
                         <td>{{ $s['label'] }}</td>
-                        @foreach (['IN_APP' => $s['inApp'], 'TELEGRAM' => $s['telegram']] as $ch => $on)
-                            <td class="text-center">
-                                <input type="checkbox" class="size-4 accent-[#4f46e5]" @checked($on)
-                                       aria-label="{{ $s['label'] }}: {{ $ch === 'IN_APP' ? t('telegram.inApp') : 'Telegram' }}"
-                                       @change="toggle(@js($s['type']), @js($ch), $event)">
-                            </td>
-                        @endforeach
+                        <td class="text-center">
+                            <input type="checkbox" class="size-4 accent-[#4f46e5]" @checked($s['telegram'])
+                                   aria-label="{{ $s['label'] }}: Telegram"
+                                   @change="toggle(@js($s['type']), 'TELEGRAM', $event)">
+                        </td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
+        <p class="px-4 py-3 text-xs text-muted-foreground">{{ t('telegram.inAppAlwaysOn') }}</p>
     </div>
 </x-card>
 

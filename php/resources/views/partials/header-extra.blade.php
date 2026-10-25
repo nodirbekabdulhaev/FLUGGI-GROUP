@@ -1,4 +1,4 @@
-{{-- Шапка: глобальный поиск (⌘K / Ctrl+K) и колокольчик уведомлений (опрос раз в 30 с) --}}
+{{-- Шапка: глобальный поиск (⌘K / Ctrl+K) и колокольчик уведомлений (счётчик обновляет partials/notify-center) --}}
 <div x-data="globalSearch" @keydown.window.prevent.ctrl.k="openSearch()" @keydown.window.prevent.meta.k="openSearch()" class="flex items-center">
     <button type="button" class="flex h-9 items-center gap-2 rounded-md border bg-surface px-2.5 text-sm text-muted-foreground hover:bg-muted sm:w-56" @click="openSearch()" aria-label="{{ t('search.open') }}">
         <x-icon name="search" class="size-4 shrink-0" />
@@ -38,7 +38,8 @@
         </div>
     </div>
 </div>
-<a href="{{ route('notifications') }}" x-data="unreadBell({{ \App\Services\Notifications\NotificationService::unread(access()->id()) }})" class="btn btn-ghost btn-icon relative" :aria-label="label()" aria-label="{{ t('notifications.title') }}">
+<a href="{{ route('notifications') }}" x-data="{ count: {{ \App\Services\Notifications\NotificationService::unread(access()->id()) }} }" @fluggi-unread.window="count = $event.detail.count"
+   class="btn btn-ghost btn-icon relative" :aria-label="@js(t('notifications.title')) + (count ? ' (' + count + ')' : '')" aria-label="{{ t('notifications.title') }}">
     <x-icon name="bell" class="size-5" />
     <span x-show="count > 0" x-cloak class="absolute right-1 top-1 flex min-w-4 items-center justify-center rounded-full bg-danger px-1 text-[10px] font-semibold leading-4 text-white" x-text="count > 99 ? '99+' : count"></span>
 </a>
@@ -65,16 +66,6 @@ document.addEventListener('alpine:init', () => {
         },
         move(d) { this.active = Math.max(0, Math.min(this.hits.length - 1, this.active + d)); },
         go(h) { if (h) window.location.href = h.link; },
-    }));
-    Alpine.data('unreadBell', (initial) => ({
-        count: initial,
-        init() {
-            setInterval(async () => {
-                if (document.hidden) return;
-                try { this.count = (await window.api('{{ route('notifications.unread') }}')).count; } catch (e) {}
-            }, 30000);
-        },
-        label() { return @js(t('notifications.title')) + (this.count ? ' (' + this.count + ')' : ''); },
     }));
 });
 </script>

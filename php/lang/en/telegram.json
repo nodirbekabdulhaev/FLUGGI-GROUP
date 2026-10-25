@@ -56,5 +56,6 @@
     "callbackForbidden": "Not enough rights — nothing was done.",
     "callbackNotFound": "Record not found.",
     "callbackFailed": "The action failed. Please open the CRM."
-  }
+  },
+  "inAppAlwaysOn": "CRM notifications (with sound) and browser push notifications always arrive and cannot be turned off. Here you choose what to duplicate to Telegram."
 }

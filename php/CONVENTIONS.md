@@ -83,6 +83,7 @@ task.overdue {taskId, overdueDays}   task.deadline_changed {taskId}
 smm.idea_created {ideaId, authorId, assigneeId}   smm.idea_approved {ideaId, assigneeId, authorId}
 smm.idea_rejected {ideaId, assigneeId, authorId, reason}   smm.idea_status_changed {ideaId, from, to, assigned?}
 smm.videographer_assigned {ideaId, videographerId, previousId}
+smm.instagram_published {ideaId, publicationId, mediaId, permalink, from}   smm.instagram_failed {ideaId, publicationId, error}
 attendance.auto_checkout {attendanceId, userId, date, checkOut}   attendance.checkout_decided {attendanceId, userId, status, reason}
 partner.payout_requested {payoutId, projectId, partnerId, amountUzs, requestedById}
 partner.payout_decided {payoutId, projectId, partnerId, status, amountUzs, reason}

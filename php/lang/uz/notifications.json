@@ -121,5 +121,20 @@
     "meetingAdded": "Sizni uchrashuvga qoʻshishdi",
     "meetingRescheduled": "Uchrashuv koʻchirildi",
     "meetingCancelled": "Uchrashuv bekor qilindi"
+  },
+  "sound": {
+    "unlock": "Bildirishnomalar ovozini yoqish uchun bosing"
+  },
+  "push": {
+    "prompt": "CRM yopiq boʻlsa ham bildirishnomalarni ovoz bilan olish uchun ularni yoqing.",
+    "enable": "Bildirishnomalarni yoqish",
+    "enabled": "Bildirishnomalar yoqildi",
+    "deniedTitle": "Bildirishnomalar brauzerda bloklangan",
+    "deniedHelp": "Bildirishnomalarni ovoz bilan olish uchun ularni ushbu sayt uchun ruxsat bering: manzil chap tomonidagi qulf belgisi → «Bildirishnomalar» → «Ruxsat berish» (Androidda: brauzer sozlamalari → Sayt sozlamalari → Bildirishnomalar; iPhoneʼda: Sozlamalar → Bildirishnomalar → CRM ilovasi). Soʻng sahifani yangilang.",
+    "iosHint": "iPhoneʼda ovozli bildirishnomalar ilovada ishlaydi: «Ulashish» → «Bosh ekranga», soʻng CRMni bosh ekrandan oching (iOS 16.4 va yangiroq).",
+    "errors": {
+      "endpoint": "Push-xizmat manzili notanish",
+      "keys": "Obuna kalitlari notoʻgʻri"
+    }
   }
 }

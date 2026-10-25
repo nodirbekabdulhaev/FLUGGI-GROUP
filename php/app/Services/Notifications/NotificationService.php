@@ -20,6 +20,28 @@ final class NotificationService
         return Notification::where('user_id', $userId)->whereNull('read_at')->count();
     }
 
+    /**
+     * Для колокольчика: число непрочитанных и самое новое из них (заголовок и ссылка для всплывающего окна со звуком).
+     *
+     * @return array{count:int, latest:?array{id:string,title:string,body:?string,url:string,at:string}}
+     */
+    public static function unreadSummary(string $userId): array
+    {
+        $count = self::unread($userId);
+        $latest = $count > 0 ? Notification::where('user_id', $userId)->whereNull('read_at')->orderByDesc('created_at')->orderByDesc('id')->first() : null;
+
+        return [
+            'count' => $count,
+            'latest' => $latest ? [
+                'id' => $latest->id,
+                'title' => (string) $latest->title,
+                'body' => $latest->body !== null ? mb_substr((string) $latest->body, 0, 300) : null,
+                'url' => '/notifications/'.$latest->id.'/open',
+                'at' => $latest->created_at?->toIso8601ZuluString('millisecond'),
+            ] : null,
+        ];
+    }
+
     /** Отметить прочитанным одно уведомление или все. */
     public static function markRead(string $userId, ?string $id = null): int
     {
@@ -41,7 +63,8 @@ final class NotificationService
         return array_map(fn (string $type) => [
             'type' => $type,
             'label' => NotificationCatalog::label($type),
-            'inApp' => ! $off->has($type.':IN_APP'),
+            // В CRM (со звуком) и push — всегда включены
+            'inApp' => true,
             'telegram' => ! $off->has($type.':TELEGRAM'),
         ], NotificationCatalog::forRole($roleCode));
     }
@@ -51,7 +74,8 @@ final class NotificationService
     {
         DB::transaction(function () use ($userId, $items) {
             foreach ($items as $i) {
-                if (! array_key_exists($i['eventType'], NotificationCatalog::EVENTS)) {
+                // Уведомления в CRM не отключаются — сохраняются только настройки Telegram
+                if (! array_key_exists($i['eventType'], NotificationCatalog::EVENTS) || $i['channel'] !== 'TELEGRAM') {
                     continue;
                 }
                 $key = ['user_id' => $userId, 'event_type' => $i['eventType'], 'channel' => $i['channel']];

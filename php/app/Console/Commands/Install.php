@@ -12,7 +12,7 @@ use Illuminate\Support\Facades\DB;
 
 /**
  * Установка и обновление: миграции, роли и справочники, защита данных триггерами,
- * первый CEO. Повторный запуск безопасен — существующие данные не изменяются.
+ * ключи Web Push (если их нет), первый CEO. Повторный запуск безопасен — существующие данные не изменяются.
  */
 class Install extends Command
 {
@@ -25,6 +25,10 @@ class Install extends Command
         $this->call('migrate', ['--force' => true]);
         $this->call('db:seed', ['--force' => true]);
         $this->call('fluggi:protect');
+        // Ключи Web Push (уведомления со звуком): создаются один раз, если их ещё нет в .env
+        if (! app()->runningUnitTests()) {
+            $this->call('fluggi:webpush-keys');
+        }
 
         $email = mb_strtolower(trim((string) ($this->option('ceo-email') ?: env('SEED_CEO_EMAIL'))));
         if ($email === '') {

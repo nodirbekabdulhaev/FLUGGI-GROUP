@@ -28,7 +28,7 @@ class NotificationController extends Controller
 
     public function unread(): JsonResponse
     {
-        return response()->json(['count' => NotificationService::unread(access()->id())]);
+        return response()->json(NotificationService::unreadSummary(access()->id()));
     }
 
     public function readAll(Request $request): JsonResponse|RedirectResponse

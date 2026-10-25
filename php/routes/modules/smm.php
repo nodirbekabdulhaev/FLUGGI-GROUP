@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Smm\IdeasController;
+use App\Http\Controllers\Smm\PublicationController;
 use App\Http\Controllers\Smm\VideoPlanController;
 use Illuminate\Support\Facades\Route;
 
@@ -19,3 +20,13 @@ Route::post('/smm/{id}/reject', [IdeasController::class, 'reject'])->where('id',
 Route::post('/smm/{id}/comments', [IdeasController::class, 'comment'])->where('id', $uuid)->middleware('auth.only')->name('smm.comment');
 
 Route::put('/finance/payroll/video-plans', [VideoPlanController::class, 'update'])->middleware('perm:payroll.manage,ALL')->name('payroll.video-plans');
+
+// Автопубликация в Instagram: файл частями, подпись и расписание, повтор, отмена (права — как на редактирование идеи)
+Route::middleware('perm:smm.read')->group(function () use ($uuid) {
+    Route::post('/smm/{id}/publication/uploads', [PublicationController::class, 'start'])->where('id', $uuid)->name('smm.publication.upload');
+    Route::post('/smm/{id}/publication/uploads/{upload}/chunk', [PublicationController::class, 'chunk'])->where(['id' => $uuid, 'upload' => $uuid])->name('smm.publication.chunk');
+    Route::post('/smm/{id}/publication/uploads/{upload}/finish', [PublicationController::class, 'finish'])->where(['id' => $uuid, 'upload' => $uuid])->name('smm.publication.finish');
+    Route::put('/smm/{id}/publication', [PublicationController::class, 'save'])->where('id', $uuid)->name('smm.publication.save');
+    Route::post('/smm/{id}/publication/retry', [PublicationController::class, 'retry'])->where('id', $uuid)->name('smm.publication.retry');
+    Route::delete('/smm/{id}/publication', [PublicationController::class, 'cancel'])->where('id', $uuid)->name('smm.publication.cancel');
+});

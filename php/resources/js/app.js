@@ -1,6 +1,7 @@
 import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 import meetingPlanner from './meeting-planner';
+import registerNotify from './notify';
 
 /**
  * Общие помощники интерфейса. Страницы — серверные (Blade), Alpine добавляет интерактивность:
@@ -11,6 +12,8 @@ const csrf = () => document.querySelector('meta[name="csrf-token"]')?.content ??
 
 /** fetch с CSRF и JSON; ошибка сервера → исключение с текстом ответа. */
 window.api = async (url, { method = 'GET', body, headers = {} } = {}) => {
+    // FormData и двоичные данные (часть файла при загрузке частями) уходят как есть
+    const raw = body instanceof FormData || body instanceof Blob || body instanceof ArrayBuffer;
     const res = await fetch(url, {
         method,
         credentials: 'same-origin',
@@ -18,10 +21,10 @@ window.api = async (url, { method = 'GET', body, headers = {} } = {}) => {
             Accept: 'application/json',
             'X-Requested-With': 'XMLHttpRequest',
             'X-CSRF-TOKEN': csrf(),
-            ...(body && !(body instanceof FormData) ? { 'Content-Type': 'application/json' } : {}),
+            ...(body && !raw ? { 'Content-Type': 'application/json' } : {}),
             ...headers,
         },
-        body: body && !(body instanceof FormData) ? JSON.stringify(body) : body,
+        body: body && !raw ? JSON.stringify(body) : body,
     });
     if (res.status === 401) {
         window.location.href = '/login';
@@ -187,4 +190,5 @@ if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
 window.Alpine = Alpine;
 Alpine.plugin(collapse);
 Alpine.data('meetingPlanner', meetingPlanner);
+registerNotify(Alpine);
 Alpine.start();

@@ -67,6 +67,7 @@
 @includeIf('partials.dock')
 @stack('dock')
 @include('partials.toasts')
+@include('partials.notify-center')
 @stack('scripts')
 </body>
 </html>

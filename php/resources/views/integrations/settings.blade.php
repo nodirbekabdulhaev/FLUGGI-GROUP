@@ -78,6 +78,36 @@
             </form>
         </x-card>
 
+        {{-- Автопубликация SMM в Instagram: права токена страницы, аккаунт, лимит, место на диске --}}
+        <x-card :title="t('smm.ig.settingsTitle')" :subtitle="t('smm.ig.settingsText')" id="instagram-publishing">
+            <div class="grid gap-2 text-sm">
+                <p>
+                    @if (! $instagram['tokenSet'])
+                        <x-badge color="yellow">{{ t('integrations.metaOff') }}</x-badge> <span class="text-muted-foreground">{{ t('integrations.errors.noPageToken') }}</span>
+                    @elseif ($instagram['checkedAt'] && ! $instagram['error'])
+                        <x-badge color="green">{{ t('smm.ig.accessOk') }}</x-badge>
+                        @if ($instagram['username'])<span>{{ '@'.$instagram['username'] }}</span>@endif
+                    @elseif ($instagram['error'])
+                        <x-badge color="red">{{ t('smm.ig.accessError') }}</x-badge>
+                    @else
+                        <x-badge color="gray">{{ t('smm.ig.notChecked') }}</x-badge>
+                    @endif
+                </p>
+                @if ($instagram['error'])<p class="text-danger" data-testid="ig-error">{{ $instagram['error'] }}</p>@endif
+                @if ($instagram['checkedAt'])
+                    <p class="text-muted-foreground">{{ t('smm.ig.checkedAt') }}: {{ dt($instagram['checkedAt']) }}
+                        @if ($instagram['quotaTotal']) · {{ t('smm.ig.quota', ['usage' => $instagram['quotaUsage'] ?? 0, 'total' => $instagram['quotaTotal']]) }}@endif</p>
+                @endif
+                <p class="text-muted-foreground">{{ t('smm.ig.stats', ['scheduled' => $instagram['scheduled'], 'published' => $instagram['published']]) }}</p>
+                <p class="text-muted-foreground" data-testid="ig-disk">{{ t('smm.ig.disk', ['size' => $instagram['diskUsage']]) }}</p>
+                <p class="text-xs text-muted-foreground">{{ t('smm.ig.scopesHint') }}</p>
+            </div>
+            <form method="POST" action="{{ route('integrations.instagram.check') }}" class="mt-4">
+                @csrf
+                <button class="btn btn-outline" @disabled(! $instagram['tokenSet'])><x-icon name="refresh" /> {{ t('smm.ig.check') }}</button>
+            </form>
+        </x-card>
+
         {{-- Форма: создание и правка --}}
         <x-modal name="lead-form" :title="t('integrations.formEdit')" size="max-w-3xl">
             <form method="POST" :action="f.action" class="grid gap-4">

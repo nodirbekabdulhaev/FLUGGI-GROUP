@@ -9,6 +9,7 @@ use App\Http\Controllers\Chat\ChatController;
 use App\Http\Controllers\Integrations\InboxController;
 use App\Http\Controllers\Integrations\IntegrationController;
 use App\Http\Controllers\Notifications\NotificationController;
+use App\Http\Controllers\Notifications\PushController;
 use App\Http\Controllers\Telegram\TelegramController;
 use App\Http\Controllers\Todos\TodoController;
 use Illuminate\Support\Facades\Route;
@@ -24,6 +25,9 @@ Route::middleware('auth.only')->group(function () {
     Route::post('/notifications/{id}/read', [NotificationController::class, 'read'])->whereUuid('id')->name('notifications.read');
     Route::get('/notifications/{id}/open', [NotificationController::class, 'open'])->whereUuid('id')->name('notifications.open');
     Route::put('/notifications/settings', [NotificationController::class, 'saveSettings'])->name('notifications.settings');
+    // Web Push: подписка браузера (свои браузеры)
+    Route::post('/me/push-subscriptions', [PushController::class, 'subscribe'])->name('push.subscribe');
+    Route::delete('/me/push-subscriptions', [PushController::class, 'unsubscribe'])->name('push.unsubscribe');
 
     // Telegram (ТЗ §53)
     Route::get('/me/telegram', [TelegramController::class, 'status'])->name('telegram.status');
@@ -73,6 +77,7 @@ Route::middleware('perm:settings.manage,ALL')->group(function () {
     Route::delete('/settings/integrations/forms/{id}', [IntegrationController::class, 'destroyForm'])->whereUuid('id')->name('integrations.forms.destroy');
     Route::get('/settings/integrations/forms/{id}/submissions', [IntegrationController::class, 'submissions'])->whereUuid('id')->name('integrations.forms.submissions');
     Route::put('/settings/integrations/meta', [IntegrationController::class, 'saveMeta'])->name('integrations.meta');
+    Route::post('/settings/integrations/instagram/check', [IntegrationController::class, 'checkInstagram'])->name('integrations.instagram.check');
 });
 
 // Повторные продажи (ТЗ §38)

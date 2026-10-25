@@ -11,11 +11,14 @@ use App\Support\Outbox;
  *  - новая идея (и повторная отправка) — проект-менеджерам SMM и CEO на утверждение;
  *  - утверждена / отклонена — ответственному и автору;
  *  - смена этапа или ответственного другим сотрудником — ответственному и автору;
- *  - назначен видеограф — видеографу.
+ *  - назначен видеограф — видеографу;
+ *  - опубликовано в Instagram (автопубликация) — автору, ответственному, видеографу и проект-менеджерам SMM;
+ *  - автопубликация не удалась — автору и ответственному (с текстом ошибки Meta).
  */
 final class SmmEvents
 {
-    public const TYPES = ['smm.idea_created', 'smm.idea_approved', 'smm.idea_rejected', 'smm.idea_status_changed', 'smm.videographer_assigned'];
+    public const TYPES = ['smm.idea_created', 'smm.idea_approved', 'smm.idea_rejected', 'smm.idea_status_changed', 'smm.videographer_assigned',
+        'smm.instagram_published', 'smm.instagram_failed'];
 
     public static function register(): void
     {
@@ -24,6 +27,38 @@ final class SmmEvents
         Outbox::on('smm.idea_rejected', [self::class, 'rejected']);
         Outbox::on('smm.idea_status_changed', [self::class, 'statusChanged']);
         Outbox::on('smm.videographer_assigned', [self::class, 'videographerAssigned']);
+        Outbox::on('smm.instagram_published', [self::class, 'instagramPublished']);
+        Outbox::on('smm.instagram_failed', [self::class, 'instagramFailed']);
+    }
+
+    public static function instagramPublished(array $e, array $meta): void
+    {
+        $idea = self::idea($e['ideaId'] ?? null);
+        if (! $idea) {
+            return;
+        }
+        Notifier::notify(
+            [$idea->author_id, $idea->assignee_id, $idea->videographer_id, ...SmmAccess::projectManagerIds()],
+            'smm.instagram_published',
+            fn () => [t('smm.notify.igPublished'), self::subject($idea)],
+            self::link($idea),
+            $meta['actorId'],
+        );
+    }
+
+    public static function instagramFailed(array $e, array $meta): void
+    {
+        $idea = self::idea($e['ideaId'] ?? null);
+        if (! $idea) {
+            return;
+        }
+        Notifier::notify(
+            [$idea->author_id, $idea->assignee_id],
+            'smm.instagram_failed',
+            fn () => [t('smm.notify.igFailed'), self::subject($idea).' — '.($e['error'] ?? '')],
+            self::link($idea),
+            $meta['actorId'],
+        );
     }
 
     public static function videographerAssigned(array $e, array $meta): void

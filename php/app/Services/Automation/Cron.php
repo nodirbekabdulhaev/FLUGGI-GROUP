@@ -2,6 +2,9 @@
 
 namespace App\Services\Automation;
 
+use App\Services\Push\PushSender;
+use App\Services\Push\WebPush;
+use App\Services\Smm\InstagramPublisher;
 use App\Services\Telegram\TelegramClient;
 use App\Services\Telegram\TelegramSender;
 use App\Services\Telegram\TelegramService;
@@ -15,7 +18,7 @@ use App\Support\Outbox;
  */
 final class Cron
 {
-    /** Telegram-очередь + проверка бота + планировщик (outbox — отдельной задачей в routes/console.php). */
+    /** Telegram- и push-очереди + проверка бота + планировщик (outbox — отдельной задачей в routes/console.php). */
     public static function comms(float $budgetSeconds = 40): array
     {
         $started = microtime(true);
@@ -24,9 +27,13 @@ final class Cron
             $telegram = TelegramSender::drain(max(1, $budgetSeconds - (microtime(true) - $started)));
             TelegramService::checkIfDue();
         }
+        $push = 0;
+        if (WebPush::configured()) {
+            $push = PushSender::drain(max(1, $budgetSeconds - (microtime(true) - $started)));
+        }
         Scheduler::tick();
 
-        return ['telegram' => $telegram];
+        return ['telegram' => $telegram, 'push' => $push];
     }
 
     /** Всё сразу — для HTTP-cron (hooks/cron) в пределах бюджета времени. */
@@ -36,9 +43,10 @@ final class Cron
         $events = Outbox::drain((int) max(1, floor($budgetSeconds)));
         $left = max(1, $budgetSeconds - (microtime(true) - $started));
         $r = self::comms($left);
+        $instagram = InstagramPublisher::tick(2);
         // События, созданные задачами планировщика (task.overdue и т.п.), доставляются сразу
         $events += Outbox::drain((int) max(1, floor($budgetSeconds - (microtime(true) - $started))));
 
-        return ['events' => $events, 'telegram' => $r['telegram'], 'ms' => (int) round((microtime(true) - $started) * 1000)];
+        return ['events' => $events, 'telegram' => $r['telegram'], 'push' => $r['push'], 'instagram' => $instagram['started'] + $instagram['checked'], 'ms' => (int) round((microtime(true) - $started) * 1000)];
     }
 }

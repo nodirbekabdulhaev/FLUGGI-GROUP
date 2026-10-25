@@ -121,5 +121,20 @@
     "meetingAdded": "You were added to a meeting",
     "meetingRescheduled": "Meeting rescheduled",
     "meetingCancelled": "Meeting cancelled"
+  },
+  "sound": {
+    "unlock": "Click to turn on notification sound"
+  },
+  "push": {
+    "prompt": "Turn on notifications to get them with sound even when the CRM is closed.",
+    "enable": "Turn on notifications",
+    "enabled": "Notifications are on",
+    "deniedTitle": "Notifications are blocked in the browser",
+    "deniedHelp": "To get notifications with sound, allow them for this site: lock icon left of the address → “Notifications” → “Allow” (Android: browser settings → Site settings → Notifications; iPhone: Settings → Notifications → the CRM app). Then reload the page.",
+    "iosHint": "On iPhone, notifications with sound work in the app: “Share” → “Add to Home Screen”, then open the CRM from the Home Screen (iOS 16.4 or later).",
+    "errors": {
+      "endpoint": "Unknown push service address",
+      "keys": "Invalid subscription keys"
+    }
   }
 }

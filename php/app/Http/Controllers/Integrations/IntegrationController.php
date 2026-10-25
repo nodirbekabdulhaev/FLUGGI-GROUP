@@ -5,11 +5,15 @@ namespace App\Http\Controllers\Integrations;
 use App\Http\Controllers\Controller;
 use App\Models\LeadSource;
 use App\Models\Service;
+use App\Models\SmmPublication;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\Integrations\FormService;
 use App\Services\Integrations\IntakeService;
 use App\Services\Integrations\MetaService;
+use App\Services\Smm\InstagramApi;
+use App\Services\Smm\SmmMedia;
+use App\Support\Audit;
 use App\Support\Format;
 use App\Support\Lang;
 use Illuminate\Http\JsonResponse;
@@ -31,6 +35,12 @@ class IntegrationController extends Controller
         return view('integrations.settings', [
             'forms' => FormService::list(),
             'meta' => MetaService::status(),
+            'instagram' => InstagramApi::settings() + [
+                'tokenSet' => (bool) InstagramApi::token(),
+                'diskUsage' => SmmMedia::human(SmmMedia::diskUsage()),
+                'scheduled' => SmmPublication::whereIn('status', ['SCHEDULED', 'PUBLISHING'])->count(),
+                'published' => SmmPublication::where('status', 'PUBLISHED')->count(),
+            ],
             'settings' => IntakeService::settings(),
             'services' => Service::where('is_active', true)->orderBy('sort')->get()->mapWithKeys(fn ($s) => [$s->id => self::name($s)])->all(),
             'sources' => LeadSource::where('is_active', true)->orderBy('sort')->get()->mapWithKeys(fn ($s) => [$s->id => self::name($s)])->all(),
@@ -91,6 +101,20 @@ class IntegrationController extends Controller
             'lead' => $s->lead ? ['id' => $s->lead->id, 'number' => Format::code('L', $s->lead->number)] : null,
             'createdAt' => dt($s->created_at),
         ])->all());
+    }
+
+    /** «Проверить доступ к публикации»: аккаунт Instagram, права токена, лимит публикаций (запрос к Meta). */
+    public function checkInstagram(Request $request): JsonResponse|RedirectResponse
+    {
+        $r = InstagramApi::check();
+        Audit::log('integrations.instagram_checked', 'setting', InstagramApi::SETTINGS_KEY, ['result' => ['old' => null, 'new' => $r['ok'] ? 'ok' : $r['error']]]);
+        if ($request->expectsJson()) {
+            return response()->json($r);
+        }
+
+        return $r['ok']
+            ? back()->with('ok', t('smm.ig.checkOk', ['username' => $r['username'] ?? '—', 'usage' => $r['quotaUsage'] ?? 0, 'total' => $r['quotaTotal'] ?? 0]))
+            : back()->with('error', $r['error']);
     }
 
     public function saveMeta(Request $request): JsonResponse|RedirectResponse

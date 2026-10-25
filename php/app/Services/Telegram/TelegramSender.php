@@ -35,7 +35,7 @@ final class TelegramSender
             $rows = DB::select(
                 "SELECT d.id, d.title, d.body, d.link, d.buttons, d.attempts, u.telegram_chat_id, u.locale
                  FROM notification_deliveries d JOIN users u ON u.id = d.user_id
-                 WHERE d.status = 'PENDING' AND d.next_attempt_at <= UTC_TIMESTAMP(3)
+                 WHERE d.channel = 'TELEGRAM' AND d.status = 'PENDING' AND d.next_attempt_at <= UTC_TIMESTAMP(3)
                  ORDER BY d.created_at LIMIT ".$limit.' '.DbSupport::lockRows(),
             );
             foreach ($rows as $d) {

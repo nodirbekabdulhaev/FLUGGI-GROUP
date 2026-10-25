@@ -17,6 +17,27 @@ return [
         'page_access_token' => env('META_PAGE_ACCESS_TOKEN'),
     ],
 
+    // Web Push (системные уведомления со звуком): ключи VAPID — php artisan fluggi:webpush-keys
+    'webpush' => [
+        'public_key' => env('VAPID_PUBLIC_KEY'),
+        'private_key' => env('VAPID_PRIVATE_KEY'),
+        // Контакт для push-сервисов (mailto: или https:); по умолчанию — адрес CRM
+        'subject' => env('VAPID_SUBJECT'),
+        // Push-сервисы браузеров: запросы уходят только на эти домены (защита от подстановки адреса)
+        'hosts' => ['fcm.googleapis.com', 'android.googleapis.com', 'updates.push.services.mozilla.com', 'push.services.mozilla.com',
+            'web.push.apple.com', 'notify.windows.com', 'push.apple.com'],
+    ],
+
+    // Автопубликация в Instagram (SMM): файлы — storage/app/smm-media (не публично)
+    'smm_media' => [
+        'max_video_mb' => (int) env('SMM_MEDIA_MAX_VIDEO_MB', 1024),
+        'max_image_mb' => 8,
+        'chunk_mb' => (int) env('SMM_MEDIA_CHUNK_MB', 4),
+        // Сколько хранить файл неудавшейся публикации и брошенные части загрузки
+        'failed_keep_days' => 7,
+        'chunks_keep_hours' => 6,
+    ],
+
     'files' => [
         // Разрешённые типы и лимит загрузки (ТЗ §46)
         'max_bytes' => 25 * 1024 * 1024,

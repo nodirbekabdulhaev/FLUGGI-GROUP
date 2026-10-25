@@ -56,5 +56,6 @@
     "callbackForbidden": "Huquq yetarli emas — amal bajarilmadi.",
     "callbackNotFound": "Yozuv topilmadi.",
     "callbackFailed": "Amalni bajarib boʻlmadi. CRMni oching."
-  }
+  },
+  "inAppAlwaysOn": "CRMdagi (ovozli) va brauzer push-bildirishnomalari doim keladi va oʻchirilmaydi. Bu yerda Telegramga nimalarni takrorlashni tanlash mumkin."
 }
