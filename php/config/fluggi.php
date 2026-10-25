@@ -9,6 +9,9 @@ return [
         'token' => env('TELEGRAM_BOT_TOKEN'),
         'username' => env('TELEGRAM_BOT_USERNAME'),
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+        // Лимиты загрузки файлов ботом (api.telegram.org): видео/документы — 50 МБ, фото — 10 МБ
+        'upload_video_mb' => 50,
+        'upload_photo_mb' => 10,
     ],
 
     'meta' => [
@@ -28,7 +31,7 @@ return [
             'web.push.apple.com', 'notify.windows.com', 'push.apple.com'],
     ],
 
-    // Автопубликация в Instagram (SMM): файлы — storage/app/smm-media (не публично)
+    // Автопубликация SMM (Instagram, Telegram-каналы): файлы — storage/app/smm-media (не публично)
     'smm_media' => [
         'max_video_mb' => (int) env('SMM_MEDIA_MAX_VIDEO_MB', 1024),
         'max_image_mb' => 8,

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Smm;
 
 use App\Http\Controllers\Controller;
 use App\Models\SmmPublication;
+use App\Models\SmmPublicationTarget;
 use App\Services\Smm\SmmMedia;
 use App\Services\Smm\SmmPublicationService;
 use App\Support\Format;
@@ -14,7 +15,8 @@ use Illuminate\Validation\Rule;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 /**
- * Автопубликация идеи в Instagram: загрузка файла частями (JSON), подпись и расписание (форма), повтор, отмена.
+ * Автопубликация идеи (Instagram, Telegram-каналы): загрузка файла частями (JSON), подпись, места и расписание (форма),
+ * повтор (всех неудавшихся мест или одного), отмена, удаление версии для Telegram.
  * Права — как на редактирование идеи (SmmPublicationService::editableIdea: чужая — 404, без права — 403).
  */
 class PublicationController extends Controller
@@ -23,14 +25,11 @@ class PublicationController extends Controller
     {
         $idea = SmmPublicationService::editableIdea($id);
         $data = $request->validate([
-            'purpose' => ['required', Rule::in(['media', 'cover'])],
+            'purpose' => ['required', Rule::in(['media', 'cover', 'telegram'])],
             'name' => ['required', 'string', 'max:255'],
             'size' => ['required', 'integer', 'min:1'],
         ]);
-        $publication = SmmPublicationService::for($idea);
-        if ($publication && ! in_array($publication->status, SmmPublicationService::EDITABLE, true)) {
-            return response()->json(['message' => t('smm.ig.errors.locked')], 422);
-        }
+        SmmPublicationService::assertCanUpload($idea, $data['purpose']);
 
         return response()->json(SmmMedia::start($idea->id, access()->id(), $data['purpose'], $data['name'], (int) $data['size']), 201);
     }
@@ -57,7 +56,11 @@ class PublicationController extends Controller
 
         return response()->json([
             'ok' => true, 'kind' => $p->kind, 'name' => $file['name'], 'size' => SmmMedia::human($file['size']), 'info' => $file['info'],
-            'message' => t($file['purpose'] === 'cover' ? 'smm.ig.coverUploaded' : 'smm.ig.uploaded'),
+            'message' => t(match ($file['purpose']) {
+                'cover' => 'smm.ig.coverUploaded',
+                'telegram' => 'smm.tg.versionUploaded',
+                default => 'smm.ig.uploaded',
+            }),
         ]);
     }
 
@@ -70,8 +73,13 @@ class PublicationController extends Controller
             'thumb_offset' => ['nullable', 'numeric', 'min:0', 'max:900'],
             'scheduled_at' => ['nullable', 'date_format:Y-m-d\TH:i'],
             'intent' => ['required', Rule::in(['draft', 'schedule'])],
+            'targets' => ['sometimes', 'array', 'max:50'],
+            'targets.*' => ['string', 'max:64'],
+            'targets_sent' => ['sometimes', 'boolean'],
         ], [], ['caption' => t('smm.ig.caption'), 'scheduled_at' => t('smm.ig.scheduledAt'), 'thumb_offset' => t('smm.ig.thumbOffset')]);
-        SmmPublicationService::save($idea, [
+        // Галочки мест: форма всегда шлёт targets_sent=1 (ни одной галочки — пустой список)
+        $targets = $request->has('targets') || $request->boolean('targets_sent') ? ['targets' => array_values($data['targets'] ?? [])] : [];
+        SmmPublicationService::save($idea, $targets + [
             'caption' => $data['caption'] ?? null,
             'share_to_feed' => $request->boolean('share_to_feed'),
             'thumb_offset_ms' => isset($data['thumb_offset']) && $data['thumb_offset'] !== '' ? (int) round((float) $data['thumb_offset'] * 1000) : null,
@@ -88,6 +96,21 @@ class PublicationController extends Controller
         return redirect('/smm/'.$id.'#instagram')->with('ok', t('smm.ig.retried'));
     }
 
+    /** Повтор одного места (Instagram или канал). */
+    public function retryTarget(string $id, string $target): RedirectResponse
+    {
+        SmmPublicationService::retry(SmmPublicationService::editableIdea($id), $target);
+
+        return redirect('/smm/'.$id.'#instagram')->with('ok', t('smm.ig.retried'));
+    }
+
+    public function removeTelegramFile(string $id): RedirectResponse
+    {
+        SmmPublicationService::removeTelegramFile(SmmPublicationService::editableIdea($id));
+
+        return redirect('/smm/'.$id.'#instagram')->with('ok', t('smm.tg.versionRemoved'));
+    }
+
     public function cancel(string $id): RedirectResponse
     {
         SmmPublicationService::cancel(SmmPublicationService::editableIdea($id));
@@ -100,7 +123,8 @@ class PublicationController extends Controller
     {
         $p = SmmPublication::find($id);
         $path = $p ? SmmMedia::path($kind === 'cover' ? $p->cover_path : $p->media_path) : null;
-        abort_unless($p && in_array($p->status, ['SCHEDULED', 'PUBLISHING'], true) && $path && is_file($path), 404);
+        $waiting = $p && SmmPublicationTarget::where('publication_id', $p->id)->where('kind', 'INSTAGRAM')->whereIn('status', ['SCHEDULED', 'PUBLISHING'])->exists();
+        abort_unless($waiting && $path && is_file($path), 404);
 
         return response()->file($path, [
             'Content-Type' => $kind === 'cover' ? 'image/jpeg' : (string) $p->media_mime,

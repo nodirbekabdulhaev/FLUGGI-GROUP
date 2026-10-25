@@ -62,7 +62,7 @@
             </x-card>
 
             {{-- Автопубликация в Instagram --}}
-            @include('smm.partials.instagram', ['idea' => $idea, 'p' => $publication, 'canPublish' => $canPublish])
+            @include('smm.partials.instagram', ['idea' => $idea, 'p' => $publication, 'canPublish' => $canPublish, 'options' => $publishTargets])
 
             {{-- Задачи по идее --}}
             <x-card :title="t('todos.tasksBlock')" id="tasks">

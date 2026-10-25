@@ -9,12 +9,13 @@ use App\Models\Notification;
 use App\Models\SmmIdea;
 use App\Models\SmmIdeaHistory;
 use App\Models\SmmPublication;
+use App\Models\SmmPublicationTarget;
 use App\Models\User;
-use App\Services\Smm\InstagramPublisher;
 use App\Services\Smm\SmmIdeaService;
 use App\Services\Smm\SmmMedia;
+use App\Services\Smm\SmmPublisher;
+use App\Services\Smm\SmmTargets;
 use App\Support\Format;
-use App\Support\Outbox;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -30,6 +31,8 @@ use Tests\TestCase;
  */
 class InstagramPublishingTest extends TestCase
 {
+    use SmmPublishingHelpers;
+
     private User $ceo;
 
     private User $pm;
@@ -103,67 +106,18 @@ class InstagramPublishingTest extends TestCase
         parent::tearDown();
     }
 
-    private function idea(string $status = 'EDITING'): SmmIdea
-    {
-        static $n = 0;
-        $n++;
-
-        return SmmIdea::create([
-            'title' => 'Ролик '.$n, 'status' => $status, 'author_id' => $this->smm->id, 'assignee_id' => $this->smm->id,
-            'videographer_id' => $this->videographer->id, 'sort_order' => $n,
-            'pm_approved_by_id' => $this->pm->id, 'ceo_approved_by_id' => $this->ceo->id,
-        ])->refresh();
-    }
-
-    /** Минимальный MP4: ftyp + moov (mvhd — длительность, tkhd — кадр 1920×1080 с поворотом на 90°) + mdat. */
-    private function mp4(int $bytes, int $seconds = 42): string
-    {
-        $box = fn (string $t, string $d) => pack('N', 8 + strlen($d)).$t.$d;
-        $mvhd = $box('mvhd', pack('N5', 0, 0, 0, 1000, $seconds * 1000).str_repeat("\0", 80));
-        $tkhd = $box('tkhd', pack('N', 7).pack('N4', 0, 0, 1, 0).pack('N', $seconds * 1000).str_repeat("\0", 16)
-            .pack('N9', 0, 0x10000, 0, 0xFFFF0000, 0, 0, 0, 0, 0x40000000).pack('NN', 1920 << 16, 1080 << 16));
-        $head = $box('ftyp', 'isom'.pack('N', 512).'isommp42').$box('moov', $mvhd.$box('trak', $tkhd));
-
-        return $head.$box('mdat', str_repeat("\x5A", max(0, $bytes - strlen($head) - 8)));
-    }
-
-    private function jpeg(int $w = 1080, int $h = 1350): string
-    {
-        $img = imagecreatetruecolor($w, $h);
-        imagefill($img, 0, 0, imagecolorallocate($img, 200, 30, 90));
-        ob_start();
-        imagejpeg($img, null, 90);
-
-        return (string) ob_get_clean();
-    }
-
-    /** Загрузка частями, как из браузера; возвращает ответ finish. */
-    private function upload(User $as, SmmIdea $idea, string $name, string $bytes, string $purpose = 'media'): TestResponse
-    {
-        $start = $this->actingAsUser($as)->postJson("/smm/{$idea->id}/publication/uploads", ['purpose' => $purpose, 'name' => $name, 'size' => strlen($bytes)]);
-        if ($start->status() !== 201) {
-            return $start;
-        }
-        $id = $start->json('uploadId');
-        foreach (str_split($bytes, $start->json('chunkSize')) as $i => $part) {
-            $this->chunk($as, $idea, $id, $i, $part)->assertOk();
-        }
-
-        return $this->actingAsUser($as)->postJson("/smm/{$idea->id}/publication/uploads/{$id}/finish");
-    }
-
-    private function chunk(User $as, SmmIdea $idea, string $uploadId, int $index, string $bytes): TestResponse
-    {
-        return $this->actingAsUser($as)->call('POST', "/smm/{$idea->id}/publication/uploads/{$uploadId}/chunk?index={$index}", [], [], [],
-            ['CONTENT_TYPE' => 'application/octet-stream', 'HTTP_ACCEPT' => 'application/json'], $bytes);
-    }
-
     private function schedule(User $as, SmmIdea $idea, array $extra = []): TestResponse
     {
         return $this->actingAsUser($as)->put("/smm/{$idea->id}/publication", $extra + [
             'caption' => "Новый кейс Fluggi 🚀\n#smm #fluggi", 'share_to_feed' => '1', 'thumb_offset' => '2.5',
-            'scheduled_at' => Format::toLocalInput(now()->addMinutes(10)), 'intent' => 'schedule',
+            'scheduled_at' => Format::toLocalInput(now()->addMinutes(10)), 'intent' => 'schedule', 'targets' => ['instagram'],
         ]);
+    }
+
+    /** Место публикации Instagram у идеи. */
+    private function ig(SmmIdea $idea): SmmPublicationTarget
+    {
+        return SmmPublicationTarget::whereHas('publication', fn ($q) => $q->where('idea_id', $idea->id))->where('kind', 'INSTAGRAM')->firstOrFail();
     }
 
     private function sent(string $key): array
@@ -179,14 +133,7 @@ class InstagramPublishingTest extends TestCase
     private function cron(bool $cleanupOnly = false): void
     {
         app()->forgetInstance(Access::class);
-        $cleanupOnly ? InstagramPublisher::cleanup() : InstagramPublisher::tick();
-    }
-
-    /** Доставка событий: outbox сравнивает время с часами MySQL, а тест «перемотал» время вперёд. */
-    private function drain(): void
-    {
-        DB::table('outbox_events')->whereNull('processed_at')->update(['available_at' => DB::raw('UTC_TIMESTAMP(3)')]);
-        while (Outbox::processBatch() > 0);
+        $cleanupOnly ? SmmTargets::cleanup() : SmmPublisher::tick();
     }
 
     public function test_chunked_upload_assembly_and_validation(): void
@@ -296,7 +243,7 @@ class InstagramPublishingTest extends TestCase
         $this->travel(11)->minutes();
         $this->cron();
         $p->refresh();
-        $this->assertSame(['PUBLISHING', 'C1'], [$p->status, $p->container_id]);
+        $this->assertSame(['PUBLISHING', 'PUBLISHING', 'C1'], [$p->status, $this->ig($idea)->status, $this->ig($idea)->container_id]);
         // Лимит публикаций проверен, контейнер Reels — resumable с подписью, «в ленте», кадром и обложкой по подписанной ссылке
         $this->assertCount(1, $this->sent('GET 1789/content_publishing_limit'));
         $container = $this->sent('POST 1789/media')[0]->data();
@@ -321,7 +268,8 @@ class InstagramPublishingTest extends TestCase
         $this->travel(2)->minutes();
         $this->cron();
         $p->refresh();
-        $this->assertSame(['PUBLISHED', 'M1', 'https://www.instagram.com/reel/AbC123/'], [$p->status, $p->ig_media_id, $p->permalink]);
+        $t = $this->ig($idea);
+        $this->assertSame(['PUBLISHED', 'PUBLISHED', 'M1', 'https://www.instagram.com/reel/AbC123/'], [$p->status, $t->status, $t->external_id, $t->permalink]);
         $this->assertSame('C1', $this->sent('POST 1789/media_publish')[0]->data()['creation_id']);
 
         // Файлы удалены сразу, метаданные остались
@@ -389,8 +337,8 @@ class InstagramPublishingTest extends TestCase
         $this->cron();
         $p = SmmPublication::where('idea_id', $idea->id)->firstOrFail();
         $this->assertSame('FAILED', $p->status);
-        $this->assertStringContainsString('The video format is not supported', $p->error);
-        $this->assertNotNull($p->failed_at);
+        $this->assertStringContainsString('The video format is not supported', $this->ig($idea)->error);
+        $this->assertNotNull($this->ig($idea)->failed_at);
         // Файл сохраняется для повтора, идея не опубликована
         $this->assertTrue(SmmMedia::exists($p->media_path));
         $this->assertSame('SCHEDULED', $idea->fresh()->status);
@@ -404,7 +352,7 @@ class InstagramPublishingTest extends TestCase
         $this->assertSame('SCHEDULED', $p->fresh()->status);
         $this->meta['POST 1789/media'] = ['error' => ['message' => 'Invalid parameter', 'error_user_msg' => 'The aspect ratio is not supported.', 'code' => 100]];
         $this->cron();
-        $this->assertSame(['FAILED', 'Meta: The aspect ratio is not supported.'], [$p->fresh()->status, $p->fresh()->error]);
+        $this->assertSame(['FAILED', 'Meta: The aspect ratio is not supported.'], [$p->fresh()->status, $this->ig($idea)->error]);
 
         // Повтор после исправления — публикуется
         $this->meta['POST 1789/media'] = ['id' => 'C1', 'uri' => 'https://rupload.facebook.com/ig-api-upload/v21.0/C1'];
@@ -427,7 +375,7 @@ class InstagramPublishingTest extends TestCase
         $this->travel(11)->minutes();
         $this->cron();
         $p = SmmPublication::where('idea_id', $idea->id)->firstOrFail();
-        $this->assertSame(['FAILED', t('smm.ig.errors.quota', ['usage' => 50, 'total' => 50])], [$p->status, $p->error]);
+        $this->assertSame(['FAILED', t('smm.ig.errors.quota', ['usage' => 50, 'total' => 50])], [$p->status, $this->ig($idea)->error]);
         $this->assertCount(0, $this->sent('POST 1789/media'));
 
         // Нет права instagram_content_publish — понятная подсказка
@@ -435,7 +383,7 @@ class InstagramPublishingTest extends TestCase
         $this->actingAsUser($this->smm)->post("/smm/{$idea->id}/publication/retry")->assertSessionHasNoErrors()->assertSessionMissing('error');
         $this->assertSame('SCHEDULED', $p->fresh()->status);
         $this->cron();
-        $this->assertStringContainsString(t('smm.ig.errors.permission', ['error' => '']), $p->fresh()->error.' ');
+        $this->assertStringContainsString(t('smm.ig.errors.permission', ['error' => '']), $this->ig($idea)->error.' ');
     }
 
     public function test_settings_check_access_button_and_disk_usage(): void
@@ -514,7 +462,8 @@ class InstagramPublishingTest extends TestCase
         $this->upload($this->smm, $idea, 'r.mp4', $this->mp4(3000))->assertOk();
         $p = SmmPublication::where('idea_id', $idea->id)->firstOrFail();
         $file = SmmMedia::path($p->media_path);
-        $p->update(['status' => 'FAILED', 'error' => 'Meta: error', 'failed_at' => now()]);
+        $p->update(['status' => 'FAILED']);
+        SmmPublicationTarget::create(['publication_id' => $p->id, 'kind' => 'INSTAGRAM', 'target_key' => 'instagram', 'status' => 'FAILED', 'error' => 'Meta: error', 'failed_at' => now()]);
         $this->travel(6)->days();
         $this->cron();
         $this->assertFileExists($file);

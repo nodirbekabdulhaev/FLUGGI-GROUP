@@ -108,6 +108,61 @@
             </form>
         </x-card>
 
+        {{-- Telegram-каналы для автопубликации SMM: бот — администратор канала с правом публиковать --}}
+        <x-card :title="t('smm.tg.settingsTitle')" :subtitle="t('smm.tg.settingsText')" id="telegram-channels">
+            <div class="grid gap-4 text-sm">
+                <div class="rounded-md bg-muted p-3">
+                    <p class="font-medium" data-testid="tg-instruction">{{ t('smm.tg.instruction', ['bot' => $telegramBot]) }}</p>
+                    <ol class="mt-1 list-decimal space-y-0.5 pl-5 text-muted-foreground">
+                        @foreach (['step1', 'step2', 'step3'] as $k)<li>{{ t('smm.tg.'.$k, ['bot' => $telegramBot]) }}</li>@endforeach
+                    </ol>
+                </div>
+                @unless ($telegramConfigured)
+                    <p><x-badge color="yellow">{{ t('integrations.metaOff') }}</x-badge> <span class="text-muted-foreground">{{ t('smm.tg.errors.botNotConfigured') }}</span></p>
+                @endunless
+
+                @if ($telegramChannels->isEmpty())
+                    <p class="text-muted-foreground">{{ t('smm.tg.noChannels') }}</p>
+                @else
+                    <ul class="divide-y rounded-md border">
+                        @foreach ($telegramChannels as $ch)
+                            <li class="grid gap-2 p-3 sm:flex sm:items-center sm:justify-between" data-testid="tg-channel">
+                                <div class="min-w-0">
+                                    <p class="flex flex-wrap items-center gap-2"><x-icon name="send" class="size-4" />
+                                        <span class="break-all font-medium">{{ $ch->title }}</span>
+                                        <span class="text-muted-foreground">{{ $ch->handle() }}</span>
+                                        @if ($ch->can_post)
+                                            <x-badge color="green">{{ t('smm.tg.canPost') }}</x-badge>
+                                        @else
+                                            <x-badge color="red">{{ t('smm.tg.cannotPost') }}</x-badge>
+                                        @endif
+                                    </p>
+                                    @if ($ch->error)<p class="mt-1 break-words text-danger">{{ $ch->error }}</p>@endif
+                                    <p class="mt-1 text-xs text-muted-foreground">
+                                        @if ($ch->checked_at){{ t('smm.ig.checkedAt') }}: {{ dt($ch->checked_at) }} · @endif
+                                        {{ t('smm.tg.publishedCount', ['n' => (int) ($telegramPublished[$ch->id] ?? 0)]) }}</p>
+                                </div>
+                                <div class="flex shrink-0 gap-2">
+                                    <form method="POST" action="{{ route('integrations.telegram-channels.check', $ch->id) }}">@csrf
+                                        <button class="btn btn-outline btn-sm" @disabled(! $telegramConfigured)><x-icon name="refresh" /> {{ t('smm.tg.check') }}</button></form>
+                                    <form method="POST" action="{{ route('integrations.telegram-channels.destroy', $ch->id) }}" data-confirm="{{ t('smm.tg.removeConfirm') }}">@csrf @method('DELETE')
+                                        <button class="btn btn-ghost btn-sm text-danger"><x-icon name="trash" /> {{ t('smm.tg.remove') }}</button></form>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                @endif
+
+                <form method="POST" action="{{ route('integrations.telegram-channels.store') }}" class="grid gap-2 sm:flex sm:items-end">
+                    @csrf
+                    <div class="min-w-0 flex-1">
+                        <x-field name="chat" :label="t('smm.tg.chat')" :hint="t('smm.tg.chatHint')" placeholder="@channel / -1001234567890" maxlength="200" required />
+                    </div>
+                    <button class="btn btn-primary" @disabled(! $telegramConfigured)><x-icon name="plus" /> {{ t('smm.tg.add') }}</button>
+                </form>
+            </div>
+        </x-card>
+
         {{-- Форма: создание и правка --}}
         <x-modal name="lead-form" :title="t('integrations.formEdit')" size="max-w-3xl">
             <form method="POST" :action="f.action" class="grid gap-4">

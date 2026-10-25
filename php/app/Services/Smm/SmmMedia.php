@@ -6,7 +6,9 @@ use App\Exceptions\BusinessRule;
 use Illuminate\Support\Str;
 
 /**
- * Файлы автопубликации Instagram: storage/app/smm-media (не публично).
+ * Файлы автопубликации (Instagram, Telegram-каналы): storage/app/smm-media (не публично).
+ * Назначение загрузки: media — видео или фото публикации, cover — обложка Reels,
+ * telegram — необязательная сжатая версия видео для Telegram (лимит Bot API — 50 МБ).
  *  - Загрузка частями (по умолчанию 4 МБ, fetch из браузера телом запроса): большие файлы с iPhone (4K)
  *    проходят при маленьких upload_max_filesize хостинга. Части дописываются в один файл .part
  *    строго по порядку (повтор той же части безопасен), после сборки папка загрузки сразу удаляется.
@@ -35,8 +37,12 @@ final class SmmMedia
         return max(1, (int) config('fluggi.smm_media.chunk_mb', 4)) * 1024 * 1024;
     }
 
-    public static function maxBytes(string $type): int
+    public static function maxBytes(string $type, string $purpose = 'media'): int
     {
+        if ($purpose === 'telegram') {
+            return TelegramPublisher::limitBytes('REELS');
+        }
+
         return (int) config($type === 'video' ? 'fluggi.smm_media.max_video_mb' : 'fluggi.smm_media.max_image_mb', 8) * 1024 * 1024;
     }
 
@@ -79,10 +85,13 @@ final class SmmMedia
         return self::root().'/chunks/'.$uploadId;
     }
 
-    /** Тип по расширению: video / image (для обложки — только image). */
+    /** Тип по расширению: video / image (для обложки — только image, для версии Telegram — только video). */
     public static function typeOf(string $name, string $purpose): ?string
     {
         $ext = strtolower(pathinfo($name, PATHINFO_EXTENSION));
+        if ($purpose === 'telegram') {
+            return isset(self::VIDEO[$ext]) ? 'video' : null;
+        }
         if (isset(self::IMAGE[$ext])) {
             return 'image';
         }
@@ -99,10 +108,11 @@ final class SmmMedia
     {
         $type = self::typeOf($name, $purpose);
         if (! $type) {
-            throw new BusinessRule(t($purpose === 'cover' ? 'smm.ig.errors.coverType' : 'smm.ig.errors.mediaType'), ['file' => t($purpose === 'cover' ? 'smm.ig.errors.coverType' : 'smm.ig.errors.mediaType')]);
+            $msg = self::typeError($purpose);
+            throw new BusinessRule($msg, ['file' => $msg]);
         }
-        if ($size <= 0 || $size > self::maxBytes($type)) {
-            $msg = t('smm.ig.errors.tooLarge', ['mb' => (int) (self::maxBytes($type) / 1024 / 1024)]);
+        if ($size <= 0 || $size > self::maxBytes($type, $purpose)) {
+            $msg = $purpose === 'telegram' ? TelegramPublisher::tooLargeMessage('REELS') : t('smm.ig.errors.tooLarge', ['mb' => (int) (self::maxBytes($type) / 1024 / 1024)]);
             throw new BusinessRule($msg, ['file' => $msg]);
         }
         $id = (string) Str::uuid();
@@ -179,11 +189,11 @@ final class SmmMedia
             $mime = (string) (new \finfo(FILEINFO_MIME_TYPE))->file($part);
             $allowed = $meta['type'] === 'video' ? self::VIDEO[$ext] ?? [] : self::IMAGE[$ext] ?? [];
             if (! in_array($mime, $allowed, true)) {
-                $msg = t($meta['purpose'] === 'cover' ? 'smm.ig.errors.coverType' : 'smm.ig.errors.mediaType');
+                $msg = self::typeError($meta['purpose']);
                 throw new BusinessRule($msg, ['file' => $msg]);
             }
             $info = $meta['type'] === 'video' ? self::probeVideo($part) : self::probeImage($part);
-            if ($meta['type'] === 'video' && isset($info['seconds']) && ($info['seconds'] < self::MIN_SECONDS || $info['seconds'] > self::MAX_SECONDS)) {
+            if ($meta['type'] === 'video' && $meta['purpose'] === 'media' && isset($info['seconds']) && ($info['seconds'] < self::MIN_SECONDS || $info['seconds'] > self::MAX_SECONDS)) {
                 $msg = t('smm.ig.errors.duration', ['min' => self::MIN_SECONDS, 'max' => self::MAX_SECONDS / 60]);
                 throw new BusinessRule($msg, ['file' => $msg]);
             }
@@ -212,6 +222,52 @@ final class SmmMedia
         } finally {
             self::removeDir($dir);
         }
+    }
+
+    private static function typeError(string $purpose): string
+    {
+        return t(match ($purpose) {
+            'cover' => 'smm.ig.errors.coverType',
+            'telegram' => 'smm.tg.errors.versionType',
+            default => 'smm.ig.errors.mediaType',
+        });
+    }
+
+    /**
+     * Миниатюра JPEG (не больше $px по большей стороне, до 200 КБ) во временном файле — для Telegram; нет GD — null.
+     * Вызывающий удаляет файл после отправки.
+     */
+    public static function thumbnail(string $path, int $px = 320): ?string
+    {
+        if (! function_exists('imagecreatefromjpeg') || ! ($s = @getimagesize($path)) || $s[0] <= 0 || $s[1] <= 0) {
+            return null;
+        }
+        $src = match ($s[2]) {
+            IMAGETYPE_JPEG => @imagecreatefromjpeg($path),
+            IMAGETYPE_PNG => @imagecreatefrompng($path),
+            default => false,
+        };
+        if (! $src) {
+            return null;
+        }
+        $scale = min(1, $px / max($s[0], $s[1]));
+        $w = max(1, (int) round($s[0] * $scale));
+        $h = max(1, (int) round($s[1] * $scale));
+        $dst = imagecreatetruecolor($w, $h);
+        imagecopyresampled($dst, $src, 0, 0, 0, 0, $w, $h, $s[0], $s[1]);
+        self::ensureDir(self::root().'/tmp');
+        $out = self::root().'/tmp/'.Str::uuid().'.jpg';
+        foreach ([85, 70, 50] as $q) {
+            imagejpeg($dst, $out, $q);
+            clearstatcache(true, $out);
+            if (filesize($out) <= 200 * 1024) {
+                break;
+            }
+        }
+        imagedestroy($src);
+        imagedestroy($dst);
+
+        return $out;
     }
 
     private static function pngToJpeg(string $from, string $to): void

@@ -13,12 +13,13 @@ use App\Support\Outbox;
  *  - смена этапа или ответственного другим сотрудником — ответственному и автору;
  *  - назначен видеограф — видеографу;
  *  - опубликовано в Instagram (автопубликация) — автору, ответственному, видеографу и проект-менеджерам SMM;
- *  - автопубликация не удалась — автору и ответственному (с текстом ошибки Meta).
+ *  - автопубликация не удалась — автору и ответственному (с текстом ошибки Meta);
+ *  - опубликовано в Telegram-канале / не удалось — так же, как для Instagram (с названием канала).
  */
 final class SmmEvents
 {
     public const TYPES = ['smm.idea_created', 'smm.idea_approved', 'smm.idea_rejected', 'smm.idea_status_changed', 'smm.videographer_assigned',
-        'smm.instagram_published', 'smm.instagram_failed'];
+        'smm.instagram_published', 'smm.instagram_failed', 'smm.telegram_published', 'smm.telegram_failed'];
 
     public static function register(): void
     {
@@ -29,6 +30,38 @@ final class SmmEvents
         Outbox::on('smm.videographer_assigned', [self::class, 'videographerAssigned']);
         Outbox::on('smm.instagram_published', [self::class, 'instagramPublished']);
         Outbox::on('smm.instagram_failed', [self::class, 'instagramFailed']);
+        Outbox::on('smm.telegram_published', [self::class, 'telegramPublished']);
+        Outbox::on('smm.telegram_failed', [self::class, 'telegramFailed']);
+    }
+
+    public static function telegramPublished(array $e, array $meta): void
+    {
+        $idea = self::idea($e['ideaId'] ?? null);
+        if (! $idea) {
+            return;
+        }
+        Notifier::notify(
+            [$idea->author_id, $idea->assignee_id, $idea->videographer_id, ...SmmAccess::projectManagerIds()],
+            'smm.telegram_published',
+            fn () => [t('smm.notify.tgPublished', ['channel' => $e['channelTitle'] ?? '—']), self::subject($idea)],
+            self::link($idea),
+            $meta['actorId'],
+        );
+    }
+
+    public static function telegramFailed(array $e, array $meta): void
+    {
+        $idea = self::idea($e['ideaId'] ?? null);
+        if (! $idea) {
+            return;
+        }
+        Notifier::notify(
+            [$idea->author_id, $idea->assignee_id],
+            'smm.telegram_failed',
+            fn () => [t('smm.notify.tgFailed', ['channel' => $e['channelTitle'] ?? '—']), self::subject($idea).' — '.($e['error'] ?? '')],
+            self::link($idea),
+            $meta['actorId'],
+        );
     }
 
     public static function instagramPublished(array $e, array $meta): void

@@ -74,6 +74,8 @@ final class NotificationCatalog
         'attendance.checkout_decided' => 'attendance.auto_checkout',
         'smm.instagram_published' => 'smm.idea_status_changed',
         'smm.instagram_failed' => 'smm.idea_status_changed',
+        'smm.telegram_published' => 'smm.idea_status_changed',
+        'smm.telegram_failed' => 'smm.idea_status_changed',
     ];
 
     public static function group(string $type): string

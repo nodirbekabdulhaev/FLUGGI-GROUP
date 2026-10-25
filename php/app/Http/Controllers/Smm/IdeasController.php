@@ -66,6 +66,7 @@ class IdeasController extends Controller
             'pmRequired' => SmmAccess::projectManagerIds() !== [],
             'publication' => SmmPublicationService::for($idea),
             'canPublish' => SmmPublicationService::canEdit($idea),
+            'publishTargets' => SmmPublicationService::options(),
         ]);
     }
 

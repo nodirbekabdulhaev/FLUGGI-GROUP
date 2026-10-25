@@ -4,7 +4,7 @@ namespace App\Services\Automation;
 
 use App\Services\Push\PushSender;
 use App\Services\Push\WebPush;
-use App\Services\Smm\InstagramPublisher;
+use App\Services\Smm\SmmPublisher;
 use App\Services\Telegram\TelegramClient;
 use App\Services\Telegram\TelegramSender;
 use App\Services\Telegram\TelegramService;
@@ -43,10 +43,10 @@ final class Cron
         $events = Outbox::drain((int) max(1, floor($budgetSeconds)));
         $left = max(1, $budgetSeconds - (microtime(true) - $started));
         $r = self::comms($left);
-        $instagram = InstagramPublisher::tick(2);
+        $smm = SmmPublisher::tick(2);
         // События, созданные задачами планировщика (task.overdue и т.п.), доставляются сразу
         $events += Outbox::drain((int) max(1, floor($budgetSeconds - (microtime(true) - $started))));
 
-        return ['events' => $events, 'telegram' => $r['telegram'], 'push' => $r['push'], 'instagram' => $instagram['started'] + $instagram['checked'], 'ms' => (int) round((microtime(true) - $started) * 1000)];
+        return ['events' => $events, 'telegram' => $r['telegram'], 'push' => $r['push'], 'instagram' => $smm['instagram']['started'] + $smm['instagram']['checked'], 'telegramChannels' => $smm['telegram']['started'], 'ms' => (int) round((microtime(true) - $started) * 1000)];
     }
 }

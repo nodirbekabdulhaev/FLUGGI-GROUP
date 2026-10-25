@@ -1,7 +1,7 @@
 <?php
 
 use App\Services\Automation\Cron;
-use App\Services\Smm\InstagramPublisher;
+use App\Services\Smm\SmmPublisher;
 use App\Support\Outbox;
 use Illuminate\Support\Facades\Schedule;
 
@@ -19,8 +19,8 @@ Schedule::call(fn () => Outbox::drain(40))
 Schedule::call(fn () => Cron::comms(15))
     ->name('comms')->everyMinute()->withoutOverlapping(10);
 
-// Автопубликация SMM в Instagram: запланированные на эту минуту, проверка статуса контейнеров Meta,
-// уборка файлов (части брошенных загрузок, файлы неудавшихся публикаций старше 7 дней).
-// Загрузка большого видео в Meta может занять минуты — отдельная задача, чтобы не задерживать уведомления.
-Schedule::call(fn () => InstagramPublisher::tick())
+// Автопубликация SMM в Instagram и Telegram-каналы: запланированные на эту минуту, проверка статуса контейнеров Meta,
+// уборка файлов (части брошенных загрузок; файлы — когда опубликованы все места, у неудачных — через 7 дней).
+// Загрузка большого видео в Meta/Telegram может занять минуты — отдельная задача, чтобы не задерживать уведомления.
+Schedule::call(fn () => SmmPublisher::tick())
     ->name('smm-instagram')->everyMinute()->withoutOverlapping(60);

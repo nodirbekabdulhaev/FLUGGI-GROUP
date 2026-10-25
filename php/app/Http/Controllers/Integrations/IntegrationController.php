@@ -5,7 +5,7 @@ namespace App\Http\Controllers\Integrations;
 use App\Http\Controllers\Controller;
 use App\Models\LeadSource;
 use App\Models\Service;
-use App\Models\SmmPublication;
+use App\Models\SmmPublicationTarget;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\Integrations\FormService;
@@ -13,6 +13,8 @@ use App\Services\Integrations\IntakeService;
 use App\Services\Integrations\MetaService;
 use App\Services\Smm\InstagramApi;
 use App\Services\Smm\SmmMedia;
+use App\Services\Smm\TelegramChannels;
+use App\Services\Telegram\TelegramClient;
 use App\Support\Audit;
 use App\Support\Format;
 use App\Support\Lang;
@@ -22,7 +24,7 @@ use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
-/** Настройки → «Интеграции»: формы для сайта, Instagram/Facebook и таргет (только CEO). */
+/** Настройки → «Интеграции»: формы для сайта, Instagram/Facebook и таргет, Telegram-каналы для публикаций (только CEO). */
 class IntegrationController extends Controller
 {
     private static function name(object $r): string
@@ -38,9 +40,14 @@ class IntegrationController extends Controller
             'instagram' => InstagramApi::settings() + [
                 'tokenSet' => (bool) InstagramApi::token(),
                 'diskUsage' => SmmMedia::human(SmmMedia::diskUsage()),
-                'scheduled' => SmmPublication::whereIn('status', ['SCHEDULED', 'PUBLISHING'])->count(),
-                'published' => SmmPublication::where('status', 'PUBLISHED')->count(),
+                'scheduled' => SmmPublicationTarget::where('kind', 'INSTAGRAM')->whereIn('status', ['SCHEDULED', 'PUBLISHING'])->count(),
+                'published' => SmmPublicationTarget::where('kind', 'INSTAGRAM')->where('status', 'PUBLISHED')->count(),
             ],
+            'telegramChannels' => TelegramChannels::list(),
+            'telegramPublished' => SmmPublicationTarget::where('kind', 'TELEGRAM')->where('status', 'PUBLISHED')
+                ->selectRaw('channel_id, COUNT(*) AS n')->groupBy('channel_id')->pluck('n', 'channel_id')->all(),
+            'telegramBot' => TelegramChannels::bot(),
+            'telegramConfigured' => TelegramClient::configured(),
             'settings' => IntakeService::settings(),
             'services' => Service::where('is_active', true)->orderBy('sort')->get()->mapWithKeys(fn ($s) => [$s->id => self::name($s)])->all(),
             'sources' => LeadSource::where('is_active', true)->orderBy('sort')->get()->mapWithKeys(fn ($s) => [$s->id => self::name($s)])->all(),
@@ -115,6 +122,36 @@ class IntegrationController extends Controller
         return $r['ok']
             ? back()->with('ok', t('smm.ig.checkOk', ['username' => $r['username'] ?? '—', 'usage' => $r['quotaUsage'] ?? 0, 'total' => $r['quotaTotal'] ?? 0]))
             : back()->with('error', $r['error']);
+    }
+
+    /** Добавить Telegram-канал для публикаций: только после успешной проверки (бот — администратор с правом публиковать). */
+    public function addTelegramChannel(Request $request): JsonResponse|RedirectResponse
+    {
+        $data = $request->validate(['chat' => ['required', 'string', 'max:200']], [], ['chat' => t('smm.tg.chat')]);
+        $ch = TelegramChannels::add($data['chat']);
+
+        return $request->expectsJson()
+            ? response()->json(['id' => $ch->id, 'chatId' => $ch->chat_id, 'title' => $ch->title, 'username' => $ch->username], 201)
+            : redirect('/settings/integrations#telegram-channels')->with('ok', t('smm.tg.added', ['channel' => $ch->title]));
+    }
+
+    public function checkTelegramChannel(Request $request, string $id): JsonResponse|RedirectResponse
+    {
+        $r = TelegramChannels::recheck($id);
+        if ($request->expectsJson()) {
+            return response()->json($r);
+        }
+
+        return $r['ok']
+            ? redirect('/settings/integrations#telegram-channels')->with('ok', t('smm.tg.checkOk', ['channel' => $r['title'] ?? '—']))
+            : redirect('/settings/integrations#telegram-channels')->with('error', $r['error']);
+    }
+
+    public function removeTelegramChannel(Request $request, string $id): JsonResponse|RedirectResponse
+    {
+        TelegramChannels::remove($id);
+
+        return $request->expectsJson() ? response()->json(null, 204) : redirect('/settings/integrations#telegram-channels')->with('ok', t('smm.tg.removed'));
     }
 
     public function saveMeta(Request $request): JsonResponse|RedirectResponse

@@ -109,7 +109,11 @@
     "ig_cancelled": "Avtomatik eʼlon bekor qilindi",
     "ig_published": "Instagramda eʼlon qilindi",
     "ig_failed": "Avtomatik eʼlon xatosi",
-    "ig_file_deleted": "Muvaffaqiyatsiz eʼlon fayli oʻchirildi"
+    "ig_file_deleted": "Muvaffaqiyatsiz eʼlon fayli oʻchirildi",
+    "tg_media": "Telegram uchun video versiyasi yuklandi",
+    "tg_media_removed": "Telegram uchun video versiyasi oʻchirildi",
+    "tg_published": "Telegram-kanalda eʼlon qilindi",
+    "tg_failed": "Telegram-kanalga eʼlon qilishda xato"
   },
   "historyFields": {
     "title": "Nomi",
@@ -123,7 +127,9 @@
     "videographer": "Videograf",
     "file": "Fayl",
     "igStatus": "Avtomatik eʼlon",
-    "scheduledAt": "Eʼlon vaqti"
+    "scheduledAt": "Eʼlon vaqti",
+    "channel": "Telegram-kanal",
+    "targets": "Qayerga eʼlon qilinadi"
   },
   "errors": {
     "assigneeRequired": "Masʼul SMM mutaxassisini tanlang",
@@ -151,7 +157,9 @@
     "moved": "Rolik: {status}",
     "videographerAssigned": "Siz rolik videografi etib tayinlandingiz",
     "igPublished": "Rolik Instagramda eʼlon qilindi",
-    "igFailed": "Instagramga avtomatik eʼlon qilish amalga oshmadi"
+    "igFailed": "Instagramga avtomatik eʼlon qilish amalga oshmadi",
+    "tgPublished": "Rolik «{channel}» Telegram-kanalida eʼlon qilindi",
+    "tgFailed": "«{channel}» Telegram-kanaliga eʼlon qilib boʻlmadi"
   },
   "allVideographers": "Barcha videograflar",
   "noVideographer": "— tanlanmagan —",
@@ -159,7 +167,7 @@
   "videographerHint": "Videograf yoki mobilograf. «Suratga olish» bosqichi uchun majburiy; eʼlon qilingan rolik unga ham hisoblanadi.",
   "askShooting": "Rolikni kim suratga oladi?",
   "ig": {
-    "title": "Instagramga avtomatik eʼlon",
+    "title": "Avtomatik eʼlon",
     "settingsTitle": "SMM: Instagramga avtomatik eʼlon",
     "settingsText": "Gʻoya kartochkasidagi rolik va rasmlar Facebook sahifasi tokeni orqali belgilangan vaqtda Instagramga eʼlon qilinadi.",
     "accessOk": "Eʼlon qilishga ruxsat bor",
@@ -255,6 +263,63 @@
       "interrupted": "Eʼlon serverda uzilib qoldi — takrorlang",
       "processingTimeout": "Meta faylni 24 soatda qayta ishlamadi",
       "container": "Meta faylni qabul qilmadi ({status}): {error}"
+    }
+  },
+  "pub": {
+    "targets": "Qayerga eʼlon qilinadi",
+    "errors": {
+      "mediaPublished": "Fayl kamida bitta joyda eʼlon qilingan — uni almashtirib boʻlmaydi. Telegram uchun alohida versiya yuklash mumkin.",
+      "unknownTarget": "Tanlangan eʼlon joyi topilmadi — sahifani yangilang",
+      "noTargets": "Qayerga eʼlon qilishni belgilang: Instagram yoki Telegram-kanal"
+    }
+  },
+  "tg": {
+    "settingsTitle": "Eʼlonlar uchun Telegram-kanallar",
+    "settingsText": "Gʻoya kartochkasidagi roliklar va rasmlar belgilangan vaqtda CRM boti orqali tanlangan kanallarga eʼlon qilinadi.",
+    "instruction": "{bot} botini kanalga xabar eʼlon qilish huquqi bilan administrator qilib qoʻshing",
+    "step1": "Telegramda kanalni oching → «Kanalni boshqarish» → «Administratorlar» → «Administrator qoʻshish».",
+    "step2": "{bot} ni toping va «Xabarlarni eʼlon qilish» huquqini yoqing.",
+    "step3": "Quyida kanalning @username yoki raqamli id sini (-100…) kiriting va «Tekshirish va qoʻshish» tugmasini bosing.",
+    "theBot": "CRM botini",
+    "noChannels": "Kanallar hali qoʻshilmagan",
+    "canPost": "Bot eʼlon qila oladi",
+    "cannotPost": "Eʼlon qilish huquqi yoʻq",
+    "publishedCount": "Avtomatik eʼlon qilingan: {n}",
+    "check": "Tekshirish",
+    "remove": "Oʻchirish",
+    "removeConfirm": "Kanal roʻyxatdan oʻchirilsinmi? Unga moʻljallangan qoralama va muvaffaqiyatsiz eʼlonlar olib tashlanadi.",
+    "chat": "Kanal: @username yoki id",
+    "chatHint": "Masalan @fluggi_uz, https://t.me/fluggi_uz yoki -1001234567890 (yopiq kanal uchun)",
+    "add": "Tekshirish va qoʻshish",
+    "added": "«{channel}» kanali qoʻshildi: bot eʼlon qila oladi",
+    "checkOk": "«{channel}» kanali: bot eʼlon qila oladi",
+    "removed": "Kanal roʻyxatdan oʻchirildi",
+    "publishingHint": "Fayl Telegramga yuborilmoqda",
+    "postponed": "Telegram kutishni soʻradi — koʻrsatilgan vaqtda qayta urinish ({error})",
+    "version": "Telegram uchun versiya",
+    "versionRemove": "olib tashlash",
+    "versionReplace": "Telegram versiyasini almashtirish",
+    "versionUpload": "Telegram uchun versiya ({mb} MB gacha)",
+    "versionUploaded": "Telegram uchun versiya yuklandi — Telegramga u, Instagramga asl fayl yuboriladi",
+    "versionRemoved": "Telegram versiyasi oʻchirildi — Telegramga asl fayl yuboriladi",
+    "noChannelsHint": "Telegram-kanallar «Sozlamalar → Integratsiyalar» boʻlimida qoʻshiladi.",
+    "captionHint": "Telegramda video izohi 1024 belgigacha: uzun izoh kanalda keyingi xabar bilan davom etadi.",
+    "errors": {
+      "botNotConfigured": "Telegram-bot sozlanmagan (.env da TELEGRAM_BOT_TOKEN)",
+      "notFound": "Kanal topilmadi: @username yoki id ni tekshiring va {bot} botini kanalga administrator qilib qoʻshing",
+      "api": "Telegram xatosi: {error}",
+      "notChannel": "Bu kanal emas — Telegram-kanalni koʻrsating",
+      "notAdmin": "{bot} boti kanal administratori emas — {bot} botini kanalga xabar eʼlon qilish huquqi bilan administrator qilib qoʻshing",
+      "cannotPost": "{bot} botida «Xabarlarni eʼlon qilish» huquqi yoʻq — uni kanal administratorlari sozlamalarida yoqing",
+      "invalid": "Kanalning @username, t.me/… havolasi yoki raqamli id sini (-100…) koʻrsating",
+      "duplicate": "Bu kanal allaqachon qoʻshilgan",
+      "inUse": "Kanal rejalashtirilgan yoki davom etayotgan eʼlonda tanlangan — avval gʻoya kartochkasida belgini olib tashlang",
+      "channelRemoved": "Kanal sozlamalardan oʻchirilgan — boshqasini tanlang",
+      "channelNotReady": "«{channel}» kanali: bot eʼlon qila olmaydi — «Sozlamalar → Integratsiyalar» da «Tekshirish» ni bosing",
+      "videoTooLarge": "Telegram-bot {mb} MB gacha video yubora oladi; kanal uchun siqilgan versiyani yuklang yoki Telegram belgisini olib tashlang",
+      "photoTooLarge": "Telegram-bot {mb} MB gacha rasm yubora oladi; rasmni kichraytiring yoki Telegram belgisini olib tashlang",
+      "versionType": "Telegram uchun versiya — MP4 yoki MOV video",
+      "versionNeedsVideo": "Avval asl videoni yuklang"
     }
   }
 }

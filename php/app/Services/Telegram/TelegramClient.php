@@ -43,6 +43,56 @@ final class TelegramClient
         return $data['result'] ?? null;
     }
 
+    /**
+     * Запрос с файлами (multipart/form-data): $files — имя поля → [путь, имя файла]. Остальные поля — строки.
+     *
+     * @param  array<string, scalar>  $fields
+     * @param  array<string, array{0:string, 1:string}>  $files
+     *
+     * @throws TelegramApiError
+     * @throws ConnectionException
+     */
+    public static function upload(string $method, array $fields, array $files, int $timeout = 600): mixed
+    {
+        $token = config('fluggi.telegram.token');
+        if (! $token) {
+            throw new TelegramApiError(0, t('telegram.problems.notConfigured'));
+        }
+        $req = Http::timeout($timeout)->connectTimeout(20)->acceptJson();
+        $handles = [];
+        try {
+            foreach ($files as $name => [$path, $filename]) {
+                $fh = fopen($path, 'rb');
+                if (! $fh) {
+                    throw new TelegramApiError(0, 'file '.$filename);
+                }
+                $handles[] = $fh;
+                $req = $req->attach($name, $fh, $filename);
+            }
+            $res = $req->post(self::API_BASE.'/bot'.$token.'/'.$method, array_map(fn ($v) => is_bool($v) ? ($v ? 'true' : 'false') : (string) $v, $fields));
+        } finally {
+            foreach ($handles as $fh) {
+                if (is_resource($fh)) {
+                    fclose($fh);
+                }
+            }
+        }
+        $data = $res->json() ?? [];
+        if (! $res->successful() || empty($data['ok'])) {
+            throw new TelegramApiError($res->status(), (string) ($data['description'] ?? $res->reason()), $data['parameters']['retry_after'] ?? null);
+        }
+
+        return $data['result'] ?? null;
+    }
+
+    /** id бота — числовая часть токена до двоеточия. */
+    public static function botId(): ?int
+    {
+        $id = strstr((string) config('fluggi.telegram.token'), ':', true);
+
+        return $id !== false && ctype_digit($id) ? (int) $id : null;
+    }
+
     /** @param  list<list<array{text:string,callback_data:string}>>|null  $keyboard  inline-кнопки */
     public static function sendMessage(string $chatId, string $html, ?array $keyboard = null): mixed
     {

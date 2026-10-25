@@ -78,6 +78,9 @@ Route::middleware('perm:settings.manage,ALL')->group(function () {
     Route::get('/settings/integrations/forms/{id}/submissions', [IntegrationController::class, 'submissions'])->whereUuid('id')->name('integrations.forms.submissions');
     Route::put('/settings/integrations/meta', [IntegrationController::class, 'saveMeta'])->name('integrations.meta');
     Route::post('/settings/integrations/instagram/check', [IntegrationController::class, 'checkInstagram'])->name('integrations.instagram.check');
+    Route::post('/settings/integrations/telegram-channels', [IntegrationController::class, 'addTelegramChannel'])->name('integrations.telegram-channels.store');
+    Route::post('/settings/integrations/telegram-channels/{id}/check', [IntegrationController::class, 'checkTelegramChannel'])->whereUuid('id')->name('integrations.telegram-channels.check');
+    Route::delete('/settings/integrations/telegram-channels/{id}', [IntegrationController::class, 'removeTelegramChannel'])->whereUuid('id')->name('integrations.telegram-channels.destroy');
 });
 
 // Повторные продажи (ТЗ §38)

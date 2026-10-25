@@ -109,7 +109,11 @@
     "ig_cancelled": "Auto-publishing cancelled",
     "ig_published": "Published on Instagram",
     "ig_failed": "Auto-publishing error",
-    "ig_file_deleted": "File of the failed publication deleted"
+    "ig_file_deleted": "File of the failed publication deleted",
+    "tg_media": "Telegram version of the video uploaded",
+    "tg_media_removed": "Telegram version of the video removed",
+    "tg_published": "Published to the Telegram channel",
+    "tg_failed": "Telegram channel publishing failed"
   },
   "historyFields": {
     "title": "Title",
@@ -123,7 +127,9 @@
     "videographer": "Videographer",
     "file": "File",
     "igStatus": "Auto-publishing",
-    "scheduledAt": "Publish time"
+    "scheduledAt": "Publish time",
+    "channel": "Telegram channel",
+    "targets": "Publish to"
   },
   "errors": {
     "assigneeRequired": "Choose the responsible SMM specialist",
@@ -151,7 +157,9 @@
     "moved": "Video: {status}",
     "videographerAssigned": "You are assigned as the videographer of a video",
     "igPublished": "The video is published on Instagram",
-    "igFailed": "Instagram auto-publishing failed"
+    "igFailed": "Instagram auto-publishing failed",
+    "tgPublished": "The video is published to the Telegram channel “{channel}”",
+    "tgFailed": "Publishing to the Telegram channel “{channel}” failed"
   },
   "allVideographers": "All videographers",
   "noVideographer": "— not selected —",
@@ -159,7 +167,7 @@
   "videographerHint": "A videographer or mobilographer. Required for the “Shooting” stage; the published video counts for them too.",
   "askShooting": "Who is shooting the video?",
   "ig": {
-    "title": "Instagram auto-publishing",
+    "title": "Auto-publishing",
     "settingsTitle": "SMM auto-publishing to Instagram",
     "settingsText": "Videos and photos from the idea card are published to Instagram at the set time using the Facebook Page token.",
     "accessOk": "Publishing access OK",
@@ -255,6 +263,63 @@
       "interrupted": "Publishing was interrupted on the server — retry",
       "processingTimeout": "Meta did not process the file within 24 hours",
       "container": "Meta rejected the file ({status}): {error}"
+    }
+  },
+  "pub": {
+    "targets": "Publish to",
+    "errors": {
+      "mediaPublished": "The file is already published in at least one place and cannot be replaced. You can upload a separate version for Telegram.",
+      "unknownTarget": "The selected destination was not found — reload the page",
+      "noTargets": "Choose where to publish: Instagram or a Telegram channel"
+    }
+  },
+  "tg": {
+    "settingsTitle": "Telegram channels for publishing",
+    "settingsText": "Videos and photos from the idea card are posted to the selected channels at the scheduled time by the CRM bot.",
+    "instruction": "Add the bot {bot} as a channel administrator with the right to post messages",
+    "step1": "Open the channel in Telegram → Manage channel → Administrators → Add administrator.",
+    "step2": "Find {bot} and enable the “Post messages” right.",
+    "step3": "Enter the channel @username or its numeric id (-100…) below and press “Check and add”.",
+    "theBot": "the CRM bot",
+    "noChannels": "No channels added yet",
+    "canPost": "The bot can post",
+    "cannotPost": "No permission to post",
+    "publishedCount": "Auto-published: {n}",
+    "check": "Check",
+    "remove": "Remove",
+    "removeConfirm": "Remove the channel from the list? Draft and failed publications to it will be removed.",
+    "chat": "Channel: @username or id",
+    "chatHint": "For example @fluggi_uz, https://t.me/fluggi_uz or -1001234567890 (for a private channel)",
+    "add": "Check and add",
+    "added": "Channel “{channel}” added: the bot can post",
+    "checkOk": "Channel “{channel}”: the bot can post",
+    "removed": "Channel removed from the list",
+    "publishingHint": "The file is being sent to Telegram",
+    "postponed": "Telegram asked to wait — retry at the shown time ({error})",
+    "version": "Telegram version",
+    "versionRemove": "remove",
+    "versionReplace": "Replace the Telegram version",
+    "versionUpload": "Telegram version (up to {mb} MB)",
+    "versionUploaded": "Telegram version uploaded — Telegram gets it, Instagram gets the original file",
+    "versionRemoved": "Telegram version removed — Telegram will get the original file",
+    "noChannelsHint": "Telegram channels are added in Settings → Integrations.",
+    "captionHint": "In Telegram a media caption is limited to 1024 characters: a longer caption continues in the next channel message.",
+    "errors": {
+      "botNotConfigured": "The Telegram bot is not configured (TELEGRAM_BOT_TOKEN in .env)",
+      "notFound": "Channel not found: check the @username or id and add the bot {bot} to the channel as an administrator",
+      "api": "Telegram error: {error}",
+      "notChannel": "This is not a channel — specify a Telegram channel",
+      "notAdmin": "The bot {bot} is not a channel administrator — add the bot {bot} as a channel administrator with the right to post messages",
+      "cannotPost": "The bot {bot} lacks the “Post messages” right — enable it in the channel administrator settings",
+      "invalid": "Enter the channel @username, a t.me/… link or a numeric id (-100…)",
+      "duplicate": "This channel has already been added",
+      "inUse": "The channel is selected in a scheduled or running publication — untick it in the idea card first",
+      "channelRemoved": "The channel was removed from settings — choose another one",
+      "channelNotReady": "Channel “{channel}”: the bot cannot post — press “Check” in Settings → Integrations",
+      "videoTooLarge": "The Telegram bot can send videos up to {mb} MB; upload a compressed version for the channel or untick Telegram",
+      "photoTooLarge": "The Telegram bot can send photos up to {mb} MB; make the photo smaller or untick Telegram",
+      "versionType": "The Telegram version must be an MP4 or MOV video",
+      "versionNeedsVideo": "Upload the original video first"
     }
   }
 }
