@@ -7,7 +7,8 @@ use RuntimeException;
 /** Ошибка Telegram Bot API: HTTP-статус, описание, пауза перед повтором (429). */
 final class TelegramApiError extends RuntimeException
 {
-    public function __construct(public readonly int $status, public readonly string $description, public readonly ?int $retryAfter = null)
+    /** $network — запрос не дошёл до Telegram (тайм-аут, нет соединения): повторять позже. */
+    public function __construct(public readonly int $status, public readonly string $description, public readonly ?int $retryAfter = null, public readonly bool $network = false)
     {
         parent::__construct('Telegram '.$status.': '.$description);
     }

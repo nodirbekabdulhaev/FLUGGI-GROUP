@@ -305,7 +305,7 @@
     "checkOk": "Канал «{channel}»: бот может публиковать",
     "removed": "Канал удалён из списка",
     "publishingHint": "Файл отправляется в Telegram",
-    "postponed": "Telegram попросил подождать — повтор в указанное время ({error})",
+    "postponed": "Повтор по расписанию ({error})",
     "version": "Версия для Telegram",
     "versionRemove": "убрать",
     "versionReplace": "Заменить версию для Telegram",

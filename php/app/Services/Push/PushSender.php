@@ -5,6 +5,7 @@ namespace App\Services\Push;
 use App\Models\PushSubscription;
 use App\Services\Telegram\TelegramSender;
 use App\Support\MySql as DbSupport;
+use App\Support\Secrets;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -123,7 +124,7 @@ final class PushSender
                 'Urgency' => 'high',
             ])->withBody($body, 'application/octet-stream')->post($sub->endpoint);
         } catch (ConnectionException $e) {
-            return [true, 'Network: '.mb_substr($e->getMessage(), 0, 200)];
+            return [true, 'Network: '.mb_substr(Secrets::redact($e->getMessage()), 0, 200)];
         }
         $status = $res->status();
         if ($status >= 200 && $status < 300) {

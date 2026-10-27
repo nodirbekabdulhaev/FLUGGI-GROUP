@@ -30,7 +30,8 @@
     "noUsername": "Couldn’t get the bot name. Set TELEGRAM_BOT_USERNAME",
     "linkFirst": "Connect Telegram first",
     "notLinked": "Telegram is not connected",
-    "forbidden": "Invalid request"
+    "forbidden": "Invalid request",
+    "network": "No connection to Telegram: {error}. Will retry automatically"
   },
   "problems": {
     "notConfigured": "The bot is not configured",

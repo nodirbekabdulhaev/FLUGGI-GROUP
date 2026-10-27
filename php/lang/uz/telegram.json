@@ -30,7 +30,8 @@
     "noUsername": "Bot nomini olib boʻlmadi. TELEGRAM_BOT_USERNAME ni koʻrsating",
     "linkFirst": "Avval Telegram ni ulang",
     "notLinked": "Telegram ulanmagan",
-    "forbidden": "Ruxsat etilmagan soʻrov"
+    "forbidden": "Ruxsat etilmagan soʻrov",
+    "network": "Telegram bilan aloqa yoʻq: {error}. Avtomatik qayta urinamiz"
   },
   "problems": {
     "notConfigured": "Bot sozlanmagan",

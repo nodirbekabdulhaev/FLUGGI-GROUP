@@ -9,8 +9,8 @@ use App\Models\Setting;
 use App\Models\TelegramLinkToken;
 use App\Models\User;
 use App\Support\Lang;
+use App\Support\Secrets;
 use Carbon\CarbonImmutable;
-use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpKernel\Exception\HttpException;
@@ -60,9 +60,13 @@ final class TelegramService
                 return t('telegram.problems.conflict');
             }
 
+            if ($err->network) {
+                return t('telegram.problems.network', ['reason' => mb_substr($err->description, 0, 300)]);
+            }
+
             return t('telegram.problems.apiError', ['error' => $err->description]);
         }
-        $reason = $err instanceof ConnectionException ? $err->getMessage() : $err->getMessage();
+        $reason = Secrets::redact($err->getMessage());
 
         return t('telegram.problems.network', ['reason' => mb_substr($reason, 0, 300)]);
     }

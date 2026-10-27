@@ -4,6 +4,7 @@ namespace App\Services\Telegram;
 
 use App\Support\Lang;
 use App\Support\MySql as DbSupport;
+use App\Support\Secrets;
 use Illuminate\Support\Facades\DB;
 use Throwable;
 
@@ -61,7 +62,7 @@ final class TelegramSender
                     $delay = $e instanceof TelegramApiError && $e->retryAfter ? $e->retryAfter : self::backoff($attempts);
                     $q->update([
                         'attempts' => $attempts,
-                        'last_error' => mb_substr($e->getMessage(), 0, 500),
+                        'last_error' => mb_substr(Secrets::redact($e->getMessage()), 0, 500),
                         'status' => $final ? 'FAILED' : 'PENDING',
                         'next_attempt_at' => now()->addSeconds($delay),
                     ]);

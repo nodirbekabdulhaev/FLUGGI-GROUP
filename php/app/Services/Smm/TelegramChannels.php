@@ -9,6 +9,7 @@ use App\Models\SmmTelegramChannel;
 use App\Services\Telegram\TelegramApiError;
 use App\Services\Telegram\TelegramClient;
 use App\Support\Audit;
+use App\Support\Secrets;
 use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\DB;
@@ -61,7 +62,7 @@ final class TelegramChannels
                 ? t('smm.tg.errors.notFound', ['bot' => self::bot()])
                 : t('smm.tg.errors.api', ['error' => $e->description])];
         } catch (ConnectionException $e) {
-            return ['ok' => false, 'error' => t('smm.tg.errors.api', ['error' => $e->getMessage()])];
+            return ['ok' => false, 'error' => t('smm.tg.errors.api', ['error' => Secrets::redact($e->getMessage())])];
         }
         if (($info['type'] ?? null) !== 'channel') {
             return ['ok' => false, 'error' => t('smm.tg.errors.notChannel')];
@@ -72,7 +73,7 @@ final class TelegramChannels
         } catch (TelegramApiError $e) {
             return $base + ['ok' => false, 'error' => t('smm.tg.errors.notAdmin', ['bot' => self::bot()])];
         } catch (ConnectionException $e) {
-            return $base + ['ok' => false, 'error' => t('smm.tg.errors.api', ['error' => $e->getMessage()])];
+            return $base + ['ok' => false, 'error' => t('smm.tg.errors.api', ['error' => Secrets::redact($e->getMessage())])];
         }
         if (($member['status'] ?? null) !== 'administrator') {
             return $base + ['ok' => false, 'error' => t('smm.tg.errors.notAdmin', ['bot' => self::bot()])];

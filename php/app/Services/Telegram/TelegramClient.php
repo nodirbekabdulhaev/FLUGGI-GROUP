@@ -2,7 +2,9 @@
 
 namespace App\Services\Telegram;
 
+use App\Support\Secrets;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\PendingRequest;
 use Illuminate\Support\Facades\Http;
 
 /** Тонкий клиент Telegram Bot API (Laravel HTTP client, без сторонних библиотек). */
@@ -33,8 +35,11 @@ final class TelegramClient
         if (! $token) {
             throw new TelegramApiError(0, t('telegram.problems.notConfigured'));
         }
-        $res = Http::timeout($timeout)->acceptJson()->asJson()
-            ->post(self::API_BASE.'/bot'.$token.'/'.$method, $body ?: (object) []);
+        try {
+            $res = self::http($timeout)->asJson()->post(self::API_BASE.'/bot'.$token.'/'.$method, $body ?: (object) []);
+        } catch (ConnectionException $e) {
+            throw self::networkError($e);
+        }
         $data = $res->json() ?? [];
         if (! $res->successful() || empty($data['ok'])) {
             throw new TelegramApiError($res->status(), (string) ($data['description'] ?? $res->reason()), $data['parameters']['retry_after'] ?? null);
@@ -58,7 +63,7 @@ final class TelegramClient
         if (! $token) {
             throw new TelegramApiError(0, t('telegram.problems.notConfigured'));
         }
-        $req = Http::timeout($timeout)->connectTimeout(20)->acceptJson();
+        $req = self::http($timeout);
         $handles = [];
         try {
             foreach ($files as $name => [$path, $filename]) {
@@ -70,6 +75,8 @@ final class TelegramClient
                 $req = $req->attach($name, $fh, $filename);
             }
             $res = $req->post(self::API_BASE.'/bot'.$token.'/'.$method, array_map(fn ($v) => is_bool($v) ? ($v ? 'true' : 'false') : (string) $v, $fields));
+        } catch (ConnectionException $e) {
+            throw self::networkError($e);
         } finally {
             foreach ($handles as $fh) {
                 if (is_resource($fh)) {
@@ -83,6 +90,25 @@ final class TelegramClient
         }
 
         return $data['result'] ?? null;
+    }
+
+    /**
+     * HTTP-клиент для Bot API: только IPv4 (на хостинге IPv6-маршрут к api.telegram.org бывает недоступен —
+     * тогда cURL ждёт до тайм-аута SSL), запас на установку соединения.
+     */
+    private static function http(int $timeout): PendingRequest
+    {
+        return Http::timeout($timeout)->connectTimeout(30)->acceptJson()
+            ->withOptions(['curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]]);
+    }
+
+    /** Ошибка сети без адреса запроса: в тексте cURL есть URL с токеном бота. */
+    private static function networkError(ConnectionException $e): TelegramApiError
+    {
+        $msg = Secrets::redact($e->getMessage());
+        $msg = (string) preg_replace('~\s*for https?://\S+~', '', $msg);
+
+        return new TelegramApiError(0, t('telegram.errors.network', ['error' => mb_substr($msg, 0, 300)]), null, true);
     }
 
     /** id бота — числовая часть токена до двоеточия. */

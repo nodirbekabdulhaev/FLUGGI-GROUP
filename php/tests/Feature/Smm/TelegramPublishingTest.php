@@ -17,6 +17,7 @@ use App\Services\Smm\SmmMedia;
 use App\Services\Smm\SmmPublisher;
 use App\Services\Smm\TelegramCaption;
 use App\Support\Format;
+use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
@@ -100,6 +101,9 @@ class TelegramPublishingTest extends TestCase
                     $fields = $r->data();
                 }
                 $this->tgCalls[] = ['method' => $method, 'fields' => $fields, 'files' => $files, 'body' => $body];
+                if (($this->tg[$method] ?? null) === 'NETWORK') {
+                    throw new ConnectionException('cURL error 28: SSL connection timeout (see https://curl.se/libcurl/c/libcurl-errors.html) for '.$r->url());
+                }
                 $res = $this->tg[$method] ?? [400, ['ok' => false, 'error_code' => 400, 'description' => 'Unexpected '.$method]];
                 if (isset($res[0]) && is_array($res[0])) {
                     $res = count($this->tg[$method]) > 1 ? array_shift($this->tg[$method]) : $this->tg[$method][0];
@@ -532,6 +536,30 @@ class TelegramPublishingTest extends TestCase
         $this->assertCount(2, $this->calls('sendVideo'));
         $this->assertCount(2, $this->calls('sendMessage'));
         $this->assertSame('PUBLISHED', $idea->fresh()->status);
+    }
+
+    public function test_network_timeout_retries_later_and_never_stores_bot_token(): void
+    {
+        $ch = $this->channel();
+        $idea = $this->idea();
+        $this->upload($this->smm, $idea, 'r.mp4', $this->mp4(3000))->assertOk();
+        $this->tg['sendVideo'] = 'NETWORK';
+        $this->schedule($idea, ['tg:'.$ch->id])->assertSessionHasNoErrors();
+        $this->travel(6)->minutes();
+        $this->cron();
+        $t = $this->target($idea, 'TELEGRAM');
+        // Обрыв связи — не ошибка публикации: снова в расписании позже, токена в тексте нет
+        $this->assertSame('SCHEDULED', $t->status);
+        $this->assertTrue($t->scheduled_at->greaterThan(now()->addSeconds(60)));
+        $this->assertStringContainsString('cURL error 28', $t->error);
+        $this->assertStringNotContainsString('TEST-TOKEN', $t->error);
+        $this->assertStringNotContainsString('api.telegram.org', $t->error);
+        $this->actingAsUser($this->ceo)->get('/smm/'.$idea->id)->assertOk()->assertDontSee('TEST-TOKEN');
+        // Связь вернулась — публикуется
+        $this->tg['sendVideo'] = [200, ['ok' => true, 'result' => ['message_id' => 77, 'chat' => ['id' => -1001234567890, 'username' => 'fluggi_news']]]];
+        $this->travel(5)->minutes();
+        $this->cron();
+        $this->assertSame('PUBLISHED', $t->fresh()->status);
     }
 
     public function test_schedule_validation_and_permissions(): void

@@ -3,6 +3,7 @@
 namespace App\Services\Smm;
 
 use App\Services\Integrations\MetaService;
+use App\Support\Secrets;
 use App\Support\Settings;
 use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\ConnectionException;
@@ -58,7 +59,7 @@ final class InstagramApi
                 ? $req->get($url, $params + ['access_token' => $token])
                 : $req->asForm()->post($url, $params + ['access_token' => $token]);
         } catch (ConnectionException $e) {
-            throw new InstagramError(t('integrations.errors.metaNetwork', ['error' => $e->getMessage()]));
+            throw new InstagramError(t('integrations.errors.metaNetwork', ['error' => Secrets::redact($e->getMessage())]));
         }
 
         return self::json($res);
@@ -208,7 +209,7 @@ final class InstagramApi
                 'file_size' => (string) $size,
             ])->withBody(Utils::streamFor($fh), 'application/octet-stream')->post($uri);
         } catch (ConnectionException $e) {
-            throw new InstagramError(t('integrations.errors.metaNetwork', ['error' => $e->getMessage()]));
+            throw new InstagramError(t('integrations.errors.metaNetwork', ['error' => Secrets::redact($e->getMessage())]));
         } finally {
             if (is_resource($fh)) {
                 fclose($fh);

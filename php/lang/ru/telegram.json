@@ -30,7 +30,8 @@
     "noUsername": "Не удалось получить имя бота. Укажите TELEGRAM_BOT_USERNAME",
     "linkFirst": "Сначала подключите Telegram",
     "notLinked": "Telegram не подключён",
-    "forbidden": "Недопустимый запрос"
+    "forbidden": "Недопустимый запрос",
+    "network": "Нет связи с Telegram: {error}. Повторим автоматически"
   },
   "problems": {
     "notConfigured": "Бот не настроен",

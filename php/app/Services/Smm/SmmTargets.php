@@ -8,6 +8,7 @@ use App\Models\SmmPublication;
 use App\Models\SmmPublicationTarget;
 use App\Support\Audit;
 use App\Support\Outbox;
+use App\Support\Secrets;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
@@ -76,7 +77,7 @@ final class SmmTargets
     /** Площадка попросила подождать (Telegram 429 retry_after): снова в расписание через $seconds секунд. */
     public static function postpone(SmmPublicationTarget $t, int $seconds, string $reason): void
     {
-        $t->update(['status' => 'SCHEDULED', 'scheduled_at' => now()->addSeconds(max(1, $seconds)), 'started_at' => null, 'error' => mb_substr($reason, 0, 2000)]);
+        $t->update(['status' => 'SCHEDULED', 'scheduled_at' => now()->addSeconds(max(1, $seconds)), 'started_at' => null, 'error' => mb_substr(Secrets::redact($reason), 0, 2000)]);
         self::settle($t->publication);
     }
 
@@ -137,7 +138,7 @@ final class SmmTargets
     /** Ошибка на месте $t (текст площадки). */
     public static function failed(SmmPublicationTarget $t, string $error): void
     {
-        $error = mb_substr($error, 0, 2000);
+        $error = mb_substr(Secrets::redact($error), 0, 2000);
         DB::transaction(function () use ($t, $error) {
             $from = $t->status;
             $t->update(['status' => 'FAILED', 'error' => $error, 'failed_at' => now(), 'next_check_at' => null]);

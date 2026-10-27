@@ -305,7 +305,7 @@
     "checkOk": "Channel “{channel}”: the bot can post",
     "removed": "Channel removed from the list",
     "publishingHint": "The file is being sent to Telegram",
-    "postponed": "Telegram asked to wait — retry at the shown time ({error})",
+    "postponed": "Will retry on schedule ({error})",
     "version": "Telegram version",
     "versionRemove": "remove",
     "versionReplace": "Replace the Telegram version",

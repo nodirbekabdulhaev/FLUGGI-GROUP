@@ -7,6 +7,7 @@ use App\Models\SmmPublicationTarget;
 use App\Models\SmmTelegramChannel;
 use App\Services\Telegram\TelegramApiError;
 use App\Services\Telegram\TelegramClient;
+use App\Support\Secrets;
 use Illuminate\Support\Facades\Log;
 use Throwable;
 
@@ -130,10 +131,16 @@ final class TelegramPublisher
 
                 return;
             }
+            // Нет связи с Telegram (тайм-аут, обрыв): повтор через 2, 4, 8 … до 30 минут
+            if ($e->network && $t->attempts < self::MAX_ATTEMPTS) {
+                SmmTargets::postpone($t, min(1800, 60 * 2 ** max(1, min(5, (int) $t->attempts))), $e->description);
+
+                return;
+            }
             SmmTargets::failed($t, 'Telegram: '.($e->description !== '' ? $e->description : 'HTTP '.$e->status));
         } catch (Throwable $e) {
-            Log::warning('Telegram channel publish failed: '.$e->getMessage());
-            SmmTargets::failed($t, 'Telegram: '.$e->getMessage());
+            Log::warning('Telegram channel publish failed: '.Secrets::redact($e->getMessage()));
+            SmmTargets::failed($t, 'Telegram: '.Secrets::redact($e->getMessage()));
         } finally {
             if ($thumb) {
                 @unlink($thumb);

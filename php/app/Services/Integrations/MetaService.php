@@ -9,6 +9,7 @@ use App\Models\SocialMessage;
 use App\Models\SocialThread;
 use App\Models\User;
 use App\Services\Notifications\Notifier;
+use App\Support\Secrets;
 use Carbon\CarbonImmutable;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
@@ -44,7 +45,7 @@ final class MetaService
             $url = self::GRAPH_BASE.'/'.ltrim($path, '/').'?'.http_build_query($params + ['access_token' => $token]);
             $res = $method === 'GET' ? $req->get($url) : ($body !== null ? $req->asJson()->post($url, $body) : $req->post($url));
         } catch (ConnectionException $e) {
-            throw new BusinessRule(t('integrations.errors.metaNetwork', ['error' => $e->getMessage()]));
+            throw new BusinessRule(t('integrations.errors.metaNetwork', ['error' => Secrets::redact($e->getMessage())]));
         }
         $json = $res->json() ?? [];
         if (! $res->successful()) {
@@ -110,8 +111,8 @@ final class MetaService
         try {
             $fn();
         } catch (Throwable $e) {
-            Log::warning('Meta event failed: '.$e->getMessage());
-            self::health($e->getMessage());
+            Log::warning('Meta event failed: '.Secrets::redact($e->getMessage()));
+            self::health(Secrets::redact($e->getMessage()));
         }
     }
 

@@ -305,7 +305,7 @@
     "checkOk": "«{channel}» kanali: bot eʼlon qila oladi",
     "removed": "Kanal roʻyxatdan oʻchirildi",
     "publishingHint": "Fayl Telegramga yuborilmoqda",
-    "postponed": "Telegram kutishni soʻradi — koʻrsatilgan vaqtda qayta urinish ({error})",
+    "postponed": "Jadval boʻyicha qayta urinish ({error})",
     "version": "Telegram uchun versiya",
     "versionRemove": "olib tashlash",
     "versionReplace": "Telegram versiyasini almashtirish",
