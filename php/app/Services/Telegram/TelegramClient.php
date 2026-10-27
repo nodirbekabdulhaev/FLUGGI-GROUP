@@ -36,7 +36,7 @@ final class TelegramClient
             throw new TelegramApiError(0, t('telegram.problems.notConfigured'));
         }
         try {
-            $res = self::http($timeout)->asJson()->post(self::API_BASE.'/bot'.$token.'/'.$method, $body ?: (object) []);
+            $res = self::http($timeout)->asJson()->post(self::base().'/bot'.$token.'/'.$method, $body ?: (object) []);
         } catch (ConnectionException $e) {
             throw self::networkError($e);
         }
@@ -74,7 +74,7 @@ final class TelegramClient
                 $handles[] = $fh;
                 $req = $req->attach($name, $fh, $filename);
             }
-            $res = $req->post(self::API_BASE.'/bot'.$token.'/'.$method, array_map(fn ($v) => is_bool($v) ? ($v ? 'true' : 'false') : (string) $v, $fields));
+            $res = $req->post(self::base().'/bot'.$token.'/'.$method, array_map(fn ($v) => is_bool($v) ? ($v ? 'true' : 'false') : (string) $v, $fields));
         } catch (ConnectionException $e) {
             throw self::networkError($e);
         } finally {
@@ -92,14 +92,24 @@ final class TelegramClient
         return $data['result'] ?? null;
     }
 
-    /**
-     * HTTP-клиент для Bot API: только IPv4 (на хостинге IPv6-маршрут к api.telegram.org бывает недоступен —
-     * тогда cURL ждёт до тайм-аута SSL), запас на установку соединения.
-     */
+    /** Адрес Bot API: api.telegram.org или посредник из TELEGRAM_API_BASE. */
+    public static function base(): string
+    {
+        return (string) (config('fluggi.telegram.api_base') ?: self::API_BASE);
+    }
+
+    /** HTTP-клиент для Bot API: запас на установку соединения; прокси и только-IPv4 — по настройкам .env. */
     private static function http(int $timeout): PendingRequest
     {
-        return Http::timeout($timeout)->connectTimeout(30)->acceptJson()
-            ->withOptions(['curl' => [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4]]);
+        $options = [];
+        if ($proxy = config('fluggi.telegram.proxy')) {
+            $options['proxy'] = $proxy;
+        }
+        if (config('fluggi.telegram.force_ipv4')) {
+            $options['curl'] = [CURLOPT_IPRESOLVE => CURL_IPRESOLVE_V4];
+        }
+
+        return Http::timeout($timeout)->connectTimeout(min(30, $timeout))->acceptJson()->withOptions($options);
     }
 
     /** Ошибка сети без адреса запроса: в тексте cURL есть URL с токеном бота. */

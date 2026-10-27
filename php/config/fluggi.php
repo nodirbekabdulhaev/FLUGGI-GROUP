@@ -9,6 +9,11 @@ return [
         'token' => env('TELEGRAM_BOT_TOKEN'),
         'username' => env('TELEGRAM_BOT_USERNAME'),
         'webhook_secret' => env('TELEGRAM_WEBHOOK_SECRET'),
+        // Если хостинг не достаёт до api.telegram.org: свой адрес-посредник (например, Cloudflare Worker)
+        // или прокси (http://… / socks5h://логин:пароль@хост:порт); IPv4 — только при проблемах с IPv6
+        'api_base' => rtrim((string) env('TELEGRAM_API_BASE', 'https://api.telegram.org'), '/'),
+        'proxy' => env('TELEGRAM_PROXY'),
+        'force_ipv4' => (bool) env('TELEGRAM_FORCE_IPV4', false),
         // Лимиты загрузки файлов ботом (api.telegram.org): видео/документы — 50 МБ, фото — 10 МБ
         'upload_video_mb' => 50,
         'upload_photo_mb' => 10,
