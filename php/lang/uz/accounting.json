@@ -72,7 +72,8 @@
     "noIncome": "Oy davomida kirim yoʻq",
     "noExpenses": "Oy davomida chiqim yoʻq",
     "recent": "Soʻnggi operatsiyalar",
-    "allOperations": "Barcha operatsiyalar"
+    "allOperations": "Barcha operatsiyalar",
+    "ytdIncome": "Yil boshidan kirimlar"
   },
   "operations": {
     "title": "Operatsiyalar",

@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\AccCategory;
 use App\Models\AccTransaction;
 use Brick\Math\BigDecimal;
+use Carbon\CarbonImmutable;
 
 /** Обзор бухгалтерии за месяц: остатки счетов, приходы и расходы по категориям и своим статьям (в UZS), налоги. */
 final class OverviewService
@@ -62,6 +63,32 @@ final class OverviewService
             'missingRate' => $missing,
             'taxes' => TaxesService::forPeriod($period),
             'recent' => OperationsService::recent(10),
+            'ytd' => self::yearToDate($period),
         ];
+    }
+
+    /**
+     * Приходы с начала года по конец выбранного месяца (в UZS, без переводов между счетами).
+     *
+     * @return array{from:string,to:string,income:string,missingRate:bool}
+     */
+    public static function yearToDate(string $period): array
+    {
+        [, $b] = Accounting::monthDates($period);
+        $a = substr($period, 0, 4).'-01-01';
+        $rows = AccTransaction::query()->join('acc_accounts as acc', 'acc.id', '=', 'acc_transactions.account_id')
+            ->leftJoin('payments as p', 'p.id', '=', 'acc_transactions.payment_id')
+            ->where('acc_transactions.direction', 'IN')->where('acc_transactions.category', '<>', 'TRANSFER_IN')
+            ->where('acc_transactions.date', '>=', $a)->where('acc_transactions.date', '<', $b)
+            ->get(['acc_transactions.amount', 'acc_transactions.date', 'acc.currency', 'p.amount_uzs as payment_uzs']);
+        $in = BigDecimal::zero();
+        $missing = false;
+        foreach ($rows as $r) {
+            $uzs = Accounting::toUzs((string) $r->amount, $r->currency, $r->date->toDateString(), $r->payment_uzs === null ? null : (string) $r->payment_uzs);
+            $missing = $missing || $uzs === null;
+            $in = $in->plus($uzs ?? BigDecimal::zero());
+        }
+
+        return ['from' => $a, 'to' => CarbonImmutable::parse($b)->subDay()->toDateString(), 'income' => (string) $in->toScale(2), 'missingRate' => $missing];
     }
 }

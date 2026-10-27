@@ -72,7 +72,8 @@
     "noIncome": "No income this month",
     "noExpenses": "No expenses this month",
     "recent": "Recent operations",
-    "allOperations": "All operations"
+    "allOperations": "All operations",
+    "ytdIncome": "Income year to date"
   },
   "operations": {
     "title": "Operations",

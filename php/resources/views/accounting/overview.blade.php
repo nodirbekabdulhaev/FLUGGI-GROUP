@@ -37,7 +37,8 @@
         </div>
     @endif
 
-    <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+    <div class="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <x-stat :label="t('accounting.overview.ytdIncome')" :value="money($ytd['income'])" :hint="d($ytd['from']).' — '.d($ytd['to'])" />
         <x-stat :label="t('accounting.overview.bankIncome')" :value="money($bankIncome)" :hint="t('accounting.overview.bankIncomeHint')" />
         <x-stat :label="t('accounting.overview.income')" :value="money($incomeTotal)" :hint="t('accounting.overview.inUzs')" />
         <x-stat :label="t('accounting.overview.expenses')" :value="money($expensesTotal)" :hint="t('accounting.overview.inUzs')" />
@@ -45,7 +46,7 @@
                 :hint="t('accounting.overview.taxesHint', ['due' => money($taxes['totalDue']), 'paid' => money($taxes['totalPaid'])])"
                 :tone="\Brick\Math\BigDecimal::of($taxes['totalDue'])->minus($taxes['totalPaid'])->isPositive() ? 'warn' : null" />
     </div>
-    @if ($missingRate)<p class="mb-4 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.errors.noUsdRate') }}</p>@endif
+    @if ($missingRate || $ytd['missingRate'])<p class="mb-4 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.errors.noUsdRate') }}</p>@endif
 
     <div class="mb-6 grid gap-4 lg:grid-cols-3">
         <x-card :title="t('accounting.overview.incomeByCategory')" :padding="false">

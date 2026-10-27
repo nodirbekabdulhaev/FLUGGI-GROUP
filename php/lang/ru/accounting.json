@@ -72,7 +72,8 @@
     "noIncome": "Приходов за месяц нет",
     "noExpenses": "Расходов за месяц нет",
     "recent": "Последние операции",
-    "allOperations": "Все операции"
+    "allOperations": "Все операции",
+    "ytdIncome": "Приходы с начала года"
   },
   "operations": {
     "title": "Операции",
