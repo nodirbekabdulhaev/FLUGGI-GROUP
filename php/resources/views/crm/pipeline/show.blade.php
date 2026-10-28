@@ -36,7 +36,7 @@
             <div class="card p-4"><p class="text-xs text-muted-foreground">{{ t('pipeline.weighted') }}</p><p class="text-lg font-semibold" x-text="board.weighted"></p></div>
         </div>
         {{-- Доска прокручивается внутри своего блока — страница на телефоне не прокручивается вбок --}}
-        <div class="overflow-x-auto pb-4">
+        <div class="overflow-x-auto pb-2" x-hscroll>
             <div class="flex gap-3">
                 @foreach (['LEAD' => t('pipeline.leadsPart'), 'DEAL' => t('pipeline.dealsPart')] as $entity => $part)
                     <div x-show="board.columns.some((c) => c.entity === '{{ $entity }}')">

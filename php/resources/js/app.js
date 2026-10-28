@@ -2,6 +2,7 @@ import Alpine from 'alpinejs';
 import collapse from '@alpinejs/collapse';
 import meetingPlanner from './meeting-planner';
 import registerNotify from './notify';
+import registerHscroll from './hscroll';
 
 /**
  * Общие помощники интерфейса. Страницы — серверные (Blade), Alpine добавляет интерактивность:
@@ -191,4 +192,5 @@ window.Alpine = Alpine;
 Alpine.plugin(collapse);
 Alpine.data('meetingPlanner', meetingPlanner);
 registerNotify(Alpine);
+registerHscroll(Alpine);
 Alpine.start();

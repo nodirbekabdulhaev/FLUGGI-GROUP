@@ -47,3 +47,25 @@
     .link { @apply text-accent hover:underline; }
     .muted { @apply text-muted-foreground; }
 }
+
+/* Доски Kanban: своя полоса прокрутки закреплена внизу экрана над «Списком дел» (h-12), доску можно тянуть мышью */
+.hscroll-board { scrollbar-width: none; }
+.hscroll-board::-webkit-scrollbar { display: none; }
+@media (pointer: fine) {
+    .hscroll-board { cursor: grab; }
+    .hscroll-board.is-panning { cursor: grabbing; user-select: none; }
+    .hscroll-board.is-panning * { cursor: grabbing !important; }
+}
+.hscroll-bar {
+    position: sticky;
+    bottom: 3rem;
+    z-index: 20;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 16px;
+    margin-top: 0.25rem;
+    border-radius: 9999px;
+    background: rgb(244 244 245 / 0.92);
+    backdrop-filter: blur(4px);
+}
+.hscroll-bar > div { height: 1px; }

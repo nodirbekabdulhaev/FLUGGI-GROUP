@@ -16,7 +16,7 @@
             <button type="button" class="btn btn-primary btn-sm" @click="$dispatch('open-modal', 'task-new')"><x-icon name="plus" /> {{ t('tasks.new') }}</button>
         @endif
     </div>
-    <div class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+    <div class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" x-hscroll>
         @foreach (ProjectAccess::KANBAN as $status)
             @php($col = $items->where('status', $status))
             <div class="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60 lg:w-auto lg:min-w-0 lg:flex-1">

@@ -9,7 +9,7 @@
 @endphp
 <div class="grid gap-4" x-data="smmKanban(@js(['cards' => $cards, 'now' => \App\Support\Format::toLocalInput(now()), 'ok' => t('smm.moved')]))">
     <p class="text-xs text-muted-foreground">{{ t('smm.kanbanHint') }}@if ($hidden) · {{ t('smm.hiddenOld', ['count' => $hidden]) }}@endif</p>
-    <div class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0">
+    <div class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" x-hscroll>
         @foreach (SmmIdeaService::KANBAN as $status)
             @php($col = $items->where('status', $status))
             <div class="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60 xl:w-auto xl:min-w-0 xl:flex-1">
