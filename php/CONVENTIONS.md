@@ -65,7 +65,8 @@ PHP-версия Fluggi CRM/ERP для **обычного виртуальног
 ```
 user.created {userId, roleCode}            user.blocked {userId}         user.role_changed {userId, from, to}
 lead.created {leadId, ownerId, teamId, createdById, budgetUzs}
-lead.assigned {leadId, ownerId, previousOwnerId}   lead.converted {leadId, dealId, clientId}   lead.closed {leadId, status}
+lead.assigned {leadId, ownerId, previousOwnerId, bulk?, batchId?}   lead.converted {leadId, dealId, clientId}   lead.closed {leadId, status}
+lead.bulk_assigned {batchId, fromOwnerId, toOwnerId, count, byUserId, fromOwners, comment, deals, clients, meetings, todos}
 deal.created {dealId, ownerId, teamId, amountUzs}  deal.stage_changed {dealId, from, to}
 deal.lost {dealId, ownerId, teamId, amountUzs, reason}   deal.won {dealId, ownerId, teamId, amountUzs}
 meeting.created {meetingId, managerId, ropId, startsAt, participantIds}   meeting.completed {meetingId, managerId, ropId, participantIds}
@@ -91,6 +92,9 @@ attendance.auto_checkout {attendanceId, userId, date, checkOut}   attendance.che
 partner.payout_requested {payoutId, projectId, partnerId, amountUzs, requestedById}
 partner.payout_decided {payoutId, projectId, partnerId, status, amountUzs, reason}
 ```
+
+Массовая передача лидов: поштучные `lead.assigned` идут с `bulk: true` и уведомлений не создают —
+вместо них одно `lead.bulk_assigned` (`fromOwners` — `{userId: число лидов}`, `fromOwnerId` — если прежний ответственный один).
 
 Модуль «Уведомления/Telegram» подписывается на эти события и рассылает уведомления — остальные
 модули только публикуют события. Новые события — добавить в этот список.

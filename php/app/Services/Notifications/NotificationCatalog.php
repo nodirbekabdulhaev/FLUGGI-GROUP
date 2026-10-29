@@ -17,6 +17,7 @@ final class NotificationCatalog
     public const EVENTS = [
         'lead.created' => ['MANAGER', 'ROP', 'CEO'],
         'lead.assigned' => ['MANAGER', 'ROP'],
+        'lead.bulk_assigned' => ['MANAGER', 'ROP'],
         'lead.large' => ['ROP', 'CEO'],
         'deal.created' => ['ROP', 'CEO'],
         'deal.large' => ['ROP', 'CEO'],

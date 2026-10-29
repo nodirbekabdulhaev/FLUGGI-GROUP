@@ -15,7 +15,8 @@
       "created": "Новый лид",
       "assigned": "Вам назначен лид",
       "large": "Крупный лид",
-      "inbound_repeat": "Повторная заявка клиента"
+      "inbound_repeat": "Повторная заявка клиента",
+      "bulk_assigned": "Массовая передача лидов"
     },
     "deal": {
       "created": "Новая сделка",
@@ -120,7 +121,15 @@
     "meetingCreated": "Новая встреча",
     "meetingAdded": "Вас добавили во встречу",
     "meetingRescheduled": "Встреча перенесена",
-    "meetingCancelled": "Встреча отменена"
+    "meetingCancelled": "Встреча отменена",
+    "leadBulkAssigned": "Вам {count, plural, one {передан # лид} few {передано # лида} many {передано # лидов} other {передано # лида}} от {from}",
+    "leadBulkTaken": "{count, plural, one {# ваш лид передан} few {# ваших лида переданы} many {# ваших лидов переданы} other {# ваших лида переданы}} менеджеру {to}",
+    "leadBulkExtra": {
+      "deals": "сделок: {count}",
+      "clients": "клиентов: {count}",
+      "meetings": "встреч: {count}",
+      "todos": "дел: {count}"
+    }
   },
   "sound": {
     "unlock": "Нажмите, чтобы включить звук уведомлений"

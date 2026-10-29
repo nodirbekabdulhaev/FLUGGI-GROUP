@@ -97,7 +97,8 @@
     },
     "client": {
       "created": "Создан клиент",
-      "updated": "Изменены данные клиента"
+      "updated": "Изменены данные клиента",
+      "assigned": "Сменён ответственный"
     },
     "proposal": {
       "created": "Создано КП",
@@ -244,7 +245,9 @@
     "deleteCommentConfirm": "Удалить комментарий?",
     "formErrors": "Проверьте поля формы",
     "meetingAt": "{label} на {date}",
-    "system": "Система"
+    "system": "Система",
+    "assignedFromTo": "от {from} к {to}",
+    "bulkTransfer": "массовая передача"
   },
   "errors": {
     "ownerRole": "Ответственным может быть только менеджер или РОП",

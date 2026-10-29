@@ -25,6 +25,7 @@ final class NotificationEvents
     {
         Outbox::on('lead.created', [self::class, 'leadCreated']);
         Outbox::on('lead.assigned', [self::class, 'leadAssigned']);
+        Outbox::on('lead.bulk_assigned', [self::class, 'leadBulkAssigned']);
         Outbox::on('deal.created', [self::class, 'dealCreated']);
         Outbox::on('deal.lost', [self::class, 'dealLost']);
         Outbox::on('proposal.approval_requested', [self::class, 'proposalApproval']);
@@ -89,11 +90,60 @@ final class NotificationEvents
 
     public static function leadAssigned(array $e, array $meta): void
     {
+        // Массовая передача: вместо уведомления по каждому лиду — одно итоговое (lead.bulk_assigned)
+        if (! empty($e['bulk'])) {
+            return;
+        }
         $lead = Lead::withTrashed()->find($e['leadId'] ?? null);
         if (! $lead) {
             return;
         }
         Notifier::notify([$e['ownerId'] ?? null], 'lead.assigned', fn () => [t('notifications.events.leadAssigned'), $lead->title], '/sales/leads/'.$lead->id, $meta['actorId']);
+    }
+
+    /** Массовая передача: одно уведомление новому ответственному и по одному — каждому прежнему. */
+    public static function leadBulkAssigned(array $e, array $meta): void
+    {
+        $to = $e['toOwnerId'] ?? null;
+        $from = array_map('intval', (array) ($e['fromOwners'] ?? []));
+        if (! $to || ! ($e['count'] ?? 0)) {
+            return;
+        }
+        $names = User::withTrashed()->whereIn('id', [$to, ...array_keys($from)])->pluck('full_name', 'id')->all();
+        $fromNames = collect(array_keys($from))->map(fn ($id) => $names[$id] ?? '')->filter()->values();
+        $comment = filled($e['comment'] ?? null) ? (string) $e['comment'] : null;
+        $extra = function () use ($e, $comment): string {
+            $parts = [];
+            foreach (['deals', 'clients', 'meetings', 'todos'] as $k) {
+                if (! empty($e[$k])) {
+                    $parts[] = t('notifications.events.leadBulkExtra.'.$k, ['count' => (int) $e[$k]]);
+                }
+            }
+
+            return implode(', ', $parts).($comment ? ($parts ? ' — ' : '').'«'.$comment.'»' : '');
+        };
+        Notifier::notify(
+            [$to],
+            'lead.bulk_assigned',
+            fn () => [t('notifications.events.leadBulkAssigned', [
+                'count' => (int) $e['count'],
+                'from' => $fromNames->count() > 3 ? $fromNames->take(3)->implode(', ').' +'.($fromNames->count() - 3) : $fromNames->implode(', '),
+            ]), $extra()],
+            '/sales/leads?'.http_build_query(['owner_id' => $to, 'batch' => $e['batchId'] ?? null, 'status' => 'any']),
+            $meta['actorId'],
+        );
+        foreach ($from as $id => $count) {
+            if ($id === $to) {
+                continue;
+            }
+            Notifier::notify(
+                [$id],
+                'lead.bulk_assigned',
+                fn () => [t('notifications.events.leadBulkTaken', ['count' => $count, 'to' => $names[$to] ?? '']), $comment],
+                '/sales/leads',
+                $meta['actorId'],
+            );
+        }
     }
 
     public static function dealCreated(array $e, array $meta): void

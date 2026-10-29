@@ -7,6 +7,7 @@ use App\Models\LossReason;
 use App\Models\Service;
 use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
+use App\Services\Crm\LeadBulkAssignService;
 use App\Services\Crm\LeadService;
 use App\Services\Crm\TimelineService;
 use App\Services\Smm\SmmIdeaService;
@@ -23,34 +24,10 @@ class LeadController extends CrmController
 
     public function index(Request $request): View
     {
-        $f = $this->check($request, [
-            'q' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', Rule::in([...Crm::LEAD_STATUSES, 'any'])],
-            'stage' => ['nullable', Rule::in(Crm::LEAD_STAGES)],
-            'owner_id' => ['nullable', 'uuid'],
-            'team_id' => ['nullable', 'uuid'],
-            'source_id' => ['nullable', 'uuid'],
-            'service_id' => ['nullable', 'uuid'],
-            'score' => ['nullable', Rule::in(Crm::SCORE_LEVELS)],
-            'date_from' => ['nullable', 'date_format:Y-m-d'],
-            'date_to' => ['nullable', 'date_format:Y-m-d'],
-        ]);
+        $f = $this->check($request, LeadService::filterRules());
         // По умолчанию — лиды в работе; «any» — все статусы
         $status = $f['status'] ?? 'OPEN';
-        $q = CrmAccess::leads()->with(['source', 'owner', 'stage']);
-        if ($s = $f['q'] ?? null) {
-            $q->where(fn ($w) => collect(['title', 'contact_name', 'company_name', 'phone', 'telegram', 'email'])
-                ->each(fn ($c) => $w->orWhere($c, 'like', '%'.$s.'%')));
-        }
-        $q->when($status !== 'any', fn ($q) => $q->where('status', $status))
-            ->when($f['stage'] ?? null, fn ($q, $v) => $q->whereHas('stage', fn ($s) => $s->where('code', $v)))
-            ->when($f['owner_id'] ?? null, fn ($q, $v) => $q->where('owner_id', $v))
-            ->when($f['team_id'] ?? null, fn ($q, $v) => $q->where('team_id', $v))
-            ->when($f['source_id'] ?? null, fn ($q, $v) => $q->where('source_id', $v))
-            ->when($f['service_id'] ?? null, fn ($q, $v) => $q->where('service_id', $v))
-            ->when($f['score'] ?? null, fn ($q, $v) => $q->where('score_level', $v))
-            ->when($f['date_from'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', Crm::dayStart($v)))
-            ->when($f['date_to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', Crm::dayStart($v)->addDay()));
+        $q = LeadService::filtered(CrmAccess::leads()->with(['source', 'owner', 'stage']), $f);
         $leads = $q->orderByDesc('created_at')->paginate(25)->withQueryString();
         $filtered = collect($f)->except('status')->filter()->isNotEmpty() || $status !== 'OPEN';
 
@@ -61,6 +38,10 @@ class LeadController extends CrmController
             'form' => $this->formOptions(),
             'owners' => access()->can('lead.read', 'TEAM') ? Crm::assignableUsers(true) : [],
             'formOwners' => Crm::assignableUsers(),
+            'bulk' => access()->can('lead.assign') ? [
+                'owners' => Crm::assignableUsers(),
+                'from' => LeadBulkAssignService::fromOwners(),
+            ] : null,
         ]);
     }
 
@@ -119,6 +100,32 @@ class LeadController extends CrmController
         $this->leads->assign($lead, $ownerId);
 
         return $this->done($request, t('crm.common.assigned'));
+    }
+
+    /** Сколько лидов будет передано (предпросмотр в окне массовой передачи). */
+    public function bulkPreview(Request $request): JsonResponse
+    {
+        $data = $this->bulkInput($request, preview: true);
+
+        return response()->json(LeadBulkAssignService::preview($data['selection'], $data['owner_id'] ?? null));
+    }
+
+    /** Массовая передача: по выбранным, по фильтру списка или все лиды менеджера. */
+    public function bulkAssign(Request $request, LeadBulkAssignService $bulk): RedirectResponse|JsonResponse
+    {
+        $data = $this->bulkInput($request, preview: false);
+        $r = $bulk->run($data['selection'], $data['owner_id'], $data['comment'] ?? null, [
+            'deals' => $request->boolean('with_deals'),
+            'clients' => $request->boolean('with_clients'),
+            'tasks' => $request->boolean('with_tasks'),
+        ]);
+        $message = t('leads.bulk.done', ['moved' => $r['moved'], 'skipped' => $r['noAccess'] + $r['same'], 'noAccess' => $r['noAccess'], 'same' => $r['same']]);
+        $link = $r['moved'] ? LeadBulkAssignService::link($r['ownerId'], $r['batchId']) : null;
+        if ($request->expectsJson()) {
+            return response()->json(['ok' => true, 'message' => $message, 'link' => $link] + $r);
+        }
+
+        return back()->with('ok', $message)->with('bulkResult', ['message' => $message, 'link' => $link] + $r);
     }
 
     public function close(Request $request, string $id): RedirectResponse|JsonResponse
@@ -241,6 +248,40 @@ class LeadController extends CrmController
         if (isset($data['email'])) {
             $data['email'] = mb_strtolower($data['email']);
         }
+
+        return $data;
+    }
+
+    /** @return array{selection: array, owner_id?: string, comment?: ?string} */
+    private function bulkInput(Request $request, bool $preview): array
+    {
+        $rules = [
+            'mode' => ['required', Rule::in(['ids', 'filter', 'owner'])],
+            'ids' => ['exclude_unless:mode,ids', 'required', 'array', 'max:'.LeadBulkAssignService::MAX],
+            'ids.*' => ['exclude_unless:mode,ids', 'uuid'],
+            'filter' => ['exclude_unless:mode,filter', 'nullable', 'array'],
+            'from_owner_id' => ['exclude_unless:mode,owner', 'required', 'uuid'],
+            'lead_status' => ['exclude_unless:mode,owner', 'nullable', Rule::in(['open', 'all'])],
+            'owner_id' => [$preview ? 'nullable' : 'required', 'uuid'],
+            'comment' => ['nullable', 'string', 'max:1000'],
+            'with_deals' => ['nullable', 'boolean'],
+            'with_clients' => ['nullable', 'boolean'],
+            'with_tasks' => ['nullable', 'boolean'],
+        ];
+        foreach (LeadService::filterRules() as $field => $rule) {
+            $rules['filter.'.$field] = ['exclude_unless:mode,filter', ...$rule];
+        }
+        $data = $this->check($request, $rules, [
+            'owner_id.required' => t('crm.errors.selectOwner'),
+            'ids.required' => t('leads.bulk.nothingSelected'),
+            'ids.max' => t('leads.bulk.tooMany', ['max' => LeadBulkAssignService::MAX, 'count' => count((array) $request->input('ids', []))]),
+            'from_owner_id.required' => t('leads.bulk.selectFrom'),
+        ]);
+        $data['selection'] = match ($data['mode']) {
+            'ids' => ['mode' => 'ids', 'ids' => $data['ids']],
+            'filter' => ['mode' => 'filter', 'filter' => array_filter($data['filter'] ?? [], fn ($v) => $v !== null && $v !== '')],
+            'owner' => ['mode' => 'filter', 'filter' => LeadBulkAssignService::ownerFilter($data['from_owner_id'], $data['lead_status'] ?? 'open')],
+        };
 
         return $data;
     }

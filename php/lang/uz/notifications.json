@@ -15,7 +15,8 @@
       "created": "Yangi lid",
       "assigned": "Sizga lid biriktirildi",
       "large": "Yirik lid",
-      "inbound_repeat": "Mijozning takroriy arizasi"
+      "inbound_repeat": "Mijozning takroriy arizasi",
+      "bulk_assigned": "Lidlarni ommaviy topshirish"
     },
     "deal": {
       "created": "Yangi bitim",
@@ -120,7 +121,15 @@
     "meetingCreated": "Yangi uchrashuv",
     "meetingAdded": "Sizni uchrashuvga qoʻshishdi",
     "meetingRescheduled": "Uchrashuv koʻchirildi",
-    "meetingCancelled": "Uchrashuv bekor qilindi"
+    "meetingCancelled": "Uchrashuv bekor qilindi",
+    "leadBulkAssigned": "Sizga {count, plural, other {# ta lid}} topshirildi (avvalgi masʼul: {from})",
+    "leadBulkTaken": "{count, plural, other {# ta lidingiz}} {to} menejeriga topshirildi",
+    "leadBulkExtra": {
+      "deals": "bitimlar: {count}",
+      "clients": "mijozlar: {count}",
+      "meetings": "uchrashuvlar: {count}",
+      "todos": "ishlar: {count}"
+    }
   },
   "sound": {
     "unlock": "Bildirishnomalar ovozini yoqish uchun bosing"

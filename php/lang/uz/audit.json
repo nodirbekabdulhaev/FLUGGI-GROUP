@@ -31,7 +31,8 @@
     "close": "Lid yopildi",
     "reopen": "Lid qaytarildi",
     "convert": "Lid kvalifikatsiya qilindi",
-    "delete": "Lid oʻchirildi"
+    "delete": "Lid oʻchirildi",
+    "bulk_assign": "Lidlarni ommaviy topshirish"
   },
   "deal": {
     "create": "Bitim yaratildi",
@@ -45,7 +46,8 @@
   },
   "client": {
     "create": "Mijoz yaratildi",
-    "update": "Mijoz oʻzgartirildi"
+    "update": "Mijoz oʻzgartirildi",
+    "assign": "Mijoz masʼuli almashtirildi"
   },
   "contact": {
     "create": "Kontakt qoʻshildi",

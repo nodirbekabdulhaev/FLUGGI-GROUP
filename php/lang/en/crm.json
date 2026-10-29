@@ -97,7 +97,8 @@
     },
     "client": {
       "created": "Client created",
-      "updated": "Client details updated"
+      "updated": "Client details updated",
+      "assigned": "Owner changed"
     },
     "proposal": {
       "created": "Proposal created",
@@ -244,7 +245,9 @@
     "deleteCommentConfirm": "Delete comment?",
     "formErrors": "Check the form fields",
     "meetingAt": "{label} on {date}",
-    "system": "System"
+    "system": "System",
+    "assignedFromTo": "from {from} to {to}",
+    "bulkTransfer": "bulk transfer"
   },
   "errors": {
     "ownerRole": "Only a manager or Sales head (ROP) can be the owner",

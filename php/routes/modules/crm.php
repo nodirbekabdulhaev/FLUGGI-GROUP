@@ -18,6 +18,8 @@ Route::name('crm.')->group(function () {
     // Лиды
     Route::get('/sales/leads', [LeadController::class, 'index'])->middleware('perm:lead.read')->name('leads.index');
     Route::post('/sales/leads', [LeadController::class, 'store'])->middleware('perm:lead.create')->name('leads.store');
+    Route::get('/sales/leads/bulk-assign/preview', [LeadController::class, 'bulkPreview'])->middleware('perm:lead.assign')->name('leads.bulkPreview');
+    Route::post('/sales/leads/bulk-assign', [LeadController::class, 'bulkAssign'])->middleware('perm:lead.assign')->name('leads.bulkAssign');
     Route::get('/sales/leads/duplicates', [LeadController::class, 'duplicates'])->middleware('perm:lead.create|lead.update')->name('leads.duplicates');
     Route::prefix('/sales/leads/{id}')->whereUuid('id')->name('leads.')->group(function () {
         Route::get('/', [LeadController::class, 'show'])->middleware('perm:lead.read')->name('show');

@@ -109,14 +109,19 @@ final class TimelineService
         return match ($a->type) {
             'lead.stage_changed', 'deal.stage_changed' => $label.': '.$str($p['from'] ?? '').' → '.$str($p['to'] ?? '')
                 .(! empty($p['auto']) ? ' ('.t('crm.common.auto').')' : ''),
-            'lead.assigned', 'deal.assigned' => $label.': '.$str($p['to'] ?? ''),
+            'lead.assigned', 'deal.assigned', 'client.assigned' => ! empty($p['from'])
+                ? $label.': '.t('crm.common.assignedFromTo', ['from' => $str($p['from']), 'to' => $str($p['to'] ?? '')])
+                    .(! empty($p['bulk']) ? ' ('.t('crm.common.bulkTransfer').')' : '')
+                    .(! empty($p['comment']) ? ' — «'.$str($p['comment']).'»' : '')
+                : $label.': '.$str($p['to'] ?? ''),
             'lead.closed', 'deal.closed' => $label.': '.t('crm.closeStatus.'.$str($p['status'] ?? ''))
                 .(! empty($p['reason']) ? ' — '.$str($p['reason']) : '')
                 .(! empty($p['comment']) ? ' («'.$str($p['comment']).'»)' : ''),
             'deal.amount_changed' => $label.': '.self::change($p['changes']['amount'] ?? null)
                 .(isset($p['changes']['currency']) ? ' ('.self::change($p['changes']['currency']).')' : ''),
             'lead.updated', 'deal.updated', 'client.updated', 'meeting.updated' => $label.': '.collect(array_keys($p['changes'] ?? []))
-                ->map(fn ($f) => self::fieldLabel($f))->implode(', '),
+                ->map(fn ($f) => self::fieldLabel($f))->implode(', ')
+                .(! empty($p['bulk']) ? ' — '.self::change($p['changes']['manager_id'] ?? null).' ('.t('crm.common.bulkTransfer').')' : ''),
             'meeting.created' => t('crm.common.meetingAt', ['label' => $label, 'date' => Format::dateTime($p['startsAt'] ?? null)]),
             'meeting.completed' => $label.': '.$str($p['result'] ?? ''),
             'comment.added' => $label.': '.$str($p['preview'] ?? ''),

@@ -31,7 +31,8 @@
     "close": "Lead closed",
     "reopen": "Lead reopened",
     "convert": "Lead qualified",
-    "delete": "Lead deleted"
+    "delete": "Lead deleted",
+    "bulk_assign": "Bulk lead transfer"
   },
   "deal": {
     "create": "Deal created",
@@ -45,7 +46,8 @@
   },
   "client": {
     "create": "Client created",
-    "update": "Client updated"
+    "update": "Client updated",
+    "assign": "Client owner changed"
   },
   "contact": {
     "create": "Contact added",

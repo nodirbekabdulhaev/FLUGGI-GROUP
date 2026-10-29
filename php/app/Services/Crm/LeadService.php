@@ -5,6 +5,7 @@ namespace App\Services\Crm;
 use App\Domain\LeadScore;
 use App\Domain\Money;
 use App\Exceptions\BusinessRule;
+use App\Models\Activity;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Deal;
@@ -15,13 +16,16 @@ use App\Models\LeadSource;
 use App\Models\LossReason;
 use App\Models\Meeting;
 use App\Models\Service;
+use App\Models\User;
 use App\Services\References\ExchangeRates;
 use App\Services\Smm\SmmIdeaService;
 use App\Support\Audit;
 use App\Support\Outbox;
 use Carbon\CarbonImmutable;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Лиды (ТЗ §8): создание, изменение, распределение, этапы, закрытие с причиной,
@@ -41,6 +45,49 @@ final class LeadService
         'city', 'country', 'source_id', 'service_id', 'budget', 'currency', 'desired_date', 'priority',
         'company_size', 'interest', 'next_contact_at', 'comment',
     ];
+
+    /** Фильтры списка лидов (те же — для массовой передачи «все по фильтру»). */
+    public static function filterRules(): array
+    {
+        return [
+            'q' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in([...Crm::LEAD_STATUSES, 'any'])],
+            'stage' => ['nullable', Rule::in(Crm::LEAD_STAGES)],
+            'owner_id' => ['nullable', 'uuid'],
+            'team_id' => ['nullable', 'uuid'],
+            'source_id' => ['nullable', 'uuid'],
+            'service_id' => ['nullable', 'uuid'],
+            'score' => ['nullable', Rule::in(Crm::SCORE_LEVELS)],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d'],
+            'batch' => ['nullable', 'uuid'],
+        ];
+    }
+
+    /**
+     * Применяет фильтры списка к уже ограниченной по области выборке. Статус по умолчанию — OPEN,
+     * «any» — все. batch — лиды одной массовой передачи (по таймлайну).
+     */
+    public static function filtered(Builder $q, array $f): Builder
+    {
+        $status = $f['status'] ?? 'OPEN';
+        if ($s = $f['q'] ?? null) {
+            $q->where(fn ($w) => collect(['title', 'contact_name', 'company_name', 'phone', 'telegram', 'email'])
+                ->each(fn ($c) => $w->orWhere($c, 'like', '%'.$s.'%')));
+        }
+
+        return $q->when($status !== 'any', fn ($q) => $q->where('status', $status))
+            ->when($f['stage'] ?? null, fn ($q, $v) => $q->whereHas('stage', fn ($s) => $s->where('code', $v)))
+            ->when($f['owner_id'] ?? null, fn ($q, $v) => $q->where('owner_id', $v))
+            ->when($f['team_id'] ?? null, fn ($q, $v) => $q->where('team_id', $v))
+            ->when($f['source_id'] ?? null, fn ($q, $v) => $q->where('source_id', $v))
+            ->when($f['service_id'] ?? null, fn ($q, $v) => $q->where('service_id', $v))
+            ->when($f['score'] ?? null, fn ($q, $v) => $q->where('score_level', $v))
+            ->when($f['date_from'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', Crm::dayStart($v)))
+            ->when($f['date_to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', Crm::dayStart($v)->addDay()))
+            ->when($f['batch'] ?? null, fn ($q, $v) => $q->whereIn('leads.id', Activity::query()
+                ->where('type', 'lead.assigned')->whereNotNull('lead_id')->where('payload->batchId', $v)->select('lead_id')));
+    }
 
     public function create(array $input): Lead
     {
@@ -153,7 +200,8 @@ final class LeadService
         return DB::transaction(function () use ($lead, $owner) {
             $previous = $lead->owner_id;
             $lead->update(['owner_id' => $owner->id, 'team_id' => $owner->team_id]);
-            Activities::log('lead.assigned', ['lead_id' => $lead->id], ['to' => $owner->full_name]);
+            $from = $previous ? User::withTrashed()->whereKey($previous)->value('full_name') : null;
+            Activities::log('lead.assigned', ['lead_id' => $lead->id], ['to' => $owner->full_name, 'from' => $from]);
             Audit::log('lead.assign', 'lead', $lead->id, ['owner_id' => ['old' => $previous, 'new' => $owner->id]]);
             Outbox::publish('lead.assigned', ['leadId' => $lead->id, 'ownerId' => $owner->id, 'previousOwnerId' => $previous]);
 

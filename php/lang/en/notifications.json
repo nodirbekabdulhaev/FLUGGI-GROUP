@@ -15,7 +15,8 @@
       "created": "New lead",
       "assigned": "Lead assigned to you",
       "large": "Large lead",
-      "inbound_repeat": "Repeat request from a client"
+      "inbound_repeat": "Repeat request from a client",
+      "bulk_assigned": "Bulk lead transfer"
     },
     "deal": {
       "created": "New deal",
@@ -120,7 +121,15 @@
     "meetingCreated": "New meeting",
     "meetingAdded": "You were added to a meeting",
     "meetingRescheduled": "Meeting rescheduled",
-    "meetingCancelled": "Meeting cancelled"
+    "meetingCancelled": "Meeting cancelled",
+    "leadBulkAssigned": "{count, plural, one {# lead was} other {# leads were}} transferred to you from {from}",
+    "leadBulkTaken": "{count, plural, one {# of your leads was} other {# of your leads were}} transferred to {to}",
+    "leadBulkExtra": {
+      "deals": "deals: {count}",
+      "clients": "clients: {count}",
+      "meetings": "meetings: {count}",
+      "todos": "to-dos: {count}"
+    }
   },
   "sound": {
     "unlock": "Click to turn on notification sound"

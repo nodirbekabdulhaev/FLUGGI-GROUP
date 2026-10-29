@@ -97,7 +97,8 @@
     },
     "client": {
       "created": "Mijoz yaratildi",
-      "updated": "Mijoz maʼlumotlari oʻzgartirildi"
+      "updated": "Mijoz maʼlumotlari oʻzgartirildi",
+      "assigned": "Masʼul almashtirildi"
     },
     "proposal": {
       "created": "TT yaratildi",
@@ -244,7 +245,9 @@
     "deleteCommentConfirm": "Izoh oʻchirilsinmi?",
     "formErrors": "Forma maydonlarini tekshiring",
     "meetingAt": "{label}: {date}",
-    "system": "Tizim"
+    "system": "Tizim",
+    "assignedFromTo": "{from} → {to}",
+    "bulkTransfer": "ommaviy topshirish"
   },
   "errors": {
     "ownerRole": "Masʼul faqat menejer yoki ROP boʻlishi mumkin",
