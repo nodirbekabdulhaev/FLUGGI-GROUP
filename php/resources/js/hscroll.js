@@ -8,6 +8,9 @@ const SKIP = 'a, button, input, select, textarea, label, [draggable="true"], [co
 
 export default function registerHscroll(Alpine) {
     Alpine.directive('hscroll', (el, _, { cleanup }) => {
+        // Телефон и планшет (только касание): обычная прокрутка пальцем без своей полосы —
+        // иначе две синхронизируемые прокрутки дёргают доску при инерционном пролистывании
+        if (!window.matchMedia('(pointer: fine)').matches) return;
         el.classList.add('hscroll-board');
 
         // Закреплённая полоса: отдельный блок под доской с position: sticky
@@ -18,16 +21,18 @@ export default function registerHscroll(Alpine) {
         bar.appendChild(inner);
         el.after(bar);
 
-        let syncing = false;
+        // Позицию передаёт только тот блок, который сейчас двигает пользователь — без «эха» туда-обратно
+        let active = el;
+        const own = (node) => () => { active = node; };
+        ['pointerdown', 'wheel', 'touchstart', 'keydown'].forEach((ev) => {
+            el.addEventListener(ev, own(el), { passive: true });
+            bar.addEventListener(ev, own(bar), { passive: true });
+        });
         const fromBoard = () => {
-            if (syncing) { syncing = false; return; }
-            syncing = true;
-            bar.scrollLeft = el.scrollLeft;
+            if (active === el && Math.abs(bar.scrollLeft - el.scrollLeft) > 1) bar.scrollLeft = el.scrollLeft;
         };
         const fromBar = () => {
-            if (syncing) { syncing = false; return; }
-            syncing = true;
-            el.scrollLeft = bar.scrollLeft;
+            if (active === bar && Math.abs(el.scrollLeft - bar.scrollLeft) > 1) el.scrollLeft = bar.scrollLeft;
         };
         const resize = () => {
             inner.style.width = el.scrollWidth + 'px';
