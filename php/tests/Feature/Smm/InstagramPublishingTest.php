@@ -352,7 +352,7 @@ class InstagramPublishingTest extends TestCase
         $this->assertSame('SCHEDULED', $p->fresh()->status);
         $this->meta['POST 1789/media'] = ['error' => ['message' => 'Invalid parameter', 'error_user_msg' => 'The aspect ratio is not supported.', 'code' => 100]];
         $this->cron();
-        $this->assertSame(['FAILED', 'Meta: The aspect ratio is not supported.'], [$p->fresh()->status, $this->ig($idea)->error]);
+        $this->assertSame(['FAILED', 'Meta: The aspect ratio is not supported. (code 100)'], [$p->fresh()->status, $this->ig($idea)->error]);
 
         // Повтор после исправления — публикуется
         $this->meta['POST 1789/media'] = ['id' => 'C1', 'uri' => 'https://rupload.facebook.com/ig-api-upload/v21.0/C1'];

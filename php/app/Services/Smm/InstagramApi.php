@@ -9,6 +9,7 @@ use GuzzleHttp\Psr7\Utils;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 /**
  * Instagram Graph API — публикация контента (Content Publishing) от имени аккаунта Instagram,
@@ -70,7 +71,27 @@ final class InstagramApi
         $json = $res->json() ?? [];
         if (! $res->successful() || isset($json['error'])) {
             $e = (array) ($json['error'] ?? []);
-            $message = (string) ($e['error_user_msg'] ?? $e['message'] ?? ('HTTP '.$res->status()));
+            // Сервер загрузки (rupload) отвечает {"debug_info": {"type", "message"}}, где message иногда — JSON с error
+            $debug = (array) ($json['debug_info'] ?? []);
+            if (! $e && isset($debug['message']) && is_array($inner = json_decode((string) $debug['message'], true)) && isset($inner['error'])) {
+                $e = (array) $inner['error'];
+            }
+            $message = (string) ($e['error_user_msg'] ?? $e['message'] ?? $debug['message'] ?? '');
+            if (! empty($e['error_user_title']) && ! str_contains($message, (string) $e['error_user_title'])) {
+                $message = $e['error_user_title'].($message !== '' ? ': '.$message : '');
+            }
+            if (! empty($debug['type']) && ! str_contains($message, (string) $debug['type'])) {
+                $message = $debug['type'].($message !== '' ? ': '.$message : '');
+            }
+            if ($message === '') {
+                $body = trim(preg_replace('~\s+~', ' ', strip_tags((string) $res->body())));
+                $message = 'HTTP '.$res->status().($body !== '' ? ' — '.mb_substr($body, 0, 300) : '');
+            }
+            $message = Secrets::redact($message);
+            if (isset($e['code'])) {
+                $message .= ' (code '.$e['code'].(isset($e['error_subcode']) ? '/'.$e['error_subcode'] : '').')';
+            }
+            Log::warning('Instagram API error: '.$message);
             $code = (int) ($e['code'] ?? 0);
             // Нет прав у токена: коды 10 и 200–299 или упоминание права в тексте
             $permission = $code === 10 || ($code >= 200 && $code < 300) || str_contains($message, 'instagram_content_publish');
