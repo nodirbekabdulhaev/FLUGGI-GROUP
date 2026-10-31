@@ -44,6 +44,9 @@ return [
         // Сколько хранить файл неудавшейся публикации и брошенные части загрузки
         'failed_keep_days' => 7,
         'chunks_keep_hours' => 6,
+        // Как Instagram получает видео Reels: url — Meta сама скачивает оригинал по временной ссылке (по умолчанию);
+        // resumable — CRM отправляет файл на rupload.facebook.com (с некоторых хостингов не проходит)
+        'ig_reels_upload' => env('SMM_IG_REELS_UPLOAD', 'url'),
     ],
 
     'files' => [

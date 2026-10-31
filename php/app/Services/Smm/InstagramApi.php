@@ -196,11 +196,13 @@ final class InstagramApi
      *
      * @return array{id:string, uri:string}
      */
-    public static function createReelsContainer(string $igUserId, ?string $caption, bool $shareToFeed, ?int $thumbOffsetMs, ?string $coverUrl): array
+    public static function createReelsContainer(string $igUserId, ?string $caption, bool $shareToFeed, ?int $thumbOffsetMs, ?string $coverUrl, ?string $videoUrl = null): array
     {
         $params = array_filter([
             'media_type' => 'REELS',
-            'upload_type' => 'resumable',
+            // По ссылке Meta сама скачивает исходный файл; иначе — загрузка частью на rupload
+            'video_url' => $videoUrl,
+            'upload_type' => $videoUrl ? null : 'resumable',
             'caption' => $caption,
             'share_to_feed' => $shareToFeed ? 'true' : 'false',
             'thumb_offset' => $thumbOffsetMs !== null ? (string) $thumbOffsetMs : null,

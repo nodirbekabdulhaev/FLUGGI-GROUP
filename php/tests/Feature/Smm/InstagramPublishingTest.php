@@ -56,7 +56,7 @@ class InstagramPublishingTest extends TestCase
     {
         parent::setUp();
         $this->root = sys_get_temp_dir().'/smm-media-test-'.uniqid();
-        config(['fluggi.smm_media.root' => $this->root, 'fluggi.smm_media.chunk_mb' => 1, 'fluggi.smm_media.max_video_mb' => 5,
+        config(['fluggi.smm_media.ig_reels_upload' => 'resumable', 'fluggi.smm_media.root' => $this->root, 'fluggi.smm_media.chunk_mb' => 1, 'fluggi.smm_media.max_video_mb' => 5,
             'fluggi.meta.page_access_token' => 'PAGE-TOKEN', 'app.url' => 'https://crm.test']);
         URL::forceRootUrl('https://crm.test');
         URL::forceScheme('https');
@@ -224,6 +224,35 @@ class InstagramPublishingTest extends TestCase
         // Без файла — нельзя
         $empty = $this->idea();
         $this->schedule($this->smm, $empty)->assertSessionHasErrors('file');
+    }
+
+    public function test_reels_by_video_url_meta_downloads_original_file(): void
+    {
+        config(['fluggi.smm_media.ig_reels_upload' => 'url']);
+        $idea = $this->idea();
+        $video = $this->mp4(2_200_000);
+        $this->upload($this->smm, $idea, 'IMG_0002.mp4', $video)->assertOk();
+        $this->schedule($this->smm, $idea)->assertSessionHasNoErrors();
+        $p = SmmPublication::where('idea_id', $idea->id)->firstOrFail();
+        $this->travel(11)->minutes();
+        $this->cron();
+        $container = $this->sent('POST 1789/media')[0]->data();
+        // Без resumable: Meta получает ссылку на оригинал, на rupload ничего не отправляется
+        $this->assertSame('REELS', $container['media_type']);
+        $this->assertArrayNotHasKey('upload_type', $container);
+        $this->assertStringStartsWith('https://crm.test/hooks/ig-media/'.$p->id.'/media?expires=', $container['video_url']);
+        $this->assertCount(0, $this->sent('POST rupload'));
+        // Ссылка отдаёт исходный файл без входа, пока публикация в работе
+        $this->flushSession();
+        $res = $this->get(str_replace('https://crm.test', '', $container['video_url']))->assertOk();
+        $this->assertSame($video, file_get_contents($res->baseResponse->getFile()->getPathname()));
+        $this->travel(3)->minutes();
+        $this->cron();
+        $this->travel(2)->minutes();
+        $this->cron();
+        $this->assertSame('PUBLISHED', $this->ig($idea)->status);
+        // После публикации ссылка больше не работает
+        $this->get(str_replace('https://crm.test', '', $container['video_url']))->assertNotFound();
     }
 
     public function test_reels_publish_flow_marks_idea_published_counts_for_salary_and_deletes_file(): void

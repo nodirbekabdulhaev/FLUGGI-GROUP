@@ -76,9 +76,14 @@ final class InstagramPublisher
             $caption = $p->caption;
             if ($p->kind === 'REELS') {
                 $cover = $p->cover_path && SmmMedia::exists($p->cover_path) ? self::mediaUrl($p, 'cover') : null;
-                $c = InstagramApi::createReelsContainer($ig, $caption, $p->share_to_feed, $p->thumb_offset_ms, $cover);
-                @set_time_limit(0);
-                InstagramApi::uploadVideo($c['uri'], $path);
+                if (config('fluggi.smm_media.ig_reels_upload', 'url') === 'resumable') {
+                    $c = InstagramApi::createReelsContainer($ig, $caption, $p->share_to_feed, $p->thumb_offset_ms, $cover);
+                    @set_time_limit(0);
+                    InstagramApi::uploadVideo($c['uri'], $path);
+                } else {
+                    // Meta скачивает оригинал по временной подписанной ссылке (файл без пережатия)
+                    $c = InstagramApi::createReelsContainer($ig, $caption, $p->share_to_feed, $p->thumb_offset_ms, $cover, self::mediaUrl($p, 'media'));
+                }
                 $containerId = $c['id'];
             } else {
                 $containerId = InstagramApi::createImageContainer($ig, self::mediaUrl($p, 'media'), $caption);
