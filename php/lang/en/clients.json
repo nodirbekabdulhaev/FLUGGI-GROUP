@@ -1,0 +1,30 @@
+{
+  "title": "Clients",
+  "subtitle": "Companies and people you have deals with",
+  "add": "Add client",
+  "emptyTitle": "No clients yet",
+  "emptyText": "Clients are created when a lead is qualified, or manually.",
+  "emptyFiltered": "No clients found",
+  "search": "Name, phone, contact",
+  "createTitle": "New client",
+  "editTitle": "Edit client",
+  "deals": "Client deals",
+  "contacts": "Contacts",
+  "addContact": "Add contact",
+  "primary": "Primary",
+  "dealsCount": "Deals: {count} · {open} in progress",
+  "newDeal": "New deal",
+  "noDeals": "No deals yet",
+  "noContacts": "No contacts yet",
+  "contact": "Contact",
+  "createSubmit": "Create client",
+  "errors": {
+    "account": "Bank account number must be 20 digits",
+    "contactInDeal": "This contact is used in a deal — replace it there first",
+    "contactName": "Enter a name",
+    "inn": "TIN (INN) must be 9 digits, PINFL must be 14 digits",
+    "mfo": "MFO bank code must be 5 digits",
+    "nameRequired": "Enter a name"
+  },
+  "deleteConfirm": "Delete client “{name}”? Their leads ({leads}), deals ({deals}) and projects ({projects}) will also be deleted. Payments, contracts and history will be kept."
+}

@@ -1,0 +1,29 @@
+{
+  "name": "fluggi",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "prettier --check .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:integration": "turbo run test:integration",
+    "test:e2e": "playwright test",
+    "format": "prettier --write .",
+    "db:generate": "pnpm --filter @fluggi/db generate",
+    "db:migrate": "pnpm --filter @fluggi/db migrate:dev",
+    "db:deploy": "pnpm --filter @fluggi/db migrate:deploy && pnpm --filter @fluggi/db protect",
+    "db:seed": "pnpm --filter @fluggi/db seed",
+    "db:reset": "pnpm --filter @fluggi/db migrate:reset"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.63.0",
+    "prettier": "^3.6.2",
+    "turbo": "^2.11.7",
+    "typescript": "~5.9.3"
+  }
+}

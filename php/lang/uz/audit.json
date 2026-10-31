@@ -1,0 +1,227 @@
+{
+  "auth": {
+    "login": "Tizimga kirish",
+    "logout": "Chiqish",
+    "login_failed": "Muvaffaqiyatsiz kirish urinishi",
+    "locked": "Kirish vaqtincha bloklandi",
+    "password_changed": "Parol oʻzgartirildi",
+    "session_revoked": "Sessiya yakunlandi"
+  },
+  "user": {
+    "create": "Xodim yaratildi",
+    "update": "Xodim oʻzgartirildi",
+    "block": "Xodim bloklandi",
+    "unblock": "Xodim blokdan chiqarildi",
+    "reset_password": "Parol tiklandi",
+    "delete": "Xodim oʻchirildi"
+  },
+  "team": {
+    "create": "Boʻlim yaratildi",
+    "update": "Boʻlim oʻzgartirildi",
+    "delete": "Boʻlim oʻchirildi"
+  },
+  "role": {
+    "permissions_update": "Rol huquqlari oʻzgartirildi"
+  },
+  "lead": {
+    "create": "Lid yaratildi",
+    "update": "Lid oʻzgartirildi",
+    "assign": "Lid masʼuli almashtirildi",
+    "stage_change": "Lid bosqichi oʻzgardi",
+    "close": "Lid yopildi",
+    "reopen": "Lid qaytarildi",
+    "convert": "Lid kvalifikatsiya qilindi",
+    "delete": "Lid oʻchirildi",
+    "bulk_assign": "Lidlarni ommaviy topshirish"
+  },
+  "deal": {
+    "create": "Bitim yaratildi",
+    "update": "Bitim oʻzgartirildi",
+    "assign": "Bitim masʼuli almashtirildi",
+    "stage_change": "Bitim bosqichi oʻzgardi",
+    "close": "Bitim yopildi",
+    "reopen": "Bitim qaytarildi",
+    "delete": "Bitim oʻchirildi",
+    "import_won": "Bitim yutilgan sifatida import qilindi"
+  },
+  "client": {
+    "create": "Mijoz yaratildi",
+    "update": "Mijoz oʻzgartirildi",
+    "assign": "Mijoz masʼuli almashtirildi"
+  },
+  "contact": {
+    "create": "Kontakt qoʻshildi",
+    "update": "Kontakt oʻzgartirildi",
+    "delete": "Kontakt oʻchirildi"
+  },
+  "meeting": {
+    "create": "Uchrashuv belgilandi",
+    "update": "Uchrashuv oʻzgartirildi",
+    "complete": "Uchrashuv oʻtkazildi"
+  },
+  "comment": {
+    "delete": "Izoh oʻchirildi"
+  },
+  "service": {
+    "create": "Xizmat qoʻshildi",
+    "update": "Xizmat oʻzgartirildi"
+  },
+  "sources": {
+    "create": "Manba qoʻshildi",
+    "update": "Manba oʻzgartirildi"
+  },
+  "loss-reasons": {
+    "create": "Yoʻqotish sababi qoʻshildi",
+    "update": "Yoʻqotish sababi oʻzgartirildi"
+  },
+  "stage": {
+    "update": "Voronka bosqichi oʻzgartirildi"
+  },
+  "exchange_rate": {
+    "set": "Valyuta kursi belgilandi"
+  },
+  "proposal": {
+    "create": "TT yaratildi",
+    "update": "TT oʻzgartirildi (yangi versiya)",
+    "approval_requested": "TT kelishishga yuborildi",
+    "approved": "TT tasdiqlandi",
+    "sent": "TT yuborildi",
+    "viewed": "TT koʻrildi",
+    "accepted": "TT qabul qilindi",
+    "rejected": "TT rad etildi"
+  },
+  "contract": {
+    "create": "Shartnoma yaratildi",
+    "update": "Shartnoma oʻzgartirildi",
+    "send": "Shartnoma yuborildi",
+    "submit-approval": "Shartnoma kelishuvda",
+    "sign": "Shartnoma imzolandi",
+    "cancel": "Shartnoma bekor qilindi"
+  },
+  "payment": {
+    "create": "Toʻlov qoʻshildi",
+    "confirm": "Toʻlov tasdiqlandi",
+    "refund": "Qaytarish",
+    "cancel": "Toʻlov bekor qilindi"
+  },
+  "file": {
+    "upload": "Fayl yuklandi",
+    "delete": "Fayl oʻchirildi"
+  },
+  "commission_rule": {
+    "create": "Komissiya qoidasi yaratildi",
+    "update": "Komissiya qoidasi oʻzgartirildi"
+  },
+  "entityType": "Yozuv turi",
+  "project": {
+    "update": "Loyiha oʻzgartirildi",
+    "status": "Loyiha holati oʻzgartirildi",
+    "apply_template": "Loyiha shabloni qoʻllandi",
+    "member_add": "Loyiha ishtirokchisi qoʻshildi",
+    "member_update": "Loyiha ishtirokchisi oʻzgartirildi",
+    "create": "Loyiha yaratildi"
+  },
+  "task": {
+    "create": "Vazifa yaratildi",
+    "update": "Vazifa oʻzgartirildi",
+    "status": "Vazifa holati oʻzgartirildi",
+    "delete": "Vazifa oʻchirildi"
+  },
+  "project_template": {
+    "create": "Loyiha shabloni yaratildi",
+    "update": "Loyiha shabloni oʻzgartirildi"
+  },
+  "expense": {
+    "create": "Xarajat qoʻshildi",
+    "update": "Xarajat oʻzgartirildi",
+    "delete": "Xarajat oʻchirildi"
+  },
+  "finance_category": {
+    "create": "Moliyaviy toifa yaratildi",
+    "update": "Moliyaviy toifa oʻzgartirildi",
+    "delete": "Moliyaviy toifa oʻchirildi"
+  },
+  "other_income": {
+    "create": "Boshqa tushum qoʻshildi",
+    "update": "Boshqa tushum oʻzgartirildi",
+    "delete": "Boshqa tushum oʻchirildi"
+  },
+  "work_item": {
+    "create": "Ijrochi ishi qoʻshildi",
+    "update": "Ijrochi ishi oʻzgartirildi"
+  },
+  "employee": {
+    "rates": "Ishbay stavkalar oʻzgartirildi",
+    "smm_video_rate_update": "SMM videosi uchun shaxsiy stavka oʻzgartirildi"
+  },
+  "settings": {
+    "finance": "Moliyaviy sozlamalar oʻzgartirildi",
+    "branding": "Brend oʻzgartirildi (nom, logotip)",
+    "branding_reset": "Brend standartga qaytarildi"
+  },
+  "kpi": {
+    "target": "KPI maqsadi oʻzgartirildi"
+  },
+  "schedule": {
+    "create": "Ish jadvali yaratildi",
+    "update": "Ish jadvali oʻzgartirildi"
+  },
+  "attendance": {
+    "check_in": "Kelish belgilandi",
+    "check_out": "Ketish belgilandi",
+    "update": "Davomat tuzatildi"
+  },
+  "payroll": {
+    "calculate": "Ish haqi hisoblandi",
+    "update": "Ish haqi oʻzgartirildi",
+    "approve": "Ish haqi tasdiqlandi",
+    "pay": "Ish haqi toʻlandi"
+  },
+  "accounting": {
+    "settings": "Buxgalteriya stavkalari oʻzgartirildi",
+    "crm_import": "CRM toʻlovi buxgalteriyaga yuklandi",
+    "crm_import_period": "Davr uchun CRM toʻlovlari yuklandi",
+    "account": {
+      "create": "Hisob yaratildi",
+      "update": "Hisob oʻzgartirildi",
+      "activate": "Hisob yoqildi",
+      "deactivate": "Hisob oʻchirib qoʻyildi",
+      "delete": "Hisob oʻchirildi"
+    },
+    "operation": {
+      "create": "Operatsiya qoʻshildi",
+      "delete": "Operatsiya oʻchirildi"
+    },
+    "transfer": {
+      "create": "Hisoblar orasida oʻtkazma"
+    },
+    "person": {
+      "create": "Soliq uchun xodim qoʻshildi",
+      "update": "Soliq uchun xodim oʻzgartirildi",
+      "delete": "Soliq uchun xodim oʻchirildi"
+    },
+    "payroll": {
+      "create": "Soliq uchun ish haqi hisoblandi",
+      "recalculate": "Soliq uchun ish haqi qayta hisoblandi",
+      "update": "Hisoblash oʻzgartirildi",
+      "approve": "Hisoblash tasdiqlandi",
+      "remove": "Hisoblash qoralamasi oʻchirildi"
+    }
+  },
+  "import": {
+    "run": "Fayldan import"
+  },
+  "todo": {
+    "create": "Ish yaratildi",
+    "update": "Ish oʻzgartirildi",
+    "status": "Ish holati oʻzgartirildi",
+    "delete": "Ish oʻchirildi"
+  },
+  "smm": {
+    "video_accrued": "SMM videosi uchun hisoblandi",
+    "video_reversed": "SMM videosi hisobi bekor qilindi",
+    "video_rates_update": "SMM video stavkalari oʻzgartirildi",
+    "expense_create": "SMM xarajati qoʻshildi",
+    "expense_delete": "SMM xarajati oʻchirildi"
+  }
+}
