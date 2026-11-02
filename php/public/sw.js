@@ -8,7 +8,7 @@
  * Если вкладка CRM сейчас перед глазами (в фокусе), уведомление показывает и озвучивает сама вкладка (notify.js);
  * Safari (iOS/macOS) требует показывать уведомление на каждый push — там оно показывается всегда.
  */
-const CACHE = 'fluggi-static-v4';
+const CACHE = 'fluggi-static-v5';
 const OFFLINE = '/offline';
 
 self.addEventListener('install', (event) => {
@@ -43,7 +43,9 @@ self.addEventListener('fetch', (event) => {
   }
   // Страницы — всегда из сети; без сети — офлайн-страница
   if (request.mode === 'navigate') {
-    event.respondWith(fetch(request).catch(() => caches.match(OFFLINE)));
+    // Сбой сети (мобильная сеть, смена Wi-Fi) — ещё две попытки с паузой, только потом офлайн-страница
+    const retry = (n) => fetch(request).catch((e) => (n > 0 ? new Promise((r) => setTimeout(r, 1500)).then(() => retry(n - 1)) : Promise.reject(e)));
+    event.respondWith(retry(2).catch(() => caches.match(OFFLINE)));
   }
   // Остальное (манифест, /brand/ без версии) — браузер запрашивает сам, без кэша service worker
 });
