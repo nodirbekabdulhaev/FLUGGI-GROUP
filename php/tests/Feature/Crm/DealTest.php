@@ -104,6 +104,21 @@ class DealTest extends CrmTestCase
             ->assertSessionHasErrors('currency');
     }
 
+    public function test_new_deal_for_client_of_dismissed_or_ceo_owner_gets_working_owner(): void
+    {
+        // Владелец клиента уволен — раньше 404; теперь ответственный — сам создающий сотрудник продаж (РОП отдела)
+        $gone = $this->user('MANAGER', $this->team1, ['status' => 'BLOCKED']);
+        $client = Client::create(['name' => 'Старый клиент', 'owner_id' => $gone->id, 'team_id' => $this->team1->id]);
+        $this->actingAsUser($this->rop)->post('/sales/deals', ['client_id' => $client->id, 'title' => 'D1', 'amount' => '1 000'])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertSame($this->rop->id, Deal::where('title', 'D1')->value('owner_id'));
+        // CEO создаёт сделку клиенту, которого завёл сам CEO, — ответственным становится менеджер продаж
+        $own = Client::create(['name' => 'Клиент CEO', 'owner_id' => $this->ceo->id]);
+        $this->actingAsUser($this->ceo)->post('/sales/deals', ['client_id' => $own->id, 'title' => 'D2', 'amount' => '2 000'])
+            ->assertSessionHasNoErrors()->assertRedirect();
+        $this->assertContains(Deal::where('title', 'D2')->first()?->owner?->role?->code, ['MANAGER', 'ROP']);
+    }
+
     public function test_assign_and_delete_rights(): void
     {
         $deal = $this->deal();

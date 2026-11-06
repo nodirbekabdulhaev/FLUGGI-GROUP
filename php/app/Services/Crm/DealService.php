@@ -6,6 +6,7 @@ use App\Exceptions\BusinessRule;
 use App\Models\Client;
 use App\Models\Contact;
 use App\Models\Deal;
+use App\Models\User;
 use App\Services\References\ExchangeRates;
 use App\Services\Smm\SmmIdeaService;
 use App\Support\Audit;
@@ -73,11 +74,31 @@ final class DealService
             ->when($f['date_to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', Crm::dayStart($v)->addDay()));
     }
 
+    /** Владелец клиента подходит ответственным за новую сделку: активный сотрудник продаж в области права deal.create. */
+    private static function clientOwnerUsable(?string $userId): bool
+    {
+        if (! $userId) {
+            return false;
+        }
+        $user = User::with('role')->where('status', 'ACTIVE')->find($userId);
+        if (! $user || ! in_array($user->role?->code, CrmAccess::OWNER_ROLES, true)) {
+            return false;
+        }
+        $access = access();
+        $scope = $access->permissions['deal.create'] ?? null;
+
+        return $scope === 'ALL' || $userId === $access->id()
+            || ($scope === 'TEAM' && $user->team_id && in_array($user->team_id, $access->teamIds(), true));
+    }
+
     public function create(array $input): Deal
     {
         $access = access();
         $client = CrmAccess::client($input['client_id']);
-        $owner = CrmAccess::assignableOwner(($input['owner_id'] ?? null) ?: $client->owner_id, 'deal.create');
+        // Ответственный: выбранный в форме; иначе владелец клиента, если он работает и доступен для назначения;
+        // иначе — по общему правилу (сам сотрудник продаж или наименее загруженный менеджер)
+        $ownerId = ($input['owner_id'] ?? null) ?: (self::clientOwnerUsable($client->owner_id) ? $client->owner_id : null);
+        $owner = CrmAccess::assignableOwner($ownerId, 'deal.create');
         if (! empty($input['contact_id'])) {
             self::assertContact($client->id, $input['contact_id']);
         }
