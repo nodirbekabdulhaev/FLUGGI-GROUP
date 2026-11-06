@@ -1,0 +1,27 @@
+{
+  "title": "Other income",
+  "subtitle": "Income not from clients: partner fees, supplier refunds, bank interest, exchange rate differences. Counted in company profit and in the accountant package.",
+  "new": "Add income",
+  "edit": "Edit income",
+  "saved": "Income saved",
+  "deleted": "Income deleted",
+  "delete": "Delete",
+  "deleteConfirm": "Delete income {number}?",
+  "category": "Category",
+  "allCategories": "All categories",
+  "amount": "Amount",
+  "currency": "Currency",
+  "date": "Date",
+  "project": "Project",
+  "projectHint": "Optional: if the income relates to a project",
+  "noProject": "No project",
+  "description": "Comment",
+  "cancel": "Cancel",
+  "save": "Save",
+  "empty": "No other income yet",
+  "emptyText": "Income categories are configured in Settings → Finance.",
+  "errors": {
+    "category": "Select an income category",
+    "categoryField": "No such income category"
+  }
+}

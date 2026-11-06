@@ -1,0 +1,14 @@
+{
+  "title": "Piece rates: {name}",
+  "text": "Personal price per unit of work for this employee. Empty field — the base rate applies (Settings → Finance). The rate is used in the project cost plan when the employee is assigned as executor.",
+  "textReadonly": "Price per unit of work used to accrue your piece-rate pay on projects. Empty — the company base rate applies.",
+  "work": "Work",
+  "base": "Base",
+  "personal": "Personal rate",
+  "asBase": "same as base",
+  "currency": "Currency",
+  "saved": "Rates saved",
+  "cancel": "Cancel",
+  "save": "Save",
+  "empty": "No active work items"
+}

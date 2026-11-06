@@ -1,0 +1,144 @@
+{
+  "settingsTitle": "Parameters",
+  "settingsText": "Thresholds and intervals for automatic notifications.",
+  "largeAmount": "“Large” lead and deal threshold, UZS",
+  "largeAmountHint": "Deals and leads from this amount trigger a notification to the Sales head (ROP) and CEO",
+  "followUps": "Follow-ups after project completion",
+  "followUpsHint": "How many days after a project is completed the manager gets a reminder, and which action.",
+  "days": "Days",
+  "daysAfter": "d →",
+  "kind": "Action",
+  "remove": "Remove",
+  "addFollowUp": "Add interval",
+  "dailyReport": "Daily report to the head at 18:00",
+  "weeklyReport": "Weekly report to the CEO on Monday at 09:00",
+  "save": "Save",
+  "saving": "Saving…",
+  "saved": "Settings saved",
+  "jobsTitle": "Scheduler",
+  "jobsText": "Background jobs on Tashkent time. Each runs once per its interval.",
+  "job": "Job",
+  "schedule": "Schedule",
+  "lastRun": "Last run",
+  "never": "Not run yet",
+  "ok": "Success",
+  "failed": "Error",
+  "running": "Running",
+  "runNow": "Run “{name}” now",
+  "done": "“{name}” completed",
+  "previewTitle": "Report preview",
+  "previewText": "The same text that is sent to Telegram.",
+  "daily": "Today",
+  "weekly": "This week",
+  "title": "Automation",
+  "subtitle": "Notifications, scheduler, reports and company details",
+  "absentComment": "No check-in (automatic)",
+  "jobs": {
+    "overdue-tasks": {
+      "label": "Overdue task check",
+      "schedule": "every hour"
+    },
+    "smart-reminders": {
+      "label": "Smart reminders",
+      "schedule": "every 15 minutes"
+    },
+    "follow-ups": {
+      "label": "Today’s follow-ups",
+      "schedule": "daily at 09:00"
+    },
+    "daily-report": {
+      "label": "Daily report to the head",
+      "schedule": "daily at 18:00"
+    },
+    "absences": {
+      "label": "Mark absent employees",
+      "schedule": "daily at 20:00"
+    },
+    "weekly-report": {
+      "label": "Weekly report to the CEO",
+      "schedule": "Monday at 09:00"
+    },
+    "recurring-todos": {
+      "label": "Recurring to-dos (tax calendar)",
+      "schedule": "daily at 07:00"
+    },
+    "client-health": {
+      "label": "Client health",
+      "schedule": "daily at 06:00"
+    },
+    "payroll": {
+      "label": "Preliminary payroll calculation",
+      "schedule": "on the 1st at 09:00"
+    },
+    "attendance-checkout": {
+      "label": "Missed check-out: reminder and auto check-out",
+      "schedule": "every 5 minutes"
+    }
+  },
+  "payroll": {
+    "title": "Preliminary payroll calculation for {period}",
+    "body": "Entries: {count}. Review bonuses and penalties, then approve."
+  },
+  "plan": {
+    "company": "🎉 Monthly plan achieved",
+    "team": "🎉 Team plan achieved",
+    "body": "{period}: {collected} of {plan}"
+  },
+  "remind": {
+    "meetingTomorrow": "Meeting tomorrow at {time}",
+    "meetingSoon": "Meeting in {min} min",
+    "noContact": "Client not called for 3 days",
+    "dealSilent": "Client not responding for 7 days",
+    "proposalWaiting": "Proposal sent 2 days ago — no response",
+    "contractUnsigned": "Contract not signed",
+    "paymentOverdue": "Payment overdue",
+    "projectEnding": "Project ends in 3 days",
+    "projectOverdue": "Overdue project",
+    "todoOverdue": "⏰ Overdue: {title}",
+    "todoToday": "Due today: {title}",
+    "until": "by {time}"
+  },
+  "report": {
+    "dailyNotice": "Daily report",
+    "dailyTeamNotice": "Daily team report",
+    "weeklyNotice": "Weekly report",
+    "dailyTitle": "REPORT FOR {date}",
+    "weeklyTitle": "WEEKLY REPORT",
+    "newLeads": "New leads",
+    "qualified": "Qualified",
+    "meetings": "Meetings",
+    "proposals": "Proposals",
+    "contracts": "Contracts",
+    "payments": "Payments",
+    "newProjects": "New projects",
+    "overdueTasks": "Overdue tasks",
+    "overdueProjects": "Overdue projects",
+    "bestManager": "Top manager",
+    "planMonth": "Monthly plan",
+    "noPlan": "no target set",
+    "forecast": "Forecast",
+    "leads": "Leads",
+    "conversion": "Conversion",
+    "deals": "Deals",
+    "revenue": "Revenue",
+    "avgCheck": "Average deal size",
+    "profit": "Profit",
+    "expenses": "Expenses",
+    "projects": "Projects",
+    "efficiency": "Employee performance",
+    "months": {
+      "1": "January",
+      "2": "February",
+      "3": "March",
+      "4": "April",
+      "5": "May",
+      "6": "June",
+      "7": "July",
+      "8": "August",
+      "9": "September",
+      "10": "October",
+      "11": "November",
+      "12": "December"
+    }
+  }
+}
