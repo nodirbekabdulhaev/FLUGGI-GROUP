@@ -9,10 +9,13 @@ use App\Models\OutboxEvent;
 use App\Models\Project;
 use App\Models\ProjectMember;
 use App\Models\ProjectTemplate;
+use App\Models\StoredFile;
 use App\Models\Task;
 use App\Models\TaskStatusHistory;
 use App\Models\User;
 use App\Services\Projects\TaskService;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 /** Проекты, команда, Kanban (ТЗ §19–24) — сценарии прежней версии (projects.int.test.ts). */
@@ -222,6 +225,16 @@ class ProjectsTest extends TestCase
                 $c->get("/projects/{$p->id}?task={$task->id}")->assertOk()->assertSee($task->title);
             }
         }
+        // В карточке задачи и во вкладке «Файлы» проекта есть загрузка (отчёт), файл попадает в список и удаляется
+        $this->ceo->update(['locale' => 'ru']);
+        $this->actingAsUser($this->ceo)->get("/projects/{$p->id}?task={$task->id}")->assertOk()->assertSee(route('sales.files.store'), false)->assertSee(t('sales.files.upload'));
+        $this->actingAsUser($this->ceo)->get("/projects/{$p->id}?tab=files")->assertOk()->assertSee(route('sales.files.store'), false);
+        Storage::fake('local');
+        $report = UploadedFile::fake()->createWithContent('отчёт.pdf', "%PDF-1.4\n1 0 obj<<>>endobj\ntrailer<<>>\n%%EOF");
+        $this->actingAsUser($this->ceo)->from("/projects/{$p->id}?task={$task->id}")
+            ->post('/files', ['task_id' => $task->id, 'category' => 'DOCUMENT', 'file' => $report])->assertRedirect();
+        $file = StoredFile::where('task_id', $task->id)->firstOrFail();
+        $this->actingAsUser($this->ceo)->get("/projects/{$p->id}?task={$task->id}")->assertSee('отчёт.pdf')->assertSee(route('sales.files.destroy', $file->id), false);
         $this->actingAsUser($this->executor)->get('/projects/all')->assertOk();
         $this->actingAsUser(User::find($this->manager->id))->get('/projects')->assertRedirect('/projects/all');
         // Исполнитель без права проектов? HR — нет доступа к проектам
