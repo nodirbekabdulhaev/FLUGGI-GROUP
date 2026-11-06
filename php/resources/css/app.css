@@ -1,0 +1,144 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Стиль «стекло и пастель»: голубо-лавандовый градиент фона, полупрозрачные белые карточки,
+ * тонкие светлые рамки, крупные скругления, кнопки-«таблетки». Названия классов прежние.
+ * Размытие фона (backdrop-filter) — только у закреплённых панелей (меню, шапка, окна): у карточек
+ * его нет, иначе окна (position: fixed) внутри карточки позиционировались бы от неё.
+ */
+@layer base {
+    html { -webkit-text-size-adjust: 100%; }
+    body { @apply bg-background text-foreground antialiased; }
+    /* Фон — отдельным закреплённым слоем (background-attachment: fixed плохо работает на iOS) */
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        pointer-events: none;
+        background:
+            radial-gradient(60rem 36rem at 0% -10%, rgb(206 226 255 / 0.95), transparent 60%),
+            radial-gradient(48rem 32rem at 100% 0%, rgb(232 222 255 / 0.9), transparent 58%),
+            radial-gradient(50rem 34rem at 70% 110%, rgb(253 226 240 / 0.75), transparent 60%),
+            radial-gradient(40rem 30rem at 0% 100%, rgb(214 240 255 / 0.8), transparent 60%),
+            linear-gradient(180deg, #f2f6fd 0%, #edf1fb 100%);
+    }
+    * { @apply border-border; }
+    :focus-visible { outline: 2px solid theme('colors.primary.DEFAULT'); outline-offset: 2px; }
+    [x-cloak] { display: none !important; }
+    ::selection { background: rgb(53 99 233 / 0.18); }
+    input[type='checkbox'], input[type='radio'] { accent-color: theme('colors.primary.DEFAULT'); }
+}
+
+/* Общие элементы: используются во всех модулях (resources/views/components) */
+@layer components {
+    .btn { @apply inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-full px-4 h-9 text-sm font-medium transition-[background-color,box-shadow,color,border-color] duration-150 disabled:opacity-50 disabled:pointer-events-none; }
+    .btn-primary { @apply bg-primary text-primary-foreground shadow-[0_6px_16px_-8px_rgb(53_99_233/0.7)] hover:bg-primary-strong; }
+    .btn-accent { @apply bg-accent text-white shadow-[0_6px_16px_-8px_rgb(91_91_214/0.7)] hover:bg-accent/90; }
+    .btn-outline { @apply border border-white bg-white/80 text-foreground shadow-soft hover:bg-white hover:border-primary/25; }
+    .btn-ghost { @apply text-foreground hover:bg-white/70; }
+    .btn-danger { @apply bg-danger text-white hover:bg-danger/90; }
+    .btn-soft { @apply bg-primary-soft text-primary-strong hover:bg-primary/15; }
+    .btn-sm { @apply h-8 px-3 text-xs; }
+    .btn-icon { @apply h-9 w-9 px-0; }
+    .btn-sm.btn-icon { @apply h-8 w-8; }
+
+    .input { @apply block w-full rounded-xl border border-input bg-white/90 px-3.5 h-10 text-sm text-foreground shadow-[inset_0_1px_2px_rgb(30_42_68/0.04)] placeholder:text-muted-foreground/80 focus:border-primary/60 focus:bg-white focus:outline-none focus:ring-4 focus:ring-primary/15 disabled:bg-muted disabled:text-muted-foreground; }
+    textarea.input { @apply h-auto py-2.5; }
+    select.input { @apply pr-8; }
+    .label { @apply mb-1.5 block text-sm font-medium text-foreground; }
+    .hint { @apply mt-1 text-xs text-muted-foreground; }
+    .error { @apply mt-1 text-xs text-danger; }
+
+    .glass { @apply border border-white/80 bg-white/70 shadow-glass; }
+    .card { @apply rounded-2xl border border-white/80 bg-white/[0.72] shadow-glass; }
+    .card-body { @apply p-4 sm:p-5; }
+    .card .card { @apply bg-white/80 shadow-soft; }
+
+    .table { @apply w-full text-sm; }
+    .table th { @apply whitespace-nowrap border-b border-border/80 bg-muted/40 px-3 py-2.5 text-left text-xs font-medium uppercase tracking-wide text-muted-foreground; }
+    .table td { @apply border-b border-border/70 px-3 py-3 align-top; }
+    .table tr:last-child td { @apply border-b-0; }
+    .table tbody tr { @apply transition-colors; }
+    .table tbody tr:hover { @apply bg-primary-soft/40; }
+
+    .badge { @apply inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium whitespace-nowrap; }
+    .badge-gray { @apply bg-muted text-muted-foreground; }
+    .badge-blue { @apply bg-primary-soft text-primary-strong; }
+    .badge-green { @apply bg-success-soft text-success; }
+    .badge-yellow { @apply bg-warning-soft text-warning; }
+    .badge-red { @apply bg-danger-soft text-danger; }
+    .badge-purple { @apply bg-periwinkle-soft text-periwinkle-strong; }
+    .badge-pink { @apply bg-blush-soft text-blush-strong; }
+
+    .nav-item .badge { @apply bg-primary-soft text-primary-strong; }
+    .link { @apply text-primary-strong hover:underline; }
+    .muted { @apply text-muted-foreground; }
+
+    /* Вкладки-«таблетки» (<x-tabs>, вкладки карточек) */
+    .tabs { @apply mb-4 flex max-w-full gap-1 overflow-x-auto rounded-full border border-white/80 bg-white/60 p-1 shadow-soft; scrollbar-width: none; }
+    .tabs::-webkit-scrollbar { display: none; }
+    .tab { @apply whitespace-nowrap rounded-full px-3.5 py-1.5 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground; }
+    .tab-active { @apply bg-white text-foreground shadow-soft; }
+    @supports (width: fit-content) { .tabs { width: fit-content; } }
+
+    /* Переключатель вида (Kanban | Список) */
+    .segmented { @apply inline-flex rounded-full border border-white/80 bg-white/60 p-1 shadow-soft; }
+    .segmented > * { @apply inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground; }
+    .segmented > [aria-current='page'], .segmented > [aria-pressed='true'] { @apply bg-white text-foreground shadow-soft; }
+
+    /* Выпадающие меню и всплывающие панели */
+    .popover { @apply rounded-2xl border border-white bg-white/95 shadow-lift; }
+    @supports (backdrop-filter: blur(1px)) {
+        .popover { @apply bg-white/85 backdrop-blur-xl; }
+    }
+
+    /* Kanban: колонка окрашена в светлый оттенок цвета этапа (--col — цвет этапа/статуса) */
+    .kanban-col { --col: #94a3b8; @apply flex w-72 shrink-0 flex-col rounded-2xl border; border-color: color-mix(in srgb, var(--col) 22%, white); background: color-mix(in srgb, var(--col) 16%, rgb(255 255 255 / 0.55)); }
+    .kanban-head { @apply flex items-center gap-2 px-3 pb-2 pt-3; }
+    .kanban-count { @apply flex size-6 shrink-0 items-center justify-center rounded-full bg-white text-xs font-semibold shadow-soft; color: color-mix(in srgb, var(--col) 55%, #1e2a44); }
+    .kanban-title { @apply min-w-0 flex-1 truncate text-sm font-semibold; color: color-mix(in srgb, var(--col) 50%, #1e2a44); }
+    .kanban-sub { @apply px-3 pb-2 text-xs; color: color-mix(in srgb, var(--col) 30%, #5b6b82); }
+    .kanban-add-icon { @apply flex size-7 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/70; color: color-mix(in srgb, var(--col) 60%, #1e2a44); }
+    .kanban-body { @apply grid min-h-24 flex-1 content-start gap-2 rounded-xl p-2 transition-colors; }
+    .kanban-body.is-over { background: color-mix(in srgb, var(--col) 22%, transparent); outline: 2px dashed color-mix(in srgb, var(--col) 55%, white); outline-offset: -4px; }
+    .kanban-card { @apply rounded-xl border border-white bg-white p-3 text-sm shadow-soft transition-shadow hover:shadow-lift; }
+    .kanban-add { @apply mx-2 mb-2 flex h-10 items-center justify-center gap-1.5 rounded-xl border-2 border-dashed text-sm font-medium transition-colors; border-color: color-mix(in srgb, var(--col) 45%, white); color: color-mix(in srgb, var(--col) 60%, #1e2a44); background: rgb(255 255 255 / 0.35); }
+    .kanban-add:hover { background: rgb(255 255 255 / 0.7); }
+    .kanban-empty { @apply py-6 text-center text-xs; color: color-mix(in srgb, var(--col) 35%, #5b6b82); }
+}
+
+/* Без color-mix (старые браузеры) — нейтральные колонки */
+@supports not (background: color-mix(in srgb, red 50%, white)) {
+    .kanban-col { background: rgb(239 243 250 / 0.8); border-color: #e2e8f3; }
+    .kanban-count, .kanban-title, .kanban-add-icon, .kanban-add, .kanban-empty, .kanban-sub { color: #1e2a44; }
+    .kanban-add { border-color: #cbd5e1; }
+}
+
+/* Доски Kanban: своя полоса прокрутки закреплена внизу экрана над «Списком дел» (h-12), доску можно тянуть мышью */
+.hscroll-board { scrollbar-width: none; }
+.hscroll-board::-webkit-scrollbar { display: none; }
+@media (pointer: fine) {
+    .hscroll-board { cursor: grab; }
+    .hscroll-board.is-panning { cursor: grabbing; user-select: none; }
+    .hscroll-board.is-panning * { cursor: grabbing !important; }
+}
+.hscroll-bar {
+    position: sticky;
+    bottom: 3rem;
+    z-index: 20;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 16px;
+    margin-top: 0.25rem;
+    border-radius: 9999px;
+    background: rgb(255 255 255 / 0.75);
+    border: 1px solid rgb(255 255 255 / 0.9);
+    box-shadow: 0 4px 12px -6px rgb(30 58 138 / 0.18);
+    backdrop-filter: blur(6px);
+}
+.hscroll-bar > div { height: 1px; }
+/* На компьютере «Список дел» — плавающая панель (bottom-3, h-12) */
+@media (min-width: 1024px) { .hscroll-bar { bottom: 4rem; } }

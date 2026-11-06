@@ -1,0 +1,93 @@
+{
+  "agenda": {
+    "title": "Mening kunim",
+    "subtitle": "Uchrashuvlar, vazifalar, ishlar va muddatlar",
+    "ranges": {
+      "day": "Kun",
+      "week": "Hafta",
+      "month": "Oy",
+      "year": "Yil"
+    },
+    "who": {
+      "me": "Meniki",
+      "all": "Hammasi"
+    },
+    "today": "Bugun",
+    "prev": "Orqaga",
+    "next": "Oldinga",
+    "rangeLabel": "Davr",
+    "whoLabel": "Kimning yozuvlari",
+    "empty": "Hech narsa rejalashtirilmagan",
+    "emptyText": "Bu davrda uchrashuvlar, vazifalar va muddatlar yoʻq.",
+    "overdue": "Muddati oʻtgan",
+    "overdueCount": "Muddati oʻtgan: {count}",
+    "kinds": {
+      "meeting": "Uchrashuvlar",
+      "task": "Vazifalar",
+      "todo": "Ishlar",
+      "followUp": "Follow-up",
+      "deal": "Bitimlarni yopish",
+      "smm": "SMM nashrlari",
+      "payment": "Kutilayotgan toʻlovlar"
+    },
+    "allDay": "kun boʻyi",
+    "loading": "Yuklanmoqda…",
+    "error": "Yuklab boʻlmadi",
+    "retry": "Qayta urinish",
+    "allMeetings": "Barcha uchrashuvlar",
+    "slots": "Slotlar",
+    "allTodos": "Barcha ishlar",
+    "total": "Jami: {count}",
+    "participants": "Ishtirokchilar",
+    "join": "Havola",
+    "openDay": "Kunni ochish",
+    "openMonth": "Oyni ochish"
+  },
+  "wallets": {
+    "title": "Hamyonlar va hisoblar",
+    "subtitle": "Faol hisoblar boʻyicha qoldiqlar",
+    "total": "Jami UZSda",
+    "missingRate": "Bugungi USD kursi yoʻq — dollar hisoblari jamiga kirmadi.",
+    "ytd": "Yil boshidan tushumlar",
+    "ytdHint": "{from} — {to}",
+    "empty": "Hali hisoblar yoʻq",
+    "open": "Buxgalteriya",
+    "kinds": {
+      "BANK": "Bank",
+      "CASH": "Kassa",
+      "CARD": "Karta"
+    }
+  },
+  "charts": {
+    "salesTitle": "Tushum va toʻlovlar",
+    "salesSub": "Soʻnggi 12 oy",
+    "revenue": "Tushum",
+    "collected": "Olingan",
+    "sourcesTitle": "Lid manbalari",
+    "sourcesSub": "Davrdagi lidlar",
+    "leads": "Lidlar",
+    "stagesTitle": "Bosqichlar boʻyicha bitimlar",
+    "stagesSub": "Ochiq bitimlar: {count} · {amount}",
+    "deals": "Bitimlar",
+    "planTitle": "Oy rejasi",
+    "planSub": "«Tushum» rejasidan olingani",
+    "plan": "Reja",
+    "fact": "Olingan",
+    "forecast": "Prognoz",
+    "kpiTitle": "Mening KPI",
+    "kpiSub": "Oy maqsadlarining bajarilishi",
+    "expensesTitle": "Toifalar boʻyicha xarajatlar",
+    "expensesSub": "Davr uchun",
+    "amount": "Summa",
+    "smmTitle": "Chop etilgan roliklar",
+    "smmSub": "Oylar boʻyicha, 12 oy",
+    "videos": "Roliklar",
+    "noData": "Davr uchun maʼlumot yoʻq",
+    "showTable": "Jadvalni koʻrsatish",
+    "total": "Jami",
+    "share": "Ulush",
+    "conversion": "Konversiya",
+    "losses": "Yoʻqotishlar",
+    "forecastTitle": "Prognoz va reja"
+  }
+}

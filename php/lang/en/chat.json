@@ -1,0 +1,18 @@
+{
+  "title": "Chats",
+  "open": "Open chat",
+  "openUnread": "Open chat, unread: {count}",
+  "close": "Close",
+  "back": "Back",
+  "newChat": "New chat",
+  "searchPeople": "Find an employee",
+  "empty": "No conversations yet. Click “+” to message a colleague.",
+  "firstMessage": "Write the first message",
+  "message": "Message",
+  "placeholder": "Message…",
+  "send": "Send",
+  "you": "You",
+  "errors": {
+    "self": "You cannot message yourself"
+  }
+}

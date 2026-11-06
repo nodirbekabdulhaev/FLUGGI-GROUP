@@ -1,0 +1,14 @@
+{
+  "title": "Boʻlim ishlab chiqilmoqda",
+  "text": "«{section}» Phase {phase} da amalga oshiriladi: {phaseName}. Hozir bu boʻlim ishlamaydi va maʼlumot koʻrsatmaydi.",
+  "phases": {
+    "2": "CRM — lidlar, mijozlar, bitimlar, voronka, uchrashuvlar",
+    "3": "Sotuvlar — TT, shartnomalar, toʻlovlar",
+    "4": "Loyihalar — loyihalar, vazifalar, jamoa, Kanban",
+    "5": "Moliya — tushum, xarajatlar, foyda, komissiyalar",
+    "6": "KPI — maqsadlar, koʻrsatkichlar, davomat, ish haqi",
+    "7": "Telegram — bot, bildirishnomalar, eslatmalar, hisobotlar",
+    "8": "Analitika — dashbordlar, prognoz, LTV, konversiyalar"
+  },
+  "roadmap": "Bosqichlar rejasi — ARCHITECTURE.md da"
+}
