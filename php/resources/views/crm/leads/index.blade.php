@@ -9,9 +9,13 @@
             <button type="button" class="btn btn-outline" x-data x-on:click="$dispatch('lead-bulk-manager')"><x-icon name="user" /> {{ t('leads.bulk.transferManager') }}</button>
         @endif
         @if (can('lead.create'))
-            <button type="button" class="btn btn-primary" x-data x-on:click="$dispatch('open-modal', 'lead-create')"><x-icon name="plus" /> {{ t('leads.add') }}</button>
+            <button type="button" class="btn btn-primary" x-data x-on:click="$dispatch('kanban-create-stage', { entity: 'LEAD', stage: '' }); $dispatch('open-modal', 'lead-create')"><x-icon name="plus" /> {{ t('leads.add') }}</button>
         @endif
     </x-page-header>
+    @php
+        $kanban = $view === 'kanban';
+        $presetStage = in_array(request('create'), \App\Services\Crm\PipelineService::LEAD_CREATE_STAGES, true) ? request('create') : null;
+    @endphp
 
     @if ($result = session('bulkResult'))
         <div class="mb-4 rounded-md border border-success/30 bg-success-soft p-3 text-sm" role="status">
@@ -23,9 +27,14 @@
         </div>
     @endif
 
-    <div @if ($bulk) x-data="leadBulk(@js(['pageIds' => $leads->pluck('id')->values(), 'total' => $leads->total(), 'previewUrl' => route('crm.leads.bulkPreview'), 'filter' => array_filter($f, fn ($v) => $v !== null && $v !== '')]))" x-on:lead-bulk-manager.window="openManager()" @endif>
+    <div @if ($bulk) x-data="leadBulk(@js(['pageIds' => $kanban ? [] : $leads->pluck('id')->values(), 'total' => $kanban ? 0 : $leads->total(), 'previewUrl' => route('crm.leads.bulkPreview'), 'filter' => array_filter($f, fn ($v) => $v !== null && $v !== '')]))" x-on:lead-bulk-manager.window="openManager()" @endif>
+    <div class="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <x-view-toggle :view="$view" key="leads" />
+        @if ($kanban)<p class="text-xs text-muted-foreground">{{ t('pipeline.subtitle') }}</p>@endif
+    </div>
     <div class="card">
-        <form method="GET" class="grid gap-3 border-b p-4">
+        <form method="GET" @class(['grid gap-3 p-4', 'border-b' => ! $kanban]) x-data="{ more: @js($filtered) }">
+            <input type="hidden" name="view" value="{{ $view }}">
             @if (! empty($f['batch']))
                 <input type="hidden" name="batch" value="{{ $f['batch'] }}">
                 <p><x-badge color="blue">{{ t('leads.bulk.batchFilter') }}</x-badge></p>
@@ -34,11 +43,16 @@
                 <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
                 <input name="q" value="{{ $f['q'] ?? '' }}" class="input pl-9" placeholder="{{ t('leads.search') }}" aria-label="{{ t('common.search') }}">
             </div>
-            <div class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+            {{-- Телефон: фильтры свёрнуты, чтобы доска была сразу видна --}}
+            <button type="button" class="btn btn-outline btn-sm justify-self-start md:hidden" x-on:click="more = !more" :aria-expanded="more"><x-icon name="filter" /> {{ t('common.filter') }}</button>
+            <div :class="more ? '' : 'max-md:hidden'" class="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
+                {{-- Kanban показывает лиды в работе — статус выбирается только в списке --}}
+                @unless ($kanban)
                 <select name="status" class="input" aria-label="{{ t('crm.fields.status') }}" onchange="this.form.submit()">
                     <option value="any" @selected($f['status'] === 'any')>{{ t('leads.filters.allStatuses') }}</option>
                     @foreach (\App\Services\Crm\Crm::LEAD_STATUSES as $s)<option value="{{ $s }}" @selected($f['status'] === $s)>{{ t('crm.status.lead.'.$s) }}</option>@endforeach
                 </select>
+                @endunless
                 <select name="stage" class="input" aria-label="{{ t('crm.fields.stage') }}" onchange="this.form.submit()">
                     <option value="">{{ t('crm.fields.stage') }}: {{ t('crm.common.all') }}</option>
                     @foreach (\App\Services\Crm\Crm::stages('LEAD') as $s)<option value="{{ $s->code }}" @selected(($f['stage'] ?? '') === $s->code)>{{ $s->label() }}</option>@endforeach
@@ -62,15 +76,27 @@
                     </select>
                 @endif
             </div>
-            <div class="flex flex-wrap items-end gap-3">
+            <div :class="more ? '' : 'max-md:hidden'" class="flex flex-wrap items-end gap-3">
                 <div><label class="label text-xs" for="lf-from">{{ t('crm.common.dateFrom') }}</label><input id="lf-from" type="date" name="date_from" value="{{ $f['date_from'] ?? '' }}" class="input"></div>
                 <div><label class="label text-xs" for="lf-to">{{ t('crm.common.dateTo') }}</label><input id="lf-to" type="date" name="date_to" value="{{ $f['date_to'] ?? '' }}" class="input"></div>
                 <button class="btn btn-outline"><x-icon name="filter" /> {{ t('common.filter') }}</button>
-                @if ($filtered)<a href="{{ route('crm.leads.index') }}" class="btn btn-ghost">{{ t('common.reset') }}</a>@endif
+                @if ($filtered)<a href="{{ route('crm.leads.index', ['view' => $view]) }}" class="btn btn-ghost">{{ t('common.reset') }}</a>@endif
             </div>
         </form>
 
-        @if ($leads->isEmpty())
+        @if ($kanban)
+    </div>
+    <div class="mt-4">
+        @include('crm.partials.board', ['board' => $board, 'parts' => ['LEAD' => null], 'cfg' => [
+            'data' => route('crm.pipeline.data', ['only' => 'LEAD'] + array_filter($f, fn ($v) => $v !== null && $v !== '' && $v !== 'any')),
+            'lead' => url('/sales/leads/__ID__/stage'),
+            'deal' => url('/sales/deals/__ID__/stage'),
+            'canLead' => can('lead.update'),
+            'canDeal' => false,
+            'create' => can('lead.create') ? ['LEAD' => ['modal' => 'lead-create']] : [],
+            'moreUrl' => request()->fullUrlWithQuery(['view' => 'list', 'stage' => '__STAGE__', 'create' => null]),
+        ]])
+        @elseif ($leads->isEmpty())
             @if ($filtered)
                 <x-empty :title="t('leads.emptyFiltered')" />
             @else
@@ -135,7 +161,7 @@
     </div>
 
     @if (can('lead.create'))
-        <x-modal name="lead-create" :title="t('leads.createTitle')" size="max-w-2xl" :open="$errors->any() && old('_form') === 'lead-create'">
+        <x-modal name="lead-create" :title="t('leads.createTitle')" size="max-w-2xl" :open="($errors->any() && old('_form') === 'lead-create') || $presetStage !== null">
             @include('crm.leads.form', ['lead' => null])
         </x-modal>
     @endif

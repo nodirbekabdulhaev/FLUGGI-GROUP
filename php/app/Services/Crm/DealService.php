@@ -11,7 +11,9 @@ use App\Services\Smm\SmmIdeaService;
 use App\Support\Audit;
 use App\Support\Outbox;
 use Brick\Math\BigDecimal;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 /**
  * Сделки (ТЗ §7): создание у существующего клиента (повторная продажа, ТЗ §63), изменение суммы
@@ -22,6 +24,54 @@ final class DealService
     public const TRACKED = ['title', 'amount', 'currency', 'service_id', 'contact_id', 'expected_close_date', 'probability_override', 'smm_idea_id'];
 
     public const EDITABLE = ['title', 'contact_id', 'service_id', 'amount', 'currency', 'expected_close_date', 'probability_override'];
+
+    /** Поля фильтра-сумм: нормализуются как деньги («10 000 000»). */
+    public const MONEY_FILTERS = ['amount_min', 'amount_max'];
+
+    /** Фильтры списка сделок (и Kanban сделок). */
+    public static function filterRules(): array
+    {
+        return [
+            'q' => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in([...Crm::DEAL_STATUSES, 'any'])],
+            'stage' => ['nullable', Rule::in(DealStages::CODES)],
+            'owner_id' => ['nullable', 'uuid'],
+            'team_id' => ['nullable', 'uuid'],
+            'client_id' => ['nullable', 'uuid'],
+            'service_id' => ['nullable', 'uuid'],
+            'amount_min' => ['nullable', 'numeric', 'min:0'],
+            'amount_max' => ['nullable', 'numeric', 'min:0'],
+            'date_from' => ['nullable', 'date_format:Y-m-d'],
+            'date_to' => ['nullable', 'date_format:Y-m-d'],
+        ];
+    }
+
+    /**
+     * Применяет фильтры к уже ограниченной по области выборке сделок. Статус по умолчанию — OPEN,
+     * «any» — все. source_id — источник клиента (фильтр воронки).
+     */
+    public static function filtered(Builder $q, array $f): Builder
+    {
+        $status = $f['status'] ?? 'OPEN';
+        if ($s = $f['q'] ?? null) {
+            $num = preg_replace('/^D-/i', '', $s);
+            $q->where(fn ($w) => $w->where('title', 'like', '%'.$s.'%')
+                ->orWhereHas('client', fn ($c) => $c->where('name', 'like', '%'.$s.'%'))
+                ->when(ctype_digit($num), fn ($w) => $w->orWhere('number', (int) $num)));
+        }
+
+        return $q->when($status !== 'any', fn ($q) => $q->where('status', $status))
+            ->when($f['stage'] ?? null, fn ($q, $v) => $q->whereHas('stage', fn ($s) => $s->where('code', $v)))
+            ->when($f['owner_id'] ?? null, fn ($q, $v) => $q->where('owner_id', $v))
+            ->when($f['team_id'] ?? null, fn ($q, $v) => $q->where('team_id', $v))
+            ->when($f['client_id'] ?? null, fn ($q, $v) => $q->where('client_id', $v))
+            ->when($f['service_id'] ?? null, fn ($q, $v) => $q->where('service_id', $v))
+            ->when($f['source_id'] ?? null, fn ($q, $v) => $q->whereHas('client', fn ($c) => $c->where('source_id', $v)))
+            ->when(isset($f['amount_min']), fn ($q) => $q->where('amount_uzs', '>=', $f['amount_min']))
+            ->when(isset($f['amount_max']), fn ($q) => $q->where('amount_uzs', '<=', $f['amount_max']))
+            ->when($f['date_from'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', Crm::dayStart($v)))
+            ->when($f['date_to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', Crm::dayStart($v)->addDay()));
+    }
 
     public function create(array $input): Deal
     {

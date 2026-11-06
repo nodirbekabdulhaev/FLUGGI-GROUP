@@ -113,5 +113,6 @@
     "smm_create": "SMM: создание идей",
     "smm_approve": "SMM: утверждение идей",
     "smm_finance": "SMM: финансы (оплата SMM, ставки за ролик, расходы)"
-  }
+  },
+  "tabBoardColors": "Цвета досок"
 }

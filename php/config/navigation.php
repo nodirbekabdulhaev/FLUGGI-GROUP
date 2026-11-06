@@ -8,6 +8,8 @@ use App\Services\Smm\SmmAccess;
  * без any — любому вошедшему. Раздел с подпунктами виден, если виден хоть один подпункт.
  * count — [класс, метод] числа для бейджа у подпункта (показывается, если больше нуля).
  * Скрытие пункта — только удобство: доступ проверяется на сервере (perm:… у маршрутов).
+ * Встречи, КП и договоры — без пунктов меню (по просьбе владельца): они в карточке клиента и сделки,
+ * их адреса (/sales/meetings, /sales/proposals, /sales/contracts) работают по ссылкам.
  */
 return [
     ['key' => 'dashboard', 'href' => '/dashboard', 'icon' => 'dashboard'],
@@ -15,9 +17,6 @@ return [
         ['key' => 'leads', 'href' => '/sales/leads', 'any' => ['lead.read']],
         ['key' => 'deals', 'href' => '/sales/deals', 'any' => ['deal.read']],
         ['key' => 'pipeline', 'href' => '/sales/pipeline', 'any' => ['lead.read', 'deal.read']],
-        ['key' => 'meetings', 'href' => '/sales/meetings', 'any' => ['meeting.read']],
-        ['key' => 'proposals', 'href' => '/sales/proposals', 'any' => ['proposal.read']],
-        ['key' => 'contracts', 'href' => '/sales/contracts', 'any' => ['contract.read']],
         ['key' => 'followUps', 'href' => '/sales/follow-ups', 'any' => ['client.read']],
     ]],
     ['key' => 'clients', 'href' => '/clients', 'icon' => 'briefcase', 'any' => ['client.read']],

@@ -10,7 +10,7 @@ use Illuminate\View\View;
 /** Настройки: разделы всех модулей, отфильтрованные по правам (и только существующие страницы). */
 class SettingsController extends Controller
 {
-    /** [адрес, ключ подписи, право, мин. область] */
+    /** [адрес, ключ подписи, право (или список — любое из), мин. область] */
     public const TABS = [
         ['/settings/teams', 'tabTeams', 'employee.manage', 'OWN'],
         ['/settings/references', 'tabReferences', 'reference.manage', 'OWN'],
@@ -22,6 +22,7 @@ class SettingsController extends Controller
         ['/settings/documents', 'tabDocuments', 'settings.manage', 'OWN'],
         ['/settings/integrations', 'tabIntegrations', 'settings.manage', 'OWN'],
         ['/settings/automation', 'tabAutomation', 'settings.manage', 'OWN'],
+        ['/settings/board-colors', 'tabBoardColors', ['settings.manage', 'reference.manage'], 'OWN'],
         ['/settings/branding', 'tabBranding', 'settings.manage', 'ALL'],
         ['/settings/roles', 'tabRoles', 'role.manage', 'ALL'],
         ['/settings/audit', 'tabAudit', 'audit.read', 'ALL'],
@@ -33,7 +34,7 @@ class SettingsController extends Controller
         $routes = Route::getRoutes();
         $out = [];
         foreach (self::TABS as [$href, $key, $perm, $scope]) {
-            if (! access()->can($perm, $scope)) {
+            if (! collect((array) $perm)->contains(fn ($p) => access()->can($p, $scope))) {
                 continue;
             }
             try {

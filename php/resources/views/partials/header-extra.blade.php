@@ -1,13 +1,13 @@
 {{-- Шапка: глобальный поиск (⌘K / Ctrl+K) и колокольчик уведомлений (счётчик обновляет partials/notify-center) --}}
 <div x-data="globalSearch" @keydown.window.prevent.ctrl.k="openSearch()" @keydown.window.prevent.meta.k="openSearch()" class="flex items-center">
-    <button type="button" class="flex h-9 items-center gap-2 rounded-md border bg-surface px-2.5 text-sm text-muted-foreground hover:bg-muted sm:w-56" @click="openSearch()" aria-label="{{ t('search.open') }}">
+    <button type="button" class="flex h-9 items-center gap-2 rounded-full border border-white bg-white/80 px-3 text-sm text-muted-foreground shadow-soft hover:bg-white sm:w-60" @click="openSearch()" aria-label="{{ t('search.open') }}">
         <x-icon name="search" class="size-4 shrink-0" />
         <span class="hidden flex-1 text-left sm:inline">{{ t('search.placeholder') }}</span>
-        <kbd class="hidden rounded border px-1 text-[10px] sm:inline">⌘K</kbd>
+        <kbd class="hidden rounded-md border bg-white px-1.5 text-[10px] sm:inline">⌘K</kbd>
     </button>
     <div x-show="open" x-cloak class="fixed inset-0 z-50 flex items-start justify-center p-0 sm:p-4 sm:pt-[12vh]" role="dialog" aria-modal="true" @keydown.escape.window="open = false">
-        <div class="absolute inset-0 bg-black/40" @click="open = false"></div>
-        <div class="relative w-full max-w-xl overflow-hidden bg-surface shadow-xl sm:rounded-xl">
+        <div class="absolute inset-0 bg-[#1e2a44]/30" @click="open = false"></div>
+        <div class="relative w-full max-w-xl overflow-hidden border border-white bg-white/95 shadow-lift sm:rounded-3xl">
             <header class="flex items-center justify-between border-b px-4 py-3">
                 <h2 class="font-semibold">{{ t('search.title') }}</h2>
                 <button type="button" class="btn btn-ghost btn-icon" @click="open = false" aria-label="{{ t('common.close') }}"><x-icon name="x" /></button>
@@ -25,7 +25,7 @@
                     <template x-for="(h, i) in hits" :key="h.kind + h.id">
                         <li role="option" :aria-selected="i === active">
                             <p x-show="i === 0 || hits[i - 1].kind !== h.kind" class="px-2 pb-1 pt-2 text-xs font-medium text-muted-foreground" x-text="kinds[h.kind]"></p>
-                            <a :href="h.link" @mouseenter="active = i" :class="i === active && 'bg-muted'" class="flex items-center gap-3 rounded-md px-2 py-2">
+                            <a :href="h.link" @mouseenter="active = i" :class="i === active && 'bg-primary-soft/60'" class="flex items-center gap-3 rounded-xl px-2 py-2">
                                 <span class="min-w-0 flex-1">
                                     <span class="block truncate text-sm" x-text="h.title"></span>
                                     <span class="block truncate text-xs text-muted-foreground" x-text="h.subtitle"></span>

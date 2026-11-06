@@ -3,13 +3,16 @@
     use App\Services\Smm\SmmIdeaService;
     $draggable = $idea->can_move;
 @endphp
-<div @class(['rounded-md border bg-surface p-3 text-sm shadow-sm', 'cursor-grab' => $draggable])
+<article @class(['kanban-card', 'cursor-grab' => $draggable])
      @if ($draggable) draggable="true" @dragstart="drag($event, '{{ $idea->id }}')" @endif
      @dragover.prevent.stop="over = '{{ $status }}'" @drop.prevent.stop="drop($event, '{{ $status }}', '{{ $idea->id }}')">
-    <a href="/smm/{{ $idea->id }}" class="font-medium leading-snug hover:underline">{{ $idea->title }}</a>
+    <a href="/smm/{{ $idea->id }}" class="font-semibold leading-snug text-foreground hover:underline">{{ $idea->title }}</a>
     <p class="mt-0.5 text-xs text-muted-foreground">{{ SmmIdeaService::code($idea) }}</p>
+    <div class="mt-3 flex items-center gap-2 text-xs">
+        <x-avatar :name="$idea->assignee?->full_name" />
+        <span class="min-w-0 flex-1 truncate text-muted-foreground">{{ $idea->assignee?->full_name }}</span>
+    </div>
     <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        <span class="flex items-center gap-1"><x-icon name="user" class="size-3" />{{ $idea->assignee?->full_name }}</span>
         @if ($idea->videographer)<span class="flex items-center gap-1" title="{{ t('smm.fields.videographer') }}"><x-icon name="eye" class="size-3" />{{ $idea->videographer->full_name }}</span>@endif
         @if ($status === 'PUBLISHED' && $idea->published_at)
             <span class="flex items-center gap-1"><x-icon name="play" class="size-3" /> {{ dt($idea->published_at) }}</span>
@@ -26,11 +29,11 @@
     @endif
     @if ($draggable && $status !== 'IDEA')
         {{-- Телефон: перенос выбором этапа --}}
-        <select class="input mt-2 h-8 py-0 text-xs xl:hidden" aria-label="{{ t('smm.moveTo') }}"
+        <select class="input mt-2 h-8 rounded-full py-0 text-xs xl:hidden" aria-label="{{ t('smm.moveTo') }}"
                 x-on:change="request('{{ $idea->id }}', $event.target.value); $event.target.value = '{{ $status }}'">
             @foreach (['APPROVED', 'SHOOTING', 'EDITING', 'SCHEDULED', 'PUBLISHED'] as $to)
                 <option value="{{ $to }}" @selected($to === $status)>{{ $to === $status ? t('smm.moveTo').': '.t('smm.status.'.$to) : t('smm.status.'.$to) }}</option>
             @endforeach
         </select>
     @endif
-</div>
+</article>

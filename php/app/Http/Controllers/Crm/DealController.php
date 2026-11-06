@@ -9,6 +9,7 @@ use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
 use App\Services\Crm\DealService;
 use App\Services\Crm\DealStages;
+use App\Services\Crm\PipelineService;
 use App\Services\Crm\TimelineService;
 use App\Services\Smm\SmmIdeaService;
 use Illuminate\Http\JsonResponse;
@@ -23,41 +24,18 @@ class DealController extends CrmController
 
     public function index(Request $request): View
     {
-        $f = $this->check($request, [
-            'q' => ['nullable', 'string', 'max:100'],
-            'status' => ['nullable', Rule::in([...Crm::DEAL_STATUSES, 'any'])],
-            'stage' => ['nullable', Rule::in(DealStages::CODES)],
-            'owner_id' => ['nullable', 'uuid'],
-            'team_id' => ['nullable', 'uuid'],
-            'client_id' => ['nullable', 'uuid'],
-            'service_id' => ['nullable', 'uuid'],
-            'amount_min' => ['nullable', 'numeric', 'min:0'],
-            'amount_max' => ['nullable', 'numeric', 'min:0'],
-            'date_from' => ['nullable', 'date_format:Y-m-d'],
-            'date_to' => ['nullable', 'date_format:Y-m-d'],
-        ], [], ['amount_min', 'amount_max']);
+        $f = $this->check($request, DealService::filterRules(), [], DealService::MONEY_FILTERS);
         $status = $f['status'] ?? 'OPEN';
-        $q = CrmAccess::deals()->with(['client', 'owner', 'stage']);
-        if ($s = $f['q'] ?? null) {
-            $num = preg_replace('/^D-/i', '', $s);
-            $q->where(fn ($w) => $w->where('title', 'like', '%'.$s.'%')
-                ->orWhereHas('client', fn ($c) => $c->where('name', 'like', '%'.$s.'%'))
-                ->when(ctype_digit($num), fn ($w) => $w->orWhere('number', (int) $num)));
-        }
-        $q->when($status !== 'any', fn ($q) => $q->where('status', $status))
-            ->when($f['stage'] ?? null, fn ($q, $v) => $q->whereHas('stage', fn ($s) => $s->where('code', $v)))
-            ->when($f['owner_id'] ?? null, fn ($q, $v) => $q->where('owner_id', $v))
-            ->when($f['team_id'] ?? null, fn ($q, $v) => $q->where('team_id', $v))
-            ->when($f['client_id'] ?? null, fn ($q, $v) => $q->where('client_id', $v))
-            ->when($f['service_id'] ?? null, fn ($q, $v) => $q->where('service_id', $v))
-            ->when(isset($f['amount_min']), fn ($q) => $q->where('amount_uzs', '>=', $f['amount_min']))
-            ->when(isset($f['amount_max']), fn ($q) => $q->where('amount_uzs', '<=', $f['amount_max']))
-            ->when($f['date_from'] ?? null, fn ($q, $v) => $q->where('created_at', '>=', Crm::dayStart($v)))
-            ->when($f['date_to'] ?? null, fn ($q, $v) => $q->where('created_at', '<', Crm::dayStart($v)->addDay()));
-        $deals = $q->orderByDesc('created_at')->paginate(25)->withQueryString();
+        // Вид: Kanban (по умолчанию) или список; выбор помнит браузер (localStorage) и ?view=
+        $view = $request->query('view') === 'list' ? 'list' : 'kanban';
+        $deals = $view === 'list'
+            ? DealService::filtered(CrmAccess::deals()->with(['client', 'owner', 'stage']), $f)->orderByDesc('created_at')->paginate(25)->withQueryString()
+            : null;
 
         return view('crm.deals.index', [
             'deals' => $deals,
+            'view' => $view,
+            'board' => $view === 'kanban' ? PipelineService::board($f, 'DEAL') : null,
             'f' => $f + ['status' => $status],
             'filtered' => collect($f)->except('status')->filter(fn ($v) => $v !== null && $v !== '')->isNotEmpty() || $status !== 'OPEN',
             'services' => Crm::allOptions(Service::class),

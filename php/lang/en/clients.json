@@ -26,5 +26,6 @@
     "mfo": "MFO bank code must be 5 digits",
     "nameRequired": "Enter a name"
   },
-  "deleteConfirm": "Delete client “{name}”? Their leads ({leads}), deals ({deals}) and projects ({projects}) will also be deleted. Payments, contracts and history will be kept."
+  "deleteConfirm": "Delete client “{name}”? Their leads ({leads}), deals ({deals}) and projects ({projects}) will also be deleted. Payments, contracts and history will be kept.",
+  "allMeetings": "All meetings"
 }

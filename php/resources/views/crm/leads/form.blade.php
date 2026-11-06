@@ -14,6 +14,14 @@
     @unless ($isNew) @method('PUT') @endunless
     <input type="hidden" name="_form" value="{{ $isNew ? 'lead-create' : 'lead-edit' }}">
     @if ($isNew)<p class="text-sm text-muted-foreground">{{ t('leads.createHint') }}</p>@endif
+    @if ($isNew)
+        {{-- «+» в колонке Kanban: лид создаётся сразу в этом этапе (сервер принимает только этапы без «ворот») --}}
+        <div x-data="{ stage: @js((string) old('stage', $presetStage ?? '')), names: @js(\App\Services\Crm\Crm::stages('LEAD')->mapWithKeys(fn ($s) => [$s->code => $s->label()])) }"
+             x-on:kanban-create-stage.window="if ($event.detail.entity === 'LEAD') stage = $event.detail.stage">
+            <input type="hidden" name="stage" :value="stage" value="{{ old('stage', $presetStage ?? '') }}">
+            <p x-show="stage && stage !== 'NEW'" x-cloak class="flex items-center gap-2 text-sm">{{ t('crm.fields.stage') }}: <span class="badge badge-blue" x-text="names[stage]"></span></p>
+        </div>
+    @endif
     <div class="grid gap-4 sm:grid-cols-2">
         <x-field name="contact_name" :label="t('crm.fields.contactName')" :value="$lead?->contact_name" maxlength="120" />
         <x-field name="company_name" :label="t('crm.fields.companyName')" :value="$lead?->company_name" maxlength="160" />

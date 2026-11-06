@@ -113,9 +113,9 @@
     @endif
 
     <div x-data="{ tab: (location.hash || '#overview').slice(1) }" x-on:hashchange.window="tab = (location.hash || '#overview').slice(1)">
-        <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
+        <nav class="tabs">
             @foreach ($tabs as $key => $label)
-                <a href="#{{ $key }}" class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium" :class="tab === '{{ $key }}' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'">{{ $label }}</a>
+                <a href="#{{ $key }}" class="tab" :class="tab === '{{ $key }}' && 'tab-active'">{{ $label }}</a>
             @endforeach
         </nav>
         <div class="card card-body">

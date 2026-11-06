@@ -46,8 +46,8 @@
 
     <div x-data="ruleEditor(@js($init))" x-on:open-rule.window="load($event.detail)" x-on:keydown.escape.window="show = false"
          x-show="show" x-cloak class="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true">
-        <div class="absolute inset-0 bg-black/40" x-on:click="show = false"></div>
-        <div class="relative max-h-[94dvh] w-full max-w-2xl overflow-y-auto rounded-t-xl bg-surface shadow-xl sm:rounded-xl">
+        <div class="absolute inset-0 bg-[#1e2a44]/30" x-on:click="show = false"></div>
+        <div class="relative max-h-[94dvh] w-full max-w-2xl overflow-y-auto rounded-t-3xl border border-white bg-surface shadow-lift sm:rounded-3xl">
             <header class="sticky top-0 z-10 flex items-center justify-between border-b bg-surface px-4 py-3 sm:px-5">
                 <h2 class="font-semibold" x-text="f.id ? @js(t('commissionRules.edit')) : @js(t('commissionRules.new'))"></h2>
                 <button type="button" class="btn btn-ghost btn-icon" x-on:click="show = false" aria-label="{{ t('common.close') }}"><x-icon name="x" /></button>

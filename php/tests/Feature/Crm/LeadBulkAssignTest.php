@@ -107,8 +107,8 @@ class LeadBulkAssignTest extends CrmTestCase
         $a = $this->lead($this->manager);
         $this->bulk($this->manager, ['mode' => 'ids', 'ids' => [$a->id], 'owner_id' => $this->manager->id])->assertForbidden();
         $this->actingAsUser($this->manager)->getJson('/sales/leads/bulk-assign/preview?mode=ids&ids[]='.$a->id)->assertForbidden();
-        $this->actingAsUser($this->manager)->get('/sales/leads')->assertOk()->assertDontSee(t('leads.bulk.selectPage'))->assertDontSee(t('leads.bulk.transferManager'));
-        $this->actingAsUser($this->rop)->get('/sales/leads')->assertOk()->assertSee(t('leads.bulk.selectPage'))->assertSee(t('leads.bulk.transferManager'));
+        $this->actingAsUser($this->manager)->get('/sales/leads?view=list')->assertOk()->assertDontSee(t('leads.bulk.selectPage'))->assertDontSee(t('leads.bulk.transferManager'));
+        $this->actingAsUser($this->rop)->get('/sales/leads?view=list')->assertOk()->assertSee(t('leads.bulk.selectPage'))->assertSee(t('leads.bulk.transferManager'));
         $this->assertSame($this->manager->id, $a->fresh()->owner_id);
     }
 

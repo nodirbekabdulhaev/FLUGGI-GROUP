@@ -9,7 +9,7 @@
 {{-- «Список дел» внизу экрана (только мои личные дела) и чат сотрудников. Обновление — опросом. --}}
 <div x-data="todoDock({{ $dockCount }}, {{ $dockOverdue }})">
     <section x-show="open" x-cloak aria-label="{{ t('todos.dockTitle') }}"
-             class="fixed inset-x-0 bottom-12 z-30 flex max-h-[75dvh] flex-col rounded-t-2xl border bg-surface shadow-xl sm:inset-x-auto sm:left-4 sm:w-[440px] sm:rounded-2xl lg:left-[17rem]">
+             class="fixed inset-x-0 bottom-12 z-30 flex max-h-[75dvh] flex-col rounded-t-3xl border border-white bg-surface shadow-lift sm:inset-x-auto sm:left-4 sm:w-[440px] sm:rounded-3xl lg:bottom-[4.25rem] lg:left-[17rem]">
         <header class="grid gap-3 border-b-2 border-success/40 px-5 pb-3 pt-4">
             <div class="flex items-center gap-2">
                 <x-icon name="list" class="size-5 text-muted-foreground" />
@@ -64,7 +64,7 @@
         <footer class="border-t px-5 py-2 text-right"><a href="{{ route('todos') }}" class="text-xs text-muted-foreground hover:underline">{{ t('todos.openPage') }}</a></footer>
     </section>
     <button type="button" @click="toggle()" :aria-expanded="open"
-            class="fixed inset-x-0 bottom-0 z-30 flex h-12 items-center gap-3 border-t bg-surface px-5 text-sm text-muted-foreground hover:text-foreground lg:left-64">
+            class="fixed inset-x-0 bottom-0 z-30 flex h-12 items-center gap-3 border-t border-white/80 bg-white/75 px-5 text-sm text-muted-foreground shadow-[0_-8px_24px_-16px_rgb(30_58_138/0.25)] backdrop-blur-xl hover:text-foreground lg:bottom-3 lg:left-[17rem] lg:right-4 lg:rounded-2xl lg:border">
         <x-icon name="list" class="size-5 text-success" />
         <span class="font-medium">{{ t('todos.dockTitle') }}</span>
         <span x-show="count" class="rounded-full px-2 py-0.5 text-xs font-medium" :class="overdue ? 'bg-danger-soft text-danger' : 'bg-muted text-foreground'" x-text="count"></span>
@@ -72,8 +72,8 @@
 
     {{-- Новое дело / изменить дело --}}
     <div x-show="dialog" x-cloak class="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" @keydown.escape.window="dialog = false">
-        <div class="absolute inset-0 bg-black/40" @click="dialog = false"></div>
-        <form class="relative max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-xl bg-surface shadow-xl sm:rounded-xl" @submit.prevent="save()">
+        <div class="absolute inset-0 bg-[#1e2a44]/30" @click="dialog = false"></div>
+        <form class="relative max-h-[92dvh] w-full max-w-lg overflow-y-auto rounded-t-3xl border border-white bg-surface shadow-lift sm:rounded-3xl" @submit.prevent="save()">
             <header class="sticky top-0 flex items-center justify-between border-b bg-surface px-4 py-3">
                 <h2 class="font-semibold" x-text="form.id ? @js(t('todos.edit')) : @js(t('todos.new'))"></h2>
                 <button type="button" class="btn btn-ghost btn-icon" @click="dialog = false" aria-label="{{ t('common.close') }}"><x-icon name="x" /></button>
@@ -112,7 +112,7 @@
 {{-- Чат сотрудников (всплывающее окно). Ссылка из Telegram открывает переписку: ?chat=… --}}
 <div x-data="chatWidget({{ $dockChatUnread }})">
     <section x-show="open" x-cloak aria-label="{{ t('chat.title') }}"
-             class="fixed inset-x-0 bottom-12 z-40 flex h-[min(560px,80dvh)] flex-col overflow-hidden rounded-t-2xl border bg-surface shadow-xl sm:inset-x-auto sm:bottom-[7.5rem] sm:right-4 sm:w-[380px] sm:rounded-2xl">
+             class="fixed inset-x-0 bottom-12 z-40 flex h-[min(560px,80dvh)] flex-col overflow-hidden rounded-t-3xl border border-white bg-surface shadow-lift sm:inset-x-auto sm:bottom-[7.5rem] sm:right-4 sm:w-[380px] sm:rounded-3xl">
         <template x-if="active">
             <div class="flex min-h-0 flex-1 flex-col">
                 <header class="flex items-center gap-2 border-b px-3 py-2">
@@ -178,7 +178,7 @@
         </template>
     </section>
     <button type="button" @click="toggle()" :class="open && 'max-sm:hidden'" :aria-label="count ? unreadLabel.replace('{count}', count) : @js(t('chat.open'))"
-            class="fixed bottom-14 right-4 z-40 flex size-12 items-center justify-center rounded-full bg-accent text-white shadow-lg hover:bg-accent/90">
+            class="fixed bottom-14 right-4 z-40 flex size-12 items-center justify-center rounded-full bg-gradient-to-br from-primary to-accent text-white shadow-lift ring-4 ring-white/70 hover:brightness-105 lg:bottom-[4.75rem]">
         <span x-show="!open"><x-icon name="message" class="size-5" /></span>
         <span x-show="open" x-cloak><x-icon name="x" class="size-5" /></span>
         <span x-show="count && !open" x-cloak class="absolute -right-1 -top-1 min-w-5 rounded-full bg-danger px-1 text-center text-[11px] font-semibold leading-5" x-text="count > 99 ? '99+' : count"></span>

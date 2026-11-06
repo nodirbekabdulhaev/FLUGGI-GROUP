@@ -12,15 +12,15 @@ class AccessTest extends CrmTestCase
         $own = $this->newLead($this->manager);
         $other = $this->newLead($this->otherManager, ['company_name' => 'Other Co', 'phone' => '+998935554433']);
 
-        $this->actingAsUser($this->manager)->get('/sales/leads')->assertOk()->assertSee($own->title)->assertDontSee('Other Co');
+        $this->actingAsUser($this->manager)->get('/sales/leads?view=list')->assertOk()->assertSee($own->title)->assertDontSee('Other Co');
         $this->actingAsUser($this->manager)->get("/sales/leads/{$other->id}")->assertNotFound();
         $this->actingAsUser($this->manager)->put("/sales/leads/{$other->id}", $this->leadData(['title' => 'hack']))->assertNotFound();
         $this->actingAsUser($this->manager)->post('/crm/comments', ['lead_id' => $other->id, 'body' => 'x'])->assertNotFound();
         $this->assertNotSame('hack', $other->fresh()->title);
 
-        $this->actingAsUser($this->rop)->get('/sales/leads')->assertOk()->assertSee($own->title)->assertDontSee('Other Co');
+        $this->actingAsUser($this->rop)->get('/sales/leads?view=list')->assertOk()->assertSee($own->title)->assertDontSee('Other Co');
         $this->actingAsUser($this->rop)->get("/sales/leads/{$other->id}")->assertNotFound();
-        $this->actingAsUser($this->ceo)->get('/sales/leads')->assertOk()->assertSee($own->title)->assertSee('Other Co');
+        $this->actingAsUser($this->ceo)->get('/sales/leads?view=list')->assertOk()->assertSee($own->title)->assertSee('Other Co');
         $this->actingAsUser($this->ceo)->get("/sales/leads/{$other->id}")->assertOk();
 
         // Воронка тоже ограничена

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Route;
 Route::middleware('auth.only')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
     Route::get('/dashboard', [DashboardController::class, 'show'])->name('dashboard');
+    Route::get('/dashboard/agenda', [DashboardController::class, 'agenda'])->name('dashboard.agenda');
     Route::get('/profile', [ProfileController::class, 'show'])->name('profile');
     Route::put('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/locale', [ProfileController::class, 'locale'])->name('profile.locale');

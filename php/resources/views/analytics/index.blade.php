@@ -15,6 +15,7 @@
 
         return $g === 'week' ? t('analytics.weekFrom', ['date' => $d]) : $d;
     };
+    $palette = ['#60a5fa', '#818cf8', '#f9a8d4', '#6ee7b7', '#fcd34d', '#a5b4fc', '#fda4af', '#7dd3fc', '#c4b5fd', '#5eead4', '#fdba74', '#cbd5e1'];
     $stat = function (string $label, string $value, $change = false) {
         return ['label' => $label, 'value' => $value, 'change' => $change];
     };
@@ -55,9 +56,8 @@
                 [t('analytics.won'), (string) $data['totals']['won'], $data['change']['won']],
                 [t('analytics.leads'), (string) $data['totals']['leads'], $data['change']['leads']],
             ];
-            $max = max(1, ...array_map(fn ($p) => max((float) $p['revenue'], (float) $p['collected']), $data['points'] ?: [['revenue' => 0, 'collected' => 0]]));
         @endphp
-        <div class="grid gap-4">
+        <div class="grid grid-cols-1 gap-4">
             <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 @foreach ($stats as [$label, $value, $change])
                     <div class="card card-body">
@@ -69,20 +69,13 @@
                 @endforeach
             </div>
             <x-card :title="t('analytics.salesTitle')" :subtitle="t('analytics.salesText', ['avg' => $short($data['totals']['avgCheck'])])">
-                <div class="mb-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-accent"></span>{{ t('analytics.revenue') }}</span>
-                    <span class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-warning"></span>{{ t('analytics.collected') }}</span>
-                </div>
-                <div class="overflow-x-auto">
-                    <div class="flex h-48 min-w-full items-end gap-1" role="img" aria-label="{{ t('analytics.salesTitle') }}">
-                        @foreach ($data['points'] as $p)
-                            <div class="flex h-full min-w-3 flex-1 items-end justify-center gap-px" title="{{ $pointLabel($p['key'], $data['granularity']) }}: {{ money($p['revenue']) }} / {{ money($p['collected']) }}">
-                                <span class="w-1/2 rounded-t-sm bg-accent" style="height: {{ max(0, (float) $p['revenue']) / $max * 100 }}%"></span>
-                                <span class="w-1/2 rounded-t-sm bg-warning" style="height: {{ max(0, (float) $p['collected']) / $max * 100 }}%"></span>
-                            </div>
-                        @endforeach
-                    </div>
-                </div>
+                @include('dashboard.partials.chart', ['empty' => ! collect($data['points'])->contains(fn ($p) => (float) $p['revenue'] != 0 || (float) $p['collected'] != 0),
+                    'label' => t('analytics.salesTitle'), 'height' => 'h-64', 'config' => [
+                    'type' => count($data['points']) > 1 ? 'line' : 'bar', 'format' => 'money', 'unit' => 'UZS', 'legend' => true,
+                    'labels' => array_map(fn ($p) => $pointLabel($p['key'], $data['granularity']), $data['points']),
+                    'series' => [['label' => t('analytics.revenue'), 'data' => array_column($data['points'], 'revenue'), 'color' => '#60a5fa'],
+                        ['label' => t('analytics.collected'), 'data' => array_column($data['points'], 'collected'), 'color' => '#f472b6', 'fill' => false]],
+                ]])
                 <details class="mt-3">
                     <summary class="cursor-pointer text-xs text-muted-foreground">{{ t('analytics.showTable') }}</summary>
                     <div class="mt-2 max-h-80 overflow-auto">
@@ -104,17 +97,36 @@
             @if ($data[0]['count'] === 0)
                 <x-empty :title="t('analytics.empty')" />
             @else
-                @include('analytics.bars', ['rows' => array_map(fn ($s, $i) => ['label' => $s['label'], 'value' => $s['count'], 'display' => (string) $s['count'],
-                    'sub' => $i === 0 ? null : t('analytics.fromPrev', ['prev' => $s['fromPrev'], 'start' => $s['fromStart']])], $data, array_keys($data))])
+                <div class="grid gap-6 lg:grid-cols-[repeat(2,minmax(0,1fr))]">
+                    @include('dashboard.partials.chart', ['label' => t('analytics.funnelTitle'), 'height' => 'h-72', 'config' => [
+                        'type' => 'hbar', 'labels' => array_column($data, 'label'), 'legend' => false,
+                        'series' => [['label' => t('analytics.leads'), 'data' => array_column($data, 'count'), 'color' => '#818cf8']],
+                    ]])
+                    @include('analytics.bars', ['rows' => array_map(fn ($s, $i) => ['label' => $s['label'], 'value' => $s['count'], 'display' => (string) $s['count'],
+                        'sub' => $i === 0 ? null : t('analytics.fromPrev', ['prev' => $s['fromPrev'], 'start' => $s['fromStart']])], $data, array_keys($data))])
+                </div>
             @endif
         </x-card>
     @elseif ($tab === 'sources' || $tab === 'services')
         @if (! $data)
             <x-card><x-empty :title="t('analytics.empty')" /></x-card>
         @else
-            <div class="grid gap-4 lg:grid-cols-[2fr_3fr]">
+            <div class="grid gap-4 lg:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
                 <x-card :title="t($tab === 'sources' ? 'analytics.sourcesTitle' : 'analytics.servicesTitle')" :subtitle="t('analytics.revenueByLeads')">
-                    @include('analytics.bars', ['rows' => array_map(fn ($r) => ['label' => $r['name'], 'value' => (float) $r['revenue'], 'display' => $short($r['revenue']), 'sub' => null], $data)])
+                    @php
+                        $byRevenue = collect($data)->contains(fn ($r) => (float) $r['revenue'] > 0);
+                        $donut = array_slice($data, 0, 10);
+                    @endphp
+                    @include('dashboard.partials.chart', ['label' => t($tab === 'sources' ? 'analytics.sourcesTitle' : 'analytics.servicesTitle'), 'height' => 'h-52', 'config' => [
+                        'type' => 'doughnut', 'labels' => array_column($donut, 'name'), 'legend' => false, 'format' => $byRevenue ? 'money' : 'number', 'unit' => 'UZS',
+                        'series' => [['label' => $byRevenue ? t('analytics.revenue') : t('analytics.leads'), 'data' => $byRevenue ? array_column($donut, 'revenue') : array_column($donut, 'leads')]],
+                    ]])
+                    <ul class="mt-4 grid grid-cols-1 gap-1.5 text-sm">
+                        @foreach ($data as $i => $r)
+                            <li class="flex min-w-0 items-center gap-2"><span class="size-2.5 shrink-0 rounded-full" style="background: {{ $i < 10 ? $palette[$i % count($palette)] : '#e2e8f0' }}"></span>
+                                <span class="min-w-0 flex-1 truncate">{{ $r['name'] }}</span><span class="whitespace-nowrap font-medium tabular-nums">{{ $byRevenue ? $short($r['revenue']) : $r['leads'] }}</span></li>
+                        @endforeach
+                    </ul>
                 </x-card>
                 <x-table>
                     <thead><tr><th>{{ t($tab === 'sources' ? 'analytics.source' : 'analytics.service') }}</th><th class="text-right">{{ t('analytics.leads') }}</th><th class="text-right">{{ t('analytics.deals') }}</th>
@@ -138,38 +150,43 @@
             @if (! $data)
                 <x-empty :title="t('analytics.noLosses')" />
             @else
+                <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+                @include('dashboard.partials.chart', ['label' => t('analytics.lossesTitle'), 'height' => 'h-56', 'config' => [
+                    'type' => 'doughnut', 'labels' => array_column($data, 'name'), 'legend' => false,
+                    'series' => [['label' => t('home.charts.losses'), 'data' => array_map(fn ($r) => $r['leads'] + $r['deals'], $data), 'colors' => array_map(fn ($i) => ['#fda4af', '#fcd34d', '#f9a8d4', '#fdba74', '#c4b5fd', '#a5b4fc', '#7dd3fc', '#6ee7b7', '#cbd5e1'][$i % 9], array_keys($data))]],
+                ]])
+                <div class="min-w-0">
                 @include('analytics.bars', ['color' => 'bg-warning', 'rows' => array_map(fn ($r) => ['label' => $r['name'], 'value' => $r['leads'] + $r['deals'], 'display' => (string) ($r['leads'] + $r['deals']),
                     'sub' => t('analytics.lossSub', ['leads' => $r['leads'], 'deals' => $r['deals'], 'amount' => $short($r['amount'])])], $data)])
+                </div>
+                </div>
             @endif
         </x-card>
     @elseif ($tab === 'forecast')
         @php
             $first = $data['months'][0];
-            $fmax = max(1, ...array_map(fn ($m) => max((float) $m['total'], (float) ($m['plan'] ?? 0)), $data['months']));
         @endphp
-        <div class="grid gap-4">
+        <div class="grid grid-cols-1 gap-4">
             <div class="grid gap-4 sm:grid-cols-3">
                 <x-stat :label="t('analytics.forecastMonth')" :value="$short($first['total'])" />
                 <x-stat :label="t('analytics.planMonth')" :value="$first['plan'] ? $short($first['plan']) : t('analytics.noPlan')" />
                 <x-stat :label="t('analytics.pipeline')" :value="$short($data['pipeline'])" />
             </div>
             <x-card :title="t('analytics.forecastTitle')" :subtitle="t('analytics.forecastText')">
-                <div class="mb-2 flex flex-wrap gap-4 text-xs text-muted-foreground">
-                    <span class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-accent"></span>{{ t('analytics.collected') }}</span>
-                    <span class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-warning"></span>{{ t('analytics.scheduled') }}</span>
-                    <span class="flex items-center gap-1"><span class="size-2.5 rounded-sm bg-success"></span>{{ t('analytics.weighted') }}</span>
-                    <span class="flex items-center gap-1"><span class="h-0 w-4 border-t-2 border-dashed border-foreground"></span>{{ t('analytics.plan') }}</span>
-                </div>
-                <div class="flex h-48 items-end gap-4 sm:gap-10">
-                    @foreach ($data['months'] as $m)
-                        <div class="relative flex h-full flex-1 flex-col justify-end" title="{{ $months($m['month']) }}: {{ money($m['total']) }}">
-                            @if ($m['plan'])<div class="absolute inset-x-0 border-t-2 border-dashed border-foreground" style="bottom: {{ (float) $m['plan'] / $fmax * 100 }}%"></div>@endif
-                            <div class="w-full bg-success" style="height: {{ (float) $m['weighted'] / $fmax * 100 }}%"></div>
-                            <div class="w-full bg-warning" style="height: {{ (float) $m['scheduled'] / $fmax * 100 }}%"></div>
-                            <div class="w-full rounded-b-sm bg-accent" style="height: {{ max(0, (float) $m['collected']) / $fmax * 100 }}%"></div>
-                        </div>
-                    @endforeach
-                </div>
+                @php
+                    $hasPlan = collect($data['months'])->contains(fn ($m) => $m['plan'] !== null);
+                @endphp
+                @include('dashboard.partials.chart', ['empty' => ! collect($data['months'])->contains(fn ($m) => (float) $m['total'] != 0 || $m['plan']),
+                    'label' => t('analytics.forecastTitle'), 'height' => 'h-64', 'config' => [
+                    'type' => 'bar', 'stacked' => true, 'format' => 'money', 'unit' => 'UZS', 'legend' => true,
+                    'labels' => array_map(fn ($m) => $months($m['month']), $data['months']),
+                    'series' => array_values(array_filter([
+                        ['label' => t('analytics.collected'), 'data' => array_column($data['months'], 'collected'), 'color' => '#60a5fa', 'stack' => 'f'],
+                        ['label' => t('analytics.scheduled'), 'data' => array_column($data['months'], 'scheduled'), 'color' => '#fcd34d', 'stack' => 'f'],
+                        ['label' => t('analytics.weighted'), 'data' => array_column($data['months'], 'weighted'), 'color' => '#6ee7b7', 'stack' => 'f'],
+                        $hasPlan ? ['label' => t('analytics.plan'), 'data' => array_map(fn ($m) => $m['plan'], $data['months']), 'color' => '#f472b6', 'kind' => 'line', 'dashed' => true, 'fill' => false] : null,
+                    ])),
+                ]])
                 <div class="mt-4 overflow-x-auto">
                     <table class="table">
                         <thead><tr><th>{{ t('analytics.month') }}</th><th class="text-right">{{ t('analytics.collected') }}</th><th class="text-right">{{ t('analytics.scheduled') }}</th>
@@ -187,7 +204,7 @@
         </div>
     @else
         @php($s = $data['summary'])
-        <div class="grid gap-4">
+        <div class="grid grid-cols-1 gap-4">
             <div class="grid gap-4 sm:grid-cols-3">
                 <x-stat :label="t('analytics.clients')" :value="(string) $s['clients']" />
                 <x-stat :label="t('analytics.avgLtv')" :value="$short($s['avgLtv'])" />

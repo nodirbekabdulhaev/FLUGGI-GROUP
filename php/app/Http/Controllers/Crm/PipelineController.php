@@ -5,9 +5,12 @@ namespace App\Http\Controllers\Crm;
 use App\Models\LeadSource;
 use App\Models\Service;
 use App\Services\Crm\Crm;
+use App\Services\Crm\DealService;
+use App\Services\Crm\LeadService;
 use App\Services\Crm\PipelineService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 use Illuminate\View\View;
 
 /** Воронка (Kanban): страница и JSON для обновления после перетаскивания. */
@@ -26,9 +29,17 @@ class PipelineController extends CrmController
         ]);
     }
 
+    /** JSON доски. only=LEAD|DEAL — Kanban страниц «Лиды»/«Сделки» с фильтрами этих списков. */
     public function data(Request $request): JsonResponse
     {
-        return response()->json(PipelineService::board($this->filters($request)));
+        $only = $this->check($request, ['only' => ['nullable', Rule::in(['LEAD', 'DEAL'])]])['only'] ?? null;
+        $f = match ($only) {
+            'LEAD' => $this->check($request, LeadService::filterRules()),
+            'DEAL' => $this->check($request, DealService::filterRules(), [], DealService::MONEY_FILTERS),
+            default => $this->filters($request),
+        };
+
+        return response()->json(PipelineService::board($f, $only));
     }
 
     private function filters(Request $request): array

@@ -3,6 +3,9 @@ import collapse from '@alpinejs/collapse';
 import meetingPlanner from './meeting-planner';
 import registerNotify from './notify';
 import registerHscroll from './hscroll';
+import pipelineBoard from './kanban';
+import registerCharts from './charts';
+import agenda from './agenda';
 
 /**
  * Общие помощники интерфейса. Страницы — серверные (Blade), Alpine добавляет интерактивность:
@@ -191,6 +194,9 @@ if ('serviceWorker' in navigator && window.location.protocol === 'https:') {
 window.Alpine = Alpine;
 Alpine.plugin(collapse);
 Alpine.data('meetingPlanner', meetingPlanner);
+window.pipelineBoard = pipelineBoard;
 registerNotify(Alpine);
 registerHscroll(Alpine);
+registerCharts(Alpine);
+Alpine.data('agenda', agenda);
 Alpine.start();

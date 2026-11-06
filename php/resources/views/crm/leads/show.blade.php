@@ -99,9 +99,9 @@
     @endif
 
     <div x-data="{ tab: (location.hash || '#overview').slice(1) }" x-on:hashchange.window="tab = (location.hash || '#overview').slice(1)">
-        <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
+        <nav class="tabs">
             @foreach (['overview', 'tasks', 'activity', 'meetings', 'comments', 'history', 'docs'] as $key)
-                <a href="#{{ $key }}" class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium" :class="tab === '{{ $key }}' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'">
+                <a href="#{{ $key }}" class="tab" :class="tab === '{{ $key }}' && 'tab-active'">
                     {{ $key === 'docs' ? t('leads.tabs.proposals').' · '.t('leads.tabs.contracts').' · '.t('leads.tabs.payments') : t('leads.tabs.'.$key) }}
                 </a>
             @endforeach

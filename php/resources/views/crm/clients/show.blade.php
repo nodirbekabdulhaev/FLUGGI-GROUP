@@ -45,13 +45,16 @@
     @includeIf('analytics.partials.client-insight', ['client' => $client])
 
     <div x-data="{ tab: (location.hash || '#deals').slice(1) }" x-on:hashchange.window="tab = (location.hash || '#deals').slice(1)">
-        <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
+        <nav class="tabs">
             @foreach (array_filter([
                 'deals' => t('clients.deals').' ('.$deals->count().')', 'contacts' => t('clients.contacts').' ('.$client->contacts->count().')',
                 'requisites' => t('requisites.tab'), 'tasks' => t('leads.tabs.tasks'), 'activity' => t('leads.tabs.activity'), 'comments' => t('leads.tabs.comments'),
+                'meetings' => $meetings !== null ? t('meetings.title').' ('.$meetings->count().')' : null,
+                'proposals' => $proposals !== null ? t('nav.proposals').' ('.$proposals->count().')' : null,
+                'contracts' => $contracts !== null ? t('nav.contracts').' ('.$contracts->count().')' : null,
                 'projects' => $projectsSlot ? t('leads.tabs.projects') : null,
             ]) as $key => $label)
-                <a href="#{{ $key }}" class="whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium" :class="tab === '{{ $key }}' ? 'border-foreground text-foreground' : 'border-transparent text-muted-foreground hover:text-foreground'">{{ $label }}</a>
+                <a href="#{{ $key }}" class="tab" :class="tab === '{{ $key }}' && 'tab-active'" data-tab="{{ $key }}">{{ $label }}</a>
             @endforeach
         </nav>
         <div class="card">
@@ -61,7 +64,7 @@
                 @else
                     <ul class="divide-y">
                         @foreach ($deals as $d)
-                            <li><a href="{{ route('crm.deals.show', $d->id) }}" class="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-muted/40">
+                            <li><a href="{{ route('crm.deals.show', $d->id) }}" class="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-primary-soft/40">
                                 <div class="min-w-0 flex-1"><p class="font-medium">{{ $d->title }}</p><p class="text-xs text-muted-foreground">{{ \App\Support\Format::code('D', $d->number) }} · {{ $d->owner?->full_name }}</p></div>
                                 @if ($d->status === 'OPEN') @include('crm.partials.stage', ['stage' => $d->stage]) @else @include('crm.partials.status', ['status' => $d->status, 'kind' => 'deal']) @endif
                                 <span class="font-medium sm:w-36 sm:text-right">{{ money($d->amount, $d->currency) }}</span>
@@ -110,6 +113,52 @@
             <div x-show="tab === 'tasks'" x-cloak class="card-body">@include('todos.partials.record-tasks', ['column' => 'client_id', 'recordId' => $client->id])</div>
             <div x-show="tab === 'activity'" x-cloak class="card-body">@include('crm.partials.timeline')</div>
             <div x-show="tab === 'comments'" x-cloak class="card-body">@include('crm.partials.comments', ['target' => ['client_id' => $client->id]])</div>
+            @if ($meetings !== null)
+                {{-- Встречи клиента (по клиенту и его сделкам); доска «Слоты» — свободное время менеджеров --}}
+                <div x-show="tab === 'meetings'" x-cloak class="card-body grid gap-4" data-section="client-meetings">
+                    <div class="flex flex-wrap gap-2">
+                        <a href="{{ route('crm.meetings.board') }}" class="btn btn-outline btn-sm"><x-icon name="calendar" /> {{ t('meetings.slots') }}</a>
+                        <a href="{{ route('crm.meetings.index') }}" class="btn btn-ghost btn-sm">{{ t('clients.allMeetings') }}</a>
+                    </div>
+                    @include('crm.partials.meetings', ['meetings' => $meetings, 'target' => null, 'canCreate' => false])
+                </div>
+            @endif
+            @if ($proposals !== null)
+                <div x-show="tab === 'proposals'" x-cloak data-section="client-proposals">
+                    @if ($proposals->isEmpty())
+                        <x-empty icon="file" :title="t('sales.proposals.empty')" />
+                    @else
+                        <ul class="divide-y divide-border/70">
+                            @foreach ($proposals as $p)
+                                <li><a href="{{ route('crm.deals.show', $p->deal_id) }}#proposals" class="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-primary-soft/40">
+                                    <div class="min-w-0 flex-1"><p class="font-medium">{{ \App\Services\Sales\Numbers::proposal($p->number) }} · {{ $p->title }}</p>
+                                        <p class="text-xs text-muted-foreground">{{ \App\Services\Sales\Numbers::deal($p->deal?->number) }} · {{ $p->deal?->title }}@if ($p->manager) · {{ $p->manager->full_name }}@endif</p></div>
+                                    @include('sales.partials.badge', ['kind' => 'proposalStatus', 'status' => $p->status])
+                                    <span class="font-medium tabular-nums sm:w-36 sm:text-right">{{ money($p->total, $p->currency) }}</span>
+                                </a></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
+            @if ($contracts !== null)
+                <div x-show="tab === 'contracts'" x-cloak data-section="client-contracts">
+                    @if ($contracts->isEmpty())
+                        <x-empty icon="file" :title="t('sales.contracts.empty')" />
+                    @else
+                        <ul class="divide-y divide-border/70">
+                            @foreach ($contracts as $c)
+                                <li><a href="{{ route('crm.deals.show', $c->deal_id) }}#contracts" class="flex flex-wrap items-center gap-3 px-5 py-3 hover:bg-primary-soft/40">
+                                    <div class="min-w-0 flex-1"><p class="font-medium">{{ \App\Services\Sales\Numbers::contract($c->number) }}</p>
+                                        <p class="text-xs text-muted-foreground">{{ t('sales.contracts.from', ['date' => d($c->contract_date)]) }} · {{ \App\Services\Sales\Numbers::deal($c->deal?->number) }} · {{ $c->deal?->title }}</p></div>
+                                    @include('sales.partials.badge', ['kind' => 'contractStatus', 'status' => $c->status])
+                                    <span class="text-right text-sm tabular-nums sm:w-44"><span class="block font-medium">{{ money($c->amount, $c->currency) }}</span><span class="block text-xs text-muted-foreground">{{ t('sales.contracts.paid') }}: {{ money($c->paid_uzs) }}</span></span>
+                                </a></li>
+                            @endforeach
+                        </ul>
+                    @endif
+                </div>
+            @endif
             @if ($projectsSlot)<div x-show="tab === 'projects'" x-cloak>@includeIf('projects.partials.client-projects', ['client' => $client])</div>@endif
         </div>
     </div>

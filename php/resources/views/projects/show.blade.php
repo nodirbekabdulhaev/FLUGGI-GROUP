@@ -64,9 +64,9 @@
         </div>
     @endisset
 
-    <nav class="mb-4 flex gap-1 overflow-x-auto border-b">
+    <nav class="tabs">
         @foreach ($tabs as $key)
-            <a href="{{ $base }}?tab={{ $key }}" @class(['whitespace-nowrap border-b-2 px-3 py-2 text-sm font-medium', 'border-foreground text-foreground' => $tab === $key, 'border-transparent text-muted-foreground hover:text-foreground' => $tab !== $key])>
+            <a href="{{ $base }}?tab={{ $key }}" @class(['tab', 'tab-active' => $tab === $key])>
                 {{ $tabLabels[$key] }}
                 @if ($key === 'tasks')<span class="ml-1 text-xs text-muted-foreground">{{ $p->task_counts['total'] }}</span>@endif
                 @if ($key === 'team')<span class="ml-1 text-xs text-muted-foreground">{{ $p->team->where('status', '<>', 'REMOVED')->count() }}</span>@endif

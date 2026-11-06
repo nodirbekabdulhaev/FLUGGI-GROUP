@@ -6,32 +6,42 @@
         'videographer' => $i->videographer_id,
     ]]);
     $rejected = $items->where('status', 'REJECTED')->sortByDesc('rejected_at');
+    $colors = \App\Support\BoardColors::for('smm');
+    $canAdd = $canCreate ?? false;
 @endphp
 <div class="grid gap-4" x-data="smmKanban(@js(['cards' => $cards, 'now' => \App\Support\Format::toLocalInput(now()), 'ok' => t('smm.moved')]))">
     <p class="text-xs text-muted-foreground">{{ t('smm.kanbanHint') }}@if ($hidden) · {{ t('smm.hiddenOld', ['count' => $hidden]) }}@endif</p>
-    <div class="-mx-4 flex gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" x-hscroll>
+    {{-- Колонки окрашены в цвета статусов (Настройки → Цвета досок) --}}
+    <div class="-mx-4 flex items-start gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" x-hscroll>
         @foreach (SmmIdeaService::KANBAN as $status)
             @php($col = $items->where('status', $status))
-            <div class="flex w-72 shrink-0 flex-col rounded-lg bg-muted/60 xl:w-auto xl:min-w-0 xl:flex-1">
-                <div class="flex items-center gap-2 border-b border-border/60 p-3">
-                    <h3 class="flex-1 truncate text-sm font-semibold" title="{{ t('smm.statusHint.'.$status) }}">{{ t('smm.status.'.$status) }}</h3>
-                    <span class="rounded-full bg-surface px-2 text-xs">{{ $col->count() }}</span>
-                </div>
-                <div class="grid min-h-32 flex-1 content-start gap-2 p-2 transition-colors" data-status="{{ $status }}" data-testid="column-{{ $status }}"
-                     :class="over === '{{ $status }}' && 'bg-accent-soft'"
+            <section class="kanban-col xl:w-auto xl:min-w-[13rem] xl:flex-1" style="--col: {{ $colors[$status] }}">
+                <header class="kanban-head">
+                    <span class="kanban-count">{{ $col->count() }}</span>
+                    <h3 class="kanban-title" title="{{ t('smm.statusHint.'.$status) }}">{{ t('smm.status.'.$status) }}</h3>
+                    @if ($canAdd && $status === 'IDEA')
+                        <button type="button" class="kanban-add-icon" @click="$dispatch('open-modal', 'smm-new')" aria-label="{{ t('ui.kanban.addTo', ['name' => t('smm.status.'.$status)]) }}"><x-icon name="plus" class="size-4" /></button>
+                    @endif
+                </header>
+                <div class="kanban-body min-h-32" data-status="{{ $status }}" data-testid="column-{{ $status }}"
+                     :class="over === '{{ $status }}' && 'is-over'"
                      @dragover.prevent="over = '{{ $status }}'" @dragleave="over = null" @drop.prevent="drop($event, '{{ $status }}', null)">
+                    @if ($col->isEmpty())<p class="kanban-empty">{{ t('ui.kanban.empty') }}</p>@endif
                     @foreach ($col as $idea)
                         @include('smm.partials.card', ['idea' => $idea, 'status' => $status])
                     @endforeach
                 </div>
-            </div>
+                @if ($canAdd && $status === 'IDEA')
+                    <button type="button" class="kanban-add" @click="$dispatch('open-modal', 'smm-new')"><x-icon name="plus" class="size-4" /> {{ t('ui.kanban.add') }}</button>
+                @endif
+            </section>
         @endforeach
     </div>
 
     @if ($rejected->isNotEmpty())
         <section class="grid gap-2">
             <h3 class="text-sm font-semibold">{{ t('smm.status.REJECTED') }} <span class="text-muted-foreground">({{ $rejected->count() }})</span></h3>
-            <ul class="divide-y rounded-lg border bg-surface">
+            <ul class="card divide-y divide-border/70">
                 @foreach ($rejected as $idea)
                     <li class="flex flex-wrap items-center gap-x-3 gap-y-1 px-3 py-2 text-sm">
                         <x-badge color="red">{{ t('smm.status.REJECTED') }}</x-badge>
@@ -46,8 +56,8 @@
 
     {{-- Дата при переносе в «Запланировано» / «Опубликовано» --}}
     <div x-show="ask" x-cloak class="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-4" role="dialog" aria-modal="true" x-on:keydown.escape.window="ask = null">
-        <div class="absolute inset-0 bg-black/40" x-on:click="ask = null"></div>
-        <form class="relative grid w-full max-w-md gap-4 rounded-t-xl bg-surface p-4 shadow-xl sm:rounded-xl sm:p-5" x-on:submit.prevent="confirm()">
+        <div class="absolute inset-0 bg-[#1e2a44]/30" x-on:click="ask = null"></div>
+        <form class="relative grid w-full max-w-md gap-4 rounded-t-3xl border border-white bg-surface p-4 shadow-lift sm:rounded-3xl sm:p-5" x-on:submit.prevent="confirm()">
             <h2 class="font-semibold" x-text="ask && ask.status === 'SHOOTING' ? @js(t('smm.askShooting')) : (ask && ask.status === 'SCHEDULED' ? @js(t('smm.askScheduled')) : @js(t('smm.askPublished')))"></h2>
             <template x-if="ask && ask.status === 'SHOOTING'">
                 <div>

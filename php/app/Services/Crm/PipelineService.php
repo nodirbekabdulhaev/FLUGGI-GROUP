@@ -13,28 +13,33 @@ final class PipelineService
 {
     public const CARDS_PER_COLUMN = 100;
 
-    /** @param  array{owner_id?:?string, team_id?:?string, service_id?:?string, source_id?:?string}  $f */
-    public static function board(array $f): array
+    /** Этапы, в которых можно сразу создать лид (без «ворот» — встреча назначена/проведена требуют встречу). */
+    public const LEAD_CREATE_STAGES = ['NEW', 'CONTACTED', 'QUALIFICATION'];
+
+    /** Новая сделка всегда начинается с первого этапа — остальные этапы сделки за «воротами». */
+    public const DEAL_CREATE_STAGES = ['NEED_DEFINED'];
+
+    /**
+     * Доска: этапы лидов, затем этапы сделок. $only — только лиды (LEAD) или только сделки (DEAL) —
+     * для Kanban на страницах «Лиды» и «Сделки»; тогда $f — фильтры этих списков (статус всегда OPEN).
+     *
+     * @param  array{owner_id?:?string, team_id?:?string, service_id?:?string, source_id?:?string}  $f
+     */
+    public static function board(array $f, ?string $only = null): array
     {
         $access = access();
-        $canLeads = $access->can('lead.read');
-        $canDeals = $access->can('deal.read');
+        $canLeads = $access->can('lead.read') && $only !== 'DEAL';
+        $canDeals = $access->can('deal.read') && $only !== 'LEAD';
         if (! $canLeads && ! $canDeals) {
             abort(403);
         }
-        $common = fn ($q) => $q->where('status', 'OPEN')
-            ->when($f['owner_id'] ?? null, fn ($q, $v) => $q->where('owner_id', $v))
-            ->when($f['team_id'] ?? null, fn ($q, $v) => $q->where('team_id', $v))
-            ->when($f['service_id'] ?? null, fn ($q, $v) => $q->where('service_id', $v));
+        $open = array_merge($f, ['status' => 'OPEN']);
         $stages = Crm::stages();
         $leads = $canLeads
-            ? $common(CrmAccess::leads()->with('owner'))->when($f['source_id'] ?? null, fn ($q, $v) => $q->where('source_id', $v))
-                ->orderByDesc('updated_at')->get()
+            ? LeadService::filtered(CrmAccess::leads()->with('owner'), $open)->orderByDesc('updated_at')->get()
             : collect();
         $deals = $canDeals
-            ? $common(CrmAccess::deals()->with(['owner', 'client']))
-                ->when($f['source_id'] ?? null, fn ($q, $v) => $q->whereHas('client', fn ($c) => $c->where('source_id', $v)))
-                ->orderByDesc('updated_at')->get()
+            ? DealService::filtered(CrmAccess::deals()->with(['owner', 'client']), $open)->orderByDesc('updated_at')->get()
             : collect();
 
         $columns = [];
@@ -49,8 +54,10 @@ final class PipelineService
                     'id' => $l->id, 'kind' => 'lead', 'number' => Format::code('L', $l->number), 'title' => $l->title,
                     'subtitle' => $l->company_name ?? $l->contact_name, 'href' => route('crm.leads.show', $l->id),
                     'amount' => $l->budget !== null ? Format::moneyShort((string) $l->budget, $l->currency) : '—',
-                    'owner' => explode(' ', (string) $l->owner?->full_name)[0], 'scoreLevel' => $l->score_level,
-                    'scoreLabel' => t('crm.score.'.$l->score_level), 'nextContactAt' => $l->next_contact_at ? Format::dateTime($l->next_contact_at) : null,
+                    'owner' => explode(' ', (string) $l->owner?->full_name)[0], 'initials' => self::initials($l->owner?->full_name),
+                    'scoreLevel' => $l->score_level, 'scoreLabel' => t('crm.score.'.$l->score_level),
+                    'nextContactAt' => $l->next_contact_at ? Format::dateTime($l->next_contact_at) : null,
+                    'priority' => $l->priority, 'priorityLabel' => $l->priority ? t('crm.priority.'.$l->priority) : null,
                 ]);
             } else {
                 $rows = $deals->where('stage_id', $stage->id)->values();
@@ -59,7 +66,10 @@ final class PipelineService
                     'id' => $d->id, 'kind' => 'deal', 'number' => Format::code('D', $d->number), 'title' => $d->title,
                     'subtitle' => $d->client?->name, 'href' => route('crm.deals.show', $d->id),
                     'amount' => Format::moneyShort((string) $d->amount, $d->currency),
-                    'owner' => explode(' ', (string) $d->owner?->full_name)[0], 'scoreLevel' => null, 'scoreLabel' => null, 'nextContactAt' => null,
+                    'owner' => explode(' ', (string) $d->owner?->full_name)[0], 'initials' => self::initials($d->owner?->full_name),
+                    'scoreLevel' => null, 'scoreLabel' => null,
+                    'nextContactAt' => $d->expected_close_date ? Format::date($d->expected_close_date) : null,
+                    'priority' => null, 'priorityLabel' => null,
                 ]);
             }
             $columns[] = [
@@ -67,6 +77,9 @@ final class PipelineService
                 'probability' => $stage->probability,
                 'items' => $cards->take(self::CARDS_PER_COLUMN)->values()->all(),
                 'count' => $cards->count(),
+                'canCreate' => $stage->entity === 'LEAD'
+                    ? in_array($stage->code, self::LEAD_CREATE_STAGES, true) && $access->can('lead.create')
+                    : in_array($stage->code, self::DEAL_CREATE_STAGES, true) && $access->can('deal.create') && $access->can('client.read'),
                 'total' => Format::moneyShort((string) Money::sum($amounts)->toScale(2)),
             ];
         }
@@ -83,5 +96,13 @@ final class PipelineService
             'pipelineUzs' => (string) $forecast['pipeline'],
             'weightedUzs' => (string) $forecast['weighted'],
         ];
+    }
+
+    /** Инициалы для аватара на карточке: «Иван Петров» → «ИП». */
+    private static function initials(?string $name): string
+    {
+        $parts = preg_split('/\s+/u', trim((string) $name), -1, PREG_SPLIT_NO_EMPTY) ?: [];
+
+        return mb_strtoupper(implode('', array_map(fn ($p) => mb_substr($p, 0, 1), array_slice($parts, 0, 2))));
     }
 }

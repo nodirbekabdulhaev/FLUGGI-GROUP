@@ -143,6 +143,11 @@ final class LeadService
             Activities::stageChange($lead->id, null, null, $stage->id, $access->id());
             Activities::log('lead.created', ['lead_id' => $lead->id], ['owner' => $owner->full_name, 'source' => $source->name_ru, 'service' => $service->name_ru]);
             Audit::log('lead.create', 'lead', $lead->id, ['title' => ['old' => null, 'new' => $title], 'owner_id' => ['old' => null, 'new' => $owner->id]]);
+            // Создан из колонки Kanban: сразу переносим в её этап (обычный переход — с историей и аудитом)
+            $preset = $input['stage'] ?? null;
+            if ($preset && $preset !== 'NEW' && in_array($preset, PipelineService::LEAD_CREATE_STAGES, true)) {
+                self::moveStage($lead->refresh(), $preset, $access->id(), audit: true);
+            }
             Outbox::publish('lead.created', [
                 'leadId' => $lead->id, 'ownerId' => $owner->id, 'teamId' => $owner->team_id,
                 'createdById' => $access->id(), 'budgetUzs' => $budgetUzs,

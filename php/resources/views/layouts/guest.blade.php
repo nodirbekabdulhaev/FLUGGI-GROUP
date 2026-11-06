@@ -4,7 +4,7 @@
     @include('partials.head')
 </head>
 <body class="flex min-h-dvh items-center justify-center bg-background p-4">
-<main class="w-full max-w-sm">
+<main class="w-full max-w-[25rem]">
     @yield('content')
 </main>
 @include('partials.toasts')

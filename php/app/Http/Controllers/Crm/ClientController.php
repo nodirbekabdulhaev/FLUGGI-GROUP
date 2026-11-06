@@ -10,6 +10,8 @@ use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
 use App\Services\Crm\Deletion;
 use App\Services\Crm\TimelineService;
+use App\Services\Sales\ContractsService;
+use App\Services\Sales\ProposalsService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -57,10 +59,28 @@ class ClientController extends CrmController
             ? CrmAccess::deals()->where('client_id', $client->id)->with(['owner', 'stage'])->orderByDesc('created_at')->get()
             : collect();
         $counts = Deal::where('client_id', $client->id)->selectRaw("COUNT(*) AS total, SUM(status = 'OPEN') AS open")->first();
+        // Встречи, КП и договоры клиента (в меню их нет — только здесь и в карточке сделки); видимость — по правам и области
+        $clientDeals = Deal::where('client_id', $client->id)->select('id');
+        $meetings = access()->can('meeting.read')
+            ? CrmAccess::meetings()->where(fn ($q) => $q->where('meetings.client_id', $client->id)->orWhereIn('meetings.deal_id', $clientDeals))
+                ->with(['manager', 'rop', 'lead', 'deal', 'participants'])->orderByDesc('starts_at')->limit(100)->get()
+            : null;
+        $proposals = access()->can('proposal.read')
+            ? ProposalsService::query()->where('client_id', $client->id)->with(['deal:id,number,title', 'manager:id,full_name'])->orderByDesc('updated_at')->limit(100)->get()
+            : null;
+        $contracts = access()->can('contract.read')
+            ? ContractsService::query()->where('client_id', $client->id)->with(['deal:id,number,title'])->orderByDesc('created_at')->limit(100)->get()
+            : null;
+        if ($contracts) {
+            ContractsService::withPaid($contracts);
+        }
 
         return view('crm.clients.show', [
             'client' => $client,
             'deals' => $deals,
+            'meetings' => $meetings,
+            'proposals' => $proposals,
+            'contracts' => $contracts,
             'dealsCount' => (int) $counts->total,
             'openDealsCount' => (int) $counts->open,
             'activities' => TimelineService::activities($target),

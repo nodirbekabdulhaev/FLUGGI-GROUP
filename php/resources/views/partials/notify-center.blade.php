@@ -12,7 +12,7 @@
         'texts' => ['pushOn' => t('notifications.push.enabled')],
     ]);
 </script>
-<div x-data="notifyCenter" class="pointer-events-none fixed inset-x-0 top-16 z-[45] flex flex-col items-center gap-2 px-3 sm:top-[4.5rem] lg:left-64">
+<div x-data="notifyCenter" class="pointer-events-none fixed inset-x-0 bottom-[4.5rem] z-[45] flex flex-col-reverse items-center gap-2 px-3 lg:left-64">
     {{-- Звук ещё не разрешён браузером: любой клик/клавиша на странице включает его --}}
     <button type="button" x-show="soundLocked" x-cloak @click="enableSound()"
             class="pointer-events-auto flex max-w-md items-center gap-2 rounded-full border bg-surface px-4 py-2 text-sm shadow-md hover:bg-muted">

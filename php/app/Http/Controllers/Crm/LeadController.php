@@ -9,6 +9,7 @@ use App\Services\Crm\Crm;
 use App\Services\Crm\CrmAccess;
 use App\Services\Crm\LeadBulkAssignService;
 use App\Services\Crm\LeadService;
+use App\Services\Crm\PipelineService;
 use App\Services\Crm\TimelineService;
 use App\Services\Smm\SmmIdeaService;
 use App\Support\Format;
@@ -27,12 +28,18 @@ class LeadController extends CrmController
         $f = $this->check($request, LeadService::filterRules());
         // По умолчанию — лиды в работе; «any» — все статусы
         $status = $f['status'] ?? 'OPEN';
-        $q = LeadService::filtered(CrmAccess::leads()->with(['source', 'owner', 'stage']), $f);
-        $leads = $q->orderByDesc('created_at')->paginate(25)->withQueryString();
+        // Вид: Kanban (по умолчанию) или список; выбор помнит браузер (localStorage) и ?view=.
+        // Ссылка «переданные лиды» (batch, из уведомления) без ?view= — список: там и закрытые лиды
+        $view = $request->query('view') === 'list' || ($request->query('view') === null && ! empty($f['batch'])) ? 'list' : 'kanban';
+        $leads = $view === 'list'
+            ? LeadService::filtered(CrmAccess::leads()->with(['source', 'owner', 'stage']), $f)->orderByDesc('created_at')->paginate(25)->withQueryString()
+            : null;
         $filtered = collect($f)->except('status')->filter()->isNotEmpty() || $status !== 'OPEN';
 
         return view('crm.leads.index', [
             'leads' => $leads,
+            'view' => $view,
+            'board' => $view === 'kanban' ? PipelineService::board($f, 'LEAD') : null,
             'f' => $f + ['status' => $status],
             'filtered' => $filtered,
             'form' => $this->formOptions(),
@@ -232,6 +239,8 @@ class LeadController extends CrmController
         ];
         if ($create) {
             $rules['owner_id'] = ['nullable', 'uuid'];
+            // «+» в колонке Kanban: лид сразу в этом этапе (только этапы без «ворот»)
+            $rules['stage'] = ['nullable', Rule::in(PipelineService::LEAD_CREATE_STAGES)];
             // Минимум полей (ТЗ §78): имя или компания, телефон или Telegram
             $rules['contact_name'][0] = 'required_without:company_name';
             $rules['phone'][0] = 'required_without:telegram';
