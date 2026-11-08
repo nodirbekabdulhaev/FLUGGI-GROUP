@@ -109,7 +109,8 @@
     "articlesOf": "Items: {base}",
     "articleHint": "Counted as:",
     "manageArticles": "Add your own income and expense items",
-    "fromBank": "from statement"
+    "fromBank": "from statement",
+    "deleteCrmHint": "This is a CRM payment: it is removed from accounting only (stays in the CRM) and will not be imported again."
   },
   "import": {
     "button": "Load payments from CRM",

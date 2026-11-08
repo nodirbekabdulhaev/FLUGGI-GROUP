@@ -18,7 +18,7 @@
         // Своя статья → базовая категория (для полей формы, зависящих от категории)
         $articleBases = collect($articles)->flatMap(fn ($groups) => collect($groups)->flatten(1)->mapWithKeys(fn ($a) => [$a->id => $a->base]))->all();
     @endphp
-    <div x-data="{ delId: null, delText: '' }">
+    <div x-data="{ delId: null, delText: '', delCrm: false }">
     <x-page-header :title="t('accounting.operations.title')" :subtitle="t('accounting.operations.subtitle')">
         @if ($canExport)
             <a href="/accounting/operations/export{{ $exportQs ? '?'.$exportQs : '' }}" class="btn btn-outline"><x-icon name="download" /> {{ t('accounting.export') }}</a>
@@ -97,10 +97,8 @@
                             <td class="text-right">@include('accounting.partials.op-row', ['op' => $op])</td>
                             @if ($canManage)
                                 <td class="text-right">
-                                    @unless ($op->payment_id)
                                         <button type="button" class="btn btn-ghost btn-icon" aria-label="{{ t('common.delete') }}"
-                                                @click="delId = @js($op->id); delText = @js(d($op->date).' · '.$op->categoryLabel().' · '.money($op->amount, $op->account?->currency ?? 'UZS')); $dispatch('open-modal', 'acc-op-delete')"><x-icon name="trash" /></button>
-                                    @endunless
+                                                @click="delId = @js($op->id); delText = @js(d($op->date).' · '.$op->categoryLabel().' · '.money($op->amount, $op->account?->currency ?? 'UZS')); delCrm = @js((bool) $op->payment_id); $dispatch('open-modal', 'acc-op-delete')"><x-icon name="trash" /></button>
                                 </td>
                             @endif
                         </tr>
@@ -119,8 +117,8 @@
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             @include('accounting.partials.op-row', ['op' => $op])
-                            @if ($canManage && ! $op->payment_id)
-                                <button type="button" class="btn btn-ghost btn-sm" @click="delId = @js($op->id); delText = @js(d($op->date).' · '.$op->categoryLabel()); $dispatch('open-modal', 'acc-op-delete')">{{ t('common.delete') }}</button>
+                            @if ($canManage)
+                                <button type="button" class="btn btn-ghost btn-sm" @click="delId = @js($op->id); delText = @js(d($op->date).' · '.$op->categoryLabel()); delCrm = @js((bool) $op->payment_id); $dispatch('open-modal', 'acc-op-delete')">{{ t('common.delete') }}</button>
                             @endif
                         </div>
                     </li>
@@ -221,6 +219,7 @@
                 @csrf @method('DELETE')
                 <p class="text-sm" x-text="delText"></p>
                 <p class="text-sm text-muted-foreground">{{ t('accounting.operations.deleteHint') }}</p>
+                <p x-show="delCrm" class="text-sm text-warning">{{ t('accounting.operations.deleteCrmHint') }}</p>
                 <x-field name="reason" type="textarea" rows="2" :label="t('accounting.fields.reason')" required minlength="3" />
                 <div class="flex justify-end gap-2">
                     <button type="button" class="btn btn-outline" @click="$dispatch('close-modal', 'acc-op-delete')">{{ t('common.cancel') }}</button>

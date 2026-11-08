@@ -190,9 +190,13 @@ class AccountingTest extends TestCase
         $this->assertSame(['OUT', 'CLIENT_PAYMENT', '1000000.00'], [$out->direction, $out->category, (string) $out->amount]);
         $this->assertSame('8000000.00', AccountsService::balance($bank->id));
 
-        // Строку из CRM вручную не удалить
-        $this->actingAsUser($this->accountant)->delete("/accounting/operations/{$row->id}", ['reason' => 'test'])->assertSessionHas('error');
-        $this->assertNull($row->refresh()->deleted_at);
+        // Строку из CRM можно удалить (тестовая оплата) с причиной; оплата в CRM остаётся, повторно не импортируется
+        $this->actingAsUser($this->accountant)->get('/accounting/operations')->assertOk()->assertSee(t('accounting.operations.deleteCrmHint'));
+        $this->delete("/accounting/operations/{$out->id}", ['reason' => 'Тестовая оплата'])->assertSessionHasNoErrors();
+        $this->assertNotNull(AccTransaction::withTrashed()->find($out->id)->deleted_at);
+        $this->assertSame('9000000.00', AccountsService::balance($bank->id));
+        $this->assertSame('exists', CrmImportService::import($refund->id));
+        $this->assertNotNull(Payment::find($refund->id));
 
         // Загрузка истории за период: новые оплаты загружаются, старые не дублируются; вне периода — нет
         $old = $this->payment(['paid_at' => '2026-08-15 10:00:00', 'amount' => '2000000', 'amount_uzs' => '2000000']);
@@ -204,7 +208,7 @@ class AccountingTest extends TestCase
         $this->assertFalse(AccTransaction::where('payment_id', $late->id)->exists());
         $this->assertFalse(AccTransaction::where('payment_id', $pending->id)->exists());
         $this->post('/accounting/import-crm', ['from' => '2026-08-01', 'to' => '2026-10-31']);
-        $this->assertSame(5, AccTransaction::whereNotNull('payment_id')->count());
+        $this->assertSame([4, 5], [AccTransaction::whereNotNull('payment_id')->count(), AccTransaction::withTrashed()->whereNotNull('payment_id')->count()]);
 
         // Начальный остаток: оплаты раньше его даты не загружаются
         $bank->update(['opening_date' => '2026-09-01']);

@@ -14,7 +14,8 @@ use Illuminate\Support\Str;
 
 /**
  * Операции по счетам: приходы, расходы, переводы между своими счетами (две связанные строки).
- * Удаление — мягкое, с обязательной причиной; строки из CRM вручную не удаляются.
+ * Удаление — мягкое, с обязательной причиной. Строку из CRM тоже можно удалить (например, тестовую оплату):
+ * оплата в CRM остаётся, повторно в бухгалтерию она не попадёт (импорт учитывает удалённые строки).
  */
 final class OperationsService
 {
@@ -177,9 +178,6 @@ final class OperationsService
     {
         return DB::transaction(function () use ($id, $reason) {
             $row = AccTransaction::lockForUpdate()->findOrFail($id);
-            if ($row->payment_id) {
-                throw new BusinessRule(t('accounting.errors.crmLocked'));
-            }
             $rows = $row->transfer_group
                 ? AccTransaction::where('transfer_group', $row->transfer_group)->lockForUpdate()->get()
                 : collect([$row]);

@@ -109,7 +109,8 @@
     "articlesOf": "Moddalar: {base}",
     "articleHint": "Hisobga olinadi:",
     "manageArticles": "Oʻz kirim va chiqim moddalaringizni qoʻshish",
-    "fromBank": "koʻchirmadan"
+    "fromBank": "koʻchirmadan",
+    "deleteCrmHint": "Bu CRM dan kelgan toʻlov: u faqat buxgalteriyadan oʻchadi (CRM da qoladi) va bu yerga qayta tushmaydi."
   },
   "import": {
     "button": "CRM toʻlovlarini yuklash",
