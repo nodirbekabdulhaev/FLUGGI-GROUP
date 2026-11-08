@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\AccAccount;
 use App\Models\AccPayroll;
 use App\Models\AccPerson;
+use App\Models\AccTaxFiling;
 use App\Models\AccTransaction;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
@@ -95,11 +96,44 @@ final class TaxesService
 
         return [
             'period' => $period, 'settings' => $sp, 'taxes' => $taxes,
-            'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'],
+            'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'], 'filed' => $cur['filed'], 'filedCovered' => ! $cur['filed'] && $cur['filedDue'] !== null,
             'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
             'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from,
         ];
+    }
+
+    /**
+     * Сальдо НДФЛ по месяцам нарастающим итогом (для страницы «Сданные отчёты»): к уплате, оплачено, остаток, откуда сумма.
+     *
+     * @return array{rows:list<array>,from:string,totalDue:string,totalPaid:string,balance:string}
+     */
+    public static function ndflLedger(string $to): array
+    {
+        $s = Accounting::settings();
+        $from = self::balanceFrom($s, $to);
+        if ($from > $to) {
+            return ['rows' => [], 'from' => $from, 'totalDue' => '0.00', 'totalPaid' => '0.00', 'balance' => '0.00'];
+        }
+        $months = self::monthly($from, $to);
+        $fm = FiledReports::map();
+        $running = Accounting::dec($s['taxOpeningNdfl']);
+        $due = BigDecimal::zero();
+        $paid = BigDecimal::zero();
+        $rows = [];
+        foreach ($months as $m => $o) {
+            $d = $o['due']['TAX_NDFL'];
+            $p = $o['paid']['TAX_NDFL'];
+            $running = $running->plus($d)->minus($p);
+            $due = $due->plus($d);
+            $paid = $paid->plus($p);
+            $rows[] = ['period' => $m, 'people' => $fm['filed'][$m]['people'] ?? ($o['rows'] ?: null), 'income' => (string) $o['gross']->toScale(2),
+                'due' => (string) $d->toScale(2), 'paid' => (string) $p->toScale(2), 'balance' => (string) $running->toScale(2),
+                'source' => $o['filed'] ? 'filed' : ($o['filedDue'] !== null ? 'covered' : ($o['rows'] ? 'payroll' : ($o['fromSalary'] ? 'salary' : 'none'))),
+                'filedMonth' => $o['filed'] ? (string) $fm['filed'][$m]['ndflMonthFiled']->toScale(2) : null];
+        }
+
+        return ['rows' => $rows, 'from' => $from, 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $running->toScale(2)];
     }
 
     /** Начало учёта сальдо: из настроек, иначе первый месяц с ведомостью, иначе сам месяц. */
@@ -109,7 +143,9 @@ final class TaxesService
             return $s['taxBalanceFrom'];
         }
 
-        return (string) (AccPayroll::min('period') ?? $period);
+        $first = array_filter([AccPayroll::min('period'), AccTaxFiling::min('period')]);
+
+        return (string) ($first ? min($first) : $period);
     }
 
     /**
@@ -134,8 +170,18 @@ final class TaxesService
             $o['drafts'] += $r->status === 'DRAFT' ? 1 : 0;
             unset($o);
         }
-        // Месяцы без ведомости (прошлые годы) — по истории окладов, как в отчёте в налоговую
-        $noPayroll = array_keys(array_filter($out, fn ($o) => $o['rows'] === 0));
+        // Сданные отчёты — источник правды для НДФЛ: месяц с отчётом даёт НДФЛ и доход, месяц до последнего отчёта года покрыт им (0)
+        $fm = FiledReports::map();
+        foreach ($out as $m => &$o) {
+            $o['filed'] = isset($fm['filed'][$m]);
+            $o['filedDue'] = FiledReports::due($m, $fm);
+            if ($o['filed'] && $o['rows'] === 0) {
+                $o['gross'] = $fm['filed'][$m]['income'];
+            }
+        }
+        unset($o);
+        // Месяцы без ведомости и без отчёта (прошлые годы) — по истории окладов, как в отчёте в налоговую
+        $noPayroll = array_keys(array_filter($out, fn ($o) => $o['rows'] === 0 && ! $o['filed'] && $o['filedDue'] === null));
         if ($noPayroll) {
             $people = AccPerson::with('salaries')->where(fn ($q) => $q->where('is_active', true)->orWhereNotNull('fired_at'))->get();
             foreach ($noPayroll as $m) {
@@ -171,8 +217,11 @@ final class TaxesService
         }
         foreach ($out as $m => &$o) {
             $s = Accounting::settingsFor($m);
+            if ($o['filed'] && $o['rows'] === 0) {
+                $o['inps'] = Accounting::pct($o['gross'], $s['inpsRate']);
+            }
             $o['due'] = [
-                'TAX_NDFL' => $s['inpsWithinNdfl'] ? $o['ndfl']->minus($o['inps']) : $o['ndfl'],
+                'TAX_NDFL' => $o['filedDue'] ?? ($s['inpsWithinNdfl'] ? $o['ndfl']->minus($o['inps']) : $o['ndfl']),
                 'TAX_INPS' => $o['inps'],
                 'TAX_ITPARK' => Accounting::pct($o['bank'], $s['itparkRate']),
                 'TAX_SOCIAL' => Accounting::pct($o['gross'], $s['socialRate']),

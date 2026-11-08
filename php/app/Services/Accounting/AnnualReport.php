@@ -62,18 +62,29 @@ final class AnnualReport
     public static function liabilities(string $date): array
     {
         $lastPeriod = substr($date, 0, 7);
-        $payroll = AccPayroll::where('period', '<=', $lastPeriod)->get(['net', 'ndfl', 'inps']);
+        $payroll = AccPayroll::where('period', '<=', $lastPeriod)->get(['period', 'net', 'ndfl', 'inps']);
         $s = Accounting::settings();
+        $fm = FiledReports::map();
         $net = BigDecimal::zero();
         $ndfl = BigDecimal::zero();
         $inps = BigDecimal::zero();
+        $inpsUnfiled = BigDecimal::zero();
         foreach ($payroll as $r) {
             $net = $net->plus((string) $r->net);
-            $ndfl = $ndfl->plus((string) $r->ndfl);
             $inps = $inps->plus((string) $r->inps);
+            // НДФЛ месяцев со сданным отчётом берётся из него (ниже), остальных — из ведомости
+            if (FiledReports::due($r->period, $fm) === null) {
+                $ndfl = $ndfl->plus((string) $r->ndfl);
+                $inpsUnfiled = $inpsUnfiled->plus((string) $r->inps);
+            }
         }
         // При «ИНПС в составе НДФЛ» в бюджет по НДФЛ уходит НДФЛ − ИНПС
-        $ndflDue = $s['inpsWithinNdfl'] ? $ndfl->minus($inps) : $ndfl;
+        $ndflDue = $s['inpsWithinNdfl'] ? $ndfl->minus($inpsUnfiled) : $ndfl;
+        foreach ($fm['filed'] as $period => $f) {
+            if ($period <= $lastPeriod) {
+                $ndflDue = $ndflDue->plus($f['due']);
+            }
+        }
         $itpark = BigDecimal::zero();
         foreach (self::periodsWithBankIncome($lastPeriod) as $period) {
             $sp = Accounting::settingsFor($period);
@@ -147,9 +158,13 @@ final class AnnualReport
         $revenue = self::flow($year, 'IN', ['CLIENT_PAYMENT'])->minus(self::flow($year, 'OUT', ['CLIENT_PAYMENT']));
         $cost = self::flow($year, 'OUT', ['SUPPLIER']);
         $gross = BigDecimal::zero();
-        foreach (AccPayroll::where('period', 'like', $year.'-%')->get(['gross']) as $r) {
+        $payrollPeriods = [];
+        foreach (AccPayroll::where('period', 'like', $year.'-%')->get(['period', 'gross']) as $r) {
             $gross = $gross->plus((string) $r->gross);
+            $payrollPeriods[] = $r->period;
         }
+        // Месяцы без ведомости, но со сданным отчётом — доход людей из отчёта
+        $gross = $gross->plus(FiledReports::incomeWithoutPayroll($year, $payrollPeriods));
         $admin = $gross->plus(self::flow($year, 'OUT', ['RENT', 'UTILITIES', 'OTHER']));
         $itpark = BigDecimal::zero();
         foreach (range(1, 12) as $m) {

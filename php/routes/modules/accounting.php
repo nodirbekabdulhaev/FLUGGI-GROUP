@@ -3,6 +3,7 @@
 use App\Http\Controllers\Accounting\AccountsController;
 use App\Http\Controllers\Accounting\BankImportController;
 use App\Http\Controllers\Accounting\CategoriesController;
+use App\Http\Controllers\Accounting\FiledReportsController;
 use App\Http\Controllers\Accounting\OperationsController;
 use App\Http\Controllers\Accounting\OverviewController;
 use App\Http\Controllers\Accounting\PayrollController;
@@ -64,6 +65,12 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     // Отчёт в налоговую (приложение 4): смотреть — accounting.read, скачать файл — accounting.manage + export.run
     Route::get('/tax-report', [TaxReportController::class, 'index'])->middleware($read)->name('taxReport');
     Route::get('/tax-report/download', [TaxReportController::class, 'download'])->middleware([$manage, 'perm:export.run'])->name('taxReport.download');
+    // Сданные отчёты: сальдо НДФЛ смотреть — accounting.read, загружать файлы — accounting.manage
+    Route::get('/filed-reports', [FiledReportsController::class, 'index'])->middleware($read)->name('filed');
+    Route::post('/filed-reports', [FiledReportsController::class, 'upload'])->middleware($manage)->name('filed.upload');
+    Route::get('/filed-reports/{token}', [FiledReportsController::class, 'preview'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.preview');
+    Route::post('/filed-reports/{token}/confirm', [FiledReportsController::class, 'confirm'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.confirm');
+    Route::post('/filed-reports/{token}/cancel', [FiledReportsController::class, 'cancel'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.cancel');
     Route::get('/annual-report', [TaxesController::class, 'annual'])->middleware($export)->name('annual');
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware($manage)->name('settings');

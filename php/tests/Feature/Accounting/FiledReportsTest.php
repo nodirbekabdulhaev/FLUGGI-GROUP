@@ -1,0 +1,238 @@
+<?php
+
+namespace Tests\Feature\Accounting;
+
+use App\Models\AccAccount;
+use App\Models\AccPerson;
+use App\Models\AccPersonSalary;
+use App\Models\AccTaxFiling;
+use App\Models\AccTransaction;
+use App\Models\AuditLog;
+use App\Models\User;
+use App\Services\Accounting\Accounting;
+use App\Services\Accounting\FiledReports;
+use App\Services\Accounting\TaxesService;
+use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Cell\DataType;
+use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
+use Tests\TestCase;
+use ZipArchive;
+
+/**
+ * Сданные отчёты: чтение файлов формы (столбцы по заголовкам), НДФЛ месяца по приросту «с начала года», покрытые месяцы,
+ * пересчёты задним числом, создание людей по ПИНФЛ, сальдо с оплатами, повторная загрузка, права. Все люди и ПИНФЛ — вымышленные.
+ */
+class FiledReportsTest extends TestCase
+{
+    private User $accountant;
+
+    private array $tmp = [];
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Accounting::forgetRates();
+        $this->accountant = $this->user('ACCOUNTANT');
+    }
+
+    protected function tearDown(): void
+    {
+        foreach ($this->tmp as $f) {
+            @unlink($f);
+        }
+        parent::tearDown();
+    }
+
+    /**
+     * Файл отчёта в форме 2025 года. Строка: [ФИО, должность, ПИНФЛ, статус, дата, доход с начала года, доход за месяц, НДФЛ с начала года, НДФЛ за месяц].
+     *
+     * @param  list<array>  $rows
+     */
+    private function report(string $period, array $rows, bool $zip = false): UploadedFile
+    {
+        [$y, $m] = explode('-', $period);
+        $name = '300000001_111111111_46_'.$y.'_M_'.(int) $m.'_11101_18_ilova.xlsx';
+        $book = new Spreadsheet;
+        $ws = $book->getActiveSheet()->setTitle('list01');
+        $heads = ['B' => 'Т/р', 'C' => 'Жисмоний шахснинг Ф.И.Ш.', 'D' => 'Лавозими', 'E' => 'ЖШ ШИР', 'F' => 'Иш ўрни ташкил қилинган сана (Иш ўрни 01.01.2025)', 'G' => 'Жисмоний шахс тури (1 - резидент)',
+            'H' => 'Ҳисобот даврида ходимнинг ҳолати (1 - ишлаётган)', 'I' => 'Шартнома тури (1 - меҳнат шартномаси)', 'J' => 'Иш вақти (ставкада 0,25; 0,5; 1 ва ҳ.к)', 'K' => 'Иш ўрни (1 - доимий)',
+            'L' => 'Жами ҳисобланган меҳнатга ҳақ тўлаш тарзидаги даромадлар', 'M' => 'шундан, ҳисобот даврида ҳисобланган меҳнатга ҳақ тўлаш тарзидаги даромадлар', 'N' => 'Жисмоний шахслардан олинадиган даромад солиғи'];
+        foreach ($heads as $c => $v) {
+            $ws->setCellValueExplicit($c.'10', $v, DataType::TYPE_STRING);
+        }
+        $ws->setCellValueExplicit('N11', 'Жами ҳисобланган солиқ суммаси', DataType::TYPE_STRING);
+        $ws->setCellValueExplicit('O11', 'шундан, ҳисобот даврида ҳисобланган солиқ суммаси', DataType::TYPE_STRING);
+        $ws->setCellValueExplicit('P11', 'имтиёз рақами', DataType::TYPE_STRING);
+        $ws->setCellValueExplicit('Q11', 'Жами солиққа тортилмайдиган меҳнатга ҳақ тўлаш тарзидаги даромадлар', DataType::TYPE_STRING);
+        foreach ($rows as $i => $r) {
+            $n = 14 + $i;
+            $ws->setCellValue('B'.$n, $i + 1);
+            $ws->setCellValueExplicit('C'.$n, $r[0], DataType::TYPE_STRING);
+            $ws->setCellValueExplicit('D'.$n, $r[1], DataType::TYPE_STRING);
+            $ws->setCellValueExplicit('E'.$n, $r[2], DataType::TYPE_STRING);
+            $ws->setCellValueExplicit('F'.$n, $r[4], DataType::TYPE_STRING);
+            $ws->setCellValue('G'.$n, 1);
+            $ws->setCellValue('H'.$n, $r[3]);
+            $ws->setCellValue('I'.$n, 1);
+            $ws->setCellValue('J'.$n, 1);
+            $ws->setCellValue('K'.$n, 1);
+            $ws->setCellValue('L'.$n, $r[5]);
+            $ws->setCellValue('M'.$n, $r[6]);
+            $ws->setCellValue('N'.$n, $r[7]);
+            $ws->setCellValue('O'.$n, $r[8]);
+        }
+        $path = tempnam(sys_get_temp_dir(), 'frt');
+        (new Xlsx($book))->save($path);
+        $this->tmp[] = $path;
+
+        return new UploadedFile($path, $name, null, null, true);
+    }
+
+    private function zip(array $uploads): UploadedFile
+    {
+        $path = tempnam(sys_get_temp_dir(), 'frz');
+        $zip = new ZipArchive;
+        $zip->open($path, ZipArchive::OVERWRITE);
+        foreach ($uploads as $u) {
+            $zip->addFile($u->getRealPath(), $u->getClientOriginalName());
+        }
+        $zip->close();
+        $this->tmp[] = $path;
+
+        return new UploadedFile($path, 'reports.zip', null, null, true);
+    }
+
+    /** Окт 2024 → дек 2024 (нояб. нет) → янв, фев 2025 (в феврале пересчёт задним числом). Две человека и пробная строка без дохода. */
+    private function sample(): array
+    {
+        $a = ['ALIYEV VALI KARIM O‘G‘LI', 'Директор', '10000000000001'];
+        $b = ['KARIMOVA ZILOLA AZIZOVNA', 'Менеджер', '10000000000002'];
+        $x = ['abc', 'ishchi', '10000000000099'];
+
+        return [
+            '2024-10' => [[...$a, 1, '01.01.2024', 1000000, 1000000, 100000, 100000], [...$x, 1, '01.01.2024', 0, 0, 0, 0]],
+            '2024-12' => [[...$a, 1, '01.01.2024', 3000000, 1000000, 300000, 100000]],
+            '2025-01' => [[...$a, 1, '01.01.2025', 1000000, 1000000, 100000, 100000], [...$b, 1, '01.01.2025', 2000000, 2000000, 200000, 200000]],
+            // Февраль: у второго человека пересчёт — «с начала года» меньше, чем было + за месяц
+            '2025-02' => [[...$a, 1, '01.01.2025', 2000000, 1000000, 200000, 100000], [...$b, 2, '01.01.2025', 2000000, 0, 180000, 0]],
+        ];
+    }
+
+    private function load(): void
+    {
+        $r = FiledReports::read(array_map(fn ($p, $rows) => $this->report($p, $rows), array_keys($this->sample()), $this->sample()));
+        $this->assertSame([], $r['errors']);
+        $this->as($this->accountant);
+        FiledReports::apply($r['months']);
+    }
+
+    public function test_reads_forms_and_computes_tax_from_year_to_date_growth(): void
+    {
+        $this->load();
+        $this->assertSame(7, AccTaxFiling::count());
+        $map = FiledReports::map();
+        $this->assertSame(['100000.00', '0.00', '200000.00', '300000.00', '80000.00'], array_map(fn ($p) => $p === null ? null : (string) $p->toScale(2),
+            [FiledReports::due('2024-10', $map), FiledReports::due('2024-11', $map), FiledReports::due('2024-12', $map), FiledReports::due('2025-01', $map), FiledReports::due('2025-02', $map)]));
+        $this->assertNull(FiledReports::due('2025-03', $map));   // после последнего отчёта года — по ведомости/окладам
+
+        // Февраль: сумма «за месяц» в файле 100 000, прирост с начала года — 80 000 (пересчёт у второго человека)
+        $feb = TaxesService::forPeriod('2025-02');
+        $this->assertTrue($feb['filed']);
+        $this->assertSame(['80000.00', '1000000.00'], [$feb['taxes']['TAX_NDFL']['due'], $feb['taxes']['TAX_NDFL']['base']]);
+        $nov = TaxesService::forPeriod('2024-11');
+        $this->assertSame(['0.00', true], [$nov['taxes']['TAX_NDFL']['due'], $nov['filedCovered']]);
+    }
+
+    public function test_people_are_created_from_reports_and_existing_are_completed(): void
+    {
+        // Уже есть второй человек с ручным окладом: оклад и имя не трогаем, пустое дополняем
+        $existing = AccPerson::create(['full_name' => 'Каримова Зилола', 'pinfl' => '10000000000002', 'monthly_salary' => '2500000', 'is_active' => true]);
+        $this->load();
+
+        $a = AccPerson::where('pinfl', '10000000000001')->firstOrFail();
+        $this->assertSame(['Aliyev Vali Karim O\'g\'li', 'ALIYEV VALI KARIM O\'G\'LI', 'Директор', '2024-10-01', true, '1000000.00'],
+            [$a->full_name, $a->passport_name, $a->position, $a->hired_at->toDateString(), $a->is_active, (string) $a->monthly_salary]);
+        $this->assertSame([['2024-10', '1000000.00']], $a->salaries->map(fn ($h) => [$h->effective_from, (string) $h->amount])->all());
+        // Пробная строка без дохода человеком не стала, но в отчётах осталась
+        $this->assertNull(AccPerson::where('pinfl', '10000000000099')->first());
+        $this->assertSame(1, AccTaxFiling::where('pinfl', '10000000000099')->count());
+        $this->assertSame($a->id, AccTaxFiling::where('pinfl', '10000000000001')->first()->person_id);
+
+        $b = $existing->refresh();
+        $this->assertSame(['Каримова Зилола', 'KARIMOVA ZILOLA AZIZOVNA', '2500000.00', '2025-01-01', '2025-01-31', false], [$b->full_name, $b->passport_name, (string) $b->monthly_salary,
+            $b->hired_at->toDateString(), $b->fired_at->toDateString(), $b->is_active]);   // статус «ушёл» в феврале → уволена на конец последнего месяца с доходом
+        $this->assertSame(1, AccPersonSalary::where('person_id', $b->id)->count());
+        $this->assertTrue(AuditLog::where('action', 'accounting.filings.import')->exists());
+
+        // Повторная загрузка ничего не дублирует
+        $this->load();
+        $this->assertSame([7, 2], [AccTaxFiling::count(), AccPerson::count()]);
+        $this->assertSame(1, AccPersonSalary::where('person_id', $a->id)->count());
+    }
+
+    public function test_ledger_runs_cumulatively_with_payments_and_opening_balance(): void
+    {
+        $this->load();
+        $acc = AccAccount::create(['name' => 'Bank', 'kind' => 'BANK', 'currency' => 'UZS', 'opening_balance' => '0', 'crm_methods' => []]);
+        // Дек 2024 оплачено 250 000 (период по дате платежа — январь), январь 2025 — 150 000 без периода
+        AccTransaction::create(['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'TAX_NDFL', 'amount' => '250000', 'date' => '2025-01-10', 'period' => '2024-12']);
+        AccTransaction::create(['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'TAX_NDFL', 'amount' => '150000', 'date' => '2025-02-12']);
+
+        $l = TaxesService::ndflLedger('2025-02');
+        $this->assertSame('2024-10', $l['from']);
+        $by = collect($l['rows'])->keyBy('period');
+        $this->assertSame(['filed', 'covered', 'filed', 'filed', 'filed'], array_map(fn ($p) => $by[$p]['source'], ['2024-10', '2024-11', '2024-12', '2025-01', '2025-02']));
+        $this->assertSame(['100000.00', '100000.00', '50000.00', '350000.00', '280000.00'], array_map(fn ($p) => $by[$p]['balance'], ['2024-10', '2024-11', '2024-12', '2025-01', '2025-02']));
+        $this->assertSame(['680000.00', '400000.00', '280000.00'], [$l['totalDue'], $l['totalPaid'], $l['balance']]);
+        $this->assertSame('100000.00', $by['2025-02']['filedMonth']);   // в файле «за месяц» 100 000, в сальдо — прирост 80 000
+
+        // Остаток переходит в налоги месяца; сальдо на начало из настроек
+        $t = TaxesService::forPeriod('2025-02')['taxes']['TAX_NDFL'];
+        $this->assertSame(['350000.00', '80000.00', '150000.00', '280000.00'], [$t['opening'], $t['due'], $t['paid'], $t['balance']]);
+        Accounting::saveSettings(['taxOpeningNdfl' => '-20000']);
+        $this->assertSame('260000.00', TaxesService::ndflLedger('2025-02')['balance']);
+    }
+
+    public function test_upload_preview_confirm_zip_and_permissions(): void
+    {
+        $files = array_map(fn ($p, $rows) => $this->report($p, $rows), array_keys($this->sample()), $this->sample());
+        $this->actingAsUser($this->accountant);
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            $html = $this->get('/accounting/filed-reports')->assertOk()->getContent();
+            $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common|import)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale: ключ без перевода");
+        }
+        // Два файла и архив с двумя
+        $resp = $this->post('/accounting/filed-reports', ['files' => [$files[0], $files[1], $this->zip([$files[2], $files[3]])]]);
+        $resp->assertRedirect();
+        $url = $resp->headers->get('Location');
+        $this->assertMatchesRegularExpression('#/accounting/filed-reports/[A-Za-z0-9]{40}$#', $url);
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            $html = $this->get($url)->assertOk()->assertSee('KARIMOVA ZILOLA AZIZOVNA')->getContent();
+            $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common|import)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale: ключ без перевода");
+        }
+        $this->assertSame(0, AccTaxFiling::count());   // до подтверждения ничего не записано
+        $this->post($url.'/confirm')->assertRedirect('/accounting/filed-reports')->assertSessionHas('ok');
+        $this->assertSame([7, 2], [AccTaxFiling::count(), AccPerson::count()]);
+        $this->post($url.'/confirm')->assertRedirect('/accounting/filed-reports')->assertSessionHas('error');   // второй раз — ничего
+        $this->assertSame(7, AccTaxFiling::count());
+        $this->get('/accounting/filed-reports?to=2025-02')->assertOk()->assertSee(t('accounting.filed.sources.covered'));
+
+        // Не отчёт и чужая вкладка
+        $bad = UploadedFile::fake()->create('notes.xlsx', 1);
+        $this->post('/accounting/filed-reports', ['files' => [$bad]])->assertSessionHasErrors('files');
+        $this->post('/accounting/filed-reports', ['files' => [UploadedFile::fake()->create('x.pdf', 1)]])->assertSessionHasErrors('files.0');
+
+        // Права: смотреть — бухгалтерия, загружать — управление; остальные роли — нет
+        foreach (['ROP', 'MANAGER', 'EXECUTOR'] as $role) {
+            $this->actingAsUser($this->user($role));
+            $this->get('/accounting/filed-reports')->assertForbidden();
+            $this->post('/accounting/filed-reports', ['files' => [$files[0]]])->assertForbidden();
+            $this->post($url.'/confirm')->assertForbidden();
+        }
+    }
+}
