@@ -102,7 +102,8 @@ final class CommissionEngine
         }
 
         $team = $deal->team_id ? Team::find($deal->team_id) : null;
-        $recipients = [['role' => 'MANAGER', 'userId' => $deal->owner_id]];
+        // Сделку ведёт сам РОП отдела — комиссия ему один раз (по правилу РОП), без второй строки «менеджер»
+        $recipients = $team?->head_id && $team->head_id === $deal->owner_id ? [] : [['role' => 'MANAGER', 'userId' => $deal->owner_id]];
         if ($team?->head_id) {
             $recipients[] = ['role' => 'ROP', 'userId' => $team->head_id];
         }

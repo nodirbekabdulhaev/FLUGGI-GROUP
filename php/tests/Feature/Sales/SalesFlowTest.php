@@ -169,6 +169,19 @@ class SalesFlowTest extends SalesTestCase
         $this->assertSame('10', Numbers::rate(Commission::where('payment_id', $p->id)->where('role', 'MANAGER')->value('rate')));
     }
 
+    public function test_rop_owning_the_deal_gets_one_commission_not_two(): void
+    {
+        $deal = $this->deal('9000000', $this->rop);
+        $this->assertSame($this->rop->team?->head_id, $this->rop->id);
+        $this->actingAsUser($this->rop)->post('/finance/payments', ['deal_id' => $deal->id, 'amount' => '9000000', 'currency' => 'UZS', 'type' => 'FULL', 'method' => 'BANK']);
+        $p = Payment::firstOrFail();
+        $this->actingAsUser($this->rop)->postJson("/finance/payments/{$p->id}/confirm")->assertOk();
+        $rows = Commission::where('payment_id', $p->id)->get();
+        // Одна строка — по правилу РОП; строки «менеджер» для того же человека нет
+        $this->assertSame(['ROP'], $rows->where('user_id', $this->rop->id)->pluck('role')->values()->all());
+        $this->assertSame(0, $rows->where('role', 'MANAGER')->count());
+    }
+
     public function test_foreign_payments_and_proposals_are_hidden(): void
     {
         $deal = $this->deal();
