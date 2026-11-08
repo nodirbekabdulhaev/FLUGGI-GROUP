@@ -99,7 +99,7 @@ final class TaxesService
             'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'], 'filed' => $cur['filed'], 'filedCovered' => ! $cur['filed'] && $cur['filedDue'] !== null,
             'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
-            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from,
+            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
         ];
     }
 
@@ -133,7 +133,7 @@ final class TaxesService
                 'filedMonth' => $o['filed'] ? (string) $fm['filed'][$m]['ndflMonthFiled']->toScale(2) : null];
         }
 
-        return ['rows' => $rows, 'from' => $from, 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $running->toScale(2)];
+        return ['rows' => $rows, 'from' => $from, 'firstFiled' => array_key_first($fm['filed']), 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $running->toScale(2)];
     }
 
     /**

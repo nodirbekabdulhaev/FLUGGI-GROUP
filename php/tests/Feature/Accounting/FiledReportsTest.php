@@ -196,6 +196,11 @@ class FiledReportsTest extends TestCase
         $this->assertSame(['300000.00', '250000.00', '52000.00', '0.00'], [$y['years']['2024']['ndflDue'], $y['years']['2024']['ndflPaid'], $y['years']['2024']['debt'], $y['years']['2024']['over']]);
         $this->assertSame(['380000.00', '150000.00'], [$y['years']['2025']['ndflDue'], $y['years']['2025']['ndflPaid']]);
         $this->actingAsUser($this->accountant)->get('/accounting/taxes?period=2025-02')->assertOk()->assertSee(t('accounting.taxes.yearly.title'));
+        // Учёт начат позже первого отчёта — предупреждение (иначе платежи прошлых начислений дают ложную переплату)
+        Accounting::saveSettings(['taxBalanceFrom' => '2025-01']);
+        $this->actingAsUser($this->accountant)->get('/accounting/taxes?period=2025-02')->assertOk()->assertSee(t('accounting.taxes.startLate', ['from' => Accounting::monthLabel('2025-01'), 'first' => Accounting::monthLabel('2024-10')]));
+        Accounting::saveSettings(['taxBalanceFrom' => '', 'taxOpeningNdfl' => '-20000']);
+        $this->assertSame('2024-10', TaxesService::ndflLedger('2025-02')['from']);
         Accounting::saveSettings(['taxOpeningNdfl' => '-20000']);
         $this->assertSame('260000.00', TaxesService::ndflLedger('2025-02')['balance']);
     }

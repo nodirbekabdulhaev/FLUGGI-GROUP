@@ -411,7 +411,8 @@
       "over": "Overpayment",
       "inOther": "incl. «Other taxes»: {sum}",
       "explain": "The income tax column is accrued / paid. If payments go as one lump (a single tax payment) and are labelled as one tax in the statement, individual taxes will be skewed — look at the «Difference» for all taxes: it does not depend on how payments are split."
-    }
+    },
+    "startLate": "The balance starts from {from} while filed reports exist from {first}: accruals and payments before {from} are not counted, so a false overpayment can appear. Clear «Track from month» in"
   },
   "settings": {
     "title": "Accounting settings",

@@ -411,7 +411,8 @@
       "over": "Ortiqcha toʻlov",
       "inOther": "shu jumladan «Boshqa soliqlar»: {sum}",
       "explain": "JShDS ustuni — hisoblangan / toʻlangan. Toʻlovlar bitta toʻlov (yagona soliq toʻlovi) bilan oʻtsa va koʻchirmada bitta soliq deb yozilsa, alohida soliqlar boʻyicha buzilish boʻladi — barcha soliqlar boʻyicha «Farq»ga qarang: u toʻlovlar qanday taqsimlanganiga bogʻliq emas."
-    }
+    },
+    "startLate": "Saldo hisobi {from} dan boshlangan, topshirilgan hisobotlar esa {first} dan bor: {from} gacha boʻlgan hisob-kitoblar va toʻlovlar hisobga olinmaydi, shuning uchun soxta ortiqcha toʻlov chiqishi mumkin. «Qaysi oydan hisoblash» maydonini tozalang:"
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",

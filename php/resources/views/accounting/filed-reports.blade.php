@@ -17,6 +17,7 @@
         <x-stat :label="$balance->isNegative() ? t('accounting.filed.overpaid') : t('accounting.filed.debt')" :value="money((string) $balance->abs())" :hint="t('accounting.filed.balanceHint', ['month' => \App\Services\Accounting\Accounting::monthLabel($to)])" />
     </div>
 
+    @if ($ledger['firstFiled'] && $ledger['from'] > $ledger['firstFiled'])<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.startLate', ['from' => \App\Services\Accounting\Accounting::monthLabel($ledger['from']), 'first' => \App\Services\Accounting\Accounting::monthLabel($ledger['firstFiled'])]) }} <a class="link" href="/accounting/settings#tax-balance">{{ t('accounting.tabs.settings') }}</a></p>@endif
     @if ($canManage)
         <x-card :title="t('accounting.filed.uploadTitle')" class="mb-4">
             <form method="POST" action="/accounting/filed-reports" enctype="multipart/form-data" class="grid gap-3 sm:grid-cols-[1fr_auto] sm:items-end">
