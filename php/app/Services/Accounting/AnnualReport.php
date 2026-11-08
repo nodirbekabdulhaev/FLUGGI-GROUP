@@ -76,7 +76,8 @@ final class AnnualReport
         $ndflDue = $s['inpsWithinNdfl'] ? $ndfl->minus($inps) : $ndfl;
         $itpark = BigDecimal::zero();
         foreach (self::periodsWithBankIncome($lastPeriod) as $period) {
-            $itpark = $itpark->plus(Accounting::pct(TaxesService::bankIncome($period)['total'], $s['itparkRate']));
+            $sp = Accounting::settingsFor($period);
+            $itpark = $itpark->plus(Accounting::pct(TaxesService::bankIncome($period)['total'], (string) BigDecimal::of($sp['itparkRate'])->plus($sp['turnoverRate'])));
         }
         $paid = fn (array $cats) => self::sumUzs(AccTransaction::query()->where('acc_transactions.direction', 'OUT')->whereIn('acc_transactions.category', $cats)
             ->whereDate('acc_transactions.date', '<=', $date));
@@ -85,7 +86,7 @@ final class AnnualReport
             'salary' => $net->minus($paid(['SALARY'])),
             'ndfl' => $ndflDue->minus($paid(['TAX_NDFL'])),
             'inps' => $inps->minus($paid(['TAX_INPS'])),
-            'itpark' => $itpark->minus($paid(['TAX_ITPARK'])),
+            'itpark' => $itpark->minus($paid(['TAX_ITPARK', 'TAX_TURNOVER'])),
         ];
     }
 
@@ -143,7 +144,6 @@ final class AnnualReport
      */
     public static function results(int $year): array
     {
-        $s = Accounting::settings();
         $revenue = self::flow($year, 'IN', ['CLIENT_PAYMENT'])->minus(self::flow($year, 'OUT', ['CLIENT_PAYMENT']));
         $cost = self::flow($year, 'OUT', ['SUPPLIER']);
         $gross = BigDecimal::zero();
@@ -153,7 +153,9 @@ final class AnnualReport
         $admin = $gross->plus(self::flow($year, 'OUT', ['RENT', 'UTILITIES', 'OTHER']));
         $itpark = BigDecimal::zero();
         foreach (range(1, 12) as $m) {
-            $itpark = $itpark->plus(Accounting::pct(TaxesService::bankIncome($year.'-'.str_pad((string) $m, 2, '0', STR_PAD_LEFT))['total'], $s['itparkRate']));
+            $per = $year.'-'.str_pad((string) $m, 2, '0', STR_PAD_LEFT);
+            $sp = Accounting::settingsFor($per);
+            $itpark = $itpark->plus(Accounting::pct(TaxesService::bankIncome($per)['total'], (string) BigDecimal::of($sp['itparkRate'])->plus($sp['turnoverRate'])));
         }
         $otherOps = $itpark->plus(self::flow($year, 'OUT', ['BANK_FEE', 'TAX_OTHER']));
         $sales = BigDecimal::zero();
@@ -262,7 +264,7 @@ final class AnnualReport
             $paidBank = self::taxesPaid($period);
             $taxRows[] = [self::MONTHS[$i], self::num(Accounting::dec($x['TAX_NDFL']['base'])), self::num(Accounting::dec($x['TAX_NDFL']['due'])), self::num($paidBank['TAX_NDFL']),
                 self::num(Accounting::dec($x['TAX_INPS']['due'])), self::num($paidBank['TAX_INPS']),
-                self::num(Accounting::dec($t['bankIncome'])), self::num(Accounting::dec($x['TAX_ITPARK']['due'])), self::num($paidBank['TAX_ITPARK'])];
+                self::num(Accounting::dec($t['bankIncome'])), self::num(Accounting::dec($x['TAX_ITPARK']['due'] ?? null)), self::num($paidBank['TAX_ITPARK'])];
             foreach (AccPayroll::with('person')->where('period', $period)->get() as $r) {
                 $payRows[] = [self::MONTHS[$i], $r->person?->full_name, $r->person?->pinfl, (float) (string) $r->gross, (float) (string) $r->ndfl, (float) (string) $r->inps, (float) (string) $r->net,
                     $r->status === 'APPROVED' ? 'Утверждено' : 'Черновик'];

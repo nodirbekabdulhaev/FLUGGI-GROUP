@@ -11,7 +11,7 @@ use Illuminate\Support\Collection;
  *  1. своя статья, у которой есть совпавшее ключевое слово (того же направления, активная);
  *  2. перенос остатка / счёт миграции → перевод (TRANSFER_IN/OUT: не выручка, не база IT Park, не расход);
  *  3. расходы: пеня → прочие налоги; IT Park → TAX_ITPARK; пенсионные взносы/ИНПС → TAX_INPS;
- *     НДФЛ → TAX_NDFL; социальный налог и прочие платежи в бюджет → TAX_OTHER; тариф/комиссия → BANK_FEE;
+ *     НДФЛ → TAX_NDFL; социальный налог → TAX_SOCIAL; налог с оборота → TAX_TURNOVER; прочие платежи в бюджет → TAX_OTHER; тариф/комиссия → BANK_FEE;
  *     зарплата/аванс → SALARY; оплата по договору → SUPPLIER;
  *  4. свой же ИНН компании или пополнение своего счёта → перевод;
  *  5. приходы по договору/за услуги → CLIENT_PAYMENT; иначе OTHER_INCOME / OTHER.
@@ -27,7 +27,11 @@ final class BankRules
 
     private const NDFL = ['даромадидан', 'доходы с физических лиц', 'доходов физических лиц', 'ндфл', 'jshds', 'жшдс', 'daromadidan', 'jismoniy shaxslar daromad'];
 
-    private const BUDGET = ['ижтимоий', 'ijtimoiy', 'социальн', '$budjet$', 'казначейств', 'молия вазирлиги', 'moliya vazirligi', 'g\'aznachilik', 'газначилик', 'солиқ', 'соли?', 'налог', 'soliq', '$tax_id$'];
+    private const SOCIAL = ['ижтимоий', 'ijtimoiy', 'социальн'];
+
+    private const TURNOVER = ['айланма', 'aylanma', 'оборот', 'aylanmadan', 'айланмадан'];
+
+    private const BUDGET = ['$budjet$', 'казначейств', 'молия вазирлиги', 'moliya vazirligi', 'g\'aznachilik', 'газначилик', 'солиқ', 'соли?', 'налог', 'soliq', '$tax_id$'];
 
     private const BANK_FEE = ['начисленные %%', 'тариф', 'комисси', 'komissiya', 'tarif', 'плата за обслуживание', 'xizmat haqi'];
 
@@ -70,7 +74,7 @@ final class BankRules
                 return $pick('TAX_OTHER', 'penalty');
             }
             foreach ([['TAX_ITPARK', self::ITPARK, 'itpark'], ['TAX_INPS', self::INPS, 'inps'], ['TAX_NDFL', self::NDFL, 'ndfl'],
-                ['TAX_OTHER', self::BUDGET, 'budget'], ['BANK_FEE', self::BANK_FEE, 'bankFee'], ['SALARY', self::SALARY, 'salary']] as [$cat, $words, $rule]) {
+                ['TAX_SOCIAL', self::SOCIAL, 'social'], ['TAX_TURNOVER', self::TURNOVER, 'turnover'], ['TAX_OTHER', self::BUDGET, 'budget'], ['BANK_FEE', self::BANK_FEE, 'bankFee'], ['SALARY', self::SALARY, 'salary']] as [$cat, $words, $rule]) {
                 if ($has($words)) {
                     return $pick($cat, $rule);
                 }

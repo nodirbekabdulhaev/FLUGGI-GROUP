@@ -28,9 +28,11 @@
         <x-stat :label="t('accounting.taxes.bankIncome')" :value="money($bankIncome)" :hint="t('accounting.taxes.bankIncomeHint')" />
     </div>
     @if ($drafts)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.draftsWarning', ['count' => $drafts]) }}</p>@endif
-    @if (! $payrollRows)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.noPayroll') }} <a class="link" href="/accounting/payroll?period={{ $period }}">{{ t('accounting.tabs.payroll') }}</a></p>@endif
+    @if (! $payrollRows && $fromSalary)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.fromSalary') }} <a class="link" href="/accounting/people">{{ t('accounting.tabs.people') }}</a></p>
+    @elseif (! $payrollRows)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.noPayroll') }} <a class="link" href="/accounting/payroll?period={{ $period }}">{{ t('accounting.tabs.payroll') }}</a></p>@endif
     @if ($missingRate)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.errors.noUsdRate') }}</p>@endif
 
+    @if ($settings['regime'] === 'EARLIER')<p class="mb-3 flex items-center gap-2 text-sm text-primary"><x-icon name="info" />{{ t('accounting.taxes.regimeEarlier', ['turnover' => $settings['turnoverRate'], 'ndfl' => $settings['ndflRate'], 'social' => $settings['socialRate']]) }}</p>@endif
     <p class="mb-3 text-sm text-muted-foreground">{{ $balanceFrom <= $period ? t('accounting.taxes.carryFrom', ['month' => \App\Services\Accounting\Accounting::monthLabel($balanceFrom)]) : t('accounting.taxes.carryLater', ['month' => \App\Services\Accounting\Accounting::monthLabel($balanceFrom)]) }}
         @if ($canManage)<a class="link" href="/accounting/settings#tax-balance">{{ t('accounting.tabs.settings') }}</a>@endif</p>
 

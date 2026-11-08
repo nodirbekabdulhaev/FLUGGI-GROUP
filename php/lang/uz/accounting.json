@@ -36,7 +36,9 @@
     "UTILITIES": "Kommunal va aloqa",
     "BANK_FEE": "Bank komissiyasi",
     "OTHER": "Boshqa chiqim",
-    "TRANSFER_OUT": "Oʻtkazma (hisobdan chiqim)"
+    "TRANSFER_OUT": "Oʻtkazma (hisobdan chiqim)",
+    "TAX_SOCIAL": "Ijtimoiy soliq",
+    "TAX_TURNOVER": "Aylanmadan olinadigan soliq"
   },
   "fields": {
     "account": "Hisob",
@@ -384,7 +386,9 @@
       "TAX_NDFL": "Vedomost boʻyicha JShDS (agar INPS JShDS tarkibida boʻlsa, INPS chegirilgan holda)",
       "TAX_INPS": "Vedomost boʻyicha INPS",
       "TAX_ITPARK": "Bank hisoblariga tushgan mijoz toʻlovlari va boshqa daromadlardan",
-      "TAX_OTHER": "Qoʻlda kiritiladi"
+      "TAX_OTHER": "Qoʻlda kiritiladi",
+      "TAX_SOCIAL": "Stavka × qaydnoma boʻyicha hisoblangan (IT Parkgacha)",
+      "TAX_TURNOVER": "Stavka × bank hisoblariga tushumlar (IT Parkgacha)"
     },
     "hint": "Stavkalar: JShDS {ndfl}%, INPS {inps}%, IT Park {itpark}% — buxgalteriya sozlamalarida oʻzgartiriladi. Toʻlangan — shu davr bilan tegishli toifadagi chiqimlar.",
     "opening": "Oldingi oylardan",
@@ -392,7 +396,9 @@
     "totalBalanceHint": "Oldingi oylardagi qarz va ortiqcha toʻlov hisobga olingan",
     "carryFrom": "Qarz va ortiqcha toʻlov {month} dan boshlab oydan oyga oʻtadi.",
     "carryLater": "Qarz va ortiqcha toʻlov hisobi {month} dan boshlanadi — bu oy alohida hisoblanadi.",
-    "overpaid": "ortiqcha toʻlov"
+    "overpaid": "ortiqcha toʻlov",
+    "fromSalary": "Bu oy uchun qaydnoma yoʻq — JShDS va INPS odamlarning maoshlari boʻyicha hisoblandi (maoshlar tarixi, qabul va boʻshatish sanalari).",
+    "regimeEarlier": "IT Parkga oʻtishdan oldingi oy — soliqlar avvalgi rejim boʻyicha (aylanma soligʻi {turnover}%, JShDS {ndfl}%, ijtimoiy soliq {social}%)."
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",
@@ -424,7 +430,16 @@
     "taxBalanceFrom": "Qaysi oydan hisoblash",
     "taxBalanceFromHint": "Boʻsh — ish haqi qaydnomasi bor birinchi oydan. Undan oldingi toʻlovlar hisobga olinmaydi.",
     "opening": "{tax} boshida",
-    "openingHint": "Musbat — oy boshidagi qarz, manfiy — ortiqcha toʻlov (masalan, -401673.81). Boʻsh yoki 0 — saldosiz."
+    "openingHint": "Musbat — oy boshidagi qarz, manfiy — ortiqcha toʻlov (masalan, -401673.81). Boʻsh yoki 0 — saldosiz.",
+    "regime": "IT Parkgacha soliq rejimi",
+    "regimeHint": "IT Parkga oʻtish oyigacha soliqlar avvalgi stavkalar boʻyicha hisoblanadi: aylanma soligʻi, imtiyozsiz JShDS, ijtimoiy soliq. Oʻtish oyidan — yuqoridagi stavkalar.",
+    "regimeFrom": "IT Park qaysi oydan",
+    "regimeFromHint": "Boʻsh — barcha oylar uchun joriy stavkalar. Masalan, 2023-04.",
+    "earlierNdflRate": "IT Parkgacha JShDS, %",
+    "earlierInpsRate": "IT Parkgacha INPS, %",
+    "earlierSocialRate": "IT Parkgacha ijtimoiy soliq, %",
+    "earlierTurnoverRate": "IT Parkgacha aylanma soligʻi, %",
+    "socialRate": "Ijtimoiy soliq, % (IT Park — 0)"
   },
   "errors": {
     "category": "Bunday operatsiya uchun bu toifani tanlab boʻlmaydi",

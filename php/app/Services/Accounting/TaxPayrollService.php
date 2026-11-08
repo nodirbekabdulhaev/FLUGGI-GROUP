@@ -180,7 +180,7 @@ final class TaxPayrollService
      */
     public static function calculate(string $period): array
     {
-        $s = Accounting::settings();
+        $s = Accounting::settingsFor($period);
         [$a, $b] = Accounting::monthDates($period);
 
         return DB::transaction(function () use ($period, $s, $a, $b) {
@@ -202,7 +202,7 @@ final class TaxPayrollService
 
                     continue;
                 }
-                $data = self::amounts($gross, $s, TaxReport::benefits($p->benefits, $s));
+                $data = self::amounts($gross, $s, TaxReport::benefitsFor($p->benefits, $s));
                 if ($row) {
                     $changes = Audit::diff($row, $data, array_keys($data));
                     $row->update($data);
@@ -236,8 +236,8 @@ final class TaxPayrollService
             if ($row->status !== 'DRAFT') {
                 throw new BusinessRule(t('accounting.errors.payrollApproved'));
             }
-            $s = Accounting::settings();
-            $data = self::amounts(Accounting::dec($gross), $s, TaxReport::benefits($row->person?->benefits, $s));
+            $s = Accounting::settingsFor($row->period);
+            $data = self::amounts(Accounting::dec($gross), $s, TaxReport::benefitsFor($row->person?->benefits, $s));
             $changes = Audit::diff($row, $data, array_keys($data));
             $row->update($data);
             Audit::log('accounting.payroll.update', 'acc_payroll', $id, $changes);

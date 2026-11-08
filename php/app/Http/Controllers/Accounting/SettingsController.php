@@ -20,11 +20,13 @@ class SettingsController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        Input::normalize($request, ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate', ...array_values(Accounting::OPENING_KEYS)]);
+        Input::normalize($request, ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate', 'socialRate', 'earlierNdflRate', 'earlierInpsRate', 'earlierSocialRate', 'earlierTurnoverRate', ...array_values(Accounting::OPENING_KEYS)]);
         $rate = ['sometimes', 'required', 'regex:/^\d{1,2}(\.\d{1,3})?$/'];
         $opening = ['sometimes', 'nullable', 'regex:/^-?\d{1,15}(\.\d{1,2})?$/'];
         $data = $request->validate([
             'ndflBaseRate' => $rate, 'inpsRate' => $rate, 'itparkRate' => $rate,
+            'socialRate' => $rate, 'earlierNdflRate' => $rate, 'earlierInpsRate' => $rate, 'earlierSocialRate' => $rate, 'earlierTurnoverRate' => $rate,
+            'regimeFrom' => ['sometimes', 'nullable', 'regex:'.Accounting::PERIOD_RE],
             'benefitCode' => ['sometimes', 'nullable', 'regex:/^\d{1,10}$/'],
             'benefitPercent' => ['sometimes', 'required', 'regex:/^(100|\d{1,2}(\.\d{1,3})?)$/'],
             'companyInn' => ['sometimes', 'nullable', 'regex:/^\d{9}$/'],

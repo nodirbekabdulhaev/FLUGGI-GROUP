@@ -22,7 +22,7 @@ class PayrollController extends Controller
         $canManage = access()->can('accounting.manage');
         $editing = $canManage && ($id = $request->query('edit')) ? AccPayroll::with('person')->where('status', 'DRAFT')->findOrFail($id) : null;
 
-        return view('accounting.payroll', ['period' => $period, 'settings' => Accounting::settings(), 'canManage' => $canManage,
+        return view('accounting.payroll', ['period' => $period, 'settings' => Accounting::settingsFor($period), 'canManage' => $canManage,
             'editing' => $editing, 'payAccount' => TaxesService::payAccount()] + TaxPayrollService::sheet($period));
     }
 

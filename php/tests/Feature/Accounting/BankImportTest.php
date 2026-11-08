@@ -162,7 +162,8 @@ class BankImportTest extends TestCase
         $this->assertSame('TAX_NDFL', $s('OUT', 'Задолженность по Налог на доходы с физических лиц втч пеня: 0 $BUDJET$1'));
         $this->assertSame('TAX_INPS', $s('OUT', '101 Фу?ароларнинг жам?ариб бориладиган пенсия бадалига ажратма'));
         $this->assertSame('TAX_OTHER', $s('OUT', '199 СОРЖ га ундириладиган 40% пеня учун'));
-        $this->assertSame('TAX_OTHER', $s('OUT', '36 Ижтимоий соли? учун олдиндан тўлов'));
+        $this->assertSame('TAX_SOCIAL', $s('OUT', '36 Ижтимоий соли? учун олдиндан тўлов'));
+        $this->assertSame('TAX_TURNOVER', $s('OUT', 'Айланмадан олинадиган соли? учун тўлов'));
         $this->assertSame('BANK_FEE', $s('OUT', 'За документ №1 Тариф-ТАРИФ "CORPORATE"-0,1%.', 'Начисленные %% "TEST" MCHJ', '300000009'));
         $this->assertSame('SALARY', $s('OUT', '00634 Аванс август 2026', '21*"TEST"', '300000009'));
         $this->assertSame('SALARY', $s('OUT', 'П/О, ЗАРПЛАТА OKTYABR OYI'));
@@ -199,7 +200,7 @@ class BankImportTest extends TestCase
         $this->assertSame(['new' => 13, 'duplicate' => 0, 'possible' => 1, 'error' => 0], $page->viewData('totals'));
         $this->assertSame([
             'TRANSFER_IN', 'TAX_NDFL', 'TAX_OTHER', 'TAX_ITPARK', 'BANK_FEE', 'TAX_NDFL', 'TAX_INPS', 'TAX_INPS', 'SALARY',
-            'CLIENT_PAYMENT', 'TAX_OTHER', 'TRANSFER_IN', 'OTHER_INCOME', 'SUPPLIER',
+            'CLIENT_PAYMENT', 'TAX_SOCIAL', 'TRANSFER_IN', 'OTHER_INCOME', 'SUPPLIER',
         ], $rows->pluck('category')->all());
 
         // Подтверждение: строка 10 — другая категория, НДФЛ за июль, возможный дубль не отмечен

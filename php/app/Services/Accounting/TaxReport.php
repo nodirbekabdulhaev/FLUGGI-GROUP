@@ -60,6 +60,12 @@ final class TaxReport
         return $out;
     }
 
+    /** Льготы в месяце: при прежнем режиме (до IT Park) льгот нет. */
+    public static function benefitsFor(?array $own, array $s): array
+    {
+        return ($s['regime'] ?? 'ITPARK') === 'EARLIER' ? [] : self::benefits($own, $s);
+    }
+
     /**
      * Необлагаемая часть по каждой льготе (процент от начисленного или фиксированная сумма в месяц, не больше остатка)
      * и НДФЛ с облагаемой части.
@@ -136,15 +142,17 @@ final class TaxReport
             $fromSalary = 0;
             foreach ($periods as $per) {
                 $row = $payroll[$p->id][$per] ?? null;
+                $sm = Accounting::settingsFor($per);
+                $mb = $sm['regime'] === 'EARLIER' ? [] : $benefits;
                 if ($row) {
                     $gross = Accounting::dec($row->gross);
-                    $split = self::split($gross, $benefits, $s);
+                    $split = self::split($gross, $mb, $sm);
                     $ndfl = Accounting::dec($row->ndfl);
                     if ($ndfl->minus($split['ndfl'])->abs()->isGreaterThan(1)) {
                         $mismatch[] = Accounting::monthLabel($per);
                     }
                 } elseif ($bySalary && ($gross = self::accrued($p, $per)) !== null) {
-                    $split = self::split($gross, $benefits, $s);
+                    $split = self::split($gross, $mb, $sm);
                     $ndfl = $split['ndfl'];
                     $fromSalary++;
                 } else {

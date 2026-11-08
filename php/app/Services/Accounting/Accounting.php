@@ -25,14 +25,14 @@ final class Accounting
 
     public const IN_CATEGORIES = ['CLIENT_PAYMENT', 'OTHER_INCOME', 'TRANSFER_IN'];
 
-    public const OUT_CATEGORIES = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER', 'CLIENT_PAYMENT', 'TRANSFER_OUT'];
+    public const OUT_CATEGORIES = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER', 'CLIENT_PAYMENT', 'TRANSFER_OUT'];
 
     /** Категории, доступные при ручном вводе (переводы — отдельной формой, возвраты клиентам — из CRM). */
     public const MANUAL_IN = ['OTHER_INCOME', 'CLIENT_PAYMENT'];
 
-    public const MANUAL_OUT = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER'];
+    public const MANUAL_OUT = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER'];
 
-    public const TAX_CATEGORIES = ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_OTHER'];
+    public const TAX_CATEGORIES = ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER'];
 
     /** Доход, с которого считается отчисление IT Park (поступления на банковские счета). */
     public const ITPARK_BASE = ['CLIENT_PAYMENT', 'OTHER_INCOME'];
@@ -46,11 +46,13 @@ final class Accounting
     public const DEFAULTS = [
         'ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5',
         'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1',
+        'socialRate' => '0', 'regimeFrom' => '',
+        'earlierNdflRate' => '12', 'earlierInpsRate' => '0.1', 'earlierSocialRate' => '12', 'earlierTurnoverRate' => '4',
         'taxBalanceFrom' => '', 'taxOpeningNdfl' => '0', 'taxOpeningInps' => '0', 'taxOpeningItpark' => '0',
         'companyInn' => '', 'taxReportCode' => '', 'taxReportFileName' => '{inn}_{code}_46_{year}_M_{month}_11101_20_ilova.xlsx',
     ];
 
-    private const RATE_KEYS = ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate'];
+    private const RATE_KEYS = ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate', 'socialRate', 'earlierNdflRate', 'earlierInpsRate', 'earlierSocialRate', 'earlierTurnoverRate'];
 
     /** Сальдо налогов на начало учёта (taxBalanceFrom): плюс — долг, минус — переплата. */
     public const OPENING_KEYS = ['TAX_NDFL' => 'taxOpeningNdfl', 'TAX_INPS' => 'taxOpeningInps', 'TAX_ITPARK' => 'taxOpeningItpark'];
@@ -87,6 +89,7 @@ final class Accounting
             $s[$k] = (string) self::dec($s[$k])->toScale(2);
         }
         $s['taxBalanceFrom'] = preg_match(self::PERIOD_RE, (string) $s['taxBalanceFrom']) ? (string) $s['taxBalanceFrom'] : '';
+        $s['regimeFrom'] = preg_match(self::PERIOD_RE, (string) $s['regimeFrom']) ? (string) $s['regimeFrom'] : '';
         foreach (['benefitCode', 'companyInn', 'taxReportCode', 'taxReportFileName'] as $k) {
             $s[$k] = trim((string) $s[$k]);
         }
@@ -95,7 +98,28 @@ final class Accounting
         $s['ndflRate'] = (string) BigDecimal::of($s['ndflBaseRate'])->multipliedBy(BigDecimal::of('100')->minus($exemptPct))
             ->dividedBy(100, 3, RoundingMode::HalfUp)->stripTrailingZeros();
 
+        $s['regime'] = 'ITPARK';
+        $s['turnoverRate'] = '0';
+
         return $s;
+    }
+
+    /**
+     * Ставки, действующие в месяце. До перехода на IT Park (regimeFrom) — прежний режим: налог с оборота
+     * (earlierTurnoverRate % поступлений), НДФЛ earlierNdflRate % без льгот, ИНПС, социальный налог earlierSocialRate %
+     * от начисленного; отчисления IT Park нет. С regimeFrom (или если он не задан) — текущие ставки.
+     */
+    public static function settingsFor(string $period): array
+    {
+        $s = self::settings();
+        if ($s['regimeFrom'] === '' || $period >= $s['regimeFrom']) {
+            return $s;
+        }
+
+        return array_replace($s, [
+            'regime' => 'EARLIER', 'ndflBaseRate' => $s['earlierNdflRate'], 'ndflRate' => $s['earlierNdflRate'], 'benefitCode' => '', 'benefitPercent' => '0',
+            'inpsRate' => $s['earlierInpsRate'], 'socialRate' => $s['earlierSocialRate'], 'itparkRate' => '0', 'turnoverRate' => $s['earlierTurnoverRate'],
+        ]);
     }
 
     /** Сохранить настройки: переданные поля меняются, остальные остаются (ndflRate вычисляется и не сохраняется). */
@@ -108,9 +132,9 @@ final class Accounting
                 $new[$k] = (string) BigDecimal::of((string) $input[$k])->stripTrailingZeros();
             }
         }
-        foreach ([...array_values(self::OPENING_KEYS), 'taxBalanceFrom'] as $k) {
+        foreach ([...array_values(self::OPENING_KEYS), 'taxBalanceFrom', 'regimeFrom'] as $k) {
             if (array_key_exists($k, $input)) {
-                $new[$k] = $k === 'taxBalanceFrom' ? trim((string) $input[$k]) : (string) self::dec($input[$k] ?? '0')->toScale(2);
+                $new[$k] = in_array($k, ['taxBalanceFrom', 'regimeFrom'], true) ? trim((string) $input[$k]) : (string) self::dec($input[$k] ?? '0')->toScale(2);
             }
         }
         if (array_key_exists('inpsWithinNdfl', $input)) {

@@ -19,6 +19,7 @@ use App\Services\Accounting\CrmImportService;
 use App\Services\Accounting\OverviewService;
 use App\Services\Accounting\TaxesService;
 use App\Services\Accounting\TaxPayrollService;
+use App\Services\Accounting\TaxReport;
 use App\Support\Outbox;
 use Tests\TestCase;
 
@@ -325,9 +326,55 @@ class AccountingTest extends TestCase
         $this->assertSame(['-401673.81', '-651673.81'], [$oct['taxes']['TAX_NDFL']['opening'], $oct['taxes']['TAX_NDFL']['balance']]);
         $this->assertSame('-130000.00', $oct['taxes']['TAX_ITPARK']['opening']);    // 20 000 + 0 − 150 000
         $this->assertSame('0.00', TaxesService::forPeriod('2026-08')['taxes']['TAX_NDFL']['opening']);   // до начала учёта — отдельно
+        // Месяц без ведомости (прошлые годы) — по окладам: июль 750 000 к уплате, переходит дальше
+        Accounting::saveSettings(['taxBalanceFrom' => '2026-07', 'taxOpeningNdfl' => '0', 'taxOpeningItpark' => '0']);
+        $jul = TaxesService::forPeriod('2026-07');
+        $this->assertSame([0, true, '750000.00', '10000.00'], [$jul['payrollRows'], $jul['fromSalary'], $jul['taxes']['TAX_NDFL']['due'], $jul['taxes']['TAX_INPS']['due']]);
+        $this->assertSame('750000.00', TaxesService::forPeriod('2026-08')['taxes']['TAX_NDFL']['opening']);
+        $this->get('/accounting/taxes?period=2026-07')->assertOk()->assertSee(t('accounting.taxes.fromSalary'));
         $this->put('/accounting/settings', ['taxOpeningNdfl' => 'abc'])->assertSessionHasErrors('taxOpeningNdfl');
         $this->get('/accounting/taxes?period=2026-10')->assertOk()->assertSee(t('accounting.taxes.opening'))->assertSee(t('accounting.taxes.overpaid'));
         $this->get('/accounting/settings')->assertOk()->assertSee('taxOpeningItpark', false);
+    }
+
+    public function test_earlier_tax_regime_before_it_park(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        $p = AccPerson::create(['full_name' => 'ALIYEV AZIZ', 'pinfl' => '10000000000001', 'position' => 'Менеджер', 'monthly_salary' => '5000000', 'hired_at' => '2023-01-01']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false,
+            'itparkRate' => '1', 'regimeFrom' => '2023-04', 'taxBalanceFrom' => '2023-03']);
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '10000000', '2023-03-10');
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '20000000', '2023-04-10');
+        $this->op($bank, 'OUT', 'TAX_TURNOVER', '300000', '2023-04-15', ['period' => '2023-04']);
+
+        // Март 2023 — прежний режим: НДФЛ 12 % без льгот, соцналог 12 %, налог с оборота 4 %, IT Park нет
+        $this->assertSame('EARLIER', Accounting::settingsFor('2023-03')['regime']);
+        $mar = TaxesService::forPeriod('2023-03');
+        $this->assertSame(['TAX_NDFL', 'TAX_INPS', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER'], array_keys($mar['taxes']));
+        $this->assertSame(['600000.00', '5000.00', '600000.00', '400000.00'], [$mar['taxes']['TAX_NDFL']['due'], $mar['taxes']['TAX_INPS']['due'], $mar['taxes']['TAX_SOCIAL']['due'], $mar['taxes']['TAX_TURNOVER']['due']]);
+
+        // Апрель 2023 — IT Park: 7,5 % и 1 %; долг по налогу с оборота и соцналогу переходит, после оплаты 300 000 остаётся 100 000
+        $apr = TaxesService::forPeriod('2023-04');
+        $this->assertSame(['375000.00', '200000.00'], [$apr['taxes']['TAX_NDFL']['due'], $apr['taxes']['TAX_ITPARK']['due']]);
+        $this->assertSame(['400000.00', '0.00', '300000.00', '100000.00'], array_values(array_intersect_key($apr['taxes']['TAX_TURNOVER'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $this->assertSame('600000.00', $apr['taxes']['TAX_SOCIAL']['opening']);
+
+        // Ведомость марта — по ставке марта
+        TaxPayrollService::calculate('2023-03');
+        $this->assertSame('600000.00', (string) AccPayroll::where('period', '2023-03')->value('ndfl'));
+        TaxPayrollService::calculate('2023-04');
+        $this->assertSame('375000.00', (string) AccPayroll::where('period', '2023-04')->value('ndfl'));
+
+        // Отчёт в налоговую за апрель 2023: НДФЛ с начала года 3 × 600 000 + 375 000, льгота только за апрель
+        $r = collect(TaxReport::build('2023-04')['rows'])->firstWhere('personId', $p->id);
+        $this->assertSame(['20000000.00', '2175000.00', '375000.00'], [$r['ytdIncome'], $r['ytdNdfl'], $r['monthNdfl']]);
+        $this->assertSame(['1875000.00', '1875000.00'], [$r['benefits'][0]['ytd'], $r['benefits'][0]['month']]);
+
+        $this->actingAsUser($this->accountant)->get('/accounting/taxes?period=2023-03')->assertOk()->assertSee(t('accounting.category.TAX_TURNOVER'))
+            ->assertSee(t('accounting.taxes.regimeEarlier', ['turnover' => '4', 'ndfl' => '12', 'social' => '12']));
+        $this->get('/accounting/settings')->assertOk()->assertSee('earlierTurnoverRate', false);
+        $this->put('/accounting/settings', ['ndflBaseRate' => '12', 'inpsRate' => '0.1', 'itparkRate' => '1', 'regimeFrom' => '2023-13'])->assertSessionHasErrors('regimeFrom');
     }
 
     public function test_taxes_due_paid_and_reports(): void

@@ -36,7 +36,9 @@
     "UTILITIES": "Utilities and internet",
     "BANK_FEE": "Bank fee",
     "OTHER": "Other expense",
-    "TRANSFER_OUT": "Transfer (out)"
+    "TRANSFER_OUT": "Transfer (out)",
+    "TAX_SOCIAL": "Social tax",
+    "TAX_TURNOVER": "Turnover tax"
   },
   "fields": {
     "account": "Account",
@@ -384,7 +386,9 @@
       "TAX_NDFL": "NDFL from the payroll (minus INPS when INPS is within NDFL)",
       "TAX_INPS": "INPS from the payroll",
       "TAX_ITPARK": "From client payments and other income on bank accounts",
-      "TAX_OTHER": "Entered manually"
+      "TAX_OTHER": "Entered manually",
+      "TAX_SOCIAL": "Rate × payroll accrued (before IT Park)",
+      "TAX_TURNOVER": "Rate × receipts to bank accounts (before IT Park)"
     },
     "hint": "Rates: NDFL {ndfl}%, INPS {inps}%, IT Park {itpark}% — change them in accounting settings. Paid = expenses of the matching category with this period.",
     "opening": "From previous months",
@@ -392,7 +396,9 @@
     "totalBalanceHint": "Including debt and overpayment of previous months",
     "carryFrom": "Debt and overpayment carry over month to month starting from {month}.",
     "carryLater": "Debt and overpayment tracking starts in {month} — this month is calculated on its own.",
-    "overpaid": "overpaid"
+    "overpaid": "overpaid",
+    "fromSalary": "No payroll for this month — personal income tax and INPS are calculated from salaries (salary history, hire and dismissal dates).",
+    "regimeEarlier": "Month before IT Park — taxes under the earlier regime (turnover tax {turnover}%, income tax {ndfl}%, social tax {social}%)."
   },
   "settings": {
     "title": "Accounting settings",
@@ -424,7 +430,16 @@
     "taxBalanceFrom": "Track from month",
     "taxBalanceFromHint": "Empty — from the first month with a payroll. Payments before that month are not counted.",
     "opening": "{tax} at start",
-    "openingHint": "Plus — debt at the start of the month, minus — overpayment (e.g. -401673.81). Empty or 0 — no opening balance."
+    "openingHint": "Plus — debt at the start of the month, minus — overpayment (e.g. -401673.81). Empty or 0 — no opening balance.",
+    "regime": "Tax regime before IT Park",
+    "regimeHint": "Before the IT Park month taxes use the earlier rates: turnover tax, income tax without benefits, social tax. From that month — the rates above.",
+    "regimeFrom": "IT Park from month",
+    "regimeFromHint": "Empty — current rates for all months. For example, 2023-04.",
+    "earlierNdflRate": "Income tax before IT Park, %",
+    "earlierInpsRate": "INPS before IT Park, %",
+    "earlierSocialRate": "Social tax before IT Park, %",
+    "earlierTurnoverRate": "Turnover tax before IT Park, %",
+    "socialRate": "Social tax, % (IT Park — 0)"
   },
   "errors": {
     "category": "This category cannot be used for this operation",

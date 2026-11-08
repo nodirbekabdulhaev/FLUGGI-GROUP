@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\AccAccount;
 use App\Models\AccPayroll;
+use App\Models\AccPerson;
 use App\Models\AccTransaction;
 use Brick\Math\BigDecimal;
 use Carbon\CarbonImmutable;
@@ -12,8 +13,12 @@ use Illuminate\Support\Collection;
 /**
  * Налоги месяца (считаются автоматически):
  *  - НДФЛ к уплате = Σ НДФЛ ведомости − Σ ИНПС (если ИНПС удерживается в составе НДФЛ), ИНПС = Σ ИНПС;
- *  - отчисление IT Park = ставка × поступления на банковские счета за месяц (оплаты клиентов и прочие доходы, без переводов).
+ *  - отчисление IT Park = ставка × поступления на банковские счета за месяц (оплаты клиентов и прочие доходы, без переводов);
+ *  - до перехода на IT Park (настройка regimeFrom): налог с оборота = ставка × те же поступления, социальный налог =
+ *    ставка × начислено, НДФЛ по прежней ставке без льгот (Accounting::settingsFor).
  * Оплачено — расходы категории TAX_* с этим периодом (без периода — по месяцу даты).
+ *
+ * Месяц без ведомости (например, прошлые годы) считается по истории окладов людей (TaxReport::accrued).
  *
  * Сальдо переходит из месяца в месяц: «с прошлых месяцев» = сальдо на начало учёта (настройки, плюс — долг,
  * минус — переплата) + Σ (к уплате − оплачено) за месяцы от начала учёта до предыдущего. Начало учёта —
@@ -22,18 +27,19 @@ use Illuminate\Support\Collection;
  */
 final class TaxesService
 {
-    public const CARRIED = ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK'];
+    public const CARRIED = ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER'];
 
     /**
      * @return array{period:string,settings:array,taxes:array<string,array{opening:?string,due:?string,paid:string,balance:?string,base:?string,rate:?string}>,
-     *   payrollRows:int,drafts:int,bankIncome:string,missingRate:bool,totalDue:string,totalPaid:string,totalBalance:string,balanceFrom:string}
+     *   payrollRows:int,drafts:int,fromSalary:bool,bankIncome:string,missingRate:bool,totalDue:string,totalPaid:string,totalBalance:string,balanceFrom:string}
      */
     public static function forPeriod(string $period): array
     {
         $s = Accounting::settings();
         $from = self::balanceFrom($s, $period);
         $first = min($from, $period);
-        $months = self::monthly($first, $period, $s);
+        $months = self::monthly($first, $period);
+        $sp = Accounting::settingsFor($period);
         $cur = $months[$period];
 
         $opening = array_fill_keys(self::CARRIED, BigDecimal::zero());
@@ -50,13 +56,22 @@ final class TaxesService
             }
         }
 
-        $taxes = [];
-        foreach ([
-            'TAX_NDFL' => [$cur['gross'], $s['ndflRate']],
-            'TAX_INPS' => [$cur['gross'], $s['inpsRate']],
-            'TAX_ITPARK' => [$cur['bank'], $s['itparkRate']],
+        // Строки месяца: налоги действующего режима, а также прежние, по которым остался долг/переплата или были оплаты
+        $all = [
+            'TAX_NDFL' => [$cur['gross'], $sp['ndflRate']],
+            'TAX_INPS' => [$cur['gross'], $sp['inpsRate']],
+            'TAX_SOCIAL' => [$cur['gross'], $sp['socialRate']],
+            'TAX_TURNOVER' => [$cur['bank'], $sp['turnoverRate']],
+            'TAX_ITPARK' => [$cur['bank'], $sp['itparkRate']],
             'TAX_OTHER' => [null, null],
-        ] as $cat => [$base, $rate]) {
+        ];
+        $active = $sp['regime'] === 'EARLIER' ? ['TAX_NDFL', 'TAX_INPS', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER']
+            : ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_OTHER', ...(BigDecimal::of($sp['socialRate'])->isPositive() ? ['TAX_SOCIAL'] : [])];
+        $taxes = [];
+        foreach ($all as $cat => [$base, $rate]) {
+            if (! in_array($cat, $active, true) && ($opening[$cat] ?? BigDecimal::zero())->isZero() && ($cur['paid'][$cat] ?? BigDecimal::zero())->isZero()) {
+                continue;
+            }
             $due = $cur['due'][$cat] ?? null;
             $p = $cur['paid'][$cat] ?? BigDecimal::zero();
             $open = $opening[$cat] ?? null;
@@ -79,8 +94,8 @@ final class TaxesService
         }
 
         return [
-            'period' => $period, 'settings' => $s, 'taxes' => $taxes,
-            'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'],
+            'period' => $period, 'settings' => $sp, 'taxes' => $taxes,
+            'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'],
             'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
             'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from,
@@ -102,12 +117,12 @@ final class TaxesService
      *
      * @return array<string, array{due:array<string,BigDecimal>,paid:array<string,BigDecimal>,gross:BigDecimal,bank:BigDecimal,missingRate:bool,rows:int,drafts:int}>
      */
-    private static function monthly(string $from, string $to, array $s): array
+    private static function monthly(string $from, string $to): array
     {
         $zero = BigDecimal::zero();
         $out = [];
         for ($m = CarbonImmutable::createFromFormat('!Y-m', $from); $m->format('Y-m') <= $to; $m = $m->addMonthNoOverflow()) {
-            $out[$m->format('Y-m')] = ['ndfl' => $zero, 'inps' => $zero, 'gross' => $zero, 'bank' => $zero, 'missingRate' => false, 'rows' => 0, 'drafts' => 0,
+            $out[$m->format('Y-m')] = ['ndfl' => $zero, 'inps' => $zero, 'gross' => $zero, 'bank' => $zero, 'missingRate' => false, 'rows' => 0, 'drafts' => 0, 'fromSalary' => false,
                 'paid' => array_fill_keys(Accounting::TAX_CATEGORIES, $zero)];
         }
         foreach (AccPayroll::whereBetween('period', [$from, $to])->get(['period', 'gross', 'ndfl', 'inps', 'status']) as $r) {
@@ -118,6 +133,25 @@ final class TaxesService
             $o['rows']++;
             $o['drafts'] += $r->status === 'DRAFT' ? 1 : 0;
             unset($o);
+        }
+        // Месяцы без ведомости (прошлые годы) — по истории окладов, как в отчёте в налоговую
+        $noPayroll = array_keys(array_filter($out, fn ($o) => $o['rows'] === 0));
+        if ($noPayroll) {
+            $people = AccPerson::with('salaries')->where(fn ($q) => $q->where('is_active', true)->orWhereNotNull('fired_at'))->get();
+            foreach ($noPayroll as $m) {
+                $s = Accounting::settingsFor($m);
+                foreach ($people as $p) {
+                    $g = TaxReport::accrued($p, $m);
+                    if ($g === null || ! $g->isPositive()) {
+                        continue;
+                    }
+                    $x = TaxPayrollService::amounts($g, $s, TaxReport::benefitsFor($p->benefits, $s));
+                    $out[$m]['ndfl'] = $out[$m]['ndfl']->plus($x['ndfl']);
+                    $out[$m]['inps'] = $out[$m]['inps']->plus($x['inps']);
+                    $out[$m]['gross'] = $out[$m]['gross']->plus($x['gross']);
+                    $out[$m]['fromSalary'] = true;
+                }
+            }
         }
         [$a] = Accounting::monthDates($from);
         [, $b] = Accounting::monthDates($to);
@@ -135,11 +169,14 @@ final class TaxesService
                 $out[$k]['paid'][$r->category] = $out[$k]['paid'][$r->category]->plus($r->uzs ?? $zero);
             }
         }
-        foreach ($out as &$o) {
+        foreach ($out as $m => &$o) {
+            $s = Accounting::settingsFor($m);
             $o['due'] = [
                 'TAX_NDFL' => $s['inpsWithinNdfl'] ? $o['ndfl']->minus($o['inps']) : $o['ndfl'],
                 'TAX_INPS' => $o['inps'],
                 'TAX_ITPARK' => Accounting::pct($o['bank'], $s['itparkRate']),
+                'TAX_SOCIAL' => Accounting::pct($o['gross'], $s['socialRate']),
+                'TAX_TURNOVER' => Accounting::pct($o['bank'], $s['turnoverRate']),
             ];
         }
         unset($o);

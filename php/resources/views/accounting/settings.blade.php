@@ -17,6 +17,19 @@
                 <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="inpsWithinNdfl" value="1" class="mt-0.5" @checked(old('inpsWithinNdfl', $settings['inpsWithinNdfl']))>
                     <span>{{ t('accounting.settings.inpsWithinNdfl') }}<span class="block text-xs text-muted-foreground">{{ t('accounting.settings.inpsWithinNdflHint') }}</span></span></label>
                 <x-field name="itparkRate" inputmode="decimal" :label="t('accounting.settings.itparkRate')" :hint="t('accounting.settings.itparkHint')" :value="$settings['itparkRate']" required />
+                <x-field name="socialRate" inputmode="decimal" :label="t('accounting.settings.socialRate')" :value="$settings['socialRate']" />
+            </div>
+        </x-card>
+        <x-card id="tax-regime">
+            <h2 class="mb-1 font-medium">{{ t('accounting.settings.regime') }}</h2>
+            <p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.settings.regimeHint') }}</p>
+            <div class="space-y-4">
+                <x-field name="regimeFrom" type="month" :label="t('accounting.settings.regimeFrom')" :hint="t('accounting.settings.regimeFromHint')" :value="$settings['regimeFrom']" />
+                <div class="grid gap-4 sm:grid-cols-2">
+                    @foreach (['earlierTurnoverRate', 'earlierNdflRate', 'earlierSocialRate', 'earlierInpsRate'] as $k)
+                        <x-field :name="$k" inputmode="decimal" :label="t('accounting.settings.'.$k)" :value="$settings[$k]" />
+                    @endforeach
+                </div>
             </div>
         </x-card>
         <x-card id="tax-balance">
