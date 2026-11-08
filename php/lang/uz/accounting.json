@@ -386,7 +386,13 @@
       "TAX_ITPARK": "Bank hisoblariga tushgan mijoz toʻlovlari va boshqa daromadlardan",
       "TAX_OTHER": "Qoʻlda kiritiladi"
     },
-    "hint": "Stavkalar: JShDS {ndfl}%, INPS {inps}%, IT Park {itpark}% — buxgalteriya sozlamalarida oʻzgartiriladi. Toʻlangan — shu davr bilan tegishli toifadagi chiqimlar."
+    "hint": "Stavkalar: JShDS {ndfl}%, INPS {inps}%, IT Park {itpark}% — buxgalteriya sozlamalarida oʻzgartiriladi. Toʻlangan — shu davr bilan tegishli toifadagi chiqimlar.",
+    "opening": "Oldingi oylardan",
+    "totalBalance": "Toʻlanadigan qoldiq",
+    "totalBalanceHint": "Oldingi oylardagi qarz va ortiqcha toʻlov hisobga olingan",
+    "carryFrom": "Qarz va ortiqcha toʻlov {month} dan boshlab oydan oyga oʻtadi.",
+    "carryLater": "Qarz va ortiqcha toʻlov hisobi {month} dan boshlanadi — bu oy alohida hisoblanadi.",
+    "overpaid": "ortiqcha toʻlov"
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",
@@ -412,7 +418,13 @@
     "taxReportCode": "Fayl nomidagi ikkinchi kod",
     "taxReportCodeHint": "Portal beradigan fayl nomida STIRdan keyingi raqam (masalan, 241967078)",
     "taxReportFileName": "Fayl nomi shabloni",
-    "taxReportFileNameHint": "{inn} — STIR, {code} — ikkinchi kod, {year} — yil, {month} — oy (9), {mm} — oy (09)"
+    "taxReportFileNameHint": "{inn} — STIR, {code} — ikkinchi kod, {year} — yil, {month} — oy (9), {mm} — oy (09)",
+    "taxBalance": "Soliqlar saldosi",
+    "taxBalanceHint": "Oldingi oy qoldigʻi (qarz yoki ortiqcha toʻlov) keyingi oyga oʻtadi. Qaysi oydan hisob yuritilishini va uning boshida qancha qarz (yoki ortiqcha toʻlov) boʻlganini kiriting.",
+    "taxBalanceFrom": "Qaysi oydan hisoblash",
+    "taxBalanceFromHint": "Boʻsh — ish haqi qaydnomasi bor birinchi oydan. Undan oldingi toʻlovlar hisobga olinmaydi.",
+    "opening": "{tax} boshida",
+    "openingHint": "Musbat — oy boshidagi qarz, manfiy — ortiqcha toʻlov (masalan, -401673.81). Boʻsh yoki 0 — saldosiz."
   },
   "errors": {
     "category": "Bunday operatsiya uchun bu toifani tanlab boʻlmaydi",

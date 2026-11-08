@@ -21,19 +21,23 @@
     </x-page-header>
     @include('accounting.partials.tabs', ['active' => '/accounting/taxes'])
 
-    <div class="mb-4 grid gap-3 sm:grid-cols-3">
+    <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <x-stat :label="t('accounting.taxes.totalDue')" :value="money($totalDue)" />
         <x-stat :label="t('accounting.taxes.totalPaid')" :value="money($totalPaid)" />
+        <x-stat :label="t('accounting.taxes.totalBalance')" :value="money($totalBalance)" :hint="t('accounting.taxes.totalBalanceHint')" />
         <x-stat :label="t('accounting.taxes.bankIncome')" :value="money($bankIncome)" :hint="t('accounting.taxes.bankIncomeHint')" />
     </div>
     @if ($drafts)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.draftsWarning', ['count' => $drafts]) }}</p>@endif
     @if (! $payrollRows)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.noPayroll') }} <a class="link" href="/accounting/payroll?period={{ $period }}">{{ t('accounting.tabs.payroll') }}</a></p>@endif
     @if ($missingRate)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.errors.noUsdRate') }}</p>@endif
 
+    <p class="mb-3 text-sm text-muted-foreground">{{ $balanceFrom <= $period ? t('accounting.taxes.carryFrom', ['month' => \App\Services\Accounting\Accounting::monthLabel($balanceFrom)]) : t('accounting.taxes.carryLater', ['month' => \App\Services\Accounting\Accounting::monthLabel($balanceFrom)]) }}
+        @if ($canManage)<a class="link" href="/accounting/settings#tax-balance">{{ t('accounting.tabs.settings') }}</a>@endif</p>
+
     <x-table>
         <thead><tr>
             <th>{{ t('accounting.taxes.tax') }}</th><th class="text-right">{{ t('accounting.taxes.base') }}</th><th class="text-right">{{ t('accounting.taxes.rate') }}</th>
-            <th class="text-right">{{ t('accounting.taxes.due') }}</th><th class="text-right">{{ t('accounting.taxes.paid') }}</th><th class="text-right">{{ t('accounting.taxes.balance') }}</th><th></th>
+            <th class="text-right">{{ t('accounting.taxes.opening') }}</th><th class="text-right">{{ t('accounting.taxes.due') }}</th><th class="text-right">{{ t('accounting.taxes.paid') }}</th><th class="text-right">{{ t('accounting.taxes.balance') }}</th><th></th>
         </tr></thead>
         <tbody>
         @foreach ($taxes as $cat => $tx)
@@ -41,9 +45,11 @@
                 <td><span class="font-medium">{{ t('accounting.category.'.$cat) }}</span><span class="block text-xs text-muted-foreground">{{ t('accounting.taxes.how.'.$cat) }}</span></td>
                 <td class="whitespace-nowrap text-right tabular-nums">{{ $tx['base'] !== null ? money($tx['base']) : '—' }}</td>
                 <td class="whitespace-nowrap text-right tabular-nums">{{ $tx['rate'] !== null ? $tx['rate'].'%' : '—' }}</td>
+                <td @class(['whitespace-nowrap text-right tabular-nums', 'text-warning' => $tx['opening'] !== null && BigDecimal::of($tx['opening'])->isPositive(), 'text-success' => $tx['opening'] !== null && BigDecimal::of($tx['opening'])->isNegative()])>{{ $tx['opening'] !== null ? money($tx['opening']) : '—' }}</td>
                 <td class="whitespace-nowrap text-right font-medium tabular-nums">{{ $tx['due'] !== null ? money($tx['due']) : '—' }}</td>
                 <td class="whitespace-nowrap text-right tabular-nums"><a class="link" href="/accounting/operations?category={{ $cat }}&direction=OUT">{{ money($tx['paid']) }}</a></td>
-                <td @class(['whitespace-nowrap text-right font-semibold tabular-nums', 'text-warning' => $tx['balance'] !== null && BigDecimal::of($tx['balance'])->isPositive()])>{{ $tx['balance'] !== null ? money($tx['balance']) : '—' }}</td>
+                <td @class(['whitespace-nowrap text-right font-semibold tabular-nums', 'text-warning' => $tx['balance'] !== null && BigDecimal::of($tx['balance'])->isPositive(), 'text-success' => $tx['balance'] !== null && BigDecimal::of($tx['balance'])->isNegative()])>{{ $tx['balance'] !== null ? money($tx['balance']) : '—' }}
+                    @if ($tx['balance'] !== null && BigDecimal::of($tx['balance'])->isNegative())<span class="block text-xs font-normal">{{ t('accounting.taxes.overpaid') }}</span>@endif</td>
                 <td class="text-right">
                     @if ($canManage && ($tx['balance'] === null || BigDecimal::of($tx['balance'])->isPositive()))
                         <a href="{{ $payUrl($cat, $tx) }}" class="btn btn-outline btn-sm">{{ t('accounting.taxes.pay') }}</a>

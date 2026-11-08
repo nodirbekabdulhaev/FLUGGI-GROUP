@@ -20,8 +20,9 @@ class SettingsController extends Controller
 
     public function update(Request $request): RedirectResponse
     {
-        Input::normalize($request, ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate']);
+        Input::normalize($request, ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate', ...array_values(Accounting::OPENING_KEYS)]);
         $rate = ['sometimes', 'required', 'regex:/^\d{1,2}(\.\d{1,3})?$/'];
+        $opening = ['sometimes', 'nullable', 'regex:/^-?\d{1,15}(\.\d{1,2})?$/'];
         $data = $request->validate([
             'ndflBaseRate' => $rate, 'inpsRate' => $rate, 'itparkRate' => $rate,
             'benefitCode' => ['sometimes', 'nullable', 'regex:/^\d{1,10}$/'],
@@ -29,6 +30,8 @@ class SettingsController extends Controller
             'companyInn' => ['sometimes', 'nullable', 'regex:/^\d{9}$/'],
             'taxReportCode' => ['sometimes', 'nullable', 'regex:/^[A-Za-z0-9]{1,30}$/'],
             'taxReportFileName' => ['sometimes', 'nullable', 'max:191', 'regex:/^[A-Za-z0-9_.{}\-]+$/'],
+            'taxBalanceFrom' => ['sometimes', 'nullable', 'regex:'.Accounting::PERIOD_RE],
+            'taxOpeningNdfl' => $opening, 'taxOpeningInps' => $opening, 'taxOpeningItpark' => $opening,
         ]);
         $data['inpsWithinNdfl'] = $request->boolean('inpsWithinNdfl');
         Accounting::saveSettings($data);

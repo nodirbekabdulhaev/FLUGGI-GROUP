@@ -290,6 +290,46 @@ class AccountingTest extends TestCase
         $this->assertTrue(AuditLog::where('action', 'accounting.payroll.approve')->exists());
     }
 
+    public function test_tax_balance_carries_over_months(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        AccPerson::create(['full_name' => 'Aliyev Aziz', 'monthly_salary' => '10000000', 'hired_at' => '2026-01-01']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflBaseRate' => '7.5', 'benefitCode' => '', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1']);
+        foreach (['2026-08', '2026-09', '2026-10'] as $m) {
+            TaxPayrollService::calculate($m);   // НДФЛ 750 000 в месяц
+        }
+        // Старые операции (2021) до начала учёта не дают «переплаты»
+        $this->op($bank, 'OUT', 'TAX_NDFL', '99000000', '2021-05-10', ['period' => '2021-05']);
+        // Август оплачен в сентябре (период по дате выписки), сентябрь — частично, без периода — по дате
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '10000000', '2026-08-20');                      // IT Park 100 000
+        $this->op($bank, 'OUT', 'TAX_NDFL', '750000', '2026-09-12', ['period' => '2026-09']);
+        $this->op($bank, 'OUT', 'TAX_NDFL', '1000000', '2026-10-12');
+        $this->op($bank, 'OUT', 'TAX_ITPARK', '150000', '2026-09-12', ['period' => '2026-09']);
+
+        $aug = TaxesService::forPeriod('2026-08');
+        $this->assertSame('2026-08', $aug['balanceFrom']);
+        $this->assertSame(['0.00', '750000.00', '0.00', '750000.00'], array_values(array_intersect_key($aug['taxes']['TAX_NDFL'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $sep = TaxesService::forPeriod('2026-09');
+        $this->assertSame(['750000.00', '750000.00', '750000.00', '750000.00'], array_values(array_intersect_key($sep['taxes']['TAX_NDFL'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $this->assertSame(['100000.00', '0.00', '150000.00', '-50000.00'], array_values(array_intersect_key($sep['taxes']['TAX_ITPARK'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $oct = TaxesService::forPeriod('2026-10');
+        $this->assertSame(['750000.00', '750000.00', '1000000.00', '500000.00'], array_values(array_intersect_key($oct['taxes']['TAX_NDFL'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $this->assertSame('-50000.00', $oct['taxes']['TAX_ITPARK']['opening']);
+
+        // Сальдо на начало из настроек: долг / переплата на начало учёта
+        $this->actingAsUser($this->accountant)->put('/accounting/settings', ['ndflBaseRate' => '7.5', 'inpsRate' => '0.1', 'itparkRate' => '1', 'taxBalanceFrom' => '2026-09',
+            'taxOpeningNdfl' => '-401 673,81', 'taxOpeningInps' => '', 'taxOpeningItpark' => '20000'])->assertSessionHasNoErrors()->assertSessionHas('ok');
+        $oct = TaxesService::forPeriod('2026-10');
+        $this->assertSame('2026-09', $oct['balanceFrom']);
+        $this->assertSame(['-401673.81', '-651673.81'], [$oct['taxes']['TAX_NDFL']['opening'], $oct['taxes']['TAX_NDFL']['balance']]);
+        $this->assertSame('-130000.00', $oct['taxes']['TAX_ITPARK']['opening']);    // 20 000 + 0 − 150 000
+        $this->assertSame('0.00', TaxesService::forPeriod('2026-08')['taxes']['TAX_NDFL']['opening']);   // до начала учёта — отдельно
+        $this->put('/accounting/settings', ['taxOpeningNdfl' => 'abc'])->assertSessionHasErrors('taxOpeningNdfl');
+        $this->get('/accounting/taxes?period=2026-10')->assertOk()->assertSee(t('accounting.taxes.opening'))->assertSee(t('accounting.taxes.overpaid'));
+        $this->get('/accounting/settings')->assertOk()->assertSee('taxOpeningItpark', false);
+    }
+
     public function test_taxes_due_paid_and_reports(): void
     {
         $bank = $this->account(['name' => 'Bank']);

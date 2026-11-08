@@ -19,6 +19,19 @@
                 <x-field name="itparkRate" inputmode="decimal" :label="t('accounting.settings.itparkRate')" :hint="t('accounting.settings.itparkHint')" :value="$settings['itparkRate']" required />
             </div>
         </x-card>
+        <x-card id="tax-balance">
+            <h2 class="mb-1 font-medium">{{ t('accounting.settings.taxBalance') }}</h2>
+            <p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.settings.taxBalanceHint') }}</p>
+            <div class="space-y-4">
+                <x-field name="taxBalanceFrom" type="month" :label="t('accounting.settings.taxBalanceFrom')" :hint="t('accounting.settings.taxBalanceFromHint')" :value="$settings['taxBalanceFrom']" />
+                <div class="grid gap-4 sm:grid-cols-3">
+                    @foreach (\App\Services\Accounting\Accounting::OPENING_KEYS as $cat => $key)
+                        <x-field :name="$key" inputmode="decimal" data-money data-allow-negative :label="t('accounting.settings.opening', ['tax' => t('accounting.category.'.$cat)])" :value="(string) \Brick\Math\BigDecimal::of($settings[$key])->stripTrailingZeros()" />
+                    @endforeach
+                </div>
+                <p class="text-xs text-muted-foreground">{{ t('accounting.settings.openingHint') }}</p>
+            </div>
+        </x-card>
         <x-card>
             <h2 class="mb-3 font-medium">{{ t('accounting.settings.taxReport') }}</h2>
             <div class="space-y-4">

@@ -386,7 +386,13 @@
       "TAX_ITPARK": "From client payments and other income on bank accounts",
       "TAX_OTHER": "Entered manually"
     },
-    "hint": "Rates: NDFL {ndfl}%, INPS {inps}%, IT Park {itpark}% — change them in accounting settings. Paid = expenses of the matching category with this period."
+    "hint": "Rates: NDFL {ndfl}%, INPS {inps}%, IT Park {itpark}% — change them in accounting settings. Paid = expenses of the matching category with this period.",
+    "opening": "From previous months",
+    "totalBalance": "Balance due",
+    "totalBalanceHint": "Including debt and overpayment of previous months",
+    "carryFrom": "Debt and overpayment carry over month to month starting from {month}.",
+    "carryLater": "Debt and overpayment tracking starts in {month} — this month is calculated on its own.",
+    "overpaid": "overpaid"
   },
   "settings": {
     "title": "Accounting settings",
@@ -412,7 +418,13 @@
     "taxReportCode": "Second code in the file name",
     "taxReportCodeHint": "The number after the TIN in the file name from the portal (e.g. 241967078)",
     "taxReportFileName": "File name pattern",
-    "taxReportFileNameHint": "{inn} — TIN, {code} — second code, {year} — year, {month} — month (9), {mm} — month (09)"
+    "taxReportFileNameHint": "{inn} — TIN, {code} — second code, {year} — year, {month} — month (9), {mm} — month (09)",
+    "taxBalance": "Tax balance",
+    "taxBalanceHint": "The previous month remainder (debt or overpayment) carries over to the next one. Set the month to start from and the debt (or overpayment) at its start.",
+    "taxBalanceFrom": "Track from month",
+    "taxBalanceFromHint": "Empty — from the first month with a payroll. Payments before that month are not counted.",
+    "opening": "{tax} at start",
+    "openingHint": "Plus — debt at the start of the month, minus — overpayment (e.g. -401673.81). Empty or 0 — no opening balance."
   },
   "errors": {
     "category": "This category cannot be used for this operation",

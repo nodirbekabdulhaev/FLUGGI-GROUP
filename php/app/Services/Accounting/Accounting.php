@@ -46,10 +46,14 @@ final class Accounting
     public const DEFAULTS = [
         'ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5',
         'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1',
+        'taxBalanceFrom' => '', 'taxOpeningNdfl' => '0', 'taxOpeningInps' => '0', 'taxOpeningItpark' => '0',
         'companyInn' => '', 'taxReportCode' => '', 'taxReportFileName' => '{inn}_{code}_46_{year}_M_{month}_11101_20_ilova.xlsx',
     ];
 
     private const RATE_KEYS = ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate'];
+
+    /** Сальдо налогов на начало учёта (taxBalanceFrom): плюс — долг, минус — переплата. */
+    public const OPENING_KEYS = ['TAX_NDFL' => 'taxOpeningNdfl', 'TAX_INPS' => 'taxOpeningInps', 'TAX_ITPARK' => 'taxOpeningItpark'];
 
     public const PERIOD_RE = '/^\d{4}-(0[1-9]|1[0-2])$/';
 
@@ -69,7 +73,8 @@ final class Accounting
      * Настройки с эффективной ставкой НДФЛ для людей с льготой компании (ndflRate, только для показа).
      *
      * @return array{ndflBaseRate:string,benefitCode:string,benefitPercent:string,ndflRate:string,inpsRate:string,inpsWithinNdfl:bool,
-     *   itparkRate:string,companyInn:string,taxReportCode:string,taxReportFileName:string}
+     *   itparkRate:string,companyInn:string,taxReportCode:string,taxReportFileName:string,taxBalanceFrom:string,
+     *   taxOpeningNdfl:string,taxOpeningInps:string,taxOpeningItpark:string}
      */
     public static function settings(): array
     {
@@ -78,6 +83,10 @@ final class Accounting
             $s[$k] = (string) BigDecimal::of((string) $s[$k])->stripTrailingZeros();
         }
         $s['inpsWithinNdfl'] = (bool) $s['inpsWithinNdfl'];
+        foreach (self::OPENING_KEYS as $k) {
+            $s[$k] = (string) self::dec($s[$k])->toScale(2);
+        }
+        $s['taxBalanceFrom'] = preg_match(self::PERIOD_RE, (string) $s['taxBalanceFrom']) ? (string) $s['taxBalanceFrom'] : '';
         foreach (['benefitCode', 'companyInn', 'taxReportCode', 'taxReportFileName'] as $k) {
             $s[$k] = trim((string) $s[$k]);
         }
@@ -97,6 +106,11 @@ final class Accounting
         foreach (self::RATE_KEYS as $k) {
             if (array_key_exists($k, $input)) {
                 $new[$k] = (string) BigDecimal::of((string) $input[$k])->stripTrailingZeros();
+            }
+        }
+        foreach ([...array_values(self::OPENING_KEYS), 'taxBalanceFrom'] as $k) {
+            if (array_key_exists($k, $input)) {
+                $new[$k] = $k === 'taxBalanceFrom' ? trim((string) $input[$k]) : (string) self::dec($input[$k] ?? '0')->toScale(2);
             }
         }
         if (array_key_exists('inpsWithinNdfl', $input)) {

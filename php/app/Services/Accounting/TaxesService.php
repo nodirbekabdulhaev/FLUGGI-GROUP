@@ -6,78 +6,145 @@ use App\Models\AccAccount;
 use App\Models\AccPayroll;
 use App\Models\AccTransaction;
 use Brick\Math\BigDecimal;
+use Carbon\CarbonImmutable;
 use Illuminate\Support\Collection;
 
 /**
  * Налоги месяца (считаются автоматически):
  *  - НДФЛ к уплате = Σ НДФЛ ведомости − Σ ИНПС (если ИНПС удерживается в составе НДФЛ), ИНПС = Σ ИНПС;
  *  - отчисление IT Park = ставка × поступления на банковские счета за месяц (оплаты клиентов и прочие доходы, без переводов).
- * Оплачено — расходы соответствующей категории TAX_* с этим периодом.
+ * Оплачено — расходы категории TAX_* с этим периодом (без периода — по месяцу даты).
+ *
+ * Сальдо переходит из месяца в месяц: «с прошлых месяцев» = сальдо на начало учёта (настройки, плюс — долг,
+ * минус — переплата) + Σ (к уплате − оплачено) за месяцы от начала учёта до предыдущего. Начало учёта —
+ * taxBalanceFrom из настроек, иначе первый месяц с ведомостью зарплаты (операции, загруженные за прошлые годы, не
+ * превращаются в огромную «переплату»). Остаток = с прошлых месяцев + к уплате − оплачено.
  */
 final class TaxesService
 {
+    public const CARRIED = ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK'];
+
     /**
-     * @return array{period:string,settings:array,taxes:array<string,array{due:?string,paid:string,balance:?string,base:?string,rate:?string}>,
-     *   payrollRows:int,drafts:int,bankIncome:string,missingRate:bool,totalDue:string,totalPaid:string}
+     * @return array{period:string,settings:array,taxes:array<string,array{opening:?string,due:?string,paid:string,balance:?string,base:?string,rate:?string}>,
+     *   payrollRows:int,drafts:int,bankIncome:string,missingRate:bool,totalDue:string,totalPaid:string,totalBalance:string,balanceFrom:string}
      */
     public static function forPeriod(string $period): array
     {
         $s = Accounting::settings();
-        $payroll = AccPayroll::where('period', $period)->get(['gross', 'ndfl', 'inps', 'status']);
-        $ndfl = BigDecimal::zero();
-        $inps = BigDecimal::zero();
-        $gross = BigDecimal::zero();
-        foreach ($payroll as $r) {
-            $ndfl = $ndfl->plus((string) $r->ndfl);
-            $inps = $inps->plus((string) $r->inps);
-            $gross = $gross->plus((string) $r->gross);
+        $from = self::balanceFrom($s, $period);
+        $first = min($from, $period);
+        $months = self::monthly($first, $period, $s);
+        $cur = $months[$period];
+
+        $opening = array_fill_keys(self::CARRIED, BigDecimal::zero());
+        if ($from <= $period) {
+            foreach (Accounting::OPENING_KEYS as $cat => $key) {
+                $opening[$cat] = Accounting::dec($s[$key]);
+            }
+            foreach ($months as $m => $row) {
+                if ($m >= $from && $m < $period) {
+                    foreach (self::CARRIED as $cat) {
+                        $opening[$cat] = $opening[$cat]->plus($row['due'][$cat])->minus($row['paid'][$cat] ?? '0');
+                    }
+                }
+            }
         }
-        $ndflDue = $s['inpsWithinNdfl'] ? $ndfl->minus($inps) : $ndfl;
-        ['total' => $bank, 'missingRate' => $missing] = self::bankIncome($period);
-        $itpark = Accounting::pct($bank, $s['itparkRate']);
-        $paid = self::paid($period);
 
         $taxes = [];
         foreach ([
-            'TAX_NDFL' => [$ndflDue, $gross, $s['ndflRate']],
-            'TAX_INPS' => [$inps, $gross, $s['inpsRate']],
-            'TAX_ITPARK' => [$itpark, $bank, $s['itparkRate']],
-            'TAX_OTHER' => [null, null, null],
-        ] as $cat => [$due, $base, $rate]) {
-            $p = Accounting::dec($paid[$cat] ?? '0');
+            'TAX_NDFL' => [$cur['gross'], $s['ndflRate']],
+            'TAX_INPS' => [$cur['gross'], $s['inpsRate']],
+            'TAX_ITPARK' => [$cur['bank'], $s['itparkRate']],
+            'TAX_OTHER' => [null, null],
+        ] as $cat => [$base, $rate]) {
+            $due = $cur['due'][$cat] ?? null;
+            $p = $cur['paid'][$cat] ?? BigDecimal::zero();
+            $open = $opening[$cat] ?? null;
             $taxes[$cat] = [
+                'opening' => $open === null ? null : (string) $open->toScale(2),
                 'due' => $due === null ? null : (string) $due->toScale(2),
                 'paid' => (string) $p->toScale(2),
-                'balance' => $due === null ? null : (string) $due->minus($p)->toScale(2),
+                'balance' => $due === null ? null : (string) $open->plus($due)->minus($p)->toScale(2),
                 'base' => $base === null ? null : (string) $base->toScale(2),
                 'rate' => $rate,
             ];
         }
         $totalDue = BigDecimal::zero();
         $totalPaid = BigDecimal::zero();
+        $totalBalance = BigDecimal::zero();
         foreach ($taxes as $t) {
             $totalDue = $totalDue->plus($t['due'] ?? '0');
             $totalPaid = $totalPaid->plus($t['paid']);
+            $totalBalance = $totalBalance->plus($t['balance'] ?? '0');
         }
 
         return [
             'period' => $period, 'settings' => $s, 'taxes' => $taxes,
-            'payrollRows' => $payroll->count(), 'drafts' => $payroll->where('status', 'DRAFT')->count(),
-            'bankIncome' => (string) $bank->toScale(2), 'missingRate' => $missing,
+            'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'],
+            'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
+            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from,
         ];
     }
 
-    /** Оплачено по категориям TAX_* за период, UZS. */
-    public static function paid(string $period): array
+    /** Начало учёта сальдо: из настроек, иначе первый месяц с ведомостью, иначе сам месяц. */
+    public static function balanceFrom(array $s, string $period): string
     {
-        $out = [];
-        foreach (self::rows(fn ($q) => $q->where('acc_transactions.direction', 'OUT')->whereIn('acc_transactions.category', Accounting::TAX_CATEGORIES)
-            ->where('acc_transactions.period', $period)) as $r) {
-            $out[$r->category] = Accounting::dec($out[$r->category] ?? '0')->plus($r->uzs ?? BigDecimal::zero());
+        if ($s['taxBalanceFrom'] !== '') {
+            return $s['taxBalanceFrom'];
         }
 
-        return array_map(fn ($v) => (string) $v->toScale(2), $out);
+        return (string) (AccPayroll::min('period') ?? $period);
+    }
+
+    /**
+     * По месяцам [$from … $to]: к уплате, оплачено, база (начислено, поступления на банк).
+     *
+     * @return array<string, array{due:array<string,BigDecimal>,paid:array<string,BigDecimal>,gross:BigDecimal,bank:BigDecimal,missingRate:bool,rows:int,drafts:int}>
+     */
+    private static function monthly(string $from, string $to, array $s): array
+    {
+        $zero = BigDecimal::zero();
+        $out = [];
+        for ($m = CarbonImmutable::createFromFormat('!Y-m', $from); $m->format('Y-m') <= $to; $m = $m->addMonthNoOverflow()) {
+            $out[$m->format('Y-m')] = ['ndfl' => $zero, 'inps' => $zero, 'gross' => $zero, 'bank' => $zero, 'missingRate' => false, 'rows' => 0, 'drafts' => 0,
+                'paid' => array_fill_keys(Accounting::TAX_CATEGORIES, $zero)];
+        }
+        foreach (AccPayroll::whereBetween('period', [$from, $to])->get(['period', 'gross', 'ndfl', 'inps', 'status']) as $r) {
+            $o = &$out[$r->period];
+            $o['ndfl'] = $o['ndfl']->plus((string) $r->ndfl);
+            $o['inps'] = $o['inps']->plus((string) $r->inps);
+            $o['gross'] = $o['gross']->plus((string) $r->gross);
+            $o['rows']++;
+            $o['drafts'] += $r->status === 'DRAFT' ? 1 : 0;
+            unset($o);
+        }
+        [$a] = Accounting::monthDates($from);
+        [, $b] = Accounting::monthDates($to);
+        foreach (self::rows(fn ($q) => self::bankIncomeWhere($q)->where('acc_transactions.date', '>=', $a)->where('acc_transactions.date', '<', $b)) as $r) {
+            $k = $r->date->format('Y-m');
+            $out[$k]['missingRate'] = $out[$k]['missingRate'] || $r->uzs === null;
+            $out[$k]['bank'] = $out[$k]['bank']->plus($r->uzs ?? $zero);
+        }
+        $paid = self::rows(fn ($q) => $q->where('acc_transactions.direction', 'OUT')->whereIn('acc_transactions.category', Accounting::TAX_CATEGORIES)
+            ->where(fn ($w) => $w->whereBetween('acc_transactions.period', [$from, $to])
+                ->orWhere(fn ($n) => $n->whereNull('acc_transactions.period')->where('acc_transactions.date', '>=', $a)->where('acc_transactions.date', '<', $b))));
+        foreach ($paid as $r) {
+            $k = $r->period ?: $r->date->format('Y-m');
+            if (isset($out[$k])) {
+                $out[$k]['paid'][$r->category] = $out[$k]['paid'][$r->category]->plus($r->uzs ?? $zero);
+            }
+        }
+        foreach ($out as &$o) {
+            $o['due'] = [
+                'TAX_NDFL' => $s['inpsWithinNdfl'] ? $o['ndfl']->minus($o['inps']) : $o['ndfl'],
+                'TAX_INPS' => $o['inps'],
+                'TAX_ITPARK' => Accounting::pct($o['bank'], $s['itparkRate']),
+            ];
+        }
+        unset($o);
+
+        return $out;
     }
 
     /**
@@ -88,8 +155,7 @@ final class TaxesService
     public static function bankIncome(string $period): array
     {
         [$a, $b] = Accounting::monthDates($period);
-        $rows = self::rows(fn ($q) => $q->where('acc_transactions.direction', 'IN')->whereIn('acc_transactions.category', Accounting::ITPARK_BASE)
-            ->where('a.kind', 'BANK')->where('acc_transactions.date', '>=', $a)->where('acc_transactions.date', '<', $b));
+        $rows = self::rows(fn ($q) => self::bankIncomeWhere($q)->where('acc_transactions.date', '>=', $a)->where('acc_transactions.date', '<', $b));
         $total = BigDecimal::zero();
         $missing = false;
         foreach ($rows as $r) {
@@ -98,6 +164,11 @@ final class TaxesService
         }
 
         return ['total' => $total, 'missingRate' => $missing, 'rows' => $rows];
+    }
+
+    private static function bankIncomeWhere($q)
+    {
+        return $q->where('acc_transactions.direction', 'IN')->whereIn('acc_transactions.category', Accounting::ITPARK_BASE)->where('a.kind', 'BANK');
     }
 
     /** Операции с суммой в UZS (поле uzs; null — нет курса USD). */
