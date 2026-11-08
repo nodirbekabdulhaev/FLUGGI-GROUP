@@ -17,6 +17,10 @@
                 <form method="POST" action="/accounting/payroll/approve" onsubmit="return confirm(@js(t('accounting.payroll.approveConfirm')))">@csrf<input type="hidden" name="period" value="{{ $period }}">
                     <button class="btn btn-primary"><x-icon name="check" /> {{ t('accounting.payroll.approveAll') }}</button></form>
             @endif
+            @if ($rows->contains('status', 'APPROVED'))
+                <form method="POST" action="/accounting/payroll/unapprove" onsubmit="return confirm(@js(t('accounting.payroll.unapproveConfirm')))">@csrf<input type="hidden" name="period" value="{{ $period }}">
+                    <button class="btn btn-outline"><x-icon name="x" /> {{ t('accounting.payroll.unapproveAll') }}</button></form>
+            @endif
         @endif
     </x-page-header>
     @include('accounting.partials.tabs', ['active' => '/accounting/payroll'])
@@ -50,6 +54,9 @@
                                 <a href="/accounting/payroll?period={{ $period }}&edit={{ $r->id }}" class="btn btn-ghost btn-icon" aria-label="{{ t('common.edit') }}"><x-icon name="edit" /></a>
                                 <form method="POST" action="/accounting/payroll/approve" class="inline">@csrf<input type="hidden" name="period" value="{{ $period }}"><input type="hidden" name="ids[]" value="{{ $r->id }}">
                                     <button class="btn btn-ghost btn-sm">{{ t('accounting.payroll.approve') }}</button></form>
+                            @else
+                                <form method="POST" action="/accounting/payroll/unapprove" class="inline" onsubmit="return confirm(@js(t('accounting.payroll.unapproveRowConfirm', ['name' => $r->person?->full_name])))">@csrf<input type="hidden" name="period" value="{{ $period }}"><input type="hidden" name="ids[]" value="{{ $r->id }}">
+                                    <button class="btn btn-ghost btn-sm" data-testid="unapprove-row">{{ t('accounting.payroll.unapprove') }}</button></form>
                             @endif
                             @if (BigDecimal::of($r->remaining)->isPositive())
                                 <a href="{{ $payUrl($r) }}" class="btn btn-outline btn-sm">{{ t('accounting.payroll.pay') }}</a>

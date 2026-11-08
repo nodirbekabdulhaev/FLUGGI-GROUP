@@ -261,6 +261,24 @@ final class TaxPayrollService
         });
     }
 
+    /**
+     * Отменить утверждение (все утверждённые строки месяца или выбранные): строка снова черновик — её можно
+     * поправить или пересчитать «Рассчитать месяц». Выплаты (расходы «Зарплата») остаются как есть.
+     */
+    public static function unapprove(string $period, ?array $ids = null): int
+    {
+        return DB::transaction(function () use ($period, $ids) {
+            $rows = AccPayroll::where('period', $period)->where('status', 'APPROVED')
+                ->when($ids, fn ($q) => $q->whereIn('id', $ids))->lockForUpdate()->get();
+            foreach ($rows as $row) {
+                $row->update(['status' => 'DRAFT', 'approved_by_id' => null, 'approved_at' => null]);
+                Audit::log('accounting.payroll.unapprove', 'acc_payroll', $row->id, ['status' => ['old' => 'APPROVED', 'new' => 'DRAFT']]);
+            }
+
+            return $rows->count();
+        });
+    }
+
     /** Выплачено людям за месяц (расходы SALARY с этим периодом), UZS: [person_id => сумма]. */
     public static function paid(string $period): array
     {

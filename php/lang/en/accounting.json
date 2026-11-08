@@ -354,7 +354,12 @@
     "emptyText": "Click “Calculate month”.",
     "calculated": "Calculated: {created} new, {updated} updated",
     "saved": "Accrual saved",
-    "approved": "Rows approved: {count}"
+    "approved": "Rows approved: {count}",
+    "unapprove": "Undo",
+    "unapproveAll": "Undo approval",
+    "unapproveConfirm": "Return all approved rows of the month to drafts? You can then edit and recalculate them. Payments stay.",
+    "unapproveRowConfirm": "Undo approval for {name}? The row becomes a draft, payments stay.",
+    "unapproved": "Approval undone, rows: {count}"
   },
   "taxes": {
     "title": "Taxes",

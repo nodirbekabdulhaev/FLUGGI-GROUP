@@ -354,7 +354,12 @@
     "emptyText": "«Oyni hisoblash» tugmasini bosing.",
     "calculated": "Hisoblandi: yangi {created}, yangilandi {updated}",
     "saved": "Hisoblash saqlandi",
-    "approved": "Tasdiqlangan qatorlar: {count}"
+    "approved": "Tasdiqlangan qatorlar: {count}",
+    "unapprove": "Bekor qilish",
+    "unapproveAll": "Tasdiqni bekor qilish",
+    "unapproveConfirm": "Oyning barcha tasdiqlangan qatorlari qoralamaga qaytarilsinmi? Ularni tuzatish va qayta hisoblash mumkin boʻladi. Toʻlovlar qoladi.",
+    "unapproveRowConfirm": "Tasdiq bekor qilinsinmi — {name}? Qator qoralama boʻladi, toʻlovlar qoladi.",
+    "unapproved": "Tasdiq bekor qilindi, qatorlar: {count}"
   },
   "taxes": {
     "title": "Soliqlar",

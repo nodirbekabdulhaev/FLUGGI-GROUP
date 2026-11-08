@@ -57,6 +57,7 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::post('/payroll/calculate', [PayrollController::class, 'calculate'])->middleware($manage)->name('payroll.calculate');
     Route::patch('/payroll/{id}', [PayrollController::class, 'update'])->whereUuid('id')->middleware($manage)->name('payroll.update');
     Route::post('/payroll/approve', [PayrollController::class, 'approve'])->middleware($manage)->name('payroll.approve');
+    Route::post('/payroll/unapprove', [PayrollController::class, 'unapprove'])->middleware($manage)->name('payroll.unapprove');
 
     Route::get('/taxes', [TaxesController::class, 'index'])->middleware($read)->name('taxes');
     Route::get('/taxes/export', [TaxesController::class, 'export'])->middleware($export)->name('taxes.export');

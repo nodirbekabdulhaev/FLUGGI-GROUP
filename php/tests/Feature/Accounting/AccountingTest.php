@@ -253,6 +253,14 @@ class AccountingTest extends TestCase
         $this->assertSame('10000000.00', (string) $rows[$a->id]->refresh()->gross);
         $this->assertSame('3000000.00', (string) $rows[$b->id]->refresh()->gross);
 
+        // Отмена утверждения: строка снова черновик и пересчитывается; кнопка «Отменить» в ведомости
+        $this->get('/accounting/payroll?period=2026-09')->assertOk()->assertSee('unapprove-row', false);
+        $this->post('/accounting/payroll/unapprove', ['period' => '2026-09', 'ids' => [$rows[$a->id]->id]])->assertSessionHasNoErrors()->assertSessionHas('ok');
+        $this->assertSame(['DRAFT', null], [$rows[$a->id]->refresh()->status, $rows[$a->id]->approved_at]);
+        $this->assertTrue(AuditLog::where('action', 'accounting.payroll.unapprove')->exists());
+        $a->update(['monthly_salary' => '10000000']);
+        $this->post('/accounting/payroll/approve', ['period' => '2026-09', 'ids' => [$rows[$a->id]->id]]);
+
         // Выплачено — расходы SALARY с человеком и периодом
         $acc = $this->account(['name' => 'Bank']);
         $this->post('/accounting/operations', ['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'SALARY', 'person_id' => $a->id, 'period' => '2026-09', 'amount' => '5000000', 'date' => '2026-10-05'])->assertSessionHasNoErrors();

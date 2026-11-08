@@ -56,4 +56,13 @@ class PayrollController extends Controller
 
         return redirect('/accounting/payroll?period='.$period)->with('ok', t('accounting.payroll.approved', ['count' => $n]));
     }
+
+    public function unapprove(Request $request): RedirectResponse
+    {
+        $period = $this->period($request);
+        $ids = $request->validate(['ids' => ['nullable', 'array', 'max:500'], 'ids.*' => ['uuid']])['ids'] ?? null;
+        $n = TaxPayrollService::unapprove($period, $ids ?: null);
+
+        return redirect('/accounting/payroll?period='.$period)->with('ok', t('accounting.payroll.unapproved', ['count' => $n]));
+    }
 }
