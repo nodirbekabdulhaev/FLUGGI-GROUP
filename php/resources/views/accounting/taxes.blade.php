@@ -8,6 +8,7 @@
     @endphp
     <x-page-header :title="t('accounting.taxes.title')" :subtitle="t('accounting.taxes.subtitle')">
         <form method="GET"><input type="month" name="period" value="{{ $period }}" class="input w-44" aria-label="{{ t('accounting.fields.month') }}" onchange="this.form.submit()"></form>
+        <a href="/accounting/tax-report" class="btn btn-primary"><x-icon name="file" /> {{ t('accounting.taxReport.title') }}</a>
         @if ($canExport)
             <a href="/accounting/taxes/export?period={{ $period }}" class="btn btn-outline"><x-icon name="download" /> {{ t('accounting.taxes.export') }}</a>
             <form method="GET" action="/accounting/annual-report" class="flex items-center gap-1">

@@ -2,6 +2,7 @@
 @section('title', t('accounting.people.title'))
 @section('content')
     <x-page-header :title="t('accounting.people.title')" :subtitle="t('accounting.people.subtitle')">
+        <a href="/accounting/tax-report" class="btn btn-outline"><x-icon name="file" /> {{ t('accounting.taxReport.title') }}</a>
         @if ($canManage)
             <button type="button" class="btn btn-primary" @click="$dispatch('open-modal', 'acc-person')"><x-icon name="plus" /> {{ t('accounting.people.add') }}</button>
         @endif
@@ -20,6 +21,7 @@
             @foreach ($people as $p)
                 <tr @class(['opacity-60' => ! $p->is_active])>
                     <td><span class="font-medium">{{ $p->full_name }}</span>
+                        @if ($p->passport_name && $p->passport_name !== $p->full_name)<span class="block text-xs text-muted-foreground">{{ $p->passport_name }}</span>@endif
                         @if ($p->user)<span class="block text-xs text-muted-foreground">{{ t('accounting.people.crmUser') }}: {{ $p->user->full_name }}</span>@endif
                         @unless ($p->is_active)<x-badge color="yellow">{{ t('accounting.people.inactive') }}</x-badge>@endunless
                     </td>
@@ -48,6 +50,25 @@
         @if ($editing)
             <x-modal name="acc-person-edit" :title="t('accounting.people.edit')" :open="true">
                 @include('accounting.partials.person-form', ['person' => $editing])
+                @if ($editing->salaries->isNotEmpty())
+                    <div class="mt-6 border-t pt-4">
+                        <h3 class="mb-2 text-sm font-medium">{{ t('accounting.people.salaryHistory') }}</h3>
+                        <ul class="divide-y text-sm">
+                            @foreach ($editing->salaries->sortByDesc('effective_from') as $h)
+                                <li class="flex items-center justify-between gap-2 py-1.5">
+                                    <span>{{ t('accounting.people.salaryFromMonth', ['month' => \App\Services\Accounting\Accounting::monthLabel($h->effective_from)]) }}</span>
+                                    <span class="flex items-center gap-2"><span class="tabular-nums">{{ money($h->amount) }}</span>
+                                        @if ($editing->salaries->count() > 1)
+                                            <form method="POST" action="/accounting/people/{{ $editing->id }}/salaries/{{ $h->id }}" onsubmit="return confirm(@js(t('accounting.people.salaryDeleteConfirm')))">@csrf @method('DELETE')
+                                                <button class="btn btn-ghost btn-icon" aria-label="{{ t('common.delete') }}"><x-icon name="trash" /></button></form>
+                                        @endif
+                                    </span>
+                                </li>
+                            @endforeach
+                        </ul>
+                        <p class="hint">{{ t('accounting.people.salaryHistoryHint') }}</p>
+                    </div>
+                @endif
             </x-modal>
         @endif
     @endif

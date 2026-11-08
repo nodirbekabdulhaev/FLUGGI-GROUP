@@ -1,5 +1,5 @@
 {{-- Строка «Моего дня» (Alpine: переменная it) --}}
-@php($kindIcons = ['meeting' => 'calendar', 'task' => 'check-square', 'todo' => 'list', 'followUp' => 'refresh', 'deal' => 'briefcase', 'smm' => 'play', 'payment' => 'dollar'])
+@php($kindIcons = ['meeting' => 'calendar', 'task' => 'check-square', 'todo' => 'list', 'followUp' => 'refresh', 'deal' => 'briefcase', 'smm' => 'video', 'payment' => 'dollar'])
 <li class="flex min-w-0 items-start gap-3 rounded-xl px-2 py-2 hover:bg-muted/40" :class="it.overdue && 'bg-danger-soft/60'">
     <span class="w-12 shrink-0 pt-0.5 text-right text-sm font-semibold tabular-nums" :class="it.overdue ? 'text-danger' : ''">
         <span x-text="it.time ?? ''"></span>

@@ -13,13 +13,13 @@
         <span class="min-w-0 flex-1 truncate text-muted-foreground">{{ $idea->assignee?->full_name }}</span>
     </div>
     <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-        @if ($idea->videographer)<span class="flex items-center gap-1" title="{{ t('smm.fields.videographer') }}"><x-icon name="eye" class="size-3" />{{ $idea->videographer->full_name }}</span>@endif
+        @if ($idea->videographer)<span class="flex items-center gap-1" title="{{ t('smm.fields.videographer') }}"><x-icon name="camera" class="size-3.5" />{{ $idea->videographer->full_name }}</span>@endif
         @if ($status === 'PUBLISHED' && $idea->published_at)
-            <span class="flex items-center gap-1"><x-icon name="play" class="size-3" /> {{ dt($idea->published_at) }}</span>
+            <span class="flex items-center gap-1"><x-icon name="play" class="size-3.5" />{{ dt($idea->published_at) }}</span>
         @elseif ($idea->planned_publish_date)
-            <span class="flex items-center gap-1"><x-icon name="calendar" class="size-3" /> {{ d($idea->planned_publish_date) }}</span>
+            <span class="flex items-center gap-1"><x-icon name="calendar" class="size-3.5" />{{ d($idea->planned_publish_date) }}</span>
         @endif
-        @if ($idea->comments_count)<span class="flex items-center gap-1"><x-icon name="message" class="size-3" /> {{ $idea->comments_count }}</span>@endif
+        @if ($idea->comments_count)<span class="flex items-center gap-1"><x-icon name="message" class="size-3.5" />{{ $idea->comments_count }}</span>@endif
     </div>
     @if ($status === 'IDEA')
         <div class="mt-2 flex flex-wrap gap-1">

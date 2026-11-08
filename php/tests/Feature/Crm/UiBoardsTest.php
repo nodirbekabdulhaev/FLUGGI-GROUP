@@ -144,6 +144,18 @@ class UiBoardsTest extends CrmTestCase
         $this->actingAsUser($this->ceo)->get('/sales/meetings/board')->assertOk();
     }
 
+    public function test_navigation_has_no_pipeline_but_page_opens_by_link(): void
+    {
+        foreach ([$this->ceo, $this->manager] as $user) {
+            $hrefs = collect(Navigation::for($this->as($user)))
+                ->flatMap(fn ($s) => isset($s['children']) ? collect($s['children'])->pluck('href') : [$s['href']])->all();
+            $this->assertContains('/sales/leads', $hrefs);
+            $this->assertNotContains('/sales/pipeline', $hrefs);
+            $this->actingAsUser($user)->get('/sales/pipeline')->assertOk();
+            $this->actingAsUser($user)->get('/dashboard')->assertOk()->assertDontSee('href="/sales/pipeline"', false);
+        }
+    }
+
     public function test_client_card_shows_meetings_proposals_and_contracts(): void
     {
         $client = Client::create(['name' => 'Card Client', 'type' => 'COMPANY', 'owner_id' => $this->manager->id, 'team_id' => $this->team1->id]);

@@ -117,6 +117,36 @@
     .kanban-add { border-color: #cbd5e1; }
 }
 
+/*
+ * Доска Kanban (.board): занимает ровно ширину содержимого страницы (те же края, что у фильтров и заголовка),
+ * колонки прокручиваются внутри скруглённого блока. Если колонки не помещаются — края блока плавно
+ * растворяются (маска), x-hscroll ставит классы is-start/is-end. Без отрицательных отступов.
+ */
+.board {
+    min-width: 0;
+    max-width: 100%;
+    border-radius: 1.75rem;
+    border: 1px solid rgb(255 255 255 / 0.75);
+    background: rgb(255 255 255 / 0.32);
+    box-shadow: 0 1px 0 rgb(255 255 255 / 0.7) inset;
+}
+.board-scroll {
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding: 0.5rem;
+    border-radius: inherit;
+    --fade-l: 0px;
+    --fade-r: 0px;
+    -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+    mask-image: linear-gradient(to right, transparent 0, #000 var(--fade-l), #000 calc(100% - var(--fade-r)), transparent 100%);
+}
+.board-scroll.is-scrollable:not(.is-start) { --fade-l: 2.5rem; }
+.board-scroll.is-scrollable:not(.is-end) { --fade-r: 2.5rem; }
+.board .hscroll-bar { margin: 0 0.5rem 0.5rem; }
+/* Колонки внутри доски: на телефоне колонка чуть уже экрана, чтобы был виден край следующей */
+@media (max-width: 639px) { .board .kanban-col { width: min(18rem, calc(100vw - 4.5rem)); } }
+
 /* Доски Kanban: своя полоса прокрутки закреплена внизу экрана над «Списком дел» (h-12), доску можно тянуть мышью */
 .hscroll-board { scrollbar-width: none; }
 .hscroll-board::-webkit-scrollbar { display: none; }

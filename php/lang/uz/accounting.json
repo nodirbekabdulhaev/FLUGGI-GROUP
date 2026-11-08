@@ -10,7 +10,8 @@
     "payroll": "Ish haqi",
     "taxes": "Soliqlar",
     "settings": "Sozlamalar",
-    "categories": "Moddalar"
+    "categories": "Moddalar",
+    "taxReport": "Soliq hisoboti"
   },
   "kind": {
     "BANK": "Bank hisobi",
@@ -272,7 +273,55 @@
     "emptyText": "Ish haqi va soliqlarni hisoblash uchun soliq idorasida rasmiylashtirilgan xodimlarni qoʻshing.",
     "created": "Xodim qoʻshildi",
     "saved": "Maʼlumotlar saqlandi",
-    "deleted": "Oʻchirildi"
+    "deleted": "Oʻchirildi",
+    "passportName": "F.I.Sh. pasportdagidek (lotincha)",
+    "passportNameHint": "Soliq hisoboti uchun, bosh harflar bilan: ALIYEV AZIZ KARIMOVICH. Boʻsh boʻlsa — yuqoridagi F.I.Sh.",
+    "positionHint": "Hisobotdagidek: «Менеджер», «Директор»",
+    "salaryFrom": "Maosh qaysi oydan amal qiladi",
+    "salaryFromHint": "Yangi maosh — shu oydan boshlab; oldingi oylar oʻzgarmaydi",
+    "salaryFromNewHint": "Boʻsh — ishga qabul qilingan oydan",
+    "reportSection": "Soliq hisoboti uchun",
+    "residentType": "Shaxs turi",
+    "contractType": "Shartnoma turi",
+    "workRate": "Stavka",
+    "workRateHint": "Stavka ulushi: 1; 0,5; 0,25",
+    "workplaceType": "Ish oʻrni",
+    "residentTypes": {
+      "1": "rezident",
+      "2": "norezident"
+    },
+    "contractTypes": {
+      "1": "mehnat shartnomasi: asosiy",
+      "2": "mehnat shartnomasi: oʻrindosh",
+      "3": "fuqarolik-huquqiy",
+      "4": "qurilishda shartnomasiz yollangan",
+      "5": "kasanachilik"
+    },
+    "workplaceTypes": {
+      "1": "doimiy",
+      "2": "1-yanvar holatiga vakant",
+      "3": "joriy yilda yangi yaratilgan",
+      "4": "mavsumiy",
+      "5": "kasanachi"
+    },
+    "benefits": "Imtiyozlar (soliqqa tortilmaydigan daromad)",
+    "benefitsDefault": "Kompaniya imtiyozi",
+    "benefitsNone": "Imtiyozsiz",
+    "benefitsCustom": "Oʻz imtiyozlari",
+    "companyBenefit": "Kod {code}: daromadning {percent}% soliqqa tortilmaydi — sozlamalarda oʻzgartiriladi",
+    "companyBenefitNone": "Sozlamalarda kompaniya imtiyozi berilmagan",
+    "benefitCode": "Imtiyoz kodi",
+    "benefitKind": "Qanday hisoblash",
+    "benefitPercent": "daromaddan %",
+    "benefitAmount": "Oyiga summa",
+    "benefitValue": "Qiymat",
+    "benefitAdd": "Imtiyoz qoʻshish",
+    "benefitsHint": "10 tagacha imtiyoz. Oylik summa oy daromadidan oshmaydi; JShDS — qolgan qismdan",
+    "salaryHistory": "Maosh tarixi",
+    "salaryFromMonth": "{month} dan",
+    "salaryDeleteConfirm": "Maoshning bu oʻzgarishi oʻchirilsinmi? Shu oydan boshlab oldingi maosh boʻyicha hisoblanadi.",
+    "salaryHistoryHint": "Soliq hisoboti va «Oyni hisoblash» oyda amal qilgan maoshni oladi",
+    "salaryDeleted": "Maosh oʻzgarishi oʻchirildi"
   },
   "payroll": {
     "title": "Soliq uchun ish haqi",
@@ -342,7 +391,22 @@
     "inpsWithinNdflHint": "Sukut boʻyicha oʻchirilgan: JShDS 7,5% va INPS 0,1% alohida ushlanadi, qoʻlga = hisoblangan − JShDS − INPS. Agar INPS JShDS tarkibiga kirsa, yoqing (toʻlanadigan JShDS = JShDS − INPS).",
     "itparkRate": "IT Park ajratmasi, %",
     "itparkHint": "Oy davomida bank hisoblariga tushgan tushumlardan",
-    "saved": "Sozlamalar saqlandi"
+    "saved": "Sozlamalar saqlandi",
+    "ndflBaseRate": "Soliqqa tortiladigan qismdan JShDS stavkasi, %",
+    "ndflBaseRateHint": "Odatda 12%. JShDS = stavka × (hisoblangan − imtiyozlar)",
+    "benefitCode": "Kompaniya imtiyozi kodi",
+    "benefitCodeHint": "IT Park: 103848. Boʻsh — imtiyozsiz",
+    "benefitPercent": "Soliqqa tortilmaydi, daromaddan %",
+    "benefitPercentHint": "IT Park: 37,5%. Oʻz imtiyozlari berilmagan hammaga amal qiladi",
+    "effectiveRate": "Kompaniya imtiyozi bilan JShDS jami: hisoblangandan {rate}%",
+    "taxReport": "Soliq hisoboti",
+    "companyInn": "Kompaniya STIR",
+    "companyInnFromCompany": "Boʻsh — kompaniya rekvizitlaridagi STIR: {inn}",
+    "companyInnHint": "9 ta raqam, fayl nomi uchun",
+    "taxReportCode": "Fayl nomidagi ikkinchi kod",
+    "taxReportCodeHint": "Portal beradigan fayl nomida STIRdan keyingi raqam (masalan, 241967078)",
+    "taxReportFileName": "Fayl nomi shabloni",
+    "taxReportFileNameHint": "{inn} — STIR, {code} — ikkinchi kod, {year} — yil, {month} — oy (9), {mm} — oy (09)"
   },
   "errors": {
     "category": "Bunday operatsiya uchun bu toifani tanlab boʻlmaydi",
@@ -366,11 +430,63 @@
     "articleNameTaken": "Bunday nomli modda allaqachon bor",
     "articleUsed": "Modda boʻyicha operatsiyalar bor — uni faqat oʻchirib qoʻyish mumkin",
     "articleDirectionLocked": "Modda boʻyicha operatsiyalar bor — turini (kirim yoki chiqim) oʻzgartirib boʻlmaydi",
-    "keywordsLong": "Soʻzlar juda koʻp — 500 belgigacha"
+    "keywordsLong": "Soʻzlar juda koʻp — 500 belgigacha",
+    "lastSalary": "Yagona maosh yozuvini oʻchirib boʻlmaydi — maoshni oʻzgartiring",
+    "benefitPercent": "Foiz 100 dan oshmasligi kerak",
+    "benefitsEmpty": "Kamida bitta imtiyoz qoʻshing yoki «Imtiyozsiz»ni tanlang"
   },
   "annual": {
     "button": "Yillik hisobot",
     "year": "Hisobot yili",
     "hint": "Soliq uchun Excel: 1-shakl (yil boshi va oxiridagi balans), 2-shakl (moliyaviy natijalar), oylar boʻyicha soliqlar va ish haqi, pul harakati. Faqat bank hisoblari — kassa va kartalar hisobotga kirmaydi"
+  },
+  "taxReport": {
+    "title": "Soliq hisoboti",
+    "subtitle": "JShDS hisob-kitobiga 4-ilova: har bir shaxs boʻyicha daromad, soliq va imtiyozlar — yil boshidan va oy uchun",
+    "people": "Hisobotdagi shaxslar",
+    "monthIncome": "Oylik daromad",
+    "ytd": "Yil boshidan",
+    "monthNdfl": "Oylik JShDS",
+    "monthExempt": "Oylik imtiyozlar",
+    "file": "Fayl",
+    "fileHint": "Rasmiy shablon boʻyicha Excel (list01 va list02 varaqlari) — portalga shundayligicha yuklang",
+    "download": "Soliq uchun faylni yuklab olish",
+    "noDownload": "Faylni yuklab olish huquqiga ega buxgalter yuklab oladi",
+    "warnings": {
+      "innMissing": "Kompaniya STIR koʻrsatilmagan — u fayl nomida kerak.",
+      "codeMissing": "Fayl nomi uchun ikkinchi kod koʻrsatilmagan."
+    },
+    "rowWarnings": "Belgilangan shaxslar maʼlumotlarini tekshiring (qatorlar: {count}) — xato boʻlsa, portal faylni qabul qilmaydi.",
+    "empty": "Bu oy uchun koʻrsatiladigan shaxs yoʻq",
+    "emptyText": "Hisobotga yil boshidan daromadi bor yoki shu oyda ishlayotgan shaxslar kiradi.",
+    "total": "JAMI",
+    "cols": {
+      "name": "F.I.Sh.",
+      "position": "Lavozimi",
+      "pinfl": "JShShIR",
+      "workplaceDate": "Ish oʻrni tashkil qilingan sana",
+      "resident": "Shaxs turi",
+      "status": "Holati",
+      "contract": "Shartnoma",
+      "rate": "Stavka",
+      "workplace": "Ish oʻrni",
+      "ytdIncome": "Yil boshidan daromad",
+      "monthIncome": "Oylik daromad",
+      "ytdNdfl": "Yil boshidan JShDS",
+      "monthNdfl": "Oylik JShDS",
+      "benefitCode": "Imtiyoz raqami",
+      "benefitYtd": "Yil boshidan soliqqa tortilmaydigan",
+      "benefitMonth": "Oy uchun soliqqa tortilmaydigan"
+    },
+    "rowWarning": {
+      "pinflMissing": "JShShIR yoʻq",
+      "pinflInvalid": "JShShIR 14 ta raqam emas",
+      "nameNotLatin": "F.I.Sh. lotincha emas",
+      "positionMissing": "lavozim yoʻq",
+      "ndflMismatch": "Vedomostdagi JShDS imtiyozlarga mos emas: {months}"
+    },
+    "fromSalary": "Maosh boʻyicha oylar (vedomostsiz): {count}",
+    "how": "Oylik daromad — ish haqi vedomostidan, agar u hisoblangan boʻlsa; aks holda oyda amal qilgan maosh (oy oʻrtasida qabul yoki boʻshatishda — kunlarga mutanosib). Yil boshidan — yanvar…hisobot oyi yigʻindisi. JShDS = stavka × (daromad − imtiyozlar); IT Park 37,5% imtiyozi bilan — daromadning 7,5%.",
+    "codes": "Kodlar: shaxs turi 1 — rezident, 2 — norezident; holati 1 — ishlamoqda, 2 — shartnoma bekor qilingan; shartnoma 1 — asosiy, 2 — oʻrindosh, 3 — FHT; ish oʻrni 1 — doimiy, 3 — yangi."
   }
 }

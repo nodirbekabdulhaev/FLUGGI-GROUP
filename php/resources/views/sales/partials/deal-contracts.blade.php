@@ -39,7 +39,7 @@
                         @if ($c->files->isNotEmpty())
                             <ul class="flex flex-wrap gap-2 text-xs">
                                 @foreach ($c->files as $file)
-                                    <li><a class="inline-flex max-w-full items-center gap-1 rounded border px-2 py-1 hover:bg-muted" href="{{ route('sales.files.download', $file->id) }}"><x-icon name="paperclip" class="size-3" /><span class="truncate">{{ $file->original_name }}</span></a></li>
+                                    <li><a class="inline-flex max-w-full items-center gap-1 rounded border px-2 py-1 hover:bg-muted" href="{{ route('sales.files.download', $file->id) }}"><x-icon name="paperclip" class="size-3.5" /><span class="truncate">{{ $file->original_name }}</span></a></li>
                                 @endforeach
                             </ul>
                         @endif

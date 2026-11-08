@@ -49,7 +49,7 @@
 
             <x-card class="mb-6" :title="t('partner.projectsTitle')" :subtitle="t('partner.projectsText', ['pct' => $settings['partnerPct']])" :padding="false">
                 @if ($rows->isEmpty())
-                    <x-empty icon="gauge" :title="t('partner.noProjects')" />
+                    <x-empty icon="folder" :title="t('partner.noProjects')" />
                 @else
                     <div class="overflow-x-auto">
                         <table class="table">

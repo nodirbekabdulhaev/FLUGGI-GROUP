@@ -31,7 +31,7 @@
         </form>
 
         @if ($projects->isEmpty())
-            <x-empty icon="gauge" :title="t('projects.empty')">{{ t('projects.emptyText') }}</x-empty>
+            <x-empty icon="folder" :title="t('projects.empty')">{{ t('projects.emptyText') }}</x-empty>
         @else
             <div class="hidden overflow-x-auto md:block">
                 <table class="table">

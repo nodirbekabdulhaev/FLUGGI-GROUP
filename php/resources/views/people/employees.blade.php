@@ -58,13 +58,13 @@
                     <li class="flex flex-wrap items-start gap-3 px-4 py-3 sm:flex-nowrap sm:items-center sm:px-5">
                         <a href="/team/employees/{{ $u->id }}" aria-hidden="true" tabindex="-1"><x-avatar :name="$u->full_name" class="!size-9 !text-xs" /></a>
                         <div class="min-w-0 flex-1">
-                            <p class="flex items-center gap-1.5 truncate font-medium"><a href="/team/employees/{{ $u->id }}" class="truncate hover:text-primary hover:underline">{{ $u->full_name }}</a>@if ($u->telegram_chat_id)<x-icon name="send" class="size-3 text-accent" aria-label="{{ t('employees.telegram') }}" />@endif</p>
+                            <p class="flex items-center gap-1.5 truncate font-medium"><a href="/team/employees/{{ $u->id }}" class="truncate hover:text-primary hover:underline">{{ $u->full_name }}</a>@if ($u->telegram_chat_id)<x-icon name="send" class="size-3.5 text-accent" aria-label="{{ t('employees.telegram') }}" />@endif</p>
                             <p class="truncate text-xs text-muted-foreground">{{ $u->email }}</p>
                         </div>
                         <div class="min-w-0 text-sm sm:w-44">
                             <p>{{ t('roles.'.$u->role->code) }}</p>
                             @if ($sub)<p class="text-xs text-muted-foreground">{{ $sub }}</p>@endif
-                            @if ($u->meeting_participant)<p class="flex items-center gap-1 text-xs text-accent"><x-icon name="calendar" class="size-3" /> {{ t('employees.meetingParticipant') }}</p>@endif
+                            @if ($u->meeting_participant)<p class="flex items-center gap-1 text-xs text-accent"><x-icon name="calendar" class="size-3.5" />{{ t('employees.meetingParticipant') }}</p>@endif
                             @if ($u->directions->isNotEmpty())<p class="text-xs text-muted-foreground">{{ $u->directions->map(fn ($dd) => $dd->direction?->name)->filter()->implode(', ') }}</p>@endif
                         </div>
                         <div class="text-sm text-muted-foreground sm:w-36">{{ $u->team?->name ?? '—' }}</div>

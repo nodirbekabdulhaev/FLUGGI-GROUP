@@ -1,5 +1,7 @@
 /**
  * x-hscroll — горизонтальная прокрутка досок (Kanban):
+ *  • на всех устройствах: классы is-scrollable / is-start / is-end — края доски плавно растворяются,
+ *    когда за ними есть ещё колонки (см. .board-scroll в app.css);
  *  • полоса прокрутки закреплена внизу экрана над «Списком дел», пока доска видна на экране;
  *  • доску можно двигать мышью: зажать на свободном месте колонки или на её заголовке и тянуть.
  * Перетаскивание карточек (draggable), кнопки, ссылки и поля ввода не перехватываются.
@@ -8,6 +10,25 @@ const SKIP = 'a, button, input, select, textarea, label, [draggable="true"], [co
 
 export default function registerHscroll(Alpine) {
     Alpine.directive('hscroll', (el, _, { cleanup }) => {
+        // Подсказка у краёв: есть ли колонки левее/правее видимой области
+        const edges = () => {
+            const max = el.scrollWidth - el.clientWidth;
+            el.classList.toggle('is-scrollable', max > 1);
+            el.classList.toggle('is-start', el.scrollLeft <= 1);
+            el.classList.toggle('is-end', el.scrollLeft >= max - 1);
+        };
+        el.addEventListener('scroll', edges, { passive: true });
+        const edgeRo = new ResizeObserver(edges);
+        edgeRo.observe(el);
+        if (el.firstElementChild) edgeRo.observe(el.firstElementChild);
+        const edgeMo = new MutationObserver(() => requestAnimationFrame(edges));
+        edgeMo.observe(el, { childList: true, subtree: true });
+        requestAnimationFrame(edges);
+        cleanup(() => {
+            edgeRo.disconnect();
+            edgeMo.disconnect();
+        });
+
         // Телефон и планшет (только касание): обычная прокрутка пальцем без своей полосы —
         // иначе две синхронизируемые прокрутки дёргают доску при инерционном пролистывании
         if (!window.matchMedia('(pointer: fine)').matches) return;
@@ -34,10 +55,12 @@ export default function registerHscroll(Alpine) {
         const fromBar = () => {
             if (active === bar && Math.abs(el.scrollLeft - bar.scrollLeft) > 1) el.scrollLeft = bar.scrollLeft;
         };
+        // Полоса занимает ширину своего блока (внутри .board — с отступами), диапазон прокрутки — как у доски
         const resize = () => {
-            inner.style.width = el.scrollWidth + 'px';
-            bar.style.width = el.clientWidth + 'px';
-            bar.hidden = el.scrollWidth <= el.clientWidth + 1;
+            const max = el.scrollWidth - el.clientWidth;
+            bar.hidden = max <= 1;
+            if (bar.hidden) return;
+            inner.style.width = (bar.clientWidth + max) + 'px';
             bar.scrollLeft = el.scrollLeft;
         };
         el.addEventListener('scroll', fromBoard, { passive: true });

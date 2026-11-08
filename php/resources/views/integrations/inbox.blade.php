@@ -15,7 +15,7 @@
                 </select>
             </form>
             @if ($items->isEmpty())
-                <x-empty icon="at" :title="t('inbox.empty')">{{ t('inbox.emptyText') }}</x-empty>
+                <x-empty icon="inbox" :title="t('inbox.empty')">{{ t('inbox.emptyText') }}</x-empty>
             @else
                 <ul class="min-h-0 flex-1 divide-y overflow-y-auto">
                     @foreach ($items as $th)

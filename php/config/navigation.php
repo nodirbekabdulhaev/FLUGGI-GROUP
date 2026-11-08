@@ -10,26 +10,27 @@ use App\Services\Smm\SmmAccess;
  * Скрытие пункта — только удобство: доступ проверяется на сервере (perm:… у маршрутов).
  * Встречи, КП и договоры — без пунктов меню (по просьбе владельца): они в карточке клиента и сделки,
  * их адреса (/sales/meetings, /sales/proposals, /sales/contracts) работают по ссылкам.
+ * «Воронка» (/sales/pipeline) — тоже без пункта меню (по просьбе владельца): лиды и сделки — на своих досках,
+ * страница открывается по прямой ссылке.
  */
 return [
     ['key' => 'dashboard', 'href' => '/dashboard', 'icon' => 'dashboard'],
     ['key' => 'sales', 'icon' => 'trending', 'children' => [
         ['key' => 'leads', 'href' => '/sales/leads', 'any' => ['lead.read']],
         ['key' => 'deals', 'href' => '/sales/deals', 'any' => ['deal.read']],
-        ['key' => 'pipeline', 'href' => '/sales/pipeline', 'any' => ['lead.read', 'deal.read']],
         ['key' => 'followUps', 'href' => '/sales/follow-ups', 'any' => ['client.read']],
     ]],
     ['key' => 'clients', 'href' => '/clients', 'icon' => 'briefcase', 'any' => ['client.read']],
-    ['key' => 'inbox', 'href' => '/inbox', 'icon' => 'at', 'any' => ['lead.read']],
-    ['key' => 'projects', 'icon' => 'gauge', 'children' => [
+    ['key' => 'inbox', 'href' => '/inbox', 'icon' => 'inbox', 'any' => ['lead.read']],
+    ['key' => 'projects', 'icon' => 'folder', 'children' => [
         ['key' => 'projectsAll', 'href' => '/projects/all', 'any' => ['project.read']],
         ['key' => 'projectsActive', 'href' => '/projects/active', 'any' => ['project.read']],
         ['key' => 'projectsOverdue', 'href' => '/projects/overdue', 'any' => ['project.read']],
         ['key' => 'projectsCompleted', 'href' => '/projects/completed', 'any' => ['project.read']],
     ]],
-    ['key' => 'tasks', 'href' => '/tasks', 'icon' => 'check', 'any' => ['task.read']],
+    ['key' => 'tasks', 'href' => '/tasks', 'icon' => 'check-square', 'any' => ['task.read']],
     // SMM: право smm.read (исполнителю — SMM-специальность) или назначенные идеи видеографа — SmmAccess::allowed()
-    ['key' => 'smm', 'href' => '/smm', 'icon' => 'play', 'gate' => [SmmAccess::class, 'allowed']],
+    ['key' => 'smm', 'href' => '/smm', 'icon' => 'video', 'gate' => [SmmAccess::class, 'allowed']],
     ['key' => 'todos', 'href' => '/todos', 'icon' => 'list'],
     ['key' => 'team', 'icon' => 'users', 'children' => [
         ['key' => 'employees', 'href' => '/team/employees', 'any' => ['employee.read']],
@@ -48,9 +49,9 @@ return [
         // Доход партнёра — только партнёру (второму CEO) и CEO; count — заявки, ждущие решения CEO
         ['key' => 'partner', 'href' => '/finance/partner', 'gate' => [PartnerService::class, 'navAllowed'], 'count' => [PartnerService::class, 'pendingCount']],
     ]],
-    ['key' => 'accounting', 'href' => '/accounting', 'icon' => 'dollar', 'any' => ['accounting.read']],
+    ['key' => 'accounting', 'href' => '/accounting', 'icon' => 'calculator', 'any' => ['accounting.read']],
     ['key' => 'kpi', 'href' => '/kpi', 'icon' => 'target', 'any' => ['kpi.read']],
-    ['key' => 'attendance', 'href' => '/attendance', 'icon' => 'calendar', 'any' => ['attendance.read']],
+    ['key' => 'attendance', 'href' => '/attendance', 'icon' => 'calendar-check', 'any' => ['attendance.read']],
     ['key' => 'analytics', 'href' => '/analytics', 'icon' => 'chart', 'any' => ['analytics.read']],
     ['key' => 'notifications', 'href' => '/notifications', 'icon' => 'bell'],
     ['key' => 'settings', 'href' => '/settings', 'icon' => 'settings', 'any' => [

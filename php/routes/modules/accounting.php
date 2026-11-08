@@ -9,9 +9,10 @@ use App\Http\Controllers\Accounting\PayrollController;
 use App\Http\Controllers\Accounting\PeopleController;
 use App\Http\Controllers\Accounting\SettingsController;
 use App\Http\Controllers\Accounting\TaxesController;
+use App\Http\Controllers\Accounting\TaxReportController;
 use Illuminate\Support\Facades\Route;
 
-// Бухгалтерия: счета, операции, свои статьи прихода и расхода, загрузка банковской выписки, оплаты из CRM, люди и зарплата для налоговой, налоги, настройки ставок
+// Бухгалтерия: счета, операции, свои статьи прихода и расхода, загрузка банковской выписки, оплаты из CRM, люди и зарплата для налоговой, налоги, отчёт в налоговую, настройки ставок
 $read = 'perm:accounting.read';
 $manage = 'perm:accounting.manage';
 $export = [$read, 'perm:export.run'];
@@ -50,6 +51,7 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::post('/people', [PeopleController::class, 'store'])->middleware($manage)->name('people.store');
     Route::put('/people/{id}', [PeopleController::class, 'update'])->whereUuid('id')->middleware($manage)->name('people.update');
     Route::delete('/people/{id}', [PeopleController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('people.destroy');
+    Route::delete('/people/{id}/salaries/{salaryId}', [PeopleController::class, 'destroySalary'])->whereUuid(['id', 'salaryId'])->middleware($manage)->name('people.salaries.destroy');
 
     Route::get('/payroll', [PayrollController::class, 'index'])->middleware($read)->name('payroll');
     Route::post('/payroll/calculate', [PayrollController::class, 'calculate'])->middleware($manage)->name('payroll.calculate');
@@ -58,6 +60,9 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
 
     Route::get('/taxes', [TaxesController::class, 'index'])->middleware($read)->name('taxes');
     Route::get('/taxes/export', [TaxesController::class, 'export'])->middleware($export)->name('taxes.export');
+    // Отчёт в налоговую (приложение 4): смотреть — accounting.read, скачать файл — accounting.manage + export.run
+    Route::get('/tax-report', [TaxReportController::class, 'index'])->middleware($read)->name('taxReport');
+    Route::get('/tax-report/download', [TaxReportController::class, 'download'])->middleware([$manage, 'perm:export.run'])->name('taxReport.download');
     Route::get('/annual-report', [TaxesController::class, 'annual'])->middleware($export)->name('annual');
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware($manage)->name('settings');

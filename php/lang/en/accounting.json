@@ -10,7 +10,8 @@
     "payroll": "Payroll",
     "taxes": "Taxes",
     "settings": "Settings",
-    "categories": "Items"
+    "categories": "Items",
+    "taxReport": "Tax report"
   },
   "kind": {
     "BANK": "Bank account",
@@ -272,7 +273,55 @@
     "emptyText": "Add the people declared to the tax office to calculate payroll and taxes.",
     "created": "Person added",
     "saved": "Details saved",
-    "deleted": "Deleted"
+    "deleted": "Deleted",
+    "passportName": "Full name as in passport (Latin)",
+    "passportNameHint": "For the tax report, in capitals: ALIYEV AZIZ KARIMOVICH. Empty — the full name above is used",
+    "positionHint": "As in the report: «Менеджер», «Директор»",
+    "salaryFrom": "Salary effective from month",
+    "salaryFromHint": "The new salary applies from this month on; earlier months stay as they were",
+    "salaryFromNewHint": "Empty — from the hire month",
+    "reportSection": "For the tax report",
+    "residentType": "Person type",
+    "contractType": "Contract type",
+    "workRate": "Rate",
+    "workRateHint": "Share of a full-time rate: 1; 0.5; 0.25",
+    "workplaceType": "Workplace",
+    "residentTypes": {
+      "1": "resident",
+      "2": "non-resident"
+    },
+    "contractTypes": {
+      "1": "employment contract: main job",
+      "2": "employment contract: part-time second job",
+      "3": "civil-law contract",
+      "4": "construction hire without a contract",
+      "5": "home-based work"
+    },
+    "workplaceTypes": {
+      "1": "permanent",
+      "2": "vacancy existing on January 1",
+      "3": "newly created this year",
+      "4": "seasonal",
+      "5": "home-based worker"
+    },
+    "benefits": "Benefits (tax-exempt income)",
+    "benefitsDefault": "Company benefit",
+    "benefitsNone": "No benefits",
+    "benefitsCustom": "Own benefits",
+    "companyBenefit": "Code {code}: {percent}% of income is exempt — change it in settings",
+    "companyBenefitNone": "No company benefit is set in settings",
+    "benefitCode": "Benefit code",
+    "benefitKind": "How to calculate",
+    "benefitPercent": "% of income",
+    "benefitAmount": "Amount per month",
+    "benefitValue": "Value",
+    "benefitAdd": "Add benefit",
+    "benefitsHint": "Up to 10 benefits. A monthly amount never exceeds the month income; personal income tax is charged on the rest",
+    "salaryHistory": "Salary history",
+    "salaryFromMonth": "from {month}",
+    "salaryDeleteConfirm": "Delete this salary change? Its months will use the previous salary.",
+    "salaryHistoryHint": "The tax report and «Calculate month» use the salary effective in each month",
+    "salaryDeleted": "Salary change deleted"
   },
   "payroll": {
     "title": "Tax payroll",
@@ -342,7 +391,22 @@
     "inpsWithinNdflHint": "Off by default: personal income tax 7.5% and INPS 0.1% are withheld separately, net = gross − PIT − INPS. Turn on if INPS is included in PIT (PIT payable = PIT − INPS).",
     "itparkRate": "IT Park fee, %",
     "itparkHint": "Of the month’s receipts on bank accounts",
-    "saved": "Settings saved"
+    "saved": "Settings saved",
+    "ndflBaseRate": "Personal income tax rate on the taxable part, %",
+    "ndflBaseRateHint": "Usually 12%. Tax = rate × (accrued − benefits)",
+    "benefitCode": "Company benefit code",
+    "benefitCodeHint": "IT Park: 103848. Empty — no benefit",
+    "benefitPercent": "Exempt, % of income",
+    "benefitPercentHint": "IT Park: 37.5%. Applies to everyone without their own benefits",
+    "effectiveRate": "Total tax with the company benefit: {rate}% of accrued",
+    "taxReport": "Tax report",
+    "companyInn": "Company TIN",
+    "companyInnFromCompany": "Empty — the TIN from company details: {inn}",
+    "companyInnHint": "9 digits, for the file name",
+    "taxReportCode": "Second code in the file name",
+    "taxReportCodeHint": "The number after the TIN in the file name from the portal (e.g. 241967078)",
+    "taxReportFileName": "File name pattern",
+    "taxReportFileNameHint": "{inn} — TIN, {code} — second code, {year} — year, {month} — month (9), {mm} — month (09)"
   },
   "errors": {
     "category": "This category cannot be used for this operation",
@@ -366,11 +430,63 @@
     "articleNameTaken": "An item with this name already exists",
     "articleUsed": "The item has operations — it can only be deactivated",
     "articleDirectionLocked": "The item has operations — its type (income or expense) cannot change",
-    "keywordsLong": "Too many keywords — up to 500 characters"
+    "keywordsLong": "Too many keywords — up to 500 characters",
+    "lastSalary": "The only salary record cannot be deleted — change the salary instead",
+    "benefitPercent": "The percent cannot exceed 100",
+    "benefitsEmpty": "Add at least one benefit or choose «No benefits»"
   },
   "annual": {
     "button": "Annual report",
     "year": "Report year",
     "hint": "Excel for the tax office: Form 1 (balance sheet at the start and end of the year), Form 2 (financial results), taxes and payroll by month, cash flow. Bank accounts only — cash and card operations are excluded"
+  },
+  "taxReport": {
+    "title": "Tax report",
+    "subtitle": "Appendix 4 to the income tax calculation: income, tax and benefits per person — year to date and for the month",
+    "people": "People in the report",
+    "monthIncome": "Income for the month",
+    "ytd": "Year to date",
+    "monthNdfl": "Tax for the month",
+    "monthExempt": "Benefits for the month",
+    "file": "File",
+    "fileHint": "Excel file in the official template (sheets list01 and list02) — upload it to the portal as is",
+    "download": "Download file for the tax office",
+    "noDownload": "Only an accountant with the export permission can download the file",
+    "warnings": {
+      "innMissing": "The company TIN is missing — it is needed in the file name.",
+      "codeMissing": "The second code for the file name is missing."
+    },
+    "rowWarnings": "Check the people marked below (rows: {count}) — the portal rejects a file with errors.",
+    "empty": "Nobody to show for this month",
+    "emptyText": "The report lists people with income since January or employed in this month.",
+    "total": "TOTAL",
+    "cols": {
+      "name": "Full name",
+      "position": "Position",
+      "pinfl": "PINFL",
+      "workplaceDate": "Workplace created",
+      "resident": "Person type",
+      "status": "Status",
+      "contract": "Contract",
+      "rate": "Rate",
+      "workplace": "Workplace",
+      "ytdIncome": "Income YTD",
+      "monthIncome": "Income for the month",
+      "ytdNdfl": "Tax YTD",
+      "monthNdfl": "Tax for the month",
+      "benefitCode": "Benefit code",
+      "benefitYtd": "Exempt YTD",
+      "benefitMonth": "Exempt for the month"
+    },
+    "rowWarning": {
+      "pinflMissing": "no PINFL",
+      "pinflInvalid": "PINFL is not 14 digits",
+      "nameNotLatin": "name is not in Latin",
+      "positionMissing": "no position",
+      "ndflMismatch": "Payroll tax differs from the benefits: {months}"
+    },
+    "fromSalary": "Months taken from the salary (no payroll): {count}",
+    "how": "Month income comes from the payroll if it was calculated; otherwise the salary effective in the month (prorated by days for a mid-month hire or termination). Year to date is the sum of January…report month. Tax = rate × (income − benefits); with the IT Park 37.5% benefit it is 7.5% of income.",
+    "codes": "Codes: person type 1 — resident, 2 — non-resident; status 1 — working, 2 — contract terminated; contract 1 — main, 2 — part-time, 3 — civil-law; workplace 1 — permanent, 3 — new."
   }
 }

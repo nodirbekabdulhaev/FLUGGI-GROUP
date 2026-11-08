@@ -8,6 +8,7 @@
         '/accounting/people' => t('accounting.tabs.people'),
         '/accounting/payroll' => t('accounting.tabs.payroll'),
         '/accounting/taxes' => t('accounting.tabs.taxes'),
+        '/accounting/tax-report' => t('accounting.tabs.taxReport'),
     ];
     if (access()->can('accounting.manage')) {
         $tabs['/accounting/settings'] = t('accounting.tabs.settings');

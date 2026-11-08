@@ -18,49 +18,51 @@
         @endif
     </div>
     {{-- Колонки окрашены в цвета статусов (Настройки → Цвета досок) --}}
-    <div class="-mx-4 flex items-start gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" x-hscroll>
-        @foreach (ProjectAccess::KANBAN as $status)
-            @php($col = $items->where('status', $status))
-            <section class="kanban-col lg:w-auto lg:min-w-[15rem] lg:flex-1" style="--col: {{ $colors[$status] }}">
-                <header class="kanban-head">
-                    <span class="kanban-count">{{ $col->count() }}</span>
-                    <h3 class="kanban-title">{{ t('tasks.status.'.$status) }}</h3>
+    <div class="board" data-board>
+        <div class="board-scroll flex items-start gap-3" x-hscroll>
+            @foreach (ProjectAccess::KANBAN as $status)
+                @php($col = $items->where('status', $status))
+                <section class="kanban-col lg:w-auto lg:min-w-[15rem] lg:flex-1" style="--col: {{ $colors[$status] }}">
+                    <header class="kanban-head">
+                        <span class="kanban-count">{{ $col->count() }}</span>
+                        <h3 class="kanban-title">{{ t('tasks.status.'.$status) }}</h3>
+                        @if ($canAdd && $status === 'TODO')
+                            <button type="button" class="kanban-add-icon" @click="$dispatch('open-modal', 'task-new')" aria-label="{{ t('ui.kanban.addTo', ['name' => t('tasks.status.'.$status)]) }}"><x-icon name="plus" class="size-4" /></button>
+                        @endif
+                    </header>
+                    <div class="kanban-body min-h-32" data-status="{{ $status }}" data-testid="column-{{ $status }}"
+                         :class="over === '{{ $status }}' && 'is-over'"
+                         @dragover.prevent="over = '{{ $status }}'" @dragleave="over = null" @drop.prevent="drop($event, '{{ $status }}', null)">
+                        @if ($col->isEmpty())<p class="kanban-empty">{{ t('ui.kanban.empty') }}</p>@endif
+                        @foreach ($col as $task)
+                            @php($draggable = $open && ($task->can_edit || $task->assignee_id === $uid))
+                            <article @class(['kanban-card', 'cursor-grab' => $draggable])
+                                 @if ($draggable) draggable="true" @dragstart="drag($event, '{{ $task->id }}')" @endif
+                                 @dragover.prevent.stop="over = '{{ $status }}'" @drop.prevent.stop="drop($event, '{{ $status }}', '{{ $task->id }}')">
+                                <a href="/projects/{{ $p->id }}?task={{ $task->id }}" class="font-semibold leading-snug text-foreground hover:underline">{{ $task->title }}</a>
+                                <p class="mt-0.5 text-xs text-muted-foreground">{{ \App\Services\Projects\TaskService::code($task) }}</p>
+                                <div class="mt-3 flex items-center gap-2 text-xs">
+                                    <x-avatar :name="$task->assignee?->full_name" />
+                                    <span class="min-w-0 flex-1 truncate text-muted-foreground">{{ $task->assignee?->full_name }}@if ($task->waiting_for_role) · {{ t('tasks.waitingRole', ['role' => t('specialties.'.$task->template_role)]) }}@endif</span>
+                                </div>
+                                <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
+                                    @if ($task->deadline)<span @class(['flex items-center gap-1', 'text-danger' => $task->overdue_days > 0])><x-icon name="clock" class="size-3.5" /> {{ dt($task->deadline) }}</span>@endif
+                                    @if ($task->comments_count)<span class="flex items-center gap-1"><x-icon name="message" class="size-3.5" /> {{ $task->comments_count }}</span>@endif
+                                    @if ($task->progress_pct > 0 && $task->status !== 'DONE')<span>{{ $task->progress_pct }}%</span>@endif
+                                    <x-priority :level="$task->priority" class="ml-auto" />
+                                </div>
+                                @if ($task->overdue_days > 0)
+                                    <div class="mt-2">@include('projects.partials.overdue', ['days' => $task->overdue_days])</div>
+                                @endif
+                            </article>
+                        @endforeach
+                    </div>
                     @if ($canAdd && $status === 'TODO')
-                        <button type="button" class="kanban-add-icon" @click="$dispatch('open-modal', 'task-new')" aria-label="{{ t('ui.kanban.addTo', ['name' => t('tasks.status.'.$status)]) }}"><x-icon name="plus" class="size-4" /></button>
+                        <button type="button" class="kanban-add" @click="$dispatch('open-modal', 'task-new')"><x-icon name="plus" class="size-4" /> {{ t('ui.kanban.add') }}</button>
                     @endif
-                </header>
-                <div class="kanban-body min-h-32" data-status="{{ $status }}" data-testid="column-{{ $status }}"
-                     :class="over === '{{ $status }}' && 'is-over'"
-                     @dragover.prevent="over = '{{ $status }}'" @dragleave="over = null" @drop.prevent="drop($event, '{{ $status }}', null)">
-                    @if ($col->isEmpty())<p class="kanban-empty">{{ t('ui.kanban.empty') }}</p>@endif
-                    @foreach ($col as $task)
-                        @php($draggable = $open && ($task->can_edit || $task->assignee_id === $uid))
-                        <article @class(['kanban-card', 'cursor-grab' => $draggable])
-                             @if ($draggable) draggable="true" @dragstart="drag($event, '{{ $task->id }}')" @endif
-                             @dragover.prevent.stop="over = '{{ $status }}'" @drop.prevent.stop="drop($event, '{{ $status }}', '{{ $task->id }}')">
-                            <a href="/projects/{{ $p->id }}?task={{ $task->id }}" class="font-semibold leading-snug text-foreground hover:underline">{{ $task->title }}</a>
-                            <p class="mt-0.5 text-xs text-muted-foreground">{{ \App\Services\Projects\TaskService::code($task) }}</p>
-                            <div class="mt-3 flex items-center gap-2 text-xs">
-                                <x-avatar :name="$task->assignee?->full_name" />
-                                <span class="min-w-0 flex-1 truncate text-muted-foreground">{{ $task->assignee?->full_name }}@if ($task->waiting_for_role) · {{ t('tasks.waitingRole', ['role' => t('specialties.'.$task->template_role)]) }}@endif</span>
-                            </div>
-                            <div class="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                                @if ($task->deadline)<span @class(['flex items-center gap-1', 'text-danger' => $task->overdue_days > 0])><x-icon name="clock" class="size-3.5" /> {{ dt($task->deadline) }}</span>@endif
-                                @if ($task->comments_count)<span class="flex items-center gap-1"><x-icon name="message" class="size-3.5" /> {{ $task->comments_count }}</span>@endif
-                                @if ($task->progress_pct > 0 && $task->status !== 'DONE')<span>{{ $task->progress_pct }}%</span>@endif
-                                <x-priority :level="$task->priority" class="ml-auto" />
-                            </div>
-                            @if ($task->overdue_days > 0)
-                                <div class="mt-2">@include('projects.partials.overdue', ['days' => $task->overdue_days])</div>
-                            @endif
-                        </article>
-                    @endforeach
-                </div>
-                @if ($canAdd && $status === 'TODO')
-                    <button type="button" class="kanban-add" @click="$dispatch('open-modal', 'task-new')"><x-icon name="plus" class="size-4" /> {{ t('ui.kanban.add') }}</button>
-                @endif
-            </section>
-        @endforeach
+                </section>
+            @endforeach
+        </div>
     </div>
     @if ($other->isNotEmpty())
         <section class="grid gap-2">

@@ -12,30 +12,32 @@
 <div class="grid gap-4" x-data="smmKanban(@js(['cards' => $cards, 'now' => \App\Support\Format::toLocalInput(now()), 'ok' => t('smm.moved')]))">
     <p class="text-xs text-muted-foreground">{{ t('smm.kanbanHint') }}@if ($hidden) · {{ t('smm.hiddenOld', ['count' => $hidden]) }}@endif</p>
     {{-- Колонки окрашены в цвета статусов (Настройки → Цвета досок) --}}
-    <div class="-mx-4 flex items-start gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:px-0" x-hscroll>
-        @foreach (SmmIdeaService::KANBAN as $status)
-            @php($col = $items->where('status', $status))
-            <section class="kanban-col xl:w-auto xl:min-w-[13rem] xl:flex-1" style="--col: {{ $colors[$status] }}">
-                <header class="kanban-head">
-                    <span class="kanban-count">{{ $col->count() }}</span>
-                    <h3 class="kanban-title" title="{{ t('smm.statusHint.'.$status) }}">{{ t('smm.status.'.$status) }}</h3>
+    <div class="board" data-board>
+        <div class="board-scroll flex items-start gap-3" x-hscroll>
+            @foreach (SmmIdeaService::KANBAN as $status)
+                @php($col = $items->where('status', $status))
+                <section class="kanban-col xl:w-auto xl:min-w-[13rem] xl:flex-1" style="--col: {{ $colors[$status] }}">
+                    <header class="kanban-head">
+                        <span class="kanban-count">{{ $col->count() }}</span>
+                        <h3 class="kanban-title" title="{{ t('smm.statusHint.'.$status) }}">{{ t('smm.status.'.$status) }}</h3>
+                        @if ($canAdd && $status === 'IDEA')
+                            <button type="button" class="kanban-add-icon" @click="$dispatch('open-modal', 'smm-new')" aria-label="{{ t('ui.kanban.addTo', ['name' => t('smm.status.'.$status)]) }}"><x-icon name="plus" class="size-4" /></button>
+                        @endif
+                    </header>
+                    <div class="kanban-body min-h-32" data-status="{{ $status }}" data-testid="column-{{ $status }}"
+                         :class="over === '{{ $status }}' && 'is-over'"
+                         @dragover.prevent="over = '{{ $status }}'" @dragleave="over = null" @drop.prevent="drop($event, '{{ $status }}', null)">
+                        @if ($col->isEmpty())<p class="kanban-empty">{{ t('ui.kanban.empty') }}</p>@endif
+                        @foreach ($col as $idea)
+                            @include('smm.partials.card', ['idea' => $idea, 'status' => $status])
+                        @endforeach
+                    </div>
                     @if ($canAdd && $status === 'IDEA')
-                        <button type="button" class="kanban-add-icon" @click="$dispatch('open-modal', 'smm-new')" aria-label="{{ t('ui.kanban.addTo', ['name' => t('smm.status.'.$status)]) }}"><x-icon name="plus" class="size-4" /></button>
+                        <button type="button" class="kanban-add" @click="$dispatch('open-modal', 'smm-new')"><x-icon name="plus" class="size-4" /> {{ t('ui.kanban.add') }}</button>
                     @endif
-                </header>
-                <div class="kanban-body min-h-32" data-status="{{ $status }}" data-testid="column-{{ $status }}"
-                     :class="over === '{{ $status }}' && 'is-over'"
-                     @dragover.prevent="over = '{{ $status }}'" @dragleave="over = null" @drop.prevent="drop($event, '{{ $status }}', null)">
-                    @if ($col->isEmpty())<p class="kanban-empty">{{ t('ui.kanban.empty') }}</p>@endif
-                    @foreach ($col as $idea)
-                        @include('smm.partials.card', ['idea' => $idea, 'status' => $status])
-                    @endforeach
-                </div>
-                @if ($canAdd && $status === 'IDEA')
-                    <button type="button" class="kanban-add" @click="$dispatch('open-modal', 'smm-new')"><x-icon name="plus" class="size-4" /> {{ t('ui.kanban.add') }}</button>
-                @endif
-            </section>
-        @endforeach
+                </section>
+            @endforeach
+        </div>
     </div>
 
     @if ($rejected->isNotEmpty())

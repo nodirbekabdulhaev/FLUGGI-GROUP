@@ -2,7 +2,7 @@
 @php use App\Services\Smm\SmmIdeaService; @endphp
 <div class="card">
     @if ($items->isEmpty())
-        <x-empty icon="play" :title="t('smm.empty')">{{ t('smm.emptyText') }}</x-empty>
+        <x-empty icon="video" :title="t('smm.empty')">{{ t('smm.emptyText') }}</x-empty>
     @else
         <div class="hidden overflow-x-auto md:block"><table class="table">
             <thead><tr>

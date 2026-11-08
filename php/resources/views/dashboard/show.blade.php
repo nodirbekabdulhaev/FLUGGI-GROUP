@@ -25,7 +25,7 @@
                     @include('dashboard.partials.stat', ['label' => t('dash.newLeads'), 'value' => $c['newLeads'], 'href' => '/sales/leads', 'icon' => 'at', 'tone' => 'pink'])
                     @include('dashboard.partials.stat', ['label' => t('dash.newDeals'), 'value' => $c['newDeals'], 'href' => '/sales/deals', 'icon' => 'briefcase', 'tone' => 'sky'])
                     @include('dashboard.partials.stat', ['label' => t('dash.contracts'), 'value' => $c['contracts'], 'href' => '/sales/contracts', 'icon' => 'file', 'tone' => 'indigo'])
-                    @include('dashboard.partials.stat', ['label' => t('dash.projectsInProgress'), 'value' => $c['projectsInProgress'], 'href' => '/projects/active', 'icon' => 'kanban', 'tone' => 'emerald'])
+                    @include('dashboard.partials.stat', ['label' => t('dash.projectsInProgress'), 'value' => $c['projectsInProgress'], 'href' => '/projects/active', 'icon' => 'folder', 'tone' => 'emerald'])
                 </div>
             </section>
         @endisset

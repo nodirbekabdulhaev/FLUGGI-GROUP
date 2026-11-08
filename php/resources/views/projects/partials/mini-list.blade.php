@@ -1,6 +1,6 @@
 {{-- Короткий список проектов (карточки сделки и клиента) --}}
 @if ($projects->isEmpty())
-    <x-empty icon="gauge" :title="t('projects.empty')">{{ t('projects.emptyText') }}</x-empty>
+    <x-empty icon="folder" :title="t('projects.empty')">{{ t('projects.emptyText') }}</x-empty>
 @else
     <ul class="divide-y">
         @foreach ($projects as $p)

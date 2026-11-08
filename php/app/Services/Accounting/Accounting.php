@@ -37,7 +37,19 @@ final class Accounting
     /** Доход, с которого считается отчисление IT Park (поступления на банковские счета). */
     public const ITPARK_BASE = ['CLIENT_PAYMENT', 'OTHER_INCOME'];
 
-    public const DEFAULTS = ['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1'];
+    /**
+     * Ставки и отчёт в налоговую. НДФЛ = ndflBaseRate % × (начислено − необлагаемая часть по льготам);
+     * льгота компании (benefitCode, benefitPercent % дохода не облагается) действует для всех, у кого не заданы свои.
+     * IT Park: 12 % × (100 − 37,5) % = 7,5 % от начисленного. taxReportFileName — шаблон имени файла отчёта
+     * ({inn}, {code}, {year}, {month}, {mm}).
+     */
+    public const DEFAULTS = [
+        'ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5',
+        'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1',
+        'companyInn' => '', 'taxReportCode' => '', 'taxReportFileName' => '{inn}_{code}_46_{year}_M_{month}_11101_20_ilova.xlsx',
+    ];
+
+    private const RATE_KEYS = ['ndflBaseRate', 'benefitPercent', 'inpsRate', 'itparkRate'];
 
     public const PERIOD_RE = '/^\d{4}-(0[1-9]|1[0-2])$/';
 
@@ -53,28 +65,48 @@ final class Accounting
         return $direction === 'IN' ? self::MANUAL_IN : self::MANUAL_OUT;
     }
 
-    /** @return array{ndflRate:string,inpsRate:string,inpsWithinNdfl:bool,itparkRate:string} */
+    /**
+     * Настройки с эффективной ставкой НДФЛ для людей с льготой компании (ndflRate, только для показа).
+     *
+     * @return array{ndflBaseRate:string,benefitCode:string,benefitPercent:string,ndflRate:string,inpsRate:string,inpsWithinNdfl:bool,
+     *   itparkRate:string,companyInn:string,taxReportCode:string,taxReportFileName:string}
+     */
     public static function settings(): array
     {
         $s = array_replace(self::DEFAULTS, array_intersect_key(Settings::get('accounting'), self::DEFAULTS));
-        foreach (['ndflRate', 'inpsRate', 'itparkRate'] as $k) {
+        foreach (self::RATE_KEYS as $k) {
             $s[$k] = (string) BigDecimal::of((string) $s[$k])->stripTrailingZeros();
         }
         $s['inpsWithinNdfl'] = (bool) $s['inpsWithinNdfl'];
+        foreach (['benefitCode', 'companyInn', 'taxReportCode', 'taxReportFileName'] as $k) {
+            $s[$k] = trim((string) $s[$k]);
+        }
+        $s['taxReportFileName'] = $s['taxReportFileName'] !== '' ? $s['taxReportFileName'] : self::DEFAULTS['taxReportFileName'];
+        $exemptPct = $s['benefitCode'] !== '' ? $s['benefitPercent'] : '0';
+        $s['ndflRate'] = (string) BigDecimal::of($s['ndflBaseRate'])->multipliedBy(BigDecimal::of('100')->minus($exemptPct))
+            ->dividedBy(100, 3, RoundingMode::HalfUp)->stripTrailingZeros();
 
         return $s;
     }
 
-    /** @param  array{ndflRate:string,inpsRate:string,inpsWithinNdfl:bool,itparkRate:string}  $input */
+    /** Сохранить настройки: переданные поля меняются, остальные остаются (ndflRate вычисляется и не сохраняется). */
     public static function saveSettings(array $input): array
     {
         $before = self::settings();
-        $new = [
-            'ndflRate' => (string) BigDecimal::of($input['ndflRate'])->stripTrailingZeros(),
-            'inpsRate' => (string) BigDecimal::of($input['inpsRate'])->stripTrailingZeros(),
-            'inpsWithinNdfl' => (bool) $input['inpsWithinNdfl'],
-            'itparkRate' => (string) BigDecimal::of($input['itparkRate'])->stripTrailingZeros(),
-        ];
+        $new = array_intersect_key($before, self::DEFAULTS);
+        foreach (self::RATE_KEYS as $k) {
+            if (array_key_exists($k, $input)) {
+                $new[$k] = (string) BigDecimal::of((string) $input[$k])->stripTrailingZeros();
+            }
+        }
+        if (array_key_exists('inpsWithinNdfl', $input)) {
+            $new['inpsWithinNdfl'] = (bool) $input['inpsWithinNdfl'];
+        }
+        foreach (['benefitCode', 'companyInn', 'taxReportCode', 'taxReportFileName'] as $k) {
+            if (array_key_exists($k, $input)) {
+                $new[$k] = trim((string) $input[$k]);
+            }
+        }
         DB::transaction(function () use ($before, $new) {
             Settings::save('accounting', $new);
             Audit::log('accounting.settings', 'setting', 'accounting', Audit::diff($before, $new, array_keys($new)));

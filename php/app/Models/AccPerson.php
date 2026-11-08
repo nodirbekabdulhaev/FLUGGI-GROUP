@@ -15,6 +15,11 @@ class AccPerson extends Model
         'hired_at' => 'date',
         'fired_at' => 'date',
         'is_active' => 'boolean',
+        'resident_type' => 'integer',
+        'contract_type' => 'integer',
+        'work_rate' => 'decimal:2',
+        'workplace_type' => 'integer',
+        'benefits' => 'array',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
     ];
@@ -22,6 +27,12 @@ class AccPerson extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id');
+    }
+
+    /** История оклада (с какого месяца какая сумма). */
+    public function salaries(): HasMany
+    {
+        return $this->hasMany(AccPersonSalary::class, 'person_id')->orderBy('effective_from');
     }
 
     public function payroll(): HasMany
