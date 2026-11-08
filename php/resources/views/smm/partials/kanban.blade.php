@@ -13,10 +13,11 @@
     <p class="text-xs text-muted-foreground">{{ t('smm.kanbanHint') }}@if ($hidden) · {{ t('smm.hiddenOld', ['count' => $hidden]) }}@endif</p>
     {{-- Колонки окрашены в цвета статусов (Настройки → Цвета досок) --}}
     <div class="board" data-board>
-        <div class="board-scroll flex items-start gap-3" x-hscroll>
+        <div class="board-scroll" x-hscroll>
+          <div class="flex w-max items-start gap-3">
             @foreach (SmmIdeaService::KANBAN as $status)
                 @php($col = $items->where('status', $status))
-                <section class="kanban-col xl:w-auto xl:min-w-[13rem] xl:flex-1" style="--col: {{ $colors[$status] }}">
+                <section class="kanban-col" style="--col: {{ $colors[$status] }}">
                     <header class="kanban-head">
                         <span class="kanban-count">{{ $col->count() }}</span>
                         <h3 class="kanban-title" title="{{ t('smm.statusHint.'.$status) }}">{{ t('smm.status.'.$status) }}</h3>
@@ -37,6 +38,7 @@
                     @endif
                 </section>
             @endforeach
+          </div>
         </div>
     </div>
 
