@@ -20,7 +20,7 @@ use Illuminate\Support\Collection;
  */
 final class BankRules
 {
-    private const MIGRATION = ['сворачивани', 'разворачивани', 'миграци', 'migratsiya', 'перенос остатка', 'qoldiqni ko'];
+    private const MIGRATION = ['сворачивани', 'разворачивани', 'миграци', 'migratsiya', 'перенос остатка', 'qoldiqni ko', 'вторичных счетов', 'вторичных сч', 'на основной счет', 'на основной счёт'];
 
     private const ITPARK = ['itpark', 'it park', 'it-park', 'ит парк', 'ит-парк'];
 

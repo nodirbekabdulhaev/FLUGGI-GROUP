@@ -75,7 +75,7 @@
                 <tr>
                     <td class="font-medium">{{ $y }}</td>
                     <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['due']) }}</td>
-                    <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['paid']) }}@if (BigDecimal::of($r['otherPaid'])->isPositive())<span class="block text-xs text-muted-foreground">{{ t('accounting.taxes.yearly.inOther', ['sum' => money($r['otherPaid'])]) }}@if ($canManage) · <a class="link" href="/accounting/other-taxes">{{ t('accounting.otherTaxes.check') }}</a>@endif</span>@endif</td>
+                    <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['paid']) }}@if (BigDecimal::of($r['otherPaid'])->isPositive())<span class="block text-xs text-muted-foreground">{{ t('accounting.taxes.yearly.inOther', ['sum' => money($r['otherPaid'])]) }}@if ($canManage) · <a class="link" href="/accounting/recategorize?category=TAX_OTHER">{{ t('accounting.recategorize.check') }}</a>@endif</span>@endif</td>
                     <td @class(['whitespace-nowrap text-right font-medium tabular-nums', 'text-warning' => BigDecimal::of($r['due'])->isGreaterThan($r['paid']), 'text-success' => BigDecimal::of($r['due'])->isLessThan($r['paid'])])>{{ money((string) BigDecimal::of($r['due'])->minus($r['paid'])) }}</td>
                     <td class="whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground">{{ money($r['ndflDue']) }} / {{ money($r['ndflPaid']) }}</td>
                     <td class="whitespace-nowrap text-right tabular-nums text-warning">{{ money($r['debt']) }}</td>

@@ -632,23 +632,23 @@
     "actsTitle": "Tax office reconciliation acts",
     "how4": "«Солиштирма далолатнома» acts (xls for each year): the balance at the start of a year comes from the previous year act, and the reconciliation by tax is shown below."
   },
-  "otherTaxes": {
-    "title": "Review «Other taxes»",
-    "subtitle": "Payees with the «Other taxes» article — move the wrong ones to the right articles",
-    "empty": "No other taxes",
-    "emptyText": "All tax payments are assigned to articles.",
-    "how": "When statements were imported, the word «tax» in a supplier payment purpose could classify it as a tax. Pick an article for each payee — all its «Other taxes» payments are moved. The suggestion follows the current rules; «Keep» changes nothing.",
+  "recategorize": {
+    "title": "Review articles",
+    "subtitle": "Operations of an article by payee and recognised payment type — move the wrong ones to the right articles",
+    "empty": "All clean here",
+    "emptyText": "No operations to review in this article (operations with their own article and CRM payments are not shown).",
+    "how": "Payments of one payee are split by how they are recognised (for example a tax penalty apart from other payments). Pick the right article for a group — all its payments move. The suggestion follows the current rules; «Keep» changes nothing. Transfers between own accounts are the «Transfer» article: neither expense nor income.",
     "payee": "Payee",
     "operations": "Payments",
     "total": "Total",
-    "sample": "Purpose (sample)",
+    "sample": "Purpose (samples)",
     "article": "Article",
     "noPayee": "No payee",
-    "keep": "Keep in «Other taxes»",
+    "keep": "Keep as is",
     "suggested": "suggested",
-    "confirm": "Move the payments of the selected payees to the chosen articles?",
+    "confirm": "Move the operations of the selected groups to the chosen articles?",
     "apply": "Move",
-    "done": "Payees moved: {groups}, payments: {operations}.",
+    "done": "Groups moved: {groups}, operations: {operations}.",
     "check": "review"
   }
 }

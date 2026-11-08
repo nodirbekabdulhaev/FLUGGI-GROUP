@@ -632,23 +632,23 @@
     "actsTitle": "Soliq solishtirma dalolatnomalari",
     "how4": "«Солиштирма далолатнома» aktlari (har yil uchun xls): yil boshidagi saldo oʻtgan yil aktidan olinadi, quyida esa soliqlar boʻyicha solishtirish koʻrsatiladi."
   },
-  "otherTaxes": {
-    "title": "«Boshqa soliqlar»ni tekshirish",
-    "subtitle": "«Boshqa soliqlar» moddasidagi toʻlov oluvchilar — notoʻgʻrilarini toʻgʻri moddalarga oʻtkazing",
-    "empty": "Boshqa soliqlar yoʻq",
-    "emptyText": "Barcha soliq toʻlovlari moddalar boʻyicha taqsimlangan.",
-    "how": "Koʻchirmalarni yuklashda taʼminotchiga toʻlov maqsadidagi «soliq» soʻzi uni soliqlarga kiritib yuborgan boʻlishi mumkin. Har bir oluvchi uchun modda tanlang — uning barcha «Boshqa soliqlar» toʻlovlari oʻtkaziladi. Maslahat joriy qoidalar boʻyicha tanlangan; «Qoldirish» — oʻzgarishsiz.",
+  "recategorize": {
+    "title": "Moddalarni tekshirish",
+    "subtitle": "Modda operatsiyalari oluvchilar va aniqlangan toʻlov turi boʻyicha — notoʻgʻrilarini toʻgʻri moddalarga oʻtkazing",
+    "empty": "Bu yerda hammasi toza",
+    "emptyText": "Bu moddada tekshiriladigan operatsiyalar yoʻq (oʻz moddasi bor operatsiyalar va CRM toʻlovlari koʻrsatilmaydi).",
+    "how": "Bitta oluvchining toʻlovlari aniqlanishiga qarab ajratilgan (masalan, soliq penyasi boshqa toʻlovlardan alohida). Guruh uchun toʻgʻri moddani tanlang — uning barcha toʻlovlari oʻtkaziladi. Maslahat joriy qoidalar boʻyicha tanlangan; «Qoldirish» — oʻzgarishsiz. Oʻz hisoblari orasidagi oʻtkazmalar — «Oʻtkazma» moddasi: xarajat ham, daromad ham emas.",
     "payee": "Oluvchi",
     "operations": "Toʻlovlar",
     "total": "Summa",
-    "sample": "Maqsad (namuna)",
+    "sample": "Maqsad (namunalar)",
     "article": "Modda",
     "noPayee": "Oluvchisiz",
-    "keep": "«Boshqa soliqlar»da qoldirish",
+    "keep": "Oʻzgarishsiz qoldirish",
     "suggested": "maslahat",
-    "confirm": "Tanlangan oluvchilarning toʻlovlari koʻrsatilgan moddalarga oʻtkazilsinmi?",
+    "confirm": "Tanlangan guruhlar operatsiyalari koʻrsatilgan moddalarga oʻtkazilsinmi?",
     "apply": "Oʻtkazish",
-    "done": "Oʻtkazilgan oluvchilar: {groups}, toʻlovlar: {operations}.",
+    "done": "Oʻtkazilgan guruhlar: {groups}, operatsiyalar: {operations}.",
     "check": "tekshirish"
   }
 }

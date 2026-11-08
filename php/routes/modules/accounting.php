@@ -5,10 +5,10 @@ use App\Http\Controllers\Accounting\BankImportController;
 use App\Http\Controllers\Accounting\CategoriesController;
 use App\Http\Controllers\Accounting\FiledReportsController;
 use App\Http\Controllers\Accounting\OperationsController;
-use App\Http\Controllers\Accounting\OtherTaxesController;
 use App\Http\Controllers\Accounting\OverviewController;
 use App\Http\Controllers\Accounting\PayrollController;
 use App\Http\Controllers\Accounting\PeopleController;
+use App\Http\Controllers\Accounting\RecategorizeController;
 use App\Http\Controllers\Accounting\SettingsController;
 use App\Http\Controllers\Accounting\TaxesController;
 use App\Http\Controllers\Accounting\TaxReportController;
@@ -66,9 +66,10 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     // Отчёт в налоговую (приложение 4): смотреть — accounting.read, скачать файл — accounting.manage + export.run
     Route::get('/tax-report', [TaxReportController::class, 'index'])->middleware($read)->name('taxReport');
     Route::get('/tax-report/download', [TaxReportController::class, 'download'])->middleware([$manage, 'perm:export.run'])->name('taxReport.download');
-    // Проверка «Прочих налогов»: платежи, попавшие в эту статью по ошибке, переносятся в верные
-    Route::get('/other-taxes', [OtherTaxesController::class, 'index'])->middleware($manage)->name('otherTaxes');
-    Route::post('/other-taxes', [OtherTaxesController::class, 'apply'])->middleware($manage)->name('otherTaxes.apply');
+    // Проверка статей: операции по получателям и распознанному типу платежа переносятся в верные статьи
+    Route::get('/recategorize', [RecategorizeController::class, 'index'])->middleware($manage)->name('recategorize');
+    Route::post('/recategorize', [RecategorizeController::class, 'apply'])->middleware($manage)->name('recategorize.apply');
+    Route::get('/other-taxes', fn () => redirect('/accounting/recategorize?category=TAX_OTHER'))->middleware($manage);
     // Сданные отчёты: сальдо НДФЛ смотреть — accounting.read, загружать файлы — accounting.manage
     Route::get('/filed-reports', [FiledReportsController::class, 'index'])->middleware($read)->name('filed');
     Route::post('/filed-reports', [FiledReportsController::class, 'upload'])->middleware($manage)->name('filed.upload');
