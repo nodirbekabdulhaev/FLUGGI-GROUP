@@ -22,7 +22,7 @@ class FiledReportsController extends Controller
         $ledger = TaxesService::ndflLedger($to);
 
         return view('accounting.filed-reports', [
-            'to' => $to, 'ledger' => $ledger, 'canManage' => access()->can('accounting.manage'),
+            'to' => $to, 'ledger' => $ledger, 'compare' => TaxesService::actCompare($to), 'canManage' => access()->can('accounting.manage'),
             'settings' => Accounting::settings(), 'filedCount' => count(FiledReports::map()['filed']),
         ]);
     }
@@ -57,7 +57,7 @@ class FiledReportsController extends Controller
             return redirect('/accounting/filed-reports')->with('error', t('import.expired'));
         }
 
-        return view('accounting.filed-reports-preview', ['token' => $token, 'data' => $data, 'plan' => FiledReports::plan($data['months'])]);
+        return view('accounting.filed-reports-preview', ['token' => $token, 'data' => $data, 'plan' => FiledReports::plan($data['months'], $data['acts'] ?? [])]);
     }
 
     public function confirm(string $token): RedirectResponse
@@ -67,7 +67,7 @@ class FiledReportsController extends Controller
             return redirect('/accounting/filed-reports')->with('error', t('import.expired'));
         }
 
-        return redirect('/accounting/filed-reports')->with('ok', t('accounting.filed.done', ['months' => $r['months'], 'created' => $r['created'], 'updated' => $r['updated']]));
+        return redirect('/accounting/filed-reports')->with('ok', t('accounting.filed.done', ['months' => $r['months'], 'created' => $r['created'], 'updated' => $r['updated'], 'acts' => $r['acts']]));
     }
 
     public function cancel(string $token): RedirectResponse

@@ -6,7 +6,7 @@
         $new = collect($plan['people'])->where('exists', false)->count();
         $upd = collect($plan['people'])->where('exists', true)->count();
     @endphp
-    <x-page-header :title="t('accounting.filed.previewTitle')" :subtitle="t('accounting.filed.previewSubtitle', ['months' => count($plan['months']), 'from' => $plan['first'], 'to' => $plan['last']])">
+    <x-page-header :title="t('accounting.filed.previewTitle')" :subtitle="t('accounting.filed.previewSubtitle', ['months' => count($plan['months']), 'from' => $plan['first'] ?? '—', 'to' => $plan['last'] ?? '—'])">
         <form method="POST" action="/accounting/filed-reports/{{ $token }}/cancel">@csrf<button class="btn btn-outline">{{ t('common.cancel') }}</button></form>
         <form method="POST" action="/accounting/filed-reports/{{ $token }}/confirm">@csrf<button class="btn btn-primary"><x-icon name="check" /> {{ t('accounting.filed.confirm') }}</button></form>
     </x-page-header>
@@ -24,6 +24,28 @@
         <p class="mb-2 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.filed.mismatch', ['month' => \App\Services\Accounting\Accounting::monthLabel($w['period']), 'filed' => money($w['filed']), 'due' => money($w['due'])]) }}</p>
     @endforeach
 
+    @if ($plan['acts'])
+        <x-table class="mb-4">
+            <caption class="px-3 pb-2 pt-3 text-left text-sm font-semibold">{{ t('accounting.filed.actsTitle') }}</caption>
+            <thead><tr><th>{{ t('accounting.taxes.yearly.year') }}</th><th>{{ t('accounting.taxes.tax') }}</th><th class="text-right">{{ t('accounting.filed.actDue') }}</th><th class="text-right">{{ t('accounting.filed.actPaid') }}</th><th class="text-right">{{ t('accounting.filed.actBalance') }}</th></tr></thead>
+            <tbody>
+            @foreach ($plan['acts'] as $year => $a)
+                @foreach (\App\Services\Accounting\FiledReports::ACT_CODES as $code => $cat)
+                    @php $r = $a['rows'][(string) $code] ?? null; @endphp
+                    @if ($r)
+                        <tr>
+                            <td class="whitespace-nowrap font-medium">@if ($loop->first){{ $year }}<span class="block text-xs font-normal text-muted-foreground">{{ $a['yearEnd'] ? t('accounting.filed.onYearEnd') : t('accounting.filed.onDate', ['date' => \Carbon\CarbonImmutable::parse($a['asOf'])->format('d.m.Y')]) }}</span>@endif</td>
+                            <td>{{ t('accounting.category.'.$cat) }}</td>
+                            <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['accrued']) }}</td>
+                            <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['paid']) }}</td>
+                            <td class="whitespace-nowrap text-right tabular-nums">{{ money((string) BigDecimal::of($r['closingDebt'])->minus($r['closingOverpay'])) }}</td>
+                        </tr>
+                    @endif
+                @endforeach
+            @endforeach
+            </tbody>
+        </x-table>
+    @endif
     <x-table class="mb-4">
         <caption class="px-3 pb-2 pt-3 text-left text-sm font-semibold">{{ t('accounting.filed.peopleTitle') }}</caption>
         <thead><tr><th>{{ t('accounting.filed.person') }}</th><th>PINFL</th><th>{{ t('accounting.filed.position') }}</th><th>{{ t('accounting.filed.hired') }}</th><th>{{ t('accounting.filed.fired') }}</th><th class="text-right">{{ t('accounting.filed.salary') }}</th><th class="text-right">{{ t('accounting.filed.paidMonths') }}</th><th></th></tr></thead>

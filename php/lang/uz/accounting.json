@@ -412,7 +412,8 @@
       "inOther": "shu jumladan «Boshqa soliqlar»: {sum}",
       "explain": "JShDS ustuni — hisoblangan / toʻlangan. Toʻlovlar bitta toʻlov (yagona soliq toʻlovi) bilan oʻtsa va koʻchirmada bitta soliq deb yozilsa, alohida soliqlar boʻyicha buzilish boʻladi — barcha soliqlar boʻyicha «Farq»ga qarang: u toʻlovlar qanday taqsimlanganiga bogʻliq emas."
     },
-    "startLate": "Saldo hisobi {from} dan boshlangan, topshirilgan hisobotlar esa {first} dan bor: {from} gacha boʻlgan hisob-kitoblar va toʻlovlar hisobga olinmaydi, shuning uchun soxta ortiqcha toʻlov chiqishi mumkin. «Qaysi oydan hisoblash» maydonini tozalang:"
+    "startLate": "Saldo hisobi {from} dan boshlangan, topshirilgan hisobotlar esa {first} dan bor: {from} gacha boʻlgan hisob-kitoblar va toʻlovlar hisobga olinmaydi, shuning uchun soxta ortiqcha toʻlov chiqishi mumkin. «Qaysi oydan hisoblash» maydonini tozalang:",
+    "anchored": "Yil boshidagi saldo {year} yil uchun soliq solishtirma dalolatnomasidan olingan."
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",
@@ -553,7 +554,7 @@
     "since": "{month} dan",
     "uploadTitle": "Topshirilgan hisobotlarni yuklash",
     "files": "Hisobot fayllari yoki ZIP",
-    "filesHint": "…_46_2026_M_5_11101_20_ilova.xltx koʻrinishidagi fayllar — 2021–2026 yillarning barchasini birdan tanlash yoki bitta ZIP arxiv yuklash mumkin.",
+    "filesHint": "…_46_2026_M_5_11101_20_ilova.xltx koʻrinishidagi hisobotlar va solishtirma dalolatnomalar (shaxsiy kabinetdan xls) — hammasini birdan yoki bitta ZIP bilan tanlash mumkin.",
     "read": "Oʻqish",
     "how1": "Yil va oy fayl nomidan olinadi; 2021–2026 yillar shakllarining barchasi oʻqiladi.",
     "how2": "Odamlar JShShIR boʻyicha yaratiladi: ishga qabul — daromadli birinchi oydan, maosh — daromadlar tarixidan, boʻshatish — hisobotdagi holatdan. Mavjudlar toʻldiriladi.",
@@ -601,7 +602,7 @@
     "file": "Fayl",
     "ndflYtd": "Yil boshidan JShDS",
     "previewHint": "Yuklangandan soʻng odamlar «Odamlar» boʻlimida, JShDS va saldo — «Soliqlar» va shu yerda paydo boʻladi. Hisobot fayllari saqlanmaydi.",
-    "done": "Yuklangan oylar: {months}. Yaratilgan odamlar: {created}, toʻldirilgan: {updated}.",
+    "done": "Yuklangan oylar: {months}, solishtirma dalolatnomalar: {acts}. Yaratilgan odamlar: {created}, toʻldirilgan: {updated}.",
     "personComment": "Topshirilgan soliq hisobotlari asosida yaratilgan",
     "errors": {
       "tooMany": "Fayllar juda koʻp (maksimum {max})",
@@ -612,7 +613,23 @@
       "columns": "hisobot ustunlari topilmadi (FIO, daromad, JShDS)",
       "empty": "hisobotda odamlar yoʻq",
       "nothing": "Birorta hisobot topilmadi",
-      "type": ".xltx, .xlsx yoki ZIP fayllari kerak"
-    }
+      "type": ".xltx, .xlsx yoki ZIP fayllari kerak",
+      "act": "Bu solishtirma dalolatnoma emas: sarlavhada yil yoki soliqlar jadvali yoʻq"
+    },
+    "reset": "soliq aktidagi saldo: {sum}",
+    "resetHint": "Yanvarda qoldiq oʻtgan yil uchun soliq solishtirma dalolatnomasidan olinadi",
+    "compareTitle": "Soliq dalolatnomalari bilan solishtirish",
+    "compareHint": "Har bir yil va soliq boʻyicha: dalolatnomada va tizimda nima hisoblangan va toʻlangan",
+    "compareExplain": "Δ = tizim minus dalolatnoma. Saldo: musbat — qarz, manfiy — ortiqcha toʻlov (penya hisobga olinmaydi). Hisoblangan boʻyicha farq — soliqda hisobot qatorlari yoki qayta hisoblashlar toʻliq hisobga olinmagan; toʻlangan boʻyicha — operatsiyada moddasi yoki oyi notoʻgʻri, yoki toʻlov yuklanmagan.",
+    "actDue": "Soliq: hisoblangan",
+    "ourDue": "Tizim: hisoblangan",
+    "actPaid": "Soliq: toʻlangan",
+    "ourPaid": "Tizim: toʻlangan",
+    "actBalance": "Soliq saldosi",
+    "ourBalance": "Tizim saldosi",
+    "onYearEnd": "31 dekabrga",
+    "onDate": "{date} ga",
+    "actsTitle": "Soliq solishtirma dalolatnomalari",
+    "how4": "«Солиштирма далолатнома» aktlari (har yil uchun xls): yil boshidagi saldo oʻtgan yil aktidan olinadi, quyida esa soliqlar boʻyicha solishtirish koʻrsatiladi."
   }
 }

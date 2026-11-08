@@ -4,6 +4,7 @@ namespace App\Services\Accounting;
 
 use App\Models\AccPerson;
 use App\Models\AccPersonSalary;
+use App\Models\AccTaxAct;
 use App\Models\AccTaxFiling;
 use App\Services\Import\ImportStore;
 use App\Services\Import\RowError;
@@ -40,7 +41,7 @@ final class FiledReports
 {
     public const ENTITY = 'filed-reports';
 
-    public const EXTENSIONS = ['xltx', 'xlsx', 'zip'];
+    public const EXTENSIONS = ['xltx', 'xlsx', 'xls', 'zip'];
 
     public const MAX_FILES = 150;
 
@@ -60,15 +61,21 @@ final class FiledReports
     {
         @set_time_limit(300);
         $months = [];
+        $acts = [];
         $errors = [];
         $n = 0;
-        $take = function (string $path, string $name) use (&$months, &$errors, &$n) {
+        $take = function (string $path, string $name) use (&$months, &$acts, &$errors, &$n) {
             if (++$n > self::MAX_FILES) {
                 throw new RowError(t('accounting.filed.errors.tooMany', ['max' => self::MAX_FILES]));
             }
             try {
-                $r = self::parse($path, $name);
-                $months[$r['period']] = $r;
+                if (mb_strtolower(pathinfo($name, PATHINFO_EXTENSION)) === 'xls') {
+                    $a = self::parseAct($path, $name);
+                    $acts[$a['year']] = $a;
+                } else {
+                    $r = self::parse($path, $name);
+                    $months[$r['period']] = $r;
+                }
             } catch (RowError $e) {
                 $errors[] = $name.': '.$e->getMessage();
             }
@@ -93,7 +100,7 @@ final class FiledReports
                 $stat = $zip->statIndex($i);
                 $entry = (string) ($stat['name'] ?? '');
                 $ext = mb_strtolower(pathinfo($entry, PATHINFO_EXTENSION));
-                if (str_ends_with($entry, '/') || str_contains($entry, '__MACOSX') || ! in_array($ext, ['xltx', 'xlsx'], true)) {
+                if (str_ends_with($entry, '/') || str_contains($entry, '__MACOSX') || ! in_array($ext, ['xltx', 'xlsx', 'xls'], true)) {
                     continue;
                 }
                 if (($stat['size'] ?? 0) > self::MAX_BYTES) {
@@ -112,8 +119,52 @@ final class FiledReports
             $zip->close();
         }
         ksort($months);
+        ksort($acts);
 
-        return ['months' => $months, 'errors' => $errors];
+        return ['months' => $months, 'acts' => $acts, 'errors' => $errors];
+    }
+
+    /** Коды налогов в акте сверки → статьи бухгалтерии. Остальные коды (пеня 191/199 и т. п.) только показываются. */
+    public const ACT_CODES = ['46' => 'TAX_NDFL', '101' => 'TAX_INPS', '36' => 'TAX_SOCIAL', '100' => 'TAX_TURNOVER'];
+
+    /**
+     * Акт сверки с налоговой («Солиштирма далолатнома», xls из личного кабинета): год из заголовка, по каждому налогу сальдо на начало
+     * и конец (текущий и продлённый долг, пеня, переплата), начислено и оплачено. Акт за прошлый год — сальдо на 31 декабря,
+     * за текущий — на дату формирования.
+     */
+    public static function parseAct(string $path, string $name): array
+    {
+        try {
+            $ws = IOFactory::load($path)->getSheet(0);
+            $grid = $ws->toArray(null, true, false, false);
+        } catch (Throwable) {
+            throw new RowError(t('accounting.filed.errors.unreadable'));
+        }
+        $title = (string) ($grid[0][0] ?? '');
+        $stamp = (string) ($grid[1][0] ?? '');
+        if (! preg_match('/(\d{4})\s*йил учун/u', $title, $y) || ! preg_match('/(\d{2})\.(\d{2})\.(\d{4})/', $stamp, $g)) {
+            throw new RowError(t('accounting.filed.errors.act'));
+        }
+        $year = (int) $y[1];
+        $asOf = CarbonImmutable::createFromFormat('!d.m.Y', $g[1].'.'.$g[2].'.'.$g[3]);
+        $num = fn ($v) => is_numeric($v) ? (string) BigDecimal::of((string) $v)->toScale(2, RoundingMode::HalfUp) : '0.00';
+        $rows = [];
+        foreach ($grid as $i => $r) {
+            if ($i < 5 || ! isset($r[1]) || ! preg_match('/^\d{1,4}$/', trim((string) $r[1]))) {
+                continue;
+            }
+            $v = array_map($num, array_slice($r, 3, 20));
+            $rows[trim((string) $r[1])] = ['code' => trim((string) $r[1]), 'name' => mb_substr(trim((string) ($r[2] ?? '')), 0, 191),
+                'openingDebt' => (string) BigDecimal::of($v[0])->plus($v[1])->toScale(2), 'openingOverpay' => $v[4],
+                'closingDebt' => (string) BigDecimal::of($v[5])->plus($v[6])->toScale(2), 'closingPenalty' => (string) BigDecimal::of($v[7])->plus($v[8])->toScale(2), 'closingOverpay' => $v[9],
+                'accrued' => $v[14], 'accruedPenalty' => $v[15], 'paid' => $v[19], 'refunded' => $v[17]];
+        }
+        if (! $rows) {
+            throw new RowError(t('accounting.filed.errors.act'));
+        }
+        $yearEnd = $asOf->format('Y') > (string) $year || ($asOf->format('Y') === (string) $year && $asOf->format('m-d') === '12-31');
+
+        return ['year' => $year, 'file' => $name, 'asOf' => $yearEnd ? $year.'-12-31' : $asOf->toDateString(), 'yearEnd' => $yearEnd, 'rows' => $rows];
     }
 
     /** Один файл отчёта → месяц и строки людей. */
@@ -421,7 +472,7 @@ final class FiledReports
     // ─────────────────────────── Предпросмотр и загрузка ───────────────────────────
 
     /** Что сделает загрузка: месяцы, расхождения, люди (новые и дополняемые). */
-    public static function plan(array $months): array
+    public static function plan(array $months, array $acts = []): array
     {
         $latest = max(array_merge(array_keys($months), array_keys(self::map()['filed'])) ?: ['0000-00']);
         $perMonth = [];
@@ -474,7 +525,7 @@ final class FiledReports
         }
         usort($people, fn ($a, $b) => strcmp($a['first'], $b['first']));
 
-        return ['months' => $perMonth, 'warnings' => $warnings, 'gaps' => $gaps, 'people' => $people, 'noIncomePeople' => $noIncome,
+        return ['months' => $perMonth, 'acts' => $acts, 'warnings' => $warnings, 'gaps' => $gaps, 'people' => $people, 'noIncomePeople' => $noIncome,
             'first' => $periods[0] ?? null, 'last' => $periods ? end($periods) : null];
     }
 
@@ -482,11 +533,11 @@ final class FiledReports
     public static function upload(array $uploads): string
     {
         $r = self::read($uploads);
-        if (! $r['months']) {
+        if (! $r['months'] && ! $r['acts']) {
             throw new RowError($r['errors'][0] ?? t('accounting.filed.errors.nothing'));
         }
 
-        return ImportStore::put(['entity' => self::ENTITY, 'user_id' => access()->id(), 'months' => $r['months'], 'errors' => $r['errors']]);
+        return ImportStore::put(['entity' => self::ENTITY, 'user_id' => access()->id(), 'months' => $r['months'], 'acts' => $r['acts'], 'errors' => $r['errors']]);
     }
 
     public static function preview(string $token): ?array
@@ -501,17 +552,26 @@ final class FiledReports
         if (! $data) {
             return null;
         }
-        $result = self::apply($data['months']);
+        $result = self::apply($data['months'], $data['acts'] ?? []);
         ImportStore::finish($token, $result);
 
         return $result;
     }
 
-    public static function apply(array $months): array
+    public static function apply(array $months, array $acts = []): array
     {
         $actor = access(false)?->id();
 
-        return DB::transaction(function () use ($months, $actor) {
+        return DB::transaction(function () use ($months, $acts, $actor) {
+            foreach ($acts as $year => $a) {
+                AccTaxAct::where('year', $year)->delete();
+                foreach ($a['rows'] as $r) {
+                    AccTaxAct::create(['year' => $year, 'tax_code' => $r['code'], 'tax_name' => $r['name'], 'as_of' => $a['asOf'], 'year_end' => $a['yearEnd'],
+                        'opening_debt' => $r['openingDebt'], 'opening_overpay' => $r['openingOverpay'], 'closing_debt' => $r['closingDebt'], 'closing_overpay' => $r['closingOverpay'],
+                        'closing_penalty' => $r['closingPenalty'], 'accrued' => $r['accrued'], 'accrued_penalty' => $r['accruedPenalty'], 'paid' => $r['paid'], 'refunded' => $r['refunded'],
+                        'source_file' => $a['file'], 'imported_by_id' => $actor]);
+                }
+            }
             $rowsCount = 0;
             foreach ($months as $period => $m) {
                 AccTaxFiling::where('period', $period)->delete();
@@ -542,9 +602,10 @@ final class FiledReports
             $periods = array_keys($months);
             Audit::log('accounting.filings.import', 'acc_tax_filing', null, ['import' => ['old' => null, 'new' => [
                 'periods' => count($periods), 'from' => $periods[0] ?? null, 'to' => end($periods) ?: null, 'rows' => $rowsCount, 'peopleCreated' => $created, 'peopleUpdated' => $updated,
+                'acts' => array_keys($acts),
             ]]]);
 
-            return ['months' => count($periods), 'rows' => $rowsCount, 'created' => $created, 'updated' => $updated, 'from' => $periods[0] ?? null, 'to' => end($periods) ?: null];
+            return ['months' => count($periods), 'acts' => count($acts), 'rows' => $rowsCount, 'created' => $created, 'updated' => $updated, 'from' => $periods[0] ?? null, 'to' => end($periods) ?: null];
         });
     }
 

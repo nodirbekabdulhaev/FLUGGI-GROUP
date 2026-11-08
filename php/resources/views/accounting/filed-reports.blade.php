@@ -24,7 +24,7 @@
                 @csrf
                 <div>
                     <label class="label" for="filed-files">{{ t('accounting.filed.files') }}<span class="text-danger"> *</span></label>
-                    <input id="filed-files" type="file" name="files[]" class="input" accept=".xltx,.xlsx,.zip" multiple required>
+                    <input id="filed-files" type="file" name="files[]" class="input" accept=".xltx,.xlsx,.xls,.zip" multiple required>
                     @error('files')<p class="error">{{ $message }}</p>@else<p class="hint">{{ t('accounting.filed.filesHint') }}</p>@enderror
                     @error('files.*')<p class="error">{{ $message }}</p>@enderror
                 </div>
@@ -34,6 +34,7 @@
                 <li>{{ t('accounting.filed.how1') }}</li>
                 <li>{{ t('accounting.filed.how2') }}</li>
                 <li>{{ t('accounting.filed.how3') }}</li>
+                <li>{{ t('accounting.filed.how4') }}</li>
             </ul>
         </x-card>
     @endif
@@ -58,7 +59,8 @@
                 @foreach ($rows->sortByDesc('period') as $r)
                     @php $b = BigDecimal::of($r['balance']); @endphp
                     <tr>
-                        <td class="whitespace-nowrap font-medium"><a class="link" href="/accounting/taxes?period={{ $r['period'] }}">{{ \App\Services\Accounting\Accounting::monthLabel($r['period']) }}</a></td>
+                        <td class="whitespace-nowrap font-medium"><a class="link" href="/accounting/taxes?period={{ $r['period'] }}">{{ \App\Services\Accounting\Accounting::monthLabel($r['period']) }}</a>
+                            @if ($r['reset'])<span class="block text-xs font-normal text-primary" title="{{ t('accounting.filed.resetHint') }}">{{ t('accounting.filed.reset', ['sum' => money($r['opening'])]) }}</span>@endif</td>
                         <td class="text-right tabular-nums">{{ $r['people'] ?? '—' }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['income']) }}</td>
                         <td class="whitespace-nowrap text-right font-medium tabular-nums">{{ money($r['due']) }}
@@ -71,6 +73,35 @@
                 </tbody>
             </x-table>
         @endforeach
+    @endif
+    @if ($compare)
+        <x-table class="mt-6">
+            <caption class="px-3 pb-2 pt-3 text-left text-sm font-semibold">{{ t('accounting.filed.compareTitle') }}<span class="block text-xs font-normal text-muted-foreground">{{ t('accounting.filed.compareHint') }}</span></caption>
+            <thead><tr>
+                <th>{{ t('accounting.taxes.yearly.year') }}</th><th>{{ t('accounting.taxes.tax') }}</th><th class="text-right">{{ t('accounting.filed.actDue') }}</th><th class="text-right">{{ t('accounting.filed.ourDue') }}</th><th class="text-right">Δ</th>
+                <th class="text-right">{{ t('accounting.filed.actPaid') }}</th><th class="text-right">{{ t('accounting.filed.ourPaid') }}</th><th class="text-right">Δ</th>
+                <th class="text-right">{{ t('accounting.filed.actBalance') }}</th><th class="text-right">{{ t('accounting.filed.ourBalance') }}</th>
+            </tr></thead>
+            <tbody>
+            @foreach (collect($compare)->sortByDesc('year')->groupBy('year') as $year => $list)
+                @foreach ($list as $i => $c)
+                    <tr>
+                        <td class="whitespace-nowrap font-medium">@if ($i === 0){{ $year }}<span class="block text-xs font-normal text-muted-foreground">{{ $c['yearEnd'] ? t('accounting.filed.onYearEnd') : t('accounting.filed.onDate', ['date' => \Carbon\CarbonImmutable::parse($c['asOf'])->format('d.m.Y')]) }}</span>@endif</td>
+                        <td>{{ t('accounting.category.'.$c['cat']) }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">{{ money($c['actDue']) }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">{{ money($c['ourDue']) }}</td>
+                        <td @class(['whitespace-nowrap text-right tabular-nums', 'text-warning' => BigDecimal::of($c['diffDue'])->abs()->isGreaterThan(1)])>{{ money($c['diffDue']) }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">{{ money($c['actPaid']) }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">{{ money($c['ourPaid']) }}</td>
+                        <td @class(['whitespace-nowrap text-right tabular-nums', 'text-warning' => BigDecimal::of($c['diffPaid'])->abs()->isGreaterThan(1)])>{{ money($c['diffPaid']) }}</td>
+                        <td class="whitespace-nowrap text-right tabular-nums">{{ money($c['actBalance']) }}</td>
+                        <td @class(['whitespace-nowrap text-right font-medium tabular-nums', 'text-warning' => BigDecimal::of($c['ourBalance'])->minus($c['actBalance'])->abs()->isGreaterThan(1)])>{{ money($c['ourBalance']) }}</td>
+                    </tr>
+                @endforeach
+            @endforeach
+            </tbody>
+        </x-table>
+        <p class="mt-2 text-xs text-muted-foreground">{{ t('accounting.filed.compareExplain') }}</p>
     @endif
     <p class="mt-3 text-xs text-muted-foreground">{{ t('accounting.filed.explain') }}</p>
 @endsection

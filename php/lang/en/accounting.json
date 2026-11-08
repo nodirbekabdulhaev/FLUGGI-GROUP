@@ -412,7 +412,8 @@
       "inOther": "incl. «Other taxes»: {sum}",
       "explain": "The income tax column is accrued / paid. If payments go as one lump (a single tax payment) and are labelled as one tax in the statement, individual taxes will be skewed — look at the «Difference» for all taxes: it does not depend on how payments are split."
     },
-    "startLate": "The balance starts from {from} while filed reports exist from {first}: accruals and payments before {from} are not counted, so a false overpayment can appear. Clear «Track from month» in"
+    "startLate": "The balance starts from {from} while filed reports exist from {first}: accruals and payments before {from} are not counted, so a false overpayment can appear. Clear «Track from month» in",
+    "anchored": "The balance at the start of the year is taken from the {year} reconciliation act."
   },
   "settings": {
     "title": "Accounting settings",
@@ -553,7 +554,7 @@
     "since": "Since {month}",
     "uploadTitle": "Upload filed reports",
     "files": "Report files or a ZIP",
-    "filesHint": "Files like …_46_2026_M_5_11101_20_ilova.xltx — select all of 2021–2026 at once, or one ZIP archive.",
+    "filesHint": "Reports like …_46_2026_M_5_11101_20_ilova.xltx and reconciliation acts (xls from the taxpayer account) — select all at once or one ZIP.",
     "read": "Read",
     "how1": "Year and month come from the file name; all 2021–2026 forms are read.",
     "how2": "People are created by PINFL: hired from the first month with income, salary from the income history, dismissed by the status in the report. Existing people are completed.",
@@ -601,7 +602,7 @@
     "file": "File",
     "ndflYtd": "Tax since year start",
     "previewHint": "After upload people appear in «People», and the tax and balance — in «Taxes» and here. Report files are not stored.",
-    "done": "Months uploaded: {months}. People created: {created}, completed: {updated}.",
+    "done": "Months uploaded: {months}, reconciliation acts: {acts}. People created: {created}, completed: {updated}.",
     "personComment": "Created from filed tax reports",
     "errors": {
       "tooMany": "Too many files (maximum {max})",
@@ -612,7 +613,23 @@
       "columns": "report columns not found (name, income, tax)",
       "empty": "no people in the report",
       "nothing": "No report found",
-      "type": ".xltx, .xlsx or ZIP files are required"
-    }
+      "type": ".xltx, .xlsx or ZIP files are required",
+      "act": "This is not a reconciliation act: no year in the title or no tax table"
+    },
+    "reset": "balance from the tax act: {sum}",
+    "resetHint": "In January the remainder is taken from the previous year reconciliation act",
+    "compareTitle": "Reconciliation with the tax office acts",
+    "compareHint": "By each year and tax: what the tax office act shows as accrued and paid, and what the system has",
+    "compareExplain": "Δ = system minus act. Balance: plus is debt, minus is overpayment (penalties not included). A difference in accrued means the tax office did not count all report rows or recalculations; in paid — the operation has a different article or month, or the payment is not loaded.",
+    "actDue": "Tax office: accrued",
+    "ourDue": "System: accrued",
+    "actPaid": "Tax office: paid",
+    "ourPaid": "System: paid",
+    "actBalance": "Tax office balance",
+    "ourBalance": "System balance",
+    "onYearEnd": "at 31 December",
+    "onDate": "at {date}",
+    "actsTitle": "Tax office reconciliation acts",
+    "how4": "«Солиштирма далолатнома» acts (xls for each year): the balance at the start of a year comes from the previous year act, and the reconciliation by tax is shown below."
   }
 }

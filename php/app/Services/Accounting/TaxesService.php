@@ -5,6 +5,7 @@ namespace App\Services\Accounting;
 use App\Models\AccAccount;
 use App\Models\AccPayroll;
 use App\Models\AccPerson;
+use App\Models\AccTaxAct;
 use App\Models\AccTaxFiling;
 use App\Models\AccTransaction;
 use Brick\Math\BigDecimal;
@@ -38,23 +39,20 @@ final class TaxesService
     {
         $s = Accounting::settings();
         $from = self::balanceFrom($s, $period);
+        $anchor = self::anchor($s, $period);
+        if ($anchor) {
+            $from = $anchor['from'];
+        }
         $first = min($from, $period);
-        $months = self::monthly($first, $period);
         $sp = Accounting::settingsFor($period);
-        $cur = $months[$period];
-
         $opening = array_fill_keys(self::CARRIED, BigDecimal::zero());
         if ($from <= $period) {
-            foreach (Accounting::OPENING_KEYS as $cat => $key) {
-                $opening[$cat] = Accounting::dec($s[$key]);
-            }
-            foreach ($months as $m => $row) {
-                if ($m >= $from && $m < $period) {
-                    foreach (self::CARRIED as $cat) {
-                        $opening[$cat] = $opening[$cat]->plus($row['due'][$cat])->minus($row['paid'][$cat] ?? '0');
-                    }
-                }
-            }
+            $walk = self::walk($from, $period, $s);
+            $lastRow = end($walk);
+            $cur = $lastRow['o'];
+            $opening = $lastRow['opening'];
+        } else {
+            $cur = self::monthly($first, $period)[$period];
         }
 
         // Строки месяца: налоги действующего режима, а также прежние, по которым остался долг/переплата или были оплаты
@@ -99,12 +97,68 @@ final class TaxesService
             'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'], 'filed' => $cur['filed'], 'filedCovered' => ! $cur['filed'] && $cur['filedDue'] !== null,
             'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
-            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
+            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'anchored' => $anchor !== null, 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
         ];
     }
 
     /**
+     * Сальдо на начало года из акта сверки налоговой: остаток на 31 декабря прошлого года (долг минус переплата) по налогам акта.
+     * Действует, если загружен годовой акт за прошлый год и начало учёта вручную не задано.
+     *
+     * @return array{from:string,year:int,opening:array<string,BigDecimal>}|null
+     */
+    public static function anchor(array $s, string $period): ?array
+    {
+        if ($s['taxBalanceFrom'] !== '') {
+            return null;
+        }
+        $year = (int) substr($period, 0, 4);
+        $acts = AccTaxAct::where('year', $year - 1)->where('year_end', true)->get()->keyBy('tax_code');
+        if ($acts->isEmpty()) {
+            return null;
+        }
+        $opening = array_fill_keys(self::CARRIED, BigDecimal::zero());
+        foreach (FiledReports::ACT_CODES as $code => $cat) {
+            if ($a = $acts->get((string) $code)) {
+                $opening[$cat] = Accounting::dec($a->closing_debt)->minus($a->closing_overpay);
+            }
+        }
+
+        return ['from' => $year.'-01', 'year' => $year - 1, 'opening' => $opening];
+    }
+
+    /**
+     * Месяцы с нарастающим сальдо по налогам: на январь года с актом сверки за прошлый год сальдо берётся из акта, дальше — к уплате минус оплачено.
+     *
+     * @return list<array{period:string,o:array,opening:array<string,BigDecimal>,balance:array<string,BigDecimal>,reset:bool}>
+     */
+    private static function walk(string $from, string $to, array $s): array
+    {
+        $months = self::monthly($from, $to);
+        $run = array_fill_keys(self::CARRIED, BigDecimal::zero());
+        foreach (Accounting::OPENING_KEYS as $cat => $key) {
+            $run[$cat] = Accounting::dec($s[$key]);
+        }
+        $rows = [];
+        foreach ($months as $m => $o) {
+            $reset = false;
+            if (substr($m, 5) === '01' && ($a = self::anchor($s, $m))) {
+                $run = $a['opening'];
+                $reset = true;
+            }
+            $opening = $run;
+            foreach (self::CARRIED as $cat) {
+                $run[$cat] = $run[$cat]->plus($o['due'][$cat])->minus($o['paid'][$cat]);
+            }
+            $rows[] = ['period' => $m, 'o' => $o, 'opening' => $opening, 'balance' => $run, 'reset' => $reset];
+        }
+
+        return $rows;
+    }
+
+    /**
      * Сальдо НДФЛ по месяцам нарастающим итогом (для страницы «Сданные отчёты»): к уплате, оплачено, остаток, откуда сумма.
+     * В январе года с актом сверки за прошлый год остаток берётся из акта (reset).
      *
      * @return array{rows:list<array>,from:string,totalDue:string,totalPaid:string,balance:string}
      */
@@ -113,32 +167,34 @@ final class TaxesService
         $s = Accounting::settings();
         $from = self::balanceFrom($s, $to);
         if ($from > $to) {
-            return ['rows' => [], 'from' => $from, 'totalDue' => '0.00', 'totalPaid' => '0.00', 'balance' => '0.00'];
+            return ['rows' => [], 'from' => $from, 'firstFiled' => array_key_first(FiledReports::map()['filed']), 'totalDue' => '0.00', 'totalPaid' => '0.00', 'balance' => '0.00'];
         }
-        $months = self::monthly($from, $to);
         $fm = FiledReports::map();
-        $running = Accounting::dec($s['taxOpeningNdfl']);
         $due = BigDecimal::zero();
         $paid = BigDecimal::zero();
         $rows = [];
-        foreach ($months as $m => $o) {
+        $balance = BigDecimal::zero();
+        foreach (self::walk($from, $to, $s) as $w) {
+            $o = $w['o'];
             $d = $o['due']['TAX_NDFL'];
             $p = $o['paid']['TAX_NDFL'];
-            $running = $running->plus($d)->minus($p);
             $due = $due->plus($d);
             $paid = $paid->plus($p);
+            $balance = $w['balance']['TAX_NDFL'];
+            $m = $w['period'];
             $rows[] = ['period' => $m, 'people' => $fm['filed'][$m]['people'] ?? ($o['rows'] ?: null), 'income' => (string) $o['gross']->toScale(2),
-                'due' => (string) $d->toScale(2), 'paid' => (string) $p->toScale(2), 'balance' => (string) $running->toScale(2),
+                'due' => (string) $d->toScale(2), 'paid' => (string) $p->toScale(2), 'balance' => (string) $balance->toScale(2), 'reset' => $w['reset'],
+                'opening' => (string) $w['opening']['TAX_NDFL']->toScale(2),
                 'source' => $o['filed'] ? 'filed' : ($o['filedDue'] !== null ? 'covered' : ($o['rows'] ? 'payroll' : ($o['fromSalary'] ? 'salary' : 'none'))),
                 'filedMonth' => $o['filed'] ? (string) $fm['filed'][$m]['ndflMonthFiled']->toScale(2) : null];
         }
 
-        return ['rows' => $rows, 'from' => $from, 'firstFiled' => array_key_first($fm['filed']), 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $running->toScale(2)];
+        return ['rows' => $rows, 'from' => $from, 'firstFiled' => array_key_first($fm['filed']), 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $balance->toScale(2)];
     }
 
     /**
      * Сверка с личным кабинетом налогоплательщика по годам: начислено и оплачено по всем налогам, долг и переплата на конец года
-     * (как «Ҳисобланган / Тўланган / Қарздорлик / Ортиқча тўлов»). Остаток считается по каждому налогу отдельно и переходит из года в год.
+     * (как «Ҳисобланган / Тўланган / Қарздорлик / Ортиқча тўлов»). Остаток считается по каждому налогу отдельно.
      *
      * @return array{from:string,years:array<string,array<string,string>>,total:array<string,string>}
      */
@@ -150,19 +206,15 @@ final class TaxesService
         if ($from > $to) {
             return ['from' => $from, 'years' => [], 'total' => []];
         }
-        $bal = array_fill_keys(self::CARRIED, $zero);
-        foreach (Accounting::OPENING_KEYS as $cat => $key) {
-            $bal[$cat] = Accounting::dec($s[$key]);
-        }
         $years = [];
-        $months = self::monthly($from, $to);
-        $keys = array_keys($months);
-        foreach ($months as $m => $o) {
-            $y = substr($m, 0, 4);
+        $walk = self::walk($from, $to, $s);
+        $count = count($walk);
+        foreach ($walk as $i => $w) {
+            $o = $w['o'];
+            $y = substr($w['period'], 0, 4);
             $years[$y] ??= ['due' => $zero, 'paid' => $zero, 'ndflDue' => $zero, 'ndflPaid' => $zero, 'inpsDue' => $zero, 'inpsPaid' => $zero, 'itparkDue' => $zero, 'itparkPaid' => $zero,
                 'otherDue' => $zero, 'otherPaid' => $zero, 'debt' => $zero, 'over' => $zero];
             foreach (self::CARRIED as $cat) {
-                $bal[$cat] = $bal[$cat]->plus($o['due'][$cat])->minus($o['paid'][$cat]);
                 $years[$y]['due'] = $years[$y]['due']->plus($o['due'][$cat]);
                 $years[$y]['paid'] = $years[$y]['paid']->plus($o['paid'][$cat]);
             }
@@ -174,9 +226,9 @@ final class TaxesService
             $years[$y]['inpsPaid'] = $years[$y]['inpsPaid']->plus($o['paid']['TAX_INPS']);
             $years[$y]['itparkDue'] = $years[$y]['itparkDue']->plus($o['due']['TAX_ITPARK'])->plus($o['due']['TAX_SOCIAL'])->plus($o['due']['TAX_TURNOVER']);
             $years[$y]['itparkPaid'] = $years[$y]['itparkPaid']->plus($o['paid']['TAX_ITPARK'])->plus($o['paid']['TAX_SOCIAL'])->plus($o['paid']['TAX_TURNOVER']);
-            $next = $keys[array_search($m, $keys, true) + 1] ?? null;
-            if ($next === null || substr($next, 0, 4) !== $y) {
-                foreach ($bal as $b) {
+            $next = $walk[$i + 1]['period'] ?? null;
+            if ($i === $count - 1 || substr((string) $next, 0, 4) !== $y) {
+                foreach ($w['balance'] as $b) {
                     $years[$y]['debt'] = $years[$y]['debt']->plus(BigDecimal::max($b, $zero));
                     $years[$y]['over'] = $years[$y]['over']->plus(BigDecimal::max($b->negated(), $zero));
                 }
@@ -190,6 +242,50 @@ final class TaxesService
         $fmt = fn (array $row) => array_map(fn (BigDecimal $v) => (string) $v->toScale(2), $row);
 
         return ['from' => $from, 'years' => array_map($fmt, $years), 'total' => $fmt($total)];
+    }
+
+    /**
+     * Сравнение с актами сверки налоговой по годам и налогам: начислено, оплачено и сальдо на конец периода акта — в акте и в системе.
+     * Сальдо системы = сальдо на начало года (из акта прошлого года, иначе по цепочке) + начислено − оплачено.
+     *
+     * @return list<array<string,mixed>>
+     */
+    public static function actCompare(string $to): array
+    {
+        $acts = AccTaxAct::orderBy('year')->get();
+        if ($acts->isEmpty()) {
+            return [];
+        }
+        $s = Accounting::settings();
+        $firstYear = (int) $acts->min('year');
+        $from = min($firstYear.'-01', self::balanceFrom($s, $to));
+        $zero = BigDecimal::zero();
+        $sums = [];
+        $end = [];
+        foreach (self::walk($from, $to, $s) as $w) {
+            $y = (int) substr($w['period'], 0, 4);
+            foreach (self::CARRIED as $cat) {
+                $sums[$y][$cat]['due'] = ($sums[$y][$cat]['due'] ?? $zero)->plus($w['o']['due'][$cat]);
+                $sums[$y][$cat]['paid'] = ($sums[$y][$cat]['paid'] ?? $zero)->plus($w['o']['paid'][$cat]);
+                $end[$y][$cat] = $w['balance'][$cat];
+            }
+        }
+        $rows = [];
+        foreach ($acts as $a) {
+            $cat = FiledReports::ACT_CODES[$a->tax_code] ?? null;
+            if (! $cat || ! isset($sums[$a->year])) {
+                continue;
+            }
+            $ourDue = $sums[$a->year][$cat]['due'];
+            $ourPaid = $sums[$a->year][$cat]['paid'];
+            $actClosing = Accounting::dec($a->closing_debt)->minus($a->closing_overpay);
+            $rows[] = ['year' => $a->year, 'code' => $a->tax_code, 'cat' => $cat, 'name' => $a->tax_name, 'asOf' => $a->as_of->toDateString(), 'yearEnd' => (bool) $a->year_end,
+                'actDue' => (string) Accounting::dec($a->accrued)->toScale(2), 'ourDue' => (string) $ourDue->toScale(2), 'diffDue' => (string) $ourDue->minus($a->accrued)->toScale(2),
+                'actPaid' => (string) Accounting::dec($a->paid)->toScale(2), 'ourPaid' => (string) $ourPaid->toScale(2), 'diffPaid' => (string) $ourPaid->minus($a->paid)->toScale(2),
+                'actBalance' => (string) $actClosing->toScale(2), 'ourBalance' => (string) ($end[$a->year][$cat] ?? $zero)->toScale(2)];
+        }
+
+        return $rows;
     }
 
     /** Начало учёта сальдо: из настроек, иначе первый месяц с ведомостью, иначе сам месяц. */
@@ -277,7 +373,9 @@ final class TaxesService
                 $o['inps'] = Accounting::pct($o['gross'], $s['inpsRate']);
             }
             $o['due'] = [
-                'TAX_NDFL' => $o['filedDue'] ?? ($s['inpsWithinNdfl'] ? $o['ndfl']->minus($o['inps']) : $o['ndfl']),
+                // По сданному отчёту НДФЛ к уплате — за вычетом ИНПС (так начисляет налоговая: НДФЛ 12 % минус 0,1 % ИНПС)
+                'TAX_NDFL' => $o['filedDue'] !== null ? ($o['filed'] ? $o['filedDue']->minus($o['inps']) : $o['filedDue'])
+                    : ($s['inpsWithinNdfl'] ? $o['ndfl']->minus($o['inps']) : $o['ndfl']),
                 'TAX_INPS' => $o['inps'],
                 'TAX_ITPARK' => Accounting::pct($o['bank'], $s['itparkRate']),
                 'TAX_SOCIAL' => Accounting::pct($o['gross'], $s['socialRate']),

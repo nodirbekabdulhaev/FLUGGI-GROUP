@@ -5,6 +5,7 @@ namespace Tests\Feature\Accounting;
 use App\Models\AccAccount;
 use App\Models\AccPerson;
 use App\Models\AccPersonSalary;
+use App\Models\AccTaxAct;
 use App\Models\AccTaxFiling;
 use App\Models\AccTransaction;
 use App\Models\AuditLog;
@@ -13,8 +14,10 @@ use App\Services\Accounting\Accounting;
 use App\Services\Accounting\FiledReports;
 use App\Services\Accounting\TaxesService;
 use Illuminate\Http\UploadedFile;
+use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
+use PhpOffice\PhpSpreadsheet\Writer\Xls;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use Tests\TestCase;
 use ZipArchive;
@@ -89,6 +92,36 @@ class FiledReportsTest extends TestCase
         return new UploadedFile($path, $name, null, null, true);
     }
 
+    /**
+     * Акт сверки с налоговой (xls): по строке на налог — [код, название, сальдо на начало: долг, переплата, на конец: долг, переплата, начислено, оплачено].
+     *
+     * @param  list<array>  $taxes
+     */
+    private function act(int $year, array $taxes): UploadedFile
+    {
+        $book = new Spreadsheet;
+        $ws = $book->getActiveSheet();
+        $ws->setCellValueExplicit('A1', '"FLUGGI" MCHJнинг (СТИР: 300000001) '.$year.' йил учун 31.12.'.$year.'га Наманган вилояти, Наманган шаҳардаги СОЛИҚ ВА ЙИҒИМЛАР БЎЙИЧА СОЛИШТИРМА ДАЛОЛАТНОМА', DataType::TYPE_STRING);
+        $ws->setCellValueExplicit('A2', 'Шакллантирилган сана ва вақти: 09.11.2026 00:17:01    Манба: Электрон солиқ хизматлари портали', DataType::TYPE_STRING);
+        $ws->setCellValueExplicit('A4', 'Ҳудуд', DataType::TYPE_STRING);
+        foreach ($taxes as $i => $t) {
+            $r = 6 + $i;
+            $ws->setCellValueExplicit('A'.$r, 'Наманган', DataType::TYPE_STRING);
+            $ws->setCellValueExplicit('B'.$r, (string) $t[0], DataType::TYPE_STRING);
+            $ws->setCellValueExplicit('C'.$r, $t[1], DataType::TYPE_STRING);
+            // D..: начало (текущий долг, продлённый долг, пеня, продлённая пеня, переплата), конец (то же), начислено (расчёт, акт, разово, баёнлар, всего, пеня), оплачено (платежи, возвращено, пеня, всего)
+            $vals = [$t[2], 0, 0, 0, $t[3], $t[4], 0, 0, 0, $t[5], $t[6], 0, 0, 0, $t[6], 0, $t[7], 0, 0, $t[7]];
+            foreach ($vals as $k => $v) {
+                $ws->setCellValue(Coordinate::stringFromColumnIndex(4 + $k).$r, $v);
+            }
+        }
+        $path = tempnam(sys_get_temp_dir(), 'fra');
+        (new Xls($book))->save($path);
+        $this->tmp[] = $path;
+
+        return new UploadedFile($path, '09.11.2026_00-19-'.$year.'.xls', null, null, true);
+    }
+
     private function zip(array $uploads): UploadedFile
     {
         $path = tempnam(sys_get_temp_dir(), 'frz');
@@ -139,7 +172,7 @@ class FiledReportsTest extends TestCase
         // Февраль: сумма «за месяц» в файле 100 000, прирост с начала года — 80 000 (пересчёт у второго человека)
         $feb = TaxesService::forPeriod('2025-02');
         $this->assertTrue($feb['filed']);
-        $this->assertSame(['80000.00', '1000000.00'], [$feb['taxes']['TAX_NDFL']['due'], $feb['taxes']['TAX_NDFL']['base']]);
+        $this->assertSame(['79000.00', '1000000.00'], [$feb['taxes']['TAX_NDFL']['due'], $feb['taxes']['TAX_NDFL']['base']]);
         $nov = TaxesService::forPeriod('2024-11');
         $this->assertSame(['0.00', true], [$nov['taxes']['TAX_NDFL']['due'], $nov['filedCovered']]);
     }
@@ -183,18 +216,18 @@ class FiledReportsTest extends TestCase
         $this->assertSame('2024-10', $l['from']);
         $by = collect($l['rows'])->keyBy('period');
         $this->assertSame(['filed', 'covered', 'filed', 'filed', 'filed'], array_map(fn ($p) => $by[$p]['source'], ['2024-10', '2024-11', '2024-12', '2025-01', '2025-02']));
-        $this->assertSame(['100000.00', '100000.00', '50000.00', '350000.00', '280000.00'], array_map(fn ($p) => $by[$p]['balance'], ['2024-10', '2024-11', '2024-12', '2025-01', '2025-02']));
-        $this->assertSame(['680000.00', '400000.00', '280000.00'], [$l['totalDue'], $l['totalPaid'], $l['balance']]);
+        $this->assertSame(['99000.00', '99000.00', '48000.00', '345000.00', '274000.00'], array_map(fn ($p) => $by[$p]['balance'], ['2024-10', '2024-11', '2024-12', '2025-01', '2025-02']));
+        $this->assertSame(['674000.00', '400000.00', '274000.00'], [$l['totalDue'], $l['totalPaid'], $l['balance']]);
         $this->assertSame('100000.00', $by['2025-02']['filedMonth']);   // в файле «за месяц» 100 000, в сальдо — прирост 80 000
 
         // Остаток переходит в налоги месяца; сальдо на начало из настроек
         $t = TaxesService::forPeriod('2025-02')['taxes']['TAX_NDFL'];
-        $this->assertSame(['350000.00', '80000.00', '150000.00', '280000.00'], [$t['opening'], $t['due'], $t['paid'], $t['balance']]);
+        $this->assertSame(['345000.00', '79000.00', '150000.00', '274000.00'], [$t['opening'], $t['due'], $t['paid'], $t['balance']]);
         // Сверка по годам: как в личном кабинете налогоплательщика — начислено, оплачено, долг и переплата на конец года
         $y = TaxesService::yearly('2025-02');
         $this->assertSame([2024, 2025], array_keys($y['years']));
-        $this->assertSame(['300000.00', '250000.00', '52000.00', '0.00'], [$y['years']['2024']['ndflDue'], $y['years']['2024']['ndflPaid'], $y['years']['2024']['debt'], $y['years']['2024']['over']]);
-        $this->assertSame(['380000.00', '150000.00'], [$y['years']['2025']['ndflDue'], $y['years']['2025']['ndflPaid']]);
+        $this->assertSame(['298000.00', '250000.00', '50000.00', '0.00'], [$y['years']['2024']['ndflDue'], $y['years']['2024']['ndflPaid'], $y['years']['2024']['debt'], $y['years']['2024']['over']]);
+        $this->assertSame(['376000.00', '150000.00'], [$y['years']['2025']['ndflDue'], $y['years']['2025']['ndflPaid']]);
         $this->actingAsUser($this->accountant)->get('/accounting/taxes?period=2025-02')->assertOk()->assertSee(t('accounting.taxes.yearly.title'));
         // Учёт начат позже первого отчёта — предупреждение (иначе платежи прошлых начислений дают ложную переплату)
         Accounting::saveSettings(['taxBalanceFrom' => '2025-01']);
@@ -202,7 +235,7 @@ class FiledReportsTest extends TestCase
         Accounting::saveSettings(['taxBalanceFrom' => '', 'taxOpeningNdfl' => '-20000']);
         $this->assertSame('2024-10', TaxesService::ndflLedger('2025-02')['from']);
         Accounting::saveSettings(['taxOpeningNdfl' => '-20000']);
-        $this->assertSame('260000.00', TaxesService::ndflLedger('2025-02')['balance']);
+        $this->assertSame('254000.00', TaxesService::ndflLedger('2025-02')['balance']);
     }
 
     public function test_upload_preview_confirm_zip_and_permissions(): void
@@ -245,5 +278,63 @@ class FiledReportsTest extends TestCase
             $this->post('/accounting/filed-reports', ['files' => [$files[0]]])->assertForbidden();
             $this->post($url.'/confirm')->assertForbidden();
         }
+    }
+
+    public function test_reconciliation_acts_anchor_the_balance_and_are_compared(): void
+    {
+        $this->load();
+        $acc = AccAccount::create(['name' => 'Bank', 'kind' => 'BANK', 'currency' => 'UZS', 'opening_balance' => '0', 'crm_methods' => []]);
+        AccTransaction::create(['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'TAX_NDFL', 'amount' => '250000', 'date' => '2025-01-10', 'period' => '2024-12']);
+        $a2024 = $this->act(2024, [['46', 'Жисмоний шахслар даромадидан олинадиган солиқ', 0, 0, 20000, 0, 298000, 250000], ['101', 'ИНПС', 0, 0, 0, 0, 2000, 2000],
+            ['199', 'Пеня', 0, 0, 0, 0, 0, 0]]);
+        $a2025 = $this->act(2025, [['46', 'Жисмоний шахслар даромадидан олинадиган солиқ', 20000, 0, 0, 5000, 376000, 401000]]);
+        $r = FiledReports::read([$a2024, $a2025]);
+        $this->assertSame([], $r['errors']);
+        $this->assertSame([2024, 2025], array_keys($r['acts']));
+        $this->assertSame(['2024-12-31', true, '20000.00', '298000.00', '250000.00'], [$r['acts'][2024]['asOf'], $r['acts'][2024]['yearEnd'], $r['acts'][2024]['rows']['46']['closingDebt'], $r['acts'][2024]['rows']['46']['accrued'], $r['acts'][2024]['rows']['46']['paid']]);
+        FiledReports::apply([], $r['acts']);
+        $this->assertSame(4, AccTaxAct::count());
+        FiledReports::apply([], $r['acts']);   // повторная загрузка заменяет
+        $this->assertSame(4, AccTaxAct::count());
+
+        // Январь 2025: сальдо на начало года — из акта 2024 (долг 20 000), а не по цепочке с 2024-10
+        $l = TaxesService::ndflLedger('2025-02');
+        $by = collect($l['rows'])->keyBy('period');
+        $this->assertSame([true, '20000.00', '317000.00'], [$by['2025-01']['reset'], $by['2025-01']['opening'], $by['2025-01']['balance']]);
+        $this->assertFalse($by['2024-12']['reset']);
+        $t = TaxesService::forPeriod('2025-02');
+        $this->assertTrue($t['anchored']);
+        $this->assertSame(['2025-01', '317000.00', '79000.00'], [$t['balanceFrom'], $t['taxes']['TAX_NDFL']['opening'], $t['taxes']['TAX_NDFL']['due']]);
+
+        // Сверка по актам: 2024 сходится, в 2025 расхождения в начислено и оплачено
+        $c = collect(TaxesService::actCompare('2025-02'))->keyBy(fn ($x) => $x['year'].'-'.$x['code']);
+        $this->assertSame(['298000.00', '298000.00', '0.00', '250000.00', '250000.00', '0.00'], [$c['2024-46']['actDue'], $c['2024-46']['ourDue'], $c['2024-46']['diffDue'], $c['2024-46']['actPaid'], $c['2024-46']['ourPaid'], $c['2024-46']['diffPaid']]);
+        $this->assertSame(['376000.00', '376000.00', '0.00', '401000.00', '0.00', '-401000.00'], [$c['2025-46']['actDue'], $c['2025-46']['ourDue'], $c['2025-46']['diffDue'], $c['2025-46']['actPaid'], $c['2025-46']['ourPaid'], $c['2025-46']['diffPaid']]);
+        $this->assertSame(['-5000.00'], [$c['2025-46']['actBalance']]);
+        $this->assertFalse($c->has('2024-199'));   // пеня только в акте
+
+        // Ручное начало учёта отключает привязку к актам
+        Accounting::saveSettings(['taxBalanceFrom' => '2024-10']);
+        $this->assertFalse(TaxesService::forPeriod('2025-02')['anchored']);
+        Accounting::saveSettings(['taxBalanceFrom' => '']);
+
+        // Страницы на всех языках
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            foreach (['/accounting/filed-reports?to=2025-02', '/accounting/taxes?period=2025-02'] as $url) {
+                $html = $this->get($url)->assertOk()->getContent();
+                $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common|import)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale $url: ключ без перевода");
+            }
+        }
+        $this->get('/accounting/filed-reports?to=2025-02')->assertSee(t('accounting.filed.compareTitle'))->assertSee(t('accounting.filed.reset', ['sum' => money('20000.00')]));
+
+        // Загрузка актов через форму вместе с архивом
+        $resp = $this->post('/accounting/filed-reports', ['files' => [$a2024, $this->zip([$a2025])]]);
+        $url = $resp->headers->get('Location');
+        $this->get($url)->assertOk()->assertSee(t('accounting.filed.actsTitle'));
+        $this->post($url.'/confirm')->assertSessionHas('ok');
+        $this->assertSame(4, AccTaxAct::count());
+        $this->post('/accounting/filed-reports', ['files' => [UploadedFile::fake()->create('notact.xls', 1)]])->assertSessionHasErrors('files');
     }
 }
