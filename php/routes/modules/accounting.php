@@ -26,6 +26,7 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::get('/operations/export', [OperationsController::class, 'export'])->middleware($export)->name('operations.export');
     Route::post('/operations', [OperationsController::class, 'store'])->middleware($manage)->name('operations.store');
     Route::post('/operations/transfer', [OperationsController::class, 'transfer'])->middleware($manage)->name('operations.transfer');
+    Route::patch('/operations/{id}/category', [OperationsController::class, 'recategorize'])->whereUuid('id')->middleware($manage)->name('operations.recategorize');
     Route::delete('/operations/{id}', [OperationsController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('operations.destroy');
     Route::post('/import-crm', [OperationsController::class, 'importCrm'])->middleware($manage)->name('import');
 

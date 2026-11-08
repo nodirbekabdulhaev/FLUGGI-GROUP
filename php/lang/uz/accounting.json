@@ -113,7 +113,10 @@
     "articleHint": "Hisobga olinadi:",
     "manageArticles": "Oʻz kirim va chiqim moddalaringizni qoʻshish",
     "fromBank": "koʻchirmadan",
-    "deleteCrmHint": "Bu CRM dan kelgan toʻlov: u faqat buxgalteriyadan oʻchadi (CRM da qoladi) va bu yerga qayta tushmaydi."
+    "deleteCrmHint": "Bu CRM dan kelgan toʻlov: u faqat buxgalteriyadan oʻchadi (CRM da qoladi) va bu yerga qayta tushmaydi.",
+    "changeArticle": "Moddani almashtirish",
+    "changeArticleHint": "Soliq va ish haqi uchun oyni koʻrsating. CRM toʻlovlari va juft oʻtkazmalar bu yerda oʻzgarmaydi.",
+    "recategorized": "Operatsiya moddasi oʻzgartirildi"
   },
   "import": {
     "button": "CRM toʻlovlarini yuklash",
@@ -481,7 +484,8 @@
     "keywordsLong": "Soʻzlar juda koʻp — 500 belgigacha",
     "lastSalary": "Yagona maosh yozuvini oʻchirib boʻlmaydi — maoshni oʻzgartiring",
     "benefitPercent": "Foiz 100 dan oshmasligi kerak",
-    "benefitsEmpty": "Kamida bitta imtiyoz qoʻshing yoki «Imtiyozsiz»ni tanlang"
+    "benefitsEmpty": "Kamida bitta imtiyoz qoʻshing yoki «Imtiyozsiz»ni tanlang",
+    "recategorizeLocked": "CRM operatsiyasi va juft oʻtkazmani oʻzgartirib boʻlmaydi"
   },
   "annual": {
     "button": "Yillik hisobot",

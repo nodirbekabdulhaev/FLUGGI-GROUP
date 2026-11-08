@@ -173,6 +173,44 @@ final class OperationsService
         });
     }
 
+    /**
+     * Сменить статью операции (ошибочно разнесённый платёж). category — базовая статья, id своей статьи или перевод между своими счетами.
+     * Оплаты из CRM и парные переводы не меняются. Для налога и зарплаты нужен месяц, для зарплаты — человек.
+     */
+    public static function recategorize(string $id, string $category, ?string $period, ?string $personId): AccTransaction
+    {
+        return DB::transaction(function () use ($id, $category, $period, $personId) {
+            $row = AccTransaction::lockForUpdate()->findOrFail($id);
+            if ($row->payment_id || $row->transfer_group) {
+                throw new BusinessRule(t('accounting.errors.recategorizeLocked'));
+            }
+            $articleId = null;
+            if (Str::isUuid($category)) {
+                $articleId = $category;
+                $category = CategoriesService::forOperation($articleId, $row->direction)->base;
+            }
+            $transfer = $row->direction === 'IN' ? 'TRANSFER_IN' : 'TRANSFER_OUT';
+            if (! in_array($category, [...Accounting::manual($row->direction), $transfer], true)) {
+                throw new BusinessRule(t('accounting.errors.category'), ['category' => t('accounting.errors.category')]);
+            }
+            $tax = $category === 'SALARY' || in_array($category, Accounting::TAX_CATEGORIES, true);
+            $period = $tax ? (($period ?: $row->period) ?: $row->date->format('Y-m')) : null;
+            $personId = $category === 'SALARY' ? ($personId ?: $row->person_id) : null;
+            if ($category === 'SALARY' && ! $personId) {
+                throw new BusinessRule(t('accounting.errors.personRequired'), ['person_id' => t('accounting.errors.personRequired')]);
+            }
+            if ($category === 'SUPPLIER' && ! trim((string) $row->counterparty)) {
+                throw new BusinessRule(t('accounting.errors.counterpartyRequired'), ['category' => t('accounting.errors.counterpartyRequired')]);
+            }
+            $before = ['category' => $row->category, 'category_id' => $row->category_id, 'period' => $row->period, 'person_id' => $row->person_id];
+            $row->forceFill(['category' => $category, 'category_id' => $articleId, 'period' => $period, 'person_id' => $personId])->save();
+            $after = ['category' => $category, 'category_id' => $articleId, 'period' => $period, 'person_id' => $personId];
+            Audit::log('accounting.operation.recategorize', 'acc_transaction', $row->id, Audit::diff($before, $after, array_keys($after)));
+
+            return $row;
+        });
+    }
+
     /** Мягкое удаление с причиной; перевод удаляется целиком (обе строки). */
     public static function delete(string $id, string $reason): int
     {

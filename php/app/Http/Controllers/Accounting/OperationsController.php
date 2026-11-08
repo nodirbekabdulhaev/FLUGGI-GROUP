@@ -93,6 +93,23 @@ class OperationsController extends Controller
         return back()->with('ok', t('accounting.operations.created'));
     }
 
+    /** Сменить статью операции (ошибочно разнесённый платёж из выписки). */
+    public function recategorize(Request $request, string $id): RedirectResponse
+    {
+        $data = $request->validate([
+            'category' => ['required', function (string $attribute, mixed $value, \Closure $fail) {
+                if (! is_string($value) || (! in_array($value, [...Accounting::categories(), 'TRANSFER_IN', 'TRANSFER_OUT'], true) && ! Str::isUuid($value))) {
+                    $fail(t('accounting.errors.category'));
+                }
+            }],
+            'period' => ['nullable', 'regex:'.Accounting::PERIOD_RE],
+            'person_id' => ['nullable', 'uuid'],
+        ]);
+        OperationsService::recategorize($id, $data['category'], $data['period'] ?? null, $data['person_id'] ?? null);
+
+        return back()->with('ok', t('accounting.operations.recategorized'));
+    }
+
     public function transfer(Request $request): RedirectResponse
     {
         Input::normalize($request, ['amount', 'amount_to']);

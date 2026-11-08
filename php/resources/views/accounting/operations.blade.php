@@ -18,7 +18,7 @@
         // Своя статья → базовая категория (для полей формы, зависящих от категории)
         $articleBases = collect($articles)->flatMap(fn ($groups) => collect($groups)->flatten(1)->mapWithKeys(fn ($a) => [$a->id => $a->base]))->all();
     @endphp
-    <div x-data="{ delId: null, delText: '', delCrm: false }">
+    <div x-data="{ delId: null, delText: '', delCrm: false, recId: null, recText: '', recDir: 'OUT', recCat: '', recPeriod: '', recPerson: '', recBase: '' }">
     <x-page-header :title="t('accounting.operations.title')" :subtitle="t('accounting.operations.subtitle')">
         @if ($canExport)
             <a href="/accounting/operations/export{{ $exportQs ? '?'.$exportQs : '' }}" class="btn btn-outline"><x-icon name="download" /> {{ t('accounting.export') }}</a>
@@ -97,6 +97,10 @@
                             <td class="text-right">@include('accounting.partials.op-row', ['op' => $op])</td>
                             @if ($canManage)
                                 <td class="text-right">
+                                        @unless ($op->payment_id || $op->transfer_group)
+                                            <button type="button" class="btn btn-ghost btn-icon" aria-label="{{ t('accounting.operations.changeArticle') }}" title="{{ t('accounting.operations.changeArticle') }}"
+                                                    @click="recId = @js($op->id); recDir = @js($op->direction); recCat = @js($op->category_id ?? $op->category); recBase = @js($op->category); recPeriod = @js($op->period ?? ''); recPerson = @js($op->person_id ?? ''); recText = @js(d($op->date).' · '.$op->categoryLabel().' · '.money($op->amount, $op->account?->currency ?? 'UZS')); $dispatch('open-modal', 'acc-op-recat')"><x-icon name="edit" /></button>
+                                        @endunless
                                         <button type="button" class="btn btn-ghost btn-icon" aria-label="{{ t('common.delete') }}"
                                                 @click="delId = @js($op->id); delText = @js(d($op->date).' · '.$op->categoryLabel().' · '.money($op->amount, $op->account?->currency ?? 'UZS')); delCrm = @js((bool) $op->payment_id); $dispatch('open-modal', 'acc-op-delete')"><x-icon name="trash" /></button>
                                 </td>
@@ -117,6 +121,9 @@
                         </div>
                         <div class="flex flex-col items-end gap-1">
                             @include('accounting.partials.op-row', ['op' => $op])
+                            @if ($canManage && ! $op->payment_id && ! $op->transfer_group)
+                                <button type="button" class="btn btn-ghost btn-sm" @click="recId = @js($op->id); recDir = @js($op->direction); recCat = @js($op->category_id ?? $op->category); recBase = @js($op->category); recPeriod = @js($op->period ?? ''); recPerson = @js($op->person_id ?? ''); recText = @js(d($op->date).' · '.$op->categoryLabel()); $dispatch('open-modal', 'acc-op-recat')">{{ t('accounting.operations.changeArticle') }}</button>
+                            @endif
                             @if ($canManage)
                                 <button type="button" class="btn btn-ghost btn-sm" @click="delId = @js($op->id); delText = @js(d($op->date).' · '.$op->categoryLabel()); delCrm = @js((bool) $op->payment_id); $dispatch('open-modal', 'acc-op-delete')">{{ t('common.delete') }}</button>
                             @endif
@@ -212,6 +219,38 @@
                 </div>
             </form>
             @endif
+        </x-modal>
+
+        <x-modal name="acc-op-recat" :title="t('accounting.operations.changeArticle')">
+            <form method="POST" :action="'/accounting/operations/' + recId + '/category'" class="space-y-4">
+                @csrf @method('PATCH')
+                <p class="text-sm" x-text="recText"></p>
+                @foreach (['IN', 'OUT'] as $d)
+                    <select name="category" class="input" aria-label="{{ t('accounting.fields.category') }}" x-show="recDir === @js($d)" :disabled="recDir !== @js($d)" x-model="recCat"
+                            @change="recBase = $event.target.selectedOptions[0].dataset.base">
+                        <optgroup label="{{ t('accounting.operations.baseCategories') }}">
+                            @foreach ([...Accounting::manual($d), $d === 'IN' ? 'TRANSFER_IN' : 'TRANSFER_OUT'] as $c)<option value="{{ $c }}" data-base="{{ $c }}">{{ t('accounting.category.'.$c) }}</option>@endforeach
+                        </optgroup>
+                        @foreach ($articles[$d] as $base => $list)
+                            <optgroup label="{{ t('accounting.operations.articlesOf', ['base' => t('accounting.category.'.$base)]) }}">
+                                @foreach ($list as $a)<option value="{{ $a->id }}" data-base="{{ $base }}">{{ $a->name }}</option>@endforeach
+                            </optgroup>
+                        @endforeach
+                    </select>
+                @endforeach
+                <p class="hint">{{ t('accounting.operations.changeArticleHint') }}</p>
+                <div x-show="recBase === 'SALARY'" x-cloak>
+                    <x-select name="person_id" :label="t('accounting.fields.person')" :placeholder="'—'" :options="$people->mapWithKeys(fn ($p) => [$p->id => $p->full_name])->all()" />
+                </div>
+                <div x-show="recBase === 'SALARY' || recBase.startsWith('TAX_')" x-cloak>
+                    <label class="label" for="rec-period">{{ t('accounting.fields.period') }}</label>
+                    <input id="rec-period" type="month" name="period" class="input" x-model="recPeriod">
+                </div>
+                <div class="flex justify-end gap-2">
+                    <button type="button" class="btn btn-outline" @click="$dispatch('close-modal', 'acc-op-recat')">{{ t('common.cancel') }}</button>
+                    <button class="btn btn-primary">{{ t('common.save') }}</button>
+                </div>
+            </form>
         </x-modal>
 
         <x-modal name="acc-op-delete" :title="t('accounting.operations.deleteTitle')" :open="$errors->has('reason')">

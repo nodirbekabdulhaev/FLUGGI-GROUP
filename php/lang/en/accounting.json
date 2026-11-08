@@ -113,7 +113,10 @@
     "articleHint": "Counted as:",
     "manageArticles": "Add your own income and expense items",
     "fromBank": "from statement",
-    "deleteCrmHint": "This is a CRM payment: it is removed from accounting only (stays in the CRM) and will not be imported again."
+    "deleteCrmHint": "This is a CRM payment: it is removed from accounting only (stays in the CRM) and will not be imported again.",
+    "changeArticle": "Change article",
+    "changeArticleHint": "Set the month for taxes and salary. CRM payments and paired transfers are not changed here.",
+    "recategorized": "Operation article changed"
   },
   "import": {
     "button": "Load payments from CRM",
@@ -481,7 +484,8 @@
     "keywordsLong": "Too many keywords — up to 500 characters",
     "lastSalary": "The only salary record cannot be deleted — change the salary instead",
     "benefitPercent": "The percent cannot exceed 100",
-    "benefitsEmpty": "Add at least one benefit or choose «No benefits»"
+    "benefitsEmpty": "Add at least one benefit or choose «No benefits»",
+    "recategorizeLocked": "A CRM payment or a paired transfer cannot be changed"
   },
   "annual": {
     "button": "Annual report",

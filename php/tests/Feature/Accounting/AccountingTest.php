@@ -16,6 +16,7 @@ use App\Models\User;
 use App\Services\Accounting\Accounting;
 use App\Services\Accounting\AccountsService;
 use App\Services\Accounting\CrmImportService;
+use App\Services\Accounting\OperationsService;
 use App\Services\Accounting\OverviewService;
 use App\Services\Accounting\TaxesService;
 use App\Services\Accounting\TaxPayrollService;
@@ -375,6 +376,50 @@ class AccountingTest extends TestCase
             ->assertSee(t('accounting.taxes.regimeEarlier', ['turnover' => '4', 'ndfl' => '12', 'social' => '12']));
         $this->get('/accounting/settings')->assertOk()->assertSee('earlierTurnoverRate', false);
         $this->put('/accounting/settings', ['ndflBaseRate' => '12', 'inpsRate' => '0.1', 'itparkRate' => '1', 'regimeFrom' => '2023-13'])->assertSessionHasErrors('regimeFrom');
+    }
+
+    public function test_change_article_of_an_operation(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        $person = AccPerson::create(['full_name' => 'Aliyev Aziz', 'monthly_salary' => '5000000']);
+        $op = $this->op($bank, 'OUT', 'OTHER', '5687748.25', '2024-10-03', ['counterparty' => '"FLUGGI" MChJ', 'description' => 'ПЕРЕВОД СО ВТОРИЧНЫХ СЧЕТОВ']);
+        $this->actingAsUser($this->accountant);
+        $this->get('/accounting/operations')->assertOk()->assertSee(t('accounting.operations.changeArticle'));
+
+        // Свои переводы — не расход
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'TRANSFER_OUT'])->assertSessionHasNoErrors()->assertSessionHas('ok');
+        $this->assertSame('TRANSFER_OUT', $op->refresh()->category);
+        // Налог: месяц по дате, если не указан; в «прочий расход» — месяц очищается
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'TAX_NDFL'])->assertSessionHasNoErrors();
+        $this->assertSame(['TAX_NDFL', '2024-10'], [$op->refresh()->category, $op->period]);
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'TAX_NDFL', 'period' => '2024-09']);
+        $this->assertSame('2024-09', $op->refresh()->period);
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER']);
+        $this->assertSame(['OTHER', null], [$op->refresh()->category, $op->period]);
+        // Зарплата требует человека
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'SALARY'])->assertSessionHas('error');
+        $this->assertSame('OTHER', $op->refresh()->category);
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'SALARY', 'person_id' => $person->id, 'period' => '2024-10'])->assertSessionHasNoErrors();
+        $this->assertSame(['SALARY', $person->id, '2024-10'], [$op->refresh()->category, $op->person_id, $op->period]);
+        // Приходная статья расходу не подходит, неизвестная — тоже
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER_INCOME'])->assertSessionHas('error');
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'NOPE'])->assertSessionHasErrors('category');
+        $this->assertTrue(AuditLog::where('action', 'accounting.operation.recategorize')->exists());
+
+        // Оплаты из CRM и парные переводы не меняются
+        $crm = $this->op($bank, 'IN', 'CLIENT_PAYMENT', '1000', '2024-10-04', ['payment_id' => $this->payment()->id]);
+        $this->patch("/accounting/operations/{$crm->id}/category", ['category' => 'OTHER_INCOME'])->assertSessionHas('error');
+        $this->assertSame('CLIENT_PAYMENT', $crm->refresh()->category);
+        $acc2 = $this->account(['name' => 'Bank 2']);
+        [$out] = OperationsService::transfer(['from_id' => $bank->id, 'to_id' => $acc2->id, 'amount' => '100', 'date' => '2024-10-05', 'description' => null]);
+        $this->patch("/accounting/operations/{$out->id}/category", ['category' => 'OTHER'])->assertSessionHas('error');
+        $this->assertSame('TRANSFER_OUT', $out->refresh()->category);
+
+        // Другие роли не меняют
+        foreach (['ROP', 'MANAGER'] as $role) {
+            $this->actingAsUser($this->user($role));
+            $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER'])->assertForbidden();
+        }
     }
 
     public function test_taxes_due_paid_and_reports(): void
