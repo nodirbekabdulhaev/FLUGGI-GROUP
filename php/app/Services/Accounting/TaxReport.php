@@ -109,7 +109,7 @@ final class TaxReport
     /**
      * Отчёт за месяц YYYY-MM.
      *
-     * @return array{period:string,year:int,month:int,rows:list<array>,totals:array,slots:int,warnings:list<string>,filename:string,drafts:int}
+     * @return array{period:string,year:int,month:int,rows:list<array>,totals:array,slots:int,warnings:list<string>,skipped:list<array>,filename:string,drafts:int}
      */
     public static function build(string $period): array
     {
@@ -124,6 +124,7 @@ final class TaxReport
         $people = AccPerson::with('salaries')->get()->sortBy(fn ($p) => mb_strtoupper(self::name($p)))->values();
         $zero = BigDecimal::zero();
         $rows = [];
+        $skipped = [];
         $slots = 0;
         foreach ($people as $p) {
             // По окладу — активные и уволенные (дата увольнения ограничивает месяцы); неактивные без даты — только по ведомости
@@ -164,6 +165,12 @@ final class TaxReport
             }
             $employedNow = $bySalary && TaxPayrollService::employedDays($p->hired_at?->toDateString(), $p->fired_at?->toDateString(), $period) !== null;
             if (! $sum['ytdIncome']->isPositive() && ! $employedNow) {
+                // Подсказка, почему человека нет в отчёте: неактивен без даты увольнения или принят позже месяца
+                $reason = ! $bySalary ? 'inactive' : ($p->hired_at && $p->hired_at->toDateString() > $monthEnd ? 'hiredLater' : null);
+                if ($reason) {
+                    $skipped[] = ['personId' => $p->id, 'name' => self::name($p), 'reason' => $reason, 'hiredAt' => $p->hired_at?->format('d.m.Y')];
+                }
+
                 continue;
             }
             $slots = max($slots, count($ben));
@@ -226,7 +233,7 @@ final class TaxReport
         $drafts = AccPayroll::where('period', $period)->where('status', 'DRAFT')->count();
 
         return ['period' => $period, 'year' => $year, 'month' => $month, 'rows' => $rows, 'totals' => $totals, 'slots' => $slots,
-            'warnings' => $warnings, 'drafts' => $drafts, 'filename' => self::filename($period, $s)];
+            'warnings' => $warnings, 'skipped' => $skipped, 'drafts' => $drafts, 'filename' => self::filename($period, $s)];
     }
 
     /** ФИО для отчёта: как в паспорте (латиницей), иначе ФИО карточки. */

@@ -77,6 +77,8 @@ class TaxReportTest extends TestCase
             $this->assertNull($this->row($r, $p->id), $p->full_name);
         }
         $this->assertCount(4, $r['rows']);
+        // Кто не попал и почему (уволенный до начала года не показывается)
+        $this->assertSame([[$future->id, 'hiredLater'], [$off->id, 'inactive']], collect($r['skipped'])->sortBy('reason')->map(fn ($x) => [$x['personId'], $x['reason']])->values()->all());
 
         // Остальные столбцы: имя как в паспорте, дата рабочего места, коды
         $ra = $this->row($r, $a->id);
@@ -171,6 +173,7 @@ class TaxReportTest extends TestCase
         Accounting::saveSettings(['taxReportCode' => '555000111']);
         $a = $this->person(['full_name' => 'FAYL SINOV ALIYEVICH', 'pinfl' => '01234567890123', 'monthly_salary' => '4500000', 'hired_at' => '2025-01-01', 'position' => 'Директор']);
         $b = $this->person(['full_name' => 'Кириллица Тест', 'monthly_salary' => '1400000', 'hired_at' => '2026-06-01', 'position' => null]);
+        $this->person(['full_name' => 'OFF XODIM', 'monthly_salary' => '1000000', 'is_active' => false]);
 
         $r = TaxReport::build('2026-09');
         $this->assertSame([], $this->row($r, $a->id)['warnings']);
@@ -187,7 +190,7 @@ class TaxReportTest extends TestCase
                 $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale $url: ключ без перевода");
             }
         }
-        $this->get('/accounting/tax-report?period=2026-09')->assertSee('FAYL SINOV ALIYEVICH')->assertSee('01234567890123')->assertSee('/accounting/tax-report/download?period=2026-09', false);
+        $this->get('/accounting/tax-report?period=2026-09')->assertSee('FAYL SINOV ALIYEVICH')->assertSee('01234567890123')->assertSee('OFF XODIM')->assertSee('/accounting/tax-report/download?period=2026-09', false);
 
         // Файл: шаблон сохранён, данные с 15-й строки
         $res = $this->get('/accounting/tax-report/download?period=2026-09')->assertOk();

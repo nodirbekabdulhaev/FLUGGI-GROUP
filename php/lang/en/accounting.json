@@ -487,6 +487,11 @@
     },
     "fromSalary": "Months taken from the salary (no payroll): {count}",
     "how": "Month income comes from the payroll if it was calculated; otherwise the salary effective in the month (prorated by days for a mid-month hire or termination). Year to date is the sum of January…report month. Tax = rate × (income − benefits); with the IT Park 37.5% benefit it is 7.5% of income.",
-    "codes": "Codes: person type 1 — resident, 2 — non-resident; status 1 — working, 2 — contract terminated; contract 1 — main, 2 — part-time, 3 — civil-law; workplace 1 — permanent, 3 — new."
+    "codes": "Codes: person type 1 — resident, 2 — non-resident; status 1 — working, 2 — contract terminated; contract 1 — main, 2 — part-time, 3 — civil-law; workplace 1 — permanent, 3 — new.",
+    "skipped": {
+      "title": "Not in the report ({count}):",
+      "inactive": "disabled in the people list with no dismissal date. If the person works here, turn on «Active»; if they left, set the dismissal date (months before it are reported).",
+      "hiredLater": "hire date {date} is after the report month. If they worked earlier, fix the hire date."
+    }
   }
 }

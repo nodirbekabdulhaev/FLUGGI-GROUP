@@ -39,6 +39,17 @@
     @if ($drafts)<p class="mb-2 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.draftsWarning', ['count' => $drafts]) }}</p>@endif
     @if ($rowWarnings)<p class="mb-2 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxReport.rowWarnings', ['count' => $rowWarnings]) }}</p>@endif
 
+    @if ($skipped)
+        <div class="mb-3 rounded-2xl border border-warning/30 bg-warning/5 p-3 text-sm" data-testid="tax-skipped">
+            <p class="mb-1 flex items-center gap-2 font-medium"><x-icon name="alert" class="text-warning" />{{ t('accounting.taxReport.skipped.title', ['count' => count($skipped)]) }}</p>
+            <ul class="grid gap-1">
+                @foreach ($skipped as $sk)
+                    <li>@if ($canManage)<a class="link font-medium" href="/accounting/people?edit={{ $sk['personId'] }}">{{ $sk['name'] }}</a>@else<span class="font-medium">{{ $sk['name'] }}</span>@endif
+                        — {{ t('accounting.taxReport.skipped.'.$sk['reason'], ['date' => $sk['hiredAt'] ?? '']) }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
     @if (! $rows)
         <div class="card"><x-empty icon="file" :title="t('accounting.taxReport.empty')">{{ t('accounting.taxReport.emptyText') }} <a class="link" href="/accounting/people">{{ t('accounting.tabs.people') }}</a></x-empty></div>
     @else

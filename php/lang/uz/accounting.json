@@ -487,6 +487,11 @@
     },
     "fromSalary": "Maosh boʻyicha oylar (vedomostsiz): {count}",
     "how": "Oylik daromad — ish haqi vedomostidan, agar u hisoblangan boʻlsa; aks holda oyda amal qilgan maosh (oy oʻrtasida qabul yoki boʻshatishda — kunlarga mutanosib). Yil boshidan — yanvar…hisobot oyi yigʻindisi. JShDS = stavka × (daromad − imtiyozlar); IT Park 37,5% imtiyozi bilan — daromadning 7,5%.",
-    "codes": "Kodlar: shaxs turi 1 — rezident, 2 — norezident; holati 1 — ishlamoqda, 2 — shartnoma bekor qilingan; shartnoma 1 — asosiy, 2 — oʻrindosh, 3 — FHT; ish oʻrni 1 — doimiy, 3 — yangi."
+    "codes": "Kodlar: shaxs turi 1 — rezident, 2 — norezident; holati 1 — ishlamoqda, 2 — shartnoma bekor qilingan; shartnoma 1 — asosiy, 2 — oʻrindosh, 3 — FHT; ish oʻrni 1 — doimiy, 3 — yangi.",
+    "skipped": {
+      "title": "Hisobotga kirmaganlar ({count}):",
+      "inactive": "odamlar roʻyxatida oʻchirilgan va boʻshatilgan sanasi yoʻq. Agar ishlayotgan boʻlsa — «Faol»ni yoqing; ketgan boʻlsa — boʻshatilgan sanani kiriting (undan oldingi oylar hisobotga kiradi).",
+      "hiredLater": "ishga qabul sanasi {date} hisobot oyidan keyin. Agar avvalroq ishlagan boʻlsa — qabul sanasini tuzating."
+    }
   }
 }
