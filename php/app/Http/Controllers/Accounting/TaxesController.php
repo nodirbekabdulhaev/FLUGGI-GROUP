@@ -20,6 +20,7 @@ class TaxesController extends Controller
 
         return view('accounting.taxes', TaxesService::forPeriod($period) + [
             'payAccount' => TaxesService::payAccount(),
+            'yearly' => TaxesService::yearly($period),
             'canManage' => access()->can('accounting.manage'),
             'canExport' => access()->can('export.run'),
         ]);

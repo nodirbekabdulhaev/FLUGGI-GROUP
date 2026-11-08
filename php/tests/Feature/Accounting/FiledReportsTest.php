@@ -190,6 +190,12 @@ class FiledReportsTest extends TestCase
         // Остаток переходит в налоги месяца; сальдо на начало из настроек
         $t = TaxesService::forPeriod('2025-02')['taxes']['TAX_NDFL'];
         $this->assertSame(['350000.00', '80000.00', '150000.00', '280000.00'], [$t['opening'], $t['due'], $t['paid'], $t['balance']]);
+        // Сверка по годам: как в личном кабинете налогоплательщика — начислено, оплачено, долг и переплата на конец года
+        $y = TaxesService::yearly('2025-02');
+        $this->assertSame([2024, 2025], array_keys($y['years']));
+        $this->assertSame(['300000.00', '250000.00', '52000.00', '0.00'], [$y['years']['2024']['ndflDue'], $y['years']['2024']['ndflPaid'], $y['years']['2024']['debt'], $y['years']['2024']['over']]);
+        $this->assertSame(['380000.00', '150000.00'], [$y['years']['2025']['ndflDue'], $y['years']['2025']['ndflPaid']]);
+        $this->actingAsUser($this->accountant)->get('/accounting/taxes?period=2025-02')->assertOk()->assertSee(t('accounting.taxes.yearly.title'));
         Accounting::saveSettings(['taxOpeningNdfl' => '-20000']);
         $this->assertSame('260000.00', TaxesService::ndflLedger('2025-02')['balance']);
     }

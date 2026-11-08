@@ -136,6 +136,62 @@ final class TaxesService
         return ['rows' => $rows, 'from' => $from, 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $running->toScale(2)];
     }
 
+    /**
+     * Сверка с личным кабинетом налогоплательщика по годам: начислено и оплачено по всем налогам, долг и переплата на конец года
+     * (как «Ҳисобланган / Тўланган / Қарздорлик / Ортиқча тўлов»). Остаток считается по каждому налогу отдельно и переходит из года в год.
+     *
+     * @return array{from:string,years:array<string,array<string,string>>,total:array<string,string>}
+     */
+    public static function yearly(string $to): array
+    {
+        $s = Accounting::settings();
+        $from = self::balanceFrom($s, $to);
+        $zero = BigDecimal::zero();
+        if ($from > $to) {
+            return ['from' => $from, 'years' => [], 'total' => []];
+        }
+        $bal = array_fill_keys(self::CARRIED, $zero);
+        foreach (Accounting::OPENING_KEYS as $cat => $key) {
+            $bal[$cat] = Accounting::dec($s[$key]);
+        }
+        $years = [];
+        $months = self::monthly($from, $to);
+        $keys = array_keys($months);
+        foreach ($months as $m => $o) {
+            $y = substr($m, 0, 4);
+            $years[$y] ??= ['due' => $zero, 'paid' => $zero, 'ndflDue' => $zero, 'ndflPaid' => $zero, 'inpsDue' => $zero, 'inpsPaid' => $zero, 'itparkDue' => $zero, 'itparkPaid' => $zero,
+                'otherDue' => $zero, 'otherPaid' => $zero, 'debt' => $zero, 'over' => $zero];
+            foreach (self::CARRIED as $cat) {
+                $bal[$cat] = $bal[$cat]->plus($o['due'][$cat])->minus($o['paid'][$cat]);
+                $years[$y]['due'] = $years[$y]['due']->plus($o['due'][$cat]);
+                $years[$y]['paid'] = $years[$y]['paid']->plus($o['paid'][$cat]);
+            }
+            $years[$y]['paid'] = $years[$y]['paid']->plus($o['paid']['TAX_OTHER']);
+            $years[$y]['otherPaid'] = $years[$y]['otherPaid']->plus($o['paid']['TAX_OTHER']);
+            $years[$y]['ndflDue'] = $years[$y]['ndflDue']->plus($o['due']['TAX_NDFL']);
+            $years[$y]['ndflPaid'] = $years[$y]['ndflPaid']->plus($o['paid']['TAX_NDFL']);
+            $years[$y]['inpsDue'] = $years[$y]['inpsDue']->plus($o['due']['TAX_INPS']);
+            $years[$y]['inpsPaid'] = $years[$y]['inpsPaid']->plus($o['paid']['TAX_INPS']);
+            $years[$y]['itparkDue'] = $years[$y]['itparkDue']->plus($o['due']['TAX_ITPARK'])->plus($o['due']['TAX_SOCIAL'])->plus($o['due']['TAX_TURNOVER']);
+            $years[$y]['itparkPaid'] = $years[$y]['itparkPaid']->plus($o['paid']['TAX_ITPARK'])->plus($o['paid']['TAX_SOCIAL'])->plus($o['paid']['TAX_TURNOVER']);
+            $next = $keys[array_search($m, $keys, true) + 1] ?? null;
+            if ($next === null || substr($next, 0, 4) !== $y) {
+                foreach ($bal as $b) {
+                    $years[$y]['debt'] = $years[$y]['debt']->plus(BigDecimal::max($b, $zero));
+                    $years[$y]['over'] = $years[$y]['over']->plus(BigDecimal::max($b->negated(), $zero));
+                }
+            }
+        }
+        $total = ['due' => $zero, 'paid' => $zero];
+        foreach ($years as $y) {
+            $total['due'] = $total['due']->plus($y['due']);
+            $total['paid'] = $total['paid']->plus($y['paid']);
+        }
+        $fmt = fn (array $row) => array_map(fn (BigDecimal $v) => (string) $v->toScale(2), $row);
+
+        return ['from' => $from, 'years' => array_map($fmt, $years), 'total' => $fmt($total)];
+    }
+
     /** Начало учёта сальдо: из настроек, иначе первый месяц с ведомостью, иначе сам месяц. */
     public static function balanceFrom(array $s, string $period): string
     {

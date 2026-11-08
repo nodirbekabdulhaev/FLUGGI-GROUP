@@ -61,5 +61,28 @@
         @endforeach
         </tbody>
     </x-table>
+    @if ($yearly['years'])
+        <x-table class="mt-6">
+            <caption class="px-3 pb-2 pt-3 text-left text-sm font-semibold">{{ t('accounting.taxes.yearly.title') }}<span class="block text-xs font-normal text-muted-foreground">{{ t('accounting.taxes.yearly.hint', ['month' => \App\Services\Accounting\Accounting::monthLabel($yearly['from'])]) }}</span></caption>
+            <thead><tr>
+                <th>{{ t('accounting.taxes.yearly.year') }}</th><th class="text-right">{{ t('accounting.taxes.yearly.accrued') }}</th><th class="text-right">{{ t('accounting.taxes.yearly.paid') }}</th>
+                <th class="text-right">{{ t('accounting.taxes.yearly.diff') }}</th><th class="text-right">{{ t('accounting.category.TAX_NDFL') }}</th><th class="text-right">{{ t('accounting.taxes.yearly.debt') }}</th><th class="text-right">{{ t('accounting.taxes.yearly.over') }}</th>
+            </tr></thead>
+            <tbody>
+            @foreach (collect($yearly['years'])->sortKeysDesc() as $y => $r)
+                <tr>
+                    <td class="font-medium">{{ $y }}</td>
+                    <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['due']) }}</td>
+                    <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['paid']) }}@if (BigDecimal::of($r['otherPaid'])->isPositive())<span class="block text-xs text-muted-foreground">{{ t('accounting.taxes.yearly.inOther', ['sum' => money($r['otherPaid'])]) }}</span>@endif</td>
+                    <td @class(['whitespace-nowrap text-right font-medium tabular-nums', 'text-warning' => BigDecimal::of($r['due'])->isGreaterThan($r['paid']), 'text-success' => BigDecimal::of($r['due'])->isLessThan($r['paid'])])>{{ money((string) BigDecimal::of($r['due'])->minus($r['paid'])) }}</td>
+                    <td class="whitespace-nowrap text-right text-xs tabular-nums text-muted-foreground">{{ money($r['ndflDue']) }} / {{ money($r['ndflPaid']) }}</td>
+                    <td class="whitespace-nowrap text-right tabular-nums text-warning">{{ money($r['debt']) }}</td>
+                    <td class="whitespace-nowrap text-right tabular-nums text-success">{{ money($r['over']) }}</td>
+                </tr>
+            @endforeach
+            </tbody>
+        </x-table>
+        <p class="mt-2 text-xs text-muted-foreground">{{ t('accounting.taxes.yearly.explain') }}</p>
+    @endif
     <p class="mt-3 text-xs text-muted-foreground">{{ t('accounting.taxes.hint', ['ndfl' => $settings['ndflRate'], 'inps' => $settings['inpsRate'], 'itpark' => $settings['itparkRate']]) }}</p>
 @endsection

@@ -399,7 +399,19 @@
     "carryLater": "Debt and overpayment tracking starts in {month} — this month is calculated on its own.",
     "overpaid": "overpaid",
     "fromSalary": "No payroll for this month — personal income tax and INPS are calculated from salaries (salary history, hire and dismissal dates).",
-    "regimeEarlier": "Month before IT Park — taxes under the earlier regime (turnover tax {turnover}%, income tax {ndfl}%, social tax {social}%)."
+    "regimeEarlier": "Month before IT Park — taxes under the earlier regime (turnover tax {turnover}%, income tax {ndfl}%, social tax {social}%).",
+    "yearly": {
+      "title": "Reconciliation with the tax office by year",
+      "hint": "Accrued and paid for all taxes since {month}; debt and overpayment at year end per tax (like the taxpayer account).",
+      "year": "Year",
+      "accrued": "Accrued",
+      "paid": "Paid",
+      "diff": "Difference",
+      "debt": "Debt",
+      "over": "Overpayment",
+      "inOther": "incl. «Other taxes»: {sum}",
+      "explain": "The income tax column is accrued / paid. If payments go as one lump (a single tax payment) and are labelled as one tax in the statement, individual taxes will be skewed — look at the «Difference» for all taxes: it does not depend on how payments are split."
+    }
   },
   "settings": {
     "title": "Accounting settings",

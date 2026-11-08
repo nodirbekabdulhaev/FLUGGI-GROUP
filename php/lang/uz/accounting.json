@@ -399,7 +399,19 @@
     "carryLater": "Qarz va ortiqcha toʻlov hisobi {month} dan boshlanadi — bu oy alohida hisoblanadi.",
     "overpaid": "ortiqcha toʻlov",
     "fromSalary": "Bu oy uchun qaydnoma yoʻq — JShDS va INPS odamlarning maoshlari boʻyicha hisoblandi (maoshlar tarixi, qabul va boʻshatish sanalari).",
-    "regimeEarlier": "IT Parkga oʻtishdan oldingi oy — soliqlar avvalgi rejim boʻyicha (aylanma soligʻi {turnover}%, JShDS {ndfl}%, ijtimoiy soliq {social}%)."
+    "regimeEarlier": "IT Parkga oʻtishdan oldingi oy — soliqlar avvalgi rejim boʻyicha (aylanma soligʻi {turnover}%, JShDS {ndfl}%, ijtimoiy soliq {social}%).",
+    "yearly": {
+      "title": "Soliq bilan yillar boʻyicha solishtirish",
+      "hint": "{month} dan barcha soliqlar boʻyicha hisoblangan va toʻlangan; qarz va ortiqcha toʻlov — yil oxiriga har bir soliq alohida (soliq toʻlovchining shaxsiy kabinetidagidek).",
+      "year": "Yil",
+      "accrued": "Hisoblangan",
+      "paid": "Toʻlangan",
+      "diff": "Farq",
+      "debt": "Qarz",
+      "over": "Ortiqcha toʻlov",
+      "inOther": "shu jumladan «Boshqa soliqlar»: {sum}",
+      "explain": "JShDS ustuni — hisoblangan / toʻlangan. Toʻlovlar bitta toʻlov (yagona soliq toʻlovi) bilan oʻtsa va koʻchirmada bitta soliq deb yozilsa, alohida soliqlar boʻyicha buzilish boʻladi — barcha soliqlar boʻyicha «Farq»ga qarang: u toʻlovlar qanday taqsimlanganiga bogʻliq emas."
+    }
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",
