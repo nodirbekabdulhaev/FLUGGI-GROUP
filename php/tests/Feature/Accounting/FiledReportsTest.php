@@ -11,7 +11,9 @@ use App\Models\AccTransaction;
 use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\Accounting\Accounting;
+use App\Services\Accounting\BankRules;
 use App\Services\Accounting\FiledReports;
+use App\Services\Accounting\OtherTaxes;
 use App\Services\Accounting\TaxesService;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Cell\Coordinate;
@@ -336,5 +338,41 @@ class FiledReportsTest extends TestCase
         $this->post($url.'/confirm')->assertSessionHas('ok');
         $this->assertSame(4, AccTaxAct::count());
         $this->post('/accounting/filed-reports', ['files' => [UploadedFile::fake()->create('notact.xls', 1)]])->assertSessionHasErrors('files');
+    }
+
+    public function test_other_taxes_review_moves_wrong_payees_and_rules_are_stricter(): void
+    {
+        $acc = AccAccount::create(['name' => 'Bank', 'kind' => 'BANK', 'currency' => 'UZS', 'opening_balance' => '0', 'crm_methods' => []]);
+        $op = fn (string $cp, string $amount, string $date, string $desc) => AccTransaction::create(['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'TAX_OTHER', 'amount' => $amount,
+            'date' => $date, 'period' => substr($date, 0, 7), 'counterparty' => $cp, 'description' => $desc]);
+        $op('OOO Supplier', '5000000', '2024-03-05', 'Оплата за товар по договору, в т.ч. налог');
+        $op('OOO Supplier', '1000000', '2025-04-05', 'Оплата за услуги, налог включён');
+        $op('Давлат ғазначилиги', '300000', '2025-04-10', 'Бюджетга тўлов');
+
+        // Правила: слово «налог» в назначении платежа поставщику налогом не считается, у получателя — считается
+        $rule = fn (string $cp, string $desc) => BankRules::suggest(['direction' => 'OUT', 'purpose' => $desc, 'counterparty' => $cp, 'inn' => null], collect(), null)['category'];
+        $this->assertSame('SUPPLIER', $rule('OOO Supplier', 'Оплата за товар, в т.ч. налог'));
+        $this->assertSame('SUPPLIER', $rule('OOO Supplier', 'Оплата по договору, в т.ч. налог'));
+        $this->assertSame('TAX_OTHER', $rule('Налоговый комитет', 'Платёж'));
+        $this->assertSame('TAX_OTHER', $rule('Молия вазирлиги ғазначилиги', 'Платёж'));
+        $this->assertSame('TAX_TURNOVER', $rule('Давлат ғазначилиги', 'Айланмадан олинадиган солиқ'));
+        $this->assertSame('OTHER', $rule('OOO Supplier', 'Оборотные средства'));
+
+        $g = OtherTaxes::groups();
+        $this->assertSame(['OOO Supplier', 2, '6000000.00', ['2024' => '5000000.00', '2025' => '1000000.00']], [$g[0]['cp'], $g[0]['count'], (string) $g[0]['total']->toScale(2), array_map(fn ($v) => (string) $v->toScale(2), $g[0]['years'])]);
+        $html = $this->actingAsUser($this->accountant)->get('/accounting/other-taxes')->assertOk()->assertSee('OOO Supplier')->getContent();
+        $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html));
+
+        $this->post('/accounting/other-taxes', ['rows' => [['cp' => 'OOO Supplier', 'category' => 'SUPPLIER'], ['cp' => 'Давлат ғазначилиги', 'category' => 'TAX_OTHER']]])->assertSessionHas('ok');
+        $this->assertSame([2, 0, 1], [AccTransaction::where('category', 'SUPPLIER')->count(), AccTransaction::where('category', 'SUPPLIER')->whereNotNull('period')->count(), AccTransaction::where('category', 'TAX_OTHER')->count()]);
+        $this->assertTrue(AuditLog::where('action', 'accounting.operations.recategorize')->exists());
+        $this->post('/accounting/other-taxes', ['rows' => [['cp' => 'x', 'category' => 'CLIENT_PAYMENT']]])->assertSessionHasErrors('rows.0.category');
+
+        // Права
+        foreach (['ROP', 'MANAGER'] as $role) {
+            $this->actingAsUser($this->user($role));
+            $this->get('/accounting/other-taxes')->assertForbidden();
+            $this->post('/accounting/other-taxes', ['rows' => [['cp' => 'x', 'category' => 'OTHER']]])->assertForbidden();
+        }
     }
 }
