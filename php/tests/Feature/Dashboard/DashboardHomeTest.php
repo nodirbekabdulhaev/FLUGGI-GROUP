@@ -189,7 +189,9 @@ class DashboardHomeTest extends TestCase
         ExchangeRate::create(['currency' => 'USD', 'date' => now()->toDateString(), 'rate_to_uzs' => '12000']);
         $bank = AccAccount::create(['name' => 'Kapitalbank', 'kind' => 'BANK', 'bank_name' => 'Kapitalbank', 'currency' => 'UZS', 'opening_balance' => '1000000', 'is_active' => true]);
         AccAccount::create(['name' => 'Карта USD', 'kind' => 'CARD', 'currency' => 'USD', 'opening_balance' => '100', 'is_active' => true]);
-        AccAccount::create(['name' => 'Закрытый', 'kind' => 'CASH', 'currency' => 'UZS', 'opening_balance' => '999', 'is_active' => false]);
+        $closed = AccAccount::create(['name' => 'Закрытый', 'kind' => 'CASH', 'currency' => 'UZS', 'opening_balance' => '999', 'is_active' => false]);
+        // Приход в кассу в «Приходы с начала года» не входит — только банковские счета
+        AccTransaction::create(['account_id' => $closed->id, 'direction' => 'IN', 'category' => 'OTHER_INCOME', 'amount' => '700000', 'date' => CarbonImmutable::now('Asia/Tashkent')->toDateString()]);
         AccTransaction::create(['account_id' => $bank->id, 'direction' => 'IN', 'category' => 'CLIENT_PAYMENT', 'amount' => '500000', 'date' => CarbonImmutable::now('Asia/Tashkent')->toDateString()]);
 
         $w = WalletsService::get($this->as($this->ceo));

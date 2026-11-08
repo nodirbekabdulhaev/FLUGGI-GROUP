@@ -10,6 +10,7 @@ use App\Models\OtherIncome;
 use App\Models\Payment;
 use App\Models\PayrollEntry;
 use App\Models\Project;
+use App\Services\People\AdvanceService;
 use App\Support\Audit;
 use App\Support\Format;
 use App\Support\Settings;
@@ -147,7 +148,7 @@ final class AccountantPackage
         // ── Задолженность по зарплате и комиссиям на конец года
         $toC = CarbonImmutable::parse($to, 'UTC');
         $payrollDebt = $payroll->filter(fn ($p) => $p->status === 'APPROVED' || ($p->status === 'PAID' && $p->paid_at && $p->paid_at->gte($toC)))
-            ->reduce(fn ($s, $p) => $s->plus((string) $p->final_salary), $zero);
+            ->reduce(fn ($s, $p) => $s->plus(AdvanceService::payable($p)), $zero);   // авансы уже выданы — в долг не входят
         $commissionsUnpaid = $commissions->filter(fn ($c) => $c->status !== 'PAID' || ($c->paid_at && $c->paid_at->gte($toC)))
             ->reduce(fn ($s, $c) => $s->plus((string) $c->amount_uzs), $zero);
         $d = fn (BigDecimal $v) => self::d($v);
@@ -170,7 +171,7 @@ final class AccountantPackage
             ['Оплаты', 'Подтверждённые РОП оплаты по дате поступления; возвраты — с минусом'],
             ['Расчёты с клиентами', 'На 31.12: сумма подписанных договоров − оплачено. «+» — долг клиента (дебиторка), «−» — аванс полученный'],
             ['Расходы', 'Внесённые в CRM расходы по дате расхода; колонка «Отнесение» — подсказка по счёту НСБУ №21'],
-            ['Зарплата', 'Расчёт CRM: оклад + KPI-бонус + комиссия + бонусы − штраф. НДФЛ и социальный налог не начислены'],
+            ['Зарплата', 'Расчёт CRM: оклад + KPI-бонус + комиссия + бонусы − штраф. НДФЛ и социальный налог не начислены. Аванс месяца удерживается: к выплате = итого − аванс'],
             ['Комиссии', 'Справочно: уже включены в зарплату месяца (колонка «Комиссия» на листе «Зарплата»)'],
             ['Проекты', 'Проекты в работе на конец года и завершённые в году: для актов выполненных работ и незавершённых услуг'],
             ['Сводка (форма №2)', 'Черновик по данным CRM: выручка — по оплатам (кассовый метод). По НСБУ выручку признают по актам — проверьте по листу «Проекты»'],
@@ -249,9 +250,10 @@ final class AccountantPackage
         $sheets[] = new Sheet('Зарплата', [
             ['header' => 'Месяц'], ['header' => 'Сотрудник', 'width' => 24], ['header' => 'Оклад', 'money' => true], ['header' => 'Сдельно', 'money' => true],
             ['header' => 'За ролики SMM', 'money' => true, 'width' => 16], ['header' => 'KPI-бонус', 'money' => true], ['header' => 'Комиссия', 'money' => true], ['header' => 'Бонус', 'money' => true], ['header' => 'Штраф', 'money' => true],
-            ['header' => 'Итого начислено', 'money' => true, 'width' => 16], ['header' => 'Статус'], ['header' => 'Выплачено', 'date' => true],
+            ['header' => 'Итого начислено', 'money' => true, 'width' => 16], ['header' => 'Аванс', 'money' => true], ['header' => 'К выплате', 'money' => true, 'width' => 16],
+            ['header' => 'Статус'], ['header' => 'Выплачено', 'date' => true],
         ], $payroll->map(fn ($p) => [$p->period, $p->user?->full_name, $num($p->base_salary), $num($p->piece_rate), $num($p->smm_video_pay), $num($p->kpi_bonus), $num($p->commission),
-            $num($p->other_bonus), $num($p->penalty), $num($p->final_salary), ['DRAFT' => 'Черновик', 'APPROVED' => 'Утверждена', 'PAID' => 'Выплачена'][$p->status] ?? $p->status,
+            $num($p->other_bonus), $num($p->penalty), $num($p->final_salary), $num($p->advances), $num(AdvanceService::payable($p)), ['DRAFT' => 'Черновик', 'APPROVED' => 'Утверждена', 'PAID' => 'Выплачена'][$p->status] ?? $p->status,
             $local($p->paid_at)])->all());
         $sheets[] = new Sheet('Комиссии', [
             ['header' => 'Месяц'], ['header' => 'Сотрудник', 'width' => 24], ['header' => 'Сделка', 'width' => 30], ['header' => 'База, UZS', 'money' => true],

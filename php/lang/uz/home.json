@@ -48,7 +48,7 @@
     "subtitle": "Faol hisoblar boʻyicha qoldiqlar",
     "total": "Jami UZSda",
     "missingRate": "Bugungi USD kursi yoʻq — dollar hisoblari jamiga kirmadi.",
-    "ytd": "Yil boshidan tushumlar",
+    "ytd": "Yil boshidan bank hisoblariga tushumlar",
     "ytdHint": "{from} — {to}",
     "empty": "Hali hisoblar yoʻq",
     "open": "Buxgalteriya",

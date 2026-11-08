@@ -71,5 +71,51 @@
   "smmVideo": "SMM videolari uchun",
   "smmVideoHint": "Eʼlon oyida eʼlon qilingan SMM videolari uchun hisoblar (videograf, montajchi)",
   "smmVideoOf": "{parts}",
-  "smmVideoCount": "Videolar: {count}"
+  "smmVideoCount": "Videolar: {count}",
+  "payable": "Toʻlanadi",
+  "advance": {
+    "title": "Avans",
+    "button": "Avans",
+    "column": "Avans",
+    "amount": "Summa, UZS",
+    "paidAt": "Berilgan sana",
+    "period": "Qaysi oy ish haqidan ushlanadi",
+    "periodHint": "Odatda — berilgan oy",
+    "comment": "Izoh",
+    "submit": "Avans berish",
+    "toAccounting": "Buxgalteriyaga yozish",
+    "toAccountingHint": "Xodimga bogʻlangan shaxs boʻyicha shu oy uchun «Ish haqi» xarajati — buxgalteriya vedomostidagi «toʻlangan»ga kiradi.",
+    "account": "Hisob",
+    "noAccounts": "Soʻmdagi faol hisoblar yoʻq",
+    "accountingText": "{period} uchun avans",
+    "created": "{amount} avans berildi ({period} ish haqi)",
+    "cancelledOk": "Avans bekor qilindi",
+    "listTitle": "Avanslar",
+    "empty": "Avanslar yoʻq",
+    "line": "{date} berilgan, {period} ish haqidan ushlanadi",
+    "inAccounting": "Buxgalteriyaga yozilgan: {account}",
+    "cancelledLine": "{date} bekor qilingan: {reason}",
+    "cancelled": "Bekor qilingan",
+    "cancel": "Bekor qilish",
+    "cancelConfirm": "Avansni bekor qilish",
+    "reason": "Bekor qilish sababi",
+    "totalLine": "Avanslar: {advances} · toʻlanadi: {payable}",
+    "hint": "Oy avanslari ayiriladi: toʻlanadi = jami − avans.",
+    "notify": {
+      "created": "Sizga {amount} avans berildi",
+      "createdBody": "{date} berildi, {period} ish haqidan ushlanadi",
+      "cancelled": "{amount} avans bekor qilindi"
+    },
+    "errors": {
+      "user": "Faol xodimni tanlang (CEO emas)",
+      "amount": "Avans summasi noldan katta boʻlishi kerak",
+      "period": "Oyni YYYY-MM koʻrinishida kiriting",
+      "account": "Buxgalteriyaga yozish uchun hisobni tanlang",
+      "person": "Buxgalteriyada bu xodimga bogʻlangan shaxs yoʻq. Uni «Buxgalteriya → Odamlar»ga qoʻshing yoki avansni buxgalteriyaga yozmasdan bering.",
+      "reason": "Bekor qilish sababini kiriting",
+      "cancelled": "Avans allaqachon bekor qilingan",
+      "frozen": "{period} ish haqi allaqachon tasdiqlangan — bu oy avanslari oʻzgarmaydi. Keyingi oyni tanlang.",
+      "accountingLinked": "Avans buxgalteriyaga yozilgan — uni faqat buxgalteriyani yuritish huquqi bor xodim bekor qila oladi."
+    }
+  }
 }

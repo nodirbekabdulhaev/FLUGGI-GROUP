@@ -68,7 +68,8 @@ final class OverviewService
     }
 
     /**
-     * Приходы с начала года по конец выбранного месяца (в UZS, без переводов между счетами).
+     * Приходы с начала года по конец выбранного месяца (в UZS, без переводов между счетами) — только на банковские
+     * счета (kind = BANK, в сумах и в валюте): наличные в кассе и поступления на карты не считаются.
      *
      * @return array{from:string,to:string,income:string,missingRate:bool}
      */
@@ -78,7 +79,7 @@ final class OverviewService
         $a = substr($period, 0, 4).'-01-01';
         $rows = AccTransaction::query()->join('acc_accounts as acc', 'acc.id', '=', 'acc_transactions.account_id')
             ->leftJoin('payments as p', 'p.id', '=', 'acc_transactions.payment_id')
-            ->where('acc_transactions.direction', 'IN')->where('acc_transactions.category', '<>', 'TRANSFER_IN')
+            ->where('acc.kind', 'BANK')->where('acc_transactions.direction', 'IN')->where('acc_transactions.category', '<>', 'TRANSFER_IN')
             ->where('acc_transactions.date', '>=', $a)->where('acc_transactions.date', '<', $b)
             ->get(['acc_transactions.amount', 'acc_transactions.date', 'acc.currency', 'p.amount_uzs as payment_uzs']);
         $in = BigDecimal::zero();

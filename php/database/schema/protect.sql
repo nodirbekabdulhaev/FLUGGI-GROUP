@@ -66,3 +66,6 @@ CREATE TRIGGER `smm_idea_history_no_delete` BEFORE DELETE ON `smm_idea_history` 
 DROP TRIGGER IF EXISTS `smm_video_accruals_no_delete`;
 CREATE TRIGGER `smm_video_accruals_no_delete` BEFORE DELETE ON `smm_video_accruals` FOR EACH ROW
   SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'rows of smm_video_accruals cannot be deleted';
+DROP TRIGGER IF EXISTS `employee_advances_no_delete`;
+CREATE TRIGGER `employee_advances_no_delete` BEFORE DELETE ON `employee_advances` FOR EACH ROW
+  SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'rows of employee_advances cannot be deleted';

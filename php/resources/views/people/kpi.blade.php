@@ -37,7 +37,7 @@
                     @foreach ($rows as $r)
                         <tr>
                             <td class="min-w-56">
-                                <span class="font-medium">{{ $r['user']->full_name }}</span>
+                                <a href="/team/employees/{{ $r['user']->id }}?period={{ $period }}#score" class="link font-medium">{{ $r['user']->full_name }}</a>
                                 <span class="block text-xs text-muted-foreground">{{ $r['team']?->name }}</span>
                                 @if (empty($r['targets']))
                                     <span class="text-xs text-muted-foreground">{{ t('kpi.noTargets') }}</span>

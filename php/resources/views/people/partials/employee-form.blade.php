@@ -10,7 +10,7 @@
 <form method="POST" action="{{ $u ? '/team/employees/'.$u->id : '/team/employees' }}" class="space-y-4" x-data="{ role: @js(old('role_code', $u?->role?->code ?? $fixedRole ?? '')) }">
     @csrf
     @if ($u) @method('PATCH') @endif
-    <input type="hidden" name="return_to" value="/team/{{ $slug }}">
+    <input type="hidden" name="return_to" value="{{ $returnTo ?? '/team/'.$slug }}">
     <x-field name="full_name" :id="$mid.'-name'" :label="t('employees.fullName')" :value="$u?->full_name" required />
     <div class="grid gap-4 sm:grid-cols-2">
         <x-field name="email" type="email" :id="$mid.'-email'" :label="t('employees.email')" :value="$u?->email" required />

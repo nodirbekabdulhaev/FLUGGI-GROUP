@@ -73,7 +73,7 @@
     "noExpenses": "No expenses this month",
     "recent": "Recent operations",
     "allOperations": "All operations",
-    "ytdIncome": "Income year to date"
+    "ytdIncome": "Bank account income year to date"
   },
   "operations": {
     "title": "Operations",
@@ -371,6 +371,6 @@
   "annual": {
     "button": "Annual report",
     "year": "Report year",
-    "hint": "Excel for the tax office: Form 1 (balance sheet at the start and end of the year), Form 2 (financial results), taxes and payroll by month, cash flow by account"
+    "hint": "Excel for the tax office: Form 1 (balance sheet at the start and end of the year), Form 2 (financial results), taxes and payroll by month, cash flow. Bank accounts only — cash and card operations are excluded"
   }
 }

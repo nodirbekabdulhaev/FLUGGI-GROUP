@@ -71,5 +71,51 @@
   "smmVideo": "SMM videos",
   "smmVideoHint": "Accruals for SMM videos published in the month (videographer, editor)",
   "smmVideoOf": "{parts}",
-  "smmVideoCount": "Videos: {count}"
+  "smmVideoCount": "Videos: {count}",
+  "payable": "Payable",
+  "advance": {
+    "title": "Advance",
+    "button": "Advance",
+    "column": "Advance",
+    "amount": "Amount, UZS",
+    "paidAt": "Issue date",
+    "period": "Deduct from salary for",
+    "periodHint": "By default — the month of issue",
+    "comment": "Comment",
+    "submit": "Issue advance",
+    "toAccounting": "Record in Accounting",
+    "toAccountingHint": "A “Salary” expense for the person linked to the employee for this month — it counts as “paid” in the accounting payroll.",
+    "account": "Account",
+    "noAccounts": "No active UZS accounts",
+    "accountingText": "Advance for {period}",
+    "created": "Advance of {amount} issued (salary for {period})",
+    "cancelledOk": "Advance cancelled",
+    "listTitle": "Advances",
+    "empty": "No advances",
+    "line": "issued {date}, deducted from salary for {period}",
+    "inAccounting": "Recorded in Accounting: {account}",
+    "cancelledLine": "Cancelled {date}: {reason}",
+    "cancelled": "Cancelled",
+    "cancel": "Cancel",
+    "cancelConfirm": "Cancel advance",
+    "reason": "Cancellation reason",
+    "totalLine": "Advances: {advances} · payable: {payable}",
+    "hint": "Advances of the month are deducted: payable = total − advance.",
+    "notify": {
+      "created": "You have been issued an advance of {amount}",
+      "createdBody": "Issued {date}, will be deducted from salary for {period}",
+      "cancelled": "Advance of {amount} cancelled"
+    },
+    "errors": {
+      "user": "Select an active employee (not CEO)",
+      "amount": "The advance amount must be greater than zero",
+      "period": "Enter the month as YYYY-MM",
+      "account": "Select an account to record in Accounting",
+      "person": "There is no person linked to this employee in Accounting. Add them under “Accounting → People” or issue the advance without recording it in Accounting.",
+      "reason": "Enter the cancellation reason",
+      "cancelled": "The advance is already cancelled",
+      "frozen": "Salary for {period} is already approved — advances of this month cannot change. Choose the next month.",
+      "accountingLinked": "The advance is recorded in Accounting — only an employee who manages accounting can cancel it."
+    }
+  }
 }

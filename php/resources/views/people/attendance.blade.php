@@ -84,7 +84,7 @@
                     <tbody>
                     @foreach ($summary as $s)
                         <tr>
-                            <td class="font-medium">{{ $s['user']->full_name }}</td>
+                            <td class="font-medium"><a href="/team/employees/{{ $s['user']->id }}" class="link">{{ $s['user']->full_name }}</a></td>
                             <td class="text-right tabular-nums">{{ $s['present'] }}</td>
                             <td @class(['text-right tabular-nums', 'text-warning' => $s['late']])>{{ $s['late'] }}</td>
                             <td class="text-right tabular-nums">{{ $s['lateMinutes'] }}</td>

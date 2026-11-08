@@ -43,7 +43,7 @@ PHP-версия Fluggi CRM/ERP для **обычного виртуальног
   (`Audit::diff($model, $data, [поля])`) + `Outbox::publish($type, $payload)`.
 - Неизменяемые таблицы (только добавление): `audit_logs`, `activities`, `stage_history`,
   `proposal_versions`, `task_status_history`, `reminder_log`, `smm_idea_history`. Без удаления: `payments`, `contracts`,
-  `commissions`, `payroll_entries`, `partner_payouts`, `smm_video_accruals` (только отмена/сторно/отказ с причиной).
+  `commissions`, `payroll_entries`, `partner_payouts`, `smm_video_accruals`, `employee_advances` (только отмена/сторно/отказ с причиной).
 - Деньги: `Brick\Math\BigDecimal` и `App\Domain\Money` — никаких float. В базе DECIMAL, модель отдаёт
   строку (`decimal:2`). Суммы в UZS считаются по курсу на дату (`exchange_rates`), курс фиксируется в записи.
 - Время: в базе UTC (`DATETIME(3)`), показывать по Ташкенту: `dt($v)`, `d($v)`,
@@ -91,6 +91,8 @@ smm.video_accrued {accrualId, ideaId, userId, role, amountUzs, period}   smm.vid
 attendance.auto_checkout {attendanceId, userId, date, checkOut}   attendance.checkout_decided {attendanceId, userId, status, reason}
 partner.payout_requested {payoutId, projectId, partnerId, amountUzs, requestedById}
 partner.payout_decided {payoutId, projectId, partnerId, status, amountUzs, reason}
+payroll.advance_created {advanceId, userId, amountUzs, period, paidAt, accountingTransactionId}
+payroll.advance_cancelled {advanceId, userId, amountUzs, period, reason}
 ```
 
 Массовая передача лидов: поштучные `lead.assigned` идут с `bulk: true` и уведомлений не создают —

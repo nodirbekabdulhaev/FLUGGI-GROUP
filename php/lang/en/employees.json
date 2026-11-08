@@ -93,5 +93,111 @@
   "meetingFrom": "From",
   "meetingTo": "To",
   "meetingSlot": "Slot length",
-  "meetingTimeHint": "Tashkent time."
+  "meetingTimeHint": "Tashkent time.",
+  "card": {
+    "title": "Employee card",
+    "month": "Month",
+    "hiredAt": "Hired",
+    "firedAt": "dismissed",
+    "telegramLinked": "linked",
+    "nothing": "No access to this employee’s data",
+    "tabs": {
+      "score": "Performance",
+      "salary": "Salary",
+      "commissions": "Commissions"
+    },
+    "telegram": "Telegram"
+  },
+  "score": {
+    "title": "Performance for {period}",
+    "subtitle": "0–100 score from CRM data: each component, its weight, actual and target",
+    "noData": "Not enough data",
+    "noDataText": "There is no data for any score component this month.",
+    "grade": "Grade {grade}",
+    "excluded": "no data — not counted",
+    "weight": "weight {pct}%",
+    "fact": "Actual",
+    "target": "Target",
+    "of": "{done} of {total}",
+    "leadsCount": "leads: {count}",
+    "reworks": "returns: {reworks}, delivered: {done}",
+    "trend": "Score over 6 months",
+    "howTitle": "How the score is calculated",
+    "weightOf": "weight {weight}",
+    "how": "Score = sum (weight × component score) / sum of weights. Only components with data for the month are counted; the remaining weights are rescaled proportionally. Grade: A — 85+, B — 70+, C — 50+, D — below 50.",
+    "listHint": "Performance score for {period}",
+    "gradeHint": {
+      "A": "Excellent: plans and deadlines are met.",
+      "B": "Good: slight delays.",
+      "C": "Fair: noticeable gaps in some indicators.",
+      "D": "Below expectations: the indicators need review."
+    },
+    "c": {
+      "kpi": "KPI completion",
+      "conversion": "Lead to deal conversion",
+      "leads": "Lead processing",
+      "meetings": "Meetings held",
+      "attendance": "Attendance",
+      "todos": "To-dos on time",
+      "tasks": "Tasks on time",
+      "rework": "No returns for rework",
+      "videos": "Video plan",
+      "ideas": "Videos on time",
+      "projects": "Projects on time"
+    },
+    "d": {
+      "kpi": "Average completion of the month’s KPI targets, capped at 100%.",
+      "conversion": "Share of the month’s leads that became deals, against a 20% target.",
+      "leads": "Share of the month’s leads moved out of the “New” stage.",
+      "meetings": "Held out of those planned for past days (excluding cancelled and rescheduled).",
+      "attendance": "Worked according to the schedule, %.",
+      "todos": "To-dos due this month completed by the due date.",
+      "tasks": "Tasks due this month delivered by the deadline.",
+      "rework": "100 − share of returns from review to delivered tasks.",
+      "videos": "Published videos against the monthly plan.",
+      "ideas": "Videos of the month published no later than the planned date.",
+      "projects": "Direction projects due this month completed on time."
+    }
+  },
+  "salary": {
+    "title": "Salary by month",
+    "subtitle": "Last 12 months: accrued, advance and payable",
+    "month": "Month",
+    "bonuses": "Bonuses",
+    "attendance": "attendance {pct}%",
+    "videos": "videos {published} of {target}",
+    "empty": "Salary has not been calculated yet",
+    "emptyText": "Rows appear after the month is calculated in “Payroll”.",
+    "hint": "Bonuses are the KPI bonus and other bonuses. The month opens the general payroll.",
+    "open": "Open payroll for {period}"
+  },
+  "commissions": {
+    "empty": "No commissions in the last 12 months",
+    "open": "All commissions of the month",
+    "project": "Project",
+    "noProject": "no project",
+    "payment": "payment",
+    "status": {
+      "ACCRUED": "Accrued",
+      "APPROVED": "Approved",
+      "PAID": "Paid",
+      "CANCELLED": "Cancelled"
+    },
+    "role": {
+      "MANAGER": "as manager",
+      "ROP": "as head of sales",
+      "SMM": "as SMM"
+    }
+  },
+  "activity": {
+    "title": "Activity for {period}",
+    "leads": "New leads",
+    "deals": "New deals",
+    "won": "Deals won",
+    "meetings": "Meetings: held of all",
+    "tasksDone": "Tasks delivered",
+    "tasksOverdue": "Tasks overdue now",
+    "todosDone": "To-dos done",
+    "todosOverdue": "To-dos overdue now"
+  }
 }

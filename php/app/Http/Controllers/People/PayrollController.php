@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PayrollEntry;
 use App\Services\Finance\Input;
 use App\Services\Finance\Period;
+use App\Services\People\AdvanceService;
 use App\Services\People\AttendanceCheckout;
 use App\Services\People\PeopleService;
 use App\Services\Smm\SmmIdeaService;
@@ -31,6 +32,8 @@ class PayrollController extends Controller
             // За ролики SMM: «2 × 50 000» по действующим начислениям (если совпадают с суммой в строке)
             'videoParts' => SmmVideoPay::byUser($period, $entries->pluck('user_id')->all())];
         if ($manage) {
+            $data['canAccounting'] = access()->can('accounting.manage');
+            $data['accounts'] = $data['canAccounting'] ? AdvanceService::accounts() : collect();
             $data['salaries'] = PeopleService::salaries();
             $data['videoPlans'] = SmmPayroll::plans();
             // Опубликовано за месяц: как ответственный и как видеограф

@@ -78,7 +78,8 @@
       "weekly": "Weekly report"
     },
     "payroll": {
-      "calculated": "Preliminary payroll calculation"
+      "calculated": "Preliminary payroll calculation",
+      "advance": "Advance issued or cancelled"
     },
     "smm": {
       "idea_created": "SMM: new video idea",

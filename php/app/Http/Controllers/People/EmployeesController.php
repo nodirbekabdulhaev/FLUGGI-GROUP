@@ -8,8 +8,14 @@ use App\Models\Direction;
 use App\Models\Team;
 use App\Models\User;
 use App\Services\Crm\MeetingSlots;
+use App\Services\Finance\Period;
+use App\Services\People\AdvanceService;
+use App\Services\People\EmployeeCard;
+use App\Services\People\EmployeeScore;
+use App\Services\People\KpiService;
 use App\Services\People\UserService;
 use App\Services\Projects\ProjectAccess;
+use App\Services\Sales\CommissionsService;
 use App\Support\Lang;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -41,6 +47,14 @@ class EmployeesController extends Controller
             'canManage' => $access->can('employee.manage', 'ALL'),
             'canRates' => $access->can('payroll.manage', 'ALL'),
         ];
+        // Оценка эффективности за текущий месяц — для тех, чьи показатели видит пользователь (kpi.read с областью)
+        $data['period'] = Period::month(null);
+        $data['scores'] = [];
+        if ($access->can('kpi.read')) {
+            $ids = $data['users']->pluck('id')->all();
+            $visible = KpiService::users('kpi.read')->whereIn('users.id', $ids ?: ['-'])->pluck('users.id')->all();
+            $data['scores'] = EmployeeScore::forList($data['users']->getCollection()->whereIn('id', $visible), $data['period']);
+        }
         // Окна действий: правка, удаление (с открытой работой), ставки
         if ($data['canManage'] && ($id = $request->query('edit'))) {
             $data['editing'] = UserService::findManageable($id);
@@ -57,6 +71,38 @@ class EmployeesController extends Controller
         }
 
         return view('people.employees', $data);
+    }
+
+    /** Карточка сотрудника: шапка, эффективность, зарплата, авансы, комиссии и активность за месяц. */
+    public function show(Request $request, string $id): View
+    {
+        $user = EmployeeCard::find($id);
+        $period = Period::month($request->query('period'));
+        $access = access();
+        $self = $user->id === $access->id();
+        $canScore = EmployeeCard::sees($user, 'kpi.read');
+        $canSalary = EmployeeCard::sees($user, 'payroll.read');
+        $canCommissions = $self || ($access->can('commission.read') && CommissionsService::query()->where('user_id', $user->id)->exists());
+        $canManage = $access->can('employee.manage', 'ALL') && ! ($user->role->code === 'CEO' && $access->roleCode !== 'CEO');
+        $canAdvance = $access->can('payroll.manage', 'ALL') && $user->role->code !== 'CEO';
+        $score = $canScore ? EmployeeScore::forUser($user, $period) : null;
+
+        return view('people.employee', [
+            'user' => $user, 'period' => $period, 'self' => $self,
+            'canScore' => $canScore, 'canSalary' => $canSalary, 'canCommissions' => $canCommissions, 'canManage' => $canManage, 'canAdvance' => $canAdvance,
+            'canAccounting' => $canAdvance && $access->can('accounting.manage'),
+            'accounts' => $canAdvance && $access->can('accounting.manage') ? AdvanceService::accounts() : collect(),
+            'score' => $score,
+            'trend' => $canScore ? EmployeeScore::trend($user, $period) : [],
+            'activity' => $canScore ? EmployeeCard::activity($user, $period) : [],
+            'payroll' => $canSalary ? EmployeeCard::payroll($user, $period) : collect(),
+            'advances' => $canSalary ? AdvanceService::forUser($user->id) : collect(),
+            'commissions' => $canCommissions ? EmployeeCard::commissions($user, $period) : [],
+            // Окно правки — та же форма, что и в списке
+            'teams' => $canManage ? Team::orderBy('name')->pluck('name', 'id')->all() : [],
+            'directions' => $canManage ? Direction::where('is_active', true)->orderBy('sort')->get() : collect(),
+            'editing' => $canManage && $request->query('edit') ? UserService::findManageable($user->id) : null,
+        ]);
     }
 
     private function input(Request $request, bool $create): array

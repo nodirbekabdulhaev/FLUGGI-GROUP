@@ -52,6 +52,8 @@ final class NotificationCatalog
         'report.daily' => ['CEO', 'ROP'],
         'report.weekly' => ['CEO'],
         'payroll.calculated' => ['CEO'],
+        // Аванс выдан / отменён — сотруднику (у CEO зарплаты нет)
+        'payroll.advance' => ['ROP', 'MANAGER', 'EXECUTOR', 'HR_ADMIN', 'PROJECT_MANAGER', 'ACCOUNTANT'],
         // Посещаемость: «Вы не отметили уход» и день, закрытый автоматически (сотруднику и CEO на утверждение)
         'attendance.no_checkout' => ['MANAGER', 'ROP'],
         'attendance.auto_checkout' => ['MANAGER', 'ROP', 'CEO'],
@@ -73,6 +75,7 @@ final class NotificationCatalog
         'todo.overdue' => 'todo.due',
         'meeting.changed' => 'meeting.created',
         'attendance.checkout_decided' => 'attendance.auto_checkout',
+        'payroll.advance_cancelled' => 'payroll.advance',
         'smm.instagram_published' => 'smm.idea_status_changed',
         'smm.instagram_failed' => 'smm.idea_status_changed',
         'smm.telegram_published' => 'smm.idea_status_changed',

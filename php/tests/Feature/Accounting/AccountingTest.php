@@ -348,11 +348,13 @@ class AccountingTest extends TestCase
         $bank = $this->account();
         $cash = $this->account(['kind' => 'CASH']);
         $this->op($bank, 'IN', 'CLIENT_PAYMENT', '5000000', '2026-02-10');
-        $this->op($cash, 'IN', 'OTHER_INCOME', '1000000', '2026-09-05');
+        $this->op($bank, 'IN', 'OTHER_INCOME', '1000000', '2026-09-05');
+        $this->op($cash, 'IN', 'CLIENT_PAYMENT', '4000000', '2026-05-05');  // касса — не считается
+        $this->op($this->account(['kind' => 'CARD']), 'IN', 'OTHER_INCOME', '800000', '2026-06-01'); // карта — не считается
         $this->op($bank, 'OUT', 'RENT', '2000000', '2026-03-01');
         $this->op($bank, 'IN', 'CLIENT_PAYMENT', '7000000', '2026-10-02'); // после выбранного месяца
         $this->op($bank, 'IN', 'CLIENT_PAYMENT', '9000000', '2025-12-30'); // прошлый год
-        $this->op($cash, 'IN', 'TRANSFER_IN', '300000', '2026-04-01'); // перевод не считается
+        $this->op($bank, 'IN', 'TRANSFER_IN', '300000', '2026-04-01'); // перевод не считается
         $y = OverviewService::yearToDate('2026-09');
         $this->assertSame(['2026-01-01', '2026-09-30', '6000000.00'], [$y['from'], $y['to'], $y['income']]);
         $this->actingAsUser($this->accountant)->get('/accounting?period=2026-09')->assertOk()

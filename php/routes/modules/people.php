@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\People\AdvancesController;
 use App\Http\Controllers\People\AttendanceController;
 use App\Http\Controllers\People\AuditController;
 use App\Http\Controllers\People\EmployeesController;
@@ -16,6 +17,8 @@ $manage = 'perm:employee.manage,ALL';
 
 Route::redirect('/team', '/team/employees')->middleware('perm:employee.read');
 Route::get('/team/{role}', [EmployeesController::class, 'index'])->whereIn('role', ['employees', 'managers', 'rop', 'executors'])->middleware('perm:employee.read')->name('team.index');
+// Карточка сотрудника: свою открывает каждый, чужую — по employee.read с областью (проверка в контроллере)
+Route::get('/team/employees/{id}', [EmployeesController::class, 'show'])->where('id', $uuid)->middleware('auth.only')->name('team.show');
 Route::post('/team/employees', [EmployeesController::class, 'store'])->middleware($manage)->name('team.store');
 Route::patch('/team/employees/{id}', [EmployeesController::class, 'update'])->where('id', $uuid)->middleware($manage)->name('team.update');
 Route::post('/team/employees/{id}/block', [EmployeesController::class, 'block'])->where('id', $uuid)->middleware($manage)->name('team.block');
@@ -41,6 +44,8 @@ Route::post('/finance/payroll/calculate', [PayrollController::class, 'calculate'
 Route::patch('/finance/payroll/{id}', [PayrollController::class, 'update'])->where('id', $uuid)->middleware('perm:payroll.manage,ALL')->name('payroll.update');
 Route::post('/finance/payroll/approve', [PayrollController::class, 'approve'])->middleware('perm:payroll.manage,ALL')->name('payroll.approve');
 Route::post('/finance/payroll/pay', [PayrollController::class, 'pay'])->middleware('perm:payroll.manage,ALL')->name('payroll.pay');
+Route::post('/finance/payroll/advances', [AdvancesController::class, 'store'])->middleware('perm:payroll.manage,ALL')->name('payroll.advances.store');
+Route::post('/finance/payroll/advances/{id}/cancel', [AdvancesController::class, 'cancel'])->where('id', $uuid)->middleware('perm:payroll.manage,ALL')->name('payroll.advances.cancel');
 
 Route::get('/settings', [SettingsController::class, 'index'])
     ->middleware('perm:settings.manage|role.manage|employee.manage|audit.read|reference.manage|commission_rule.manage|schedule.manage')->name('settings');

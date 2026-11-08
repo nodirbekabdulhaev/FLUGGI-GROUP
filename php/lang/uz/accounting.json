@@ -73,7 +73,7 @@
     "noExpenses": "Oy davomida chiqim yoʻq",
     "recent": "Soʻnggi operatsiyalar",
     "allOperations": "Barcha operatsiyalar",
-    "ytdIncome": "Yil boshidan kirimlar"
+    "ytdIncome": "Yil boshidan bank hisoblariga kirimlar"
   },
   "operations": {
     "title": "Operatsiyalar",
@@ -371,6 +371,6 @@
   "annual": {
     "button": "Yillik hisobot",
     "year": "Hisobot yili",
-    "hint": "Soliq uchun Excel: 1-shakl (yil boshi va oxiridagi balans), 2-shakl (moliyaviy natijalar), oylar boʻyicha soliqlar va ish haqi, hisoblar boʻyicha pul harakati"
+    "hint": "Soliq uchun Excel: 1-shakl (yil boshi va oxiridagi balans), 2-shakl (moliyaviy natijalar), oylar boʻyicha soliqlar va ish haqi, pul harakati. Faqat bank hisoblari — kassa va kartalar hisobotga kirmaydi"
   }
 }

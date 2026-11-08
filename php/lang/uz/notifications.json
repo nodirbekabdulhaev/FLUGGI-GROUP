@@ -78,7 +78,8 @@
       "weekly": "Haftalik hisobot"
     },
     "payroll": {
-      "calculated": "Ish haqining dastlabki hisobi"
+      "calculated": "Ish haqining dastlabki hisobi",
+      "advance": "Avans berildi yoki bekor qilindi"
     },
     "smm": {
       "idea_created": "SMM: yangi rolik gʻoyasi",

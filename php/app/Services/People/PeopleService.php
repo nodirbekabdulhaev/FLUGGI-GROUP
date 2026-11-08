@@ -449,7 +449,8 @@ final class PeopleService
      * роликов — оклад при 100 % × доля опубликованных роликов (не больше 100 %); сдельно — начисления
      * «Исполнитель» по проектам; за ролики SMM — действующие начисления видеографу/монтажёру за месяц публикации
      * (App\Services\Smm\SmmVideoPay), входят в начислено так же, как сдельно; KPI-бонус — «бонус при 100%» × KPI (до 120%); бонусы и штрафы вносятся
-     * вручную и при пересчёте сохраняются. Утверждённые строки не пересчитываются.
+     * вручную и при пересчёте сохраняются; авансы месяца (App\Services\People\AdvanceService) — в колонке «Аванс»,
+     * к выплате = итого − авансы. Утверждённые строки не пересчитываются.
      */
     public static function calculate(string $period): void
     {
@@ -461,8 +462,9 @@ final class PeopleService
             ->where('expense_date', '>=', $d1)->where('expense_date', '<', $d2)->groupBy('payee_user_id')
             ->select('payee_user_id', DB::raw('SUM(amount_uzs) s'))->pluck('s', 'payee_user_id');
         $videos = SmmVideoPay::byUser($period);
+        $advances = AdvanceService::sumByUser($period);
 
-        DB::transaction(function () use ($users, $period, $kpi, $piece, $videos) {
+        DB::transaction(function () use ($users, $period, $kpi, $piece, $videos, $advances) {
             foreach ($users as $u) {
                 $existing = PayrollEntry::where('user_id', $u->id)->where('period', $period)->lockForUpdate()->first();
                 if ($existing && $existing->status !== 'DRAFT') {
@@ -493,7 +495,8 @@ final class PeopleService
                     'other_bonus' => self::dec($existing?->other_bonus),
                     'penalty' => self::dec($existing?->penalty),
                 ];
-                $data = $parts + ['final_salary' => self::final($parts), 'kpi_pct' => $pct, 'base_full' => $full, 'attendance_pct' => $attendancePct,
+                // Авансы месяца удерживаются из итога: к выплате = итого − авансы
+                $data = $parts + ['final_salary' => self::final($parts), 'advances' => $advances[$u->id] ?? '0.00', 'kpi_pct' => $pct, 'base_full' => $full, 'attendance_pct' => $attendancePct,
                     'videos_published' => $videosPublished, 'videos_target' => $videosTarget, 'smm_video_count' => isset($videos[$u->id]) ? $videos[$u->id]['count'] : null];
                 $existing ? $existing->update($data) : PayrollEntry::create(['user_id' => $u->id, 'period' => $period] + $data);
             }

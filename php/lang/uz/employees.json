@@ -93,5 +93,111 @@
   "meetingFrom": "Dan",
   "meetingTo": "Gacha",
   "meetingSlot": "Slot davomiyligi",
-  "meetingTimeHint": "Toshkent vaqti."
+  "meetingTimeHint": "Toshkent vaqti.",
+  "card": {
+    "title": "Xodim kartasi",
+    "month": "Oy",
+    "hiredAt": "Ishga qabul qilingan",
+    "firedAt": "boʻshatilgan",
+    "telegramLinked": "ulangan",
+    "nothing": "Xodim maʼlumotlariga ruxsat yoʻq",
+    "tabs": {
+      "score": "Samaradorlik",
+      "salary": "Ish haqi",
+      "commissions": "Komissiyalar"
+    },
+    "telegram": "Telegram"
+  },
+  "score": {
+    "title": "{period} samaradorligi",
+    "subtitle": "CRM maʼlumotlari boʻyicha 0–100 baho: har bir tarkibiy qism, uning vazni, fakt va maqsad",
+    "noData": "Maʼlumot yetarli emas",
+    "noDataText": "Bu oy uchun bahoning birorta tarkibiy qismi boʻyicha maʼlumot yoʻq.",
+    "grade": "Baho {grade}",
+    "excluded": "maʼlumot yoʻq — hisobga olinmaydi",
+    "weight": "vazn {pct}%",
+    "fact": "Fakt",
+    "target": "Maqsad",
+    "of": "{total} dan {done}",
+    "leadsCount": "lidlar: {count}",
+    "reworks": "qaytarishlar: {reworks}, topshirildi: {done}",
+    "trend": "6 oylik baho",
+    "howTitle": "Baho qanday hisoblanadi",
+    "weightOf": "vazn {weight}",
+    "how": "Baho = yigʻindi (vazn × tarkibiy qism bali) / vaznlar yigʻindisi. Faqat oyda maʼlumoti bor tarkibiy qismlar hisobga olinadi; qolganlarning vazni mutanosib qayta hisoblanadi. Harf: A — 85 dan, B — 70 dan, C — 50 dan, D — 50 dan past.",
+    "listHint": "{period} samaradorlik bahosi",
+    "gradeHint": {
+      "A": "Aʼlo: reja va muddatlar bajarilmoqda.",
+      "B": "Yaxshi: kichik orqada qolishlar bor.",
+      "C": "Qoniqarli: baʼzi koʻrsatkichlarda sezilarli orqada qolish.",
+      "D": "Kutilganidan past: koʻrsatkichlarni tahlil qilish kerak."
+    },
+    "c": {
+      "kpi": "KPI bajarilishi",
+      "conversion": "Lidlarning bitimga konversiyasi",
+      "leads": "Lidlarni qayta ishlash",
+      "meetings": "Oʻtkazilgan uchrashuvlar",
+      "attendance": "Davomat",
+      "todos": "Muddatida bajarilgan ishlar",
+      "tasks": "Muddatida topshirilgan vazifalar",
+      "rework": "Qayta ishlashga qaytarilmasdan",
+      "videos": "Roliklar rejasi",
+      "ideas": "Muddatida chiqqan roliklar",
+      "projects": "Muddatida tugagan loyihalar"
+    },
+    "d": {
+      "kpi": "Oylik KPI maqsadlarining oʻrtacha bajarilishi, 100 % dan oshmaydi.",
+      "conversion": "Oy lidlaridan bitimga aylanganlari ulushi, maqsad 20 %.",
+      "leads": "«Yangi» bosqichidan chiqarilgan oy lidlari ulushi.",
+      "meetings": "Oʻtgan kunlarga rejalashtirilganlardan oʻtkazilgani (bekor qilingan va koʻchirilganlarsiz).",
+      "attendance": "Jadval boʻyicha ishlangan, %.",
+      "todos": "Muddati shu oyda boʻlgan va muddatida bajarilgan ishlar.",
+      "tasks": "Muddati shu oyda boʻlgan va muddatida topshirilgan vazifalar.",
+      "rework": "100 − tekshiruvdan qaytarishlarning topshirilgan vazifalarga ulushi.",
+      "videos": "Oylik rejaga nisbatan chop etilgan roliklar.",
+      "ideas": "Rejalashtirilgan sanadan kechikmay chop etilgan roliklar.",
+      "projects": "Muddati shu oyda boʻlgan va muddatida tugagan yoʻnalish loyihalari."
+    }
+  },
+  "salary": {
+    "title": "Oylar boʻyicha ish haqi",
+    "subtitle": "Soʻnggi 12 oy: hisoblangan, avans va toʻlanadigan",
+    "month": "Oy",
+    "bonuses": "Bonuslar",
+    "attendance": "davomat {pct}%",
+    "videos": "roliklar {target} dan {published}",
+    "empty": "Ish haqi hali hisoblanmagan",
+    "emptyText": "Qatorlar «Ish haqi» boʻlimida oy hisoblangandan keyin paydo boʻladi.",
+    "hint": "Bonuslar — KPI-bonus va boshqa bonuslar. Oy umumiy vedomostni ochadi.",
+    "open": "{period} vedomostini ochish"
+  },
+  "commissions": {
+    "empty": "Soʻnggi 12 oyda komissiyalar yoʻq",
+    "open": "Oyning barcha komissiyalari",
+    "project": "Loyiha",
+    "noProject": "loyiha yoʻq",
+    "payment": "toʻlov",
+    "status": {
+      "ACCRUED": "Hisoblangan",
+      "APPROVED": "Tasdiqlangan",
+      "PAID": "Toʻlangan",
+      "CANCELLED": "Bekor qilingan"
+    },
+    "role": {
+      "MANAGER": "menejer sifatida",
+      "ROP": "ROP sifatida",
+      "SMM": "SMM sifatida"
+    }
+  },
+  "activity": {
+    "title": "{period} faolligi",
+    "leads": "Yangi lidlar",
+    "deals": "Yangi bitimlar",
+    "won": "Yutilgan bitimlar",
+    "meetings": "Uchrashuvlar: barchasidan oʻtkazilgani",
+    "tasksDone": "Topshirilgan vazifalar",
+    "tasksOverdue": "Hozir muddati oʻtgan vazifalar",
+    "todosDone": "Bajarilgan ishlar",
+    "todosOverdue": "Hozir muddati oʻtgan ishlar"
+  }
 }

@@ -48,7 +48,7 @@
     "subtitle": "Balances of active accounts",
     "total": "Total in UZS",
     "missingRate": "No USD rate for today — dollar accounts are not included in the total.",
-    "ytd": "Income since start of year",
+    "ytd": "Bank income since start of year",
     "ytdHint": "{from} — {to}",
     "empty": "No accounts yet",
     "open": "Accounting",

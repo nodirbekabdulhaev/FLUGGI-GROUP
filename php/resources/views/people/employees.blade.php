@@ -56,9 +56,9 @@
                         $actions = ($canManage || $canRates) && ! ($u->role->code === 'CEO' && $me->roleCode !== 'CEO');
                     @endphp
                     <li class="flex flex-wrap items-start gap-3 px-4 py-3 sm:flex-nowrap sm:items-center sm:px-5">
-                        <span class="flex size-9 shrink-0 items-center justify-center rounded-full bg-muted text-xs font-semibold">{{ mb_strtoupper(mb_substr($u->full_name, 0, 1)) }}</span>
+                        <a href="/team/employees/{{ $u->id }}" aria-hidden="true" tabindex="-1"><x-avatar :name="$u->full_name" class="!size-9 !text-xs" /></a>
                         <div class="min-w-0 flex-1">
-                            <p class="flex items-center gap-1.5 truncate font-medium">{{ $u->full_name }}@if ($u->telegram_chat_id)<x-icon name="send" class="size-3 text-accent" aria-label="{{ t('employees.telegram') }}" />@endif</p>
+                            <p class="flex items-center gap-1.5 truncate font-medium"><a href="/team/employees/{{ $u->id }}" class="truncate hover:text-primary hover:underline">{{ $u->full_name }}</a>@if ($u->telegram_chat_id)<x-icon name="send" class="size-3 text-accent" aria-label="{{ t('employees.telegram') }}" />@endif</p>
                             <p class="truncate text-xs text-muted-foreground">{{ $u->email }}</p>
                         </div>
                         <div class="min-w-0 text-sm sm:w-44">
@@ -69,6 +69,16 @@
                         </div>
                         <div class="text-sm text-muted-foreground sm:w-36">{{ $u->team?->name ?? '—' }}</div>
                         <div class="sm:w-28"><x-badge :color="$u->status === 'ACTIVE' ? 'green' : 'red'">{{ t('userStatus.'.$u->status) }}</x-badge></div>
+                        @if ($scores)
+                            @php($sc = $scores[$u->id] ?? null)
+                            <div class="sm:w-20" title="{{ t('employees.score.listHint', ['period' => $period]) }}">
+                                @if ($sc && $sc['score'] !== null)
+                                    <a href="/team/employees/{{ $u->id }}#score"><x-badge :color="\App\Services\People\EmployeeScore::color($sc['grade'])">{{ $sc['grade'] }} · {{ $sc['score'] }}</x-badge></a>
+                                @elseif ($sc)
+                                    <span class="text-xs text-muted-foreground">—</span>
+                                @endif
+                            </div>
+                        @endif
                         <div class="hidden whitespace-nowrap text-xs text-muted-foreground lg:block lg:w-32">{{ $u->last_login_at ? dt($u->last_login_at) : t('common.never') }}</div>
                         <div class="ml-auto">
                             @if ($actions)

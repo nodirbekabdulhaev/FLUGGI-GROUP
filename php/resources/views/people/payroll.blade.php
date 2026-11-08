@@ -6,6 +6,7 @@
         use Brick\Math\BigDecimal;
         $tone = ['DRAFT' => 'gray', 'APPROVED' => 'blue', 'PAID' => 'green'];
         $total = $entries->reduce(fn ($s, $e) => $s->plus($e->final_salary), BigDecimal::zero());
+        $advTotal = $entries->reduce(fn ($s, $e) => $s->plus((string) $e->advances), BigDecimal::zero());
         $num = fn ($v) => rtrim(rtrim((string) $v, '0'), '.');
     @endphp
     <x-page-header :title="t('payroll.title')" :subtitle="$manage ? t('payroll.subtitle') : t('payroll.ownSubtitle')">
@@ -47,7 +48,7 @@
                 @foreach ($entries as $e)
                     <tr>
                         @if ($manage)<td><input type="checkbox" value="{{ $e->id }}" x-model="selected" aria-label="{{ t('payroll.select', ['name' => $e->user?->full_name]) }}"></td>@endif
-                        <td><span class="font-medium">{{ $e->user?->full_name }}</span><span class="block text-xs text-muted-foreground">{{ $e->period }}@if ($e->kpi_pct !== null) · {{ t('payroll.kpi') }} {{ $e->kpi_pct }}%@endif</span>
+                        <td><a href="/team/employees/{{ $e->user_id }}?period={{ $period }}#salary" class="link font-medium">{{ $e->user?->full_name }}</a><span class="block text-xs text-muted-foreground">{{ $e->period }}@if ($e->kpi_pct !== null) · {{ t('payroll.kpi') }} {{ $e->kpi_pct }}%@endif</span>
                             @if ($n = $pendingCheckouts[$e->user_id] ?? 0)<span class="mt-1 block text-xs text-warning">⚠ {{ t('payroll.pendingDays', ['count' => $n]) }}</span>@endif</td>
                         <td class="whitespace-nowrap text-right tabular-nums">
                             @if (PeopleService::hasFixedSalary($e->user?->role?->code ?? '') || $e->videos_target !== null)
@@ -78,17 +79,27 @@
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->commission) }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($e->other_bonus) }}</td>
                         <td @class(['whitespace-nowrap text-right tabular-nums', 'text-danger' => (float) $e->penalty])>{{ (float) $e->penalty ? '− '.money($e->penalty) : money(0) }}</td>
-                        <td class="whitespace-nowrap text-right font-semibold tabular-nums">{{ money($e->final_salary) }}</td>
+                        <td class="whitespace-nowrap text-right font-semibold tabular-nums">{{ money($e->final_salary) }}
+                            @if ((float) $e->advances)
+                                <span class="block text-xs font-normal text-danger">{{ t('payroll.advance.column') }} − {{ money($e->advances) }}</span>
+                                <span class="block text-xs">{{ t('payroll.payable') }}: {{ money(\App\Services\People\AdvanceService::payable($e)) }}</span>
+                            @endif
+                        </td>
                         <td><x-badge :color="$tone[$e->status]">{{ t('payroll.status.'.$e->status) }}</x-badge></td>
-                        @if ($manage)<td class="text-right">@if ($e->status === 'DRAFT')<a href="/finance/payroll?period={{ $period }}&edit={{ $e->id }}" class="btn btn-ghost btn-icon" aria-label="{{ t('payroll.edit') }}"><x-icon name="edit" /></a>@endif</td>@endif
+                        @if ($manage)<td class="whitespace-nowrap text-right">@if ($e->status === 'DRAFT')
+                            <button type="button" class="btn btn-ghost btn-icon" title="{{ t('payroll.advance.button') }}" aria-label="{{ t('payroll.advance.button') }}: {{ $e->user?->full_name }}" x-on:click="$dispatch('advance-for', { id: @js($e->user_id), name: @js($e->user?->full_name) }); $dispatch('open-modal', 'advance')"><x-icon name="wallet" /></button>
+                            <a href="/finance/payroll?period={{ $period }}&edit={{ $e->id }}" class="btn btn-ghost btn-icon" aria-label="{{ t('payroll.edit') }}"><x-icon name="edit" /></a>@endif</td>@endif
                     </tr>
                 @endforeach
                 </tbody>
             </table></div>
-            @if ($entries->count() > 1)<p class="border-t px-4 py-3 text-right text-sm">{{ t('payroll.total') }}: <span class="font-semibold tabular-nums">{{ money($total) }}</span></p>@endif
+            @if ($entries->count() > 1)<p class="border-t px-4 py-3 text-right text-sm">{{ t('payroll.total') }}: <span class="font-semibold tabular-nums">{{ money($total) }}</span>
+                @if (! $advTotal->isZero())<span class="block text-xs text-muted-foreground">{{ t('payroll.advance.totalLine', ['advances' => money($advTotal), 'payable' => money($total->minus($advTotal))]) }}</span>@endif</p>@endif
         @endif
     </div>
-    @if ($manage)<p class="mt-3 text-xs text-muted-foreground">{{ t('payroll.calculateHint') }}</p>@endif
+    @if ($manage)<p class="mt-3 text-xs text-muted-foreground">{{ t('payroll.calculateHint') }} {{ t('payroll.advance.hint') }}</p>
+        @include('people.partials.advance-form', ['advanceUser' => null])
+    @endif
 
     @if ($manage)
         {{-- Оклады при 100 % посещаемости: при расчёте месяца умножаются на посещаемость (полдня = 50 %) --}}

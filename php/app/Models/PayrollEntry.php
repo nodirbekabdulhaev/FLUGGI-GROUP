@@ -24,6 +24,7 @@ class PayrollEntry extends Model
         'commission' => 'decimal:2',
         'other_bonus' => 'decimal:2',
         'penalty' => 'decimal:2',
+        'advances' => 'decimal:2',
         'final_salary' => 'decimal:2',
         'kpi_pct' => 'decimal:2',
         'approved_at' => 'datetime',

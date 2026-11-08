@@ -16,10 +16,15 @@ use Illuminate\Support\Facades\DB;
  * на начало и конец года, форма №2 «Отчёт о финансовых результатах», налоги и зарплата по месяцам,
  * движение денег по счетам. Формы — на русском, как их сдают в налоговую.
  *
- * Учёт: деньги — по операциям счетов; зарплата — по начислениям (ведомость для налоговой);
- * НДФЛ, ИНПС и 1 % IT Park — по начислениям месяца; остальные расходы — по факту оплаты.
- * В баланс попадают только денежные средства и расчёты по зарплате и налогам — то, что ведётся
- * в бухгалтерии CRM; основные средства, запасы и дебиторскую задолженность бухгалтер добавляет сам.
+ * Учёт: только банковские счета (acc_accounts.kind = BANK, в сумах и в валюте) — наличные в кассе
+ * и операции по картам в отчёт не входят: ни в остатки денег, ни в доходы и расходы, ни в оплату
+ * зарплаты и налогов. Зарплата — по начислениям (ведомость для налоговой); НДФЛ, ИНПС и 1 % IT Park —
+ * по начислениям месяца; выплаты зарплаты и налогов уменьшают задолженность, только если оплачены
+ * с банковского счёта; остальные расходы — по факту оплаты с банковского счёта.
+ * Переводы между банком и кассой/картой — не доход и не расход: их сальдо показано отдельной строкой
+ * пассива («снято с банковских счетов»), поэтому баланс сходится и прирост собственных средств = прибыль года.
+ * В баланс попадают только денежные средства на банковских счетах и расчёты по зарплате и налогам;
+ * основные средства, запасы и дебиторскую задолженность бухгалтер добавляет сам.
  */
 final class AnnualReport
 {
@@ -30,15 +35,15 @@ final class AnnualReport
         return (float) (string) $v->toScale(2);
     }
 
-    /** Остатки денег на конец дня $date (включительно), UZS: по видам счетов. */
+    /** Остатки денег на банковских счетах на конец дня $date (включительно), UZS: BANK — в сумах, USD — в валюте. */
     public static function money(string $date): array
     {
-        $out = ['CASH' => BigDecimal::zero(), 'BANK' => BigDecimal::zero(), 'USD' => BigDecimal::zero(), 'CARD' => BigDecimal::zero()];
+        $out = ['BANK' => BigDecimal::zero(), 'USD' => BigDecimal::zero()];
         $missingRate = false;
         $flows = AccTransaction::query()->whereDate('date', '<=', $date)
             ->selectRaw("account_id, SUM(CASE WHEN direction = 'IN' THEN amount ELSE -amount END) AS s")
             ->groupBy('account_id')->pluck('s', 'account_id');
-        foreach (AccAccount::all() as $a) {
+        foreach (AccAccount::where('kind', 'BANK')->get() as $a) {
             $opening = $a->opening_date === null || $a->opening_date->format('Y-m-d') <= $date ? Accounting::dec($a->opening_balance) : BigDecimal::zero();
             $balance = $opening->plus(Accounting::dec($flows[$a->id] ?? '0'));
             if ($a->currency === 'USD') {
@@ -46,14 +51,14 @@ final class AnnualReport
                 $missingRate = $missingRate || ($uzs === null && ! $balance->isZero());
                 $out['USD'] = $out['USD']->plus($uzs ?? BigDecimal::zero());
             } else {
-                $out[$a->kind] = $out[$a->kind]->plus($balance);
+                $out['BANK'] = $out['BANK']->plus($balance);
             }
         }
 
         return ['lines' => $out, 'total' => array_reduce($out, fn ($s, $v) => $s->plus($v), BigDecimal::zero()), 'missingRate' => $missingRate];
     }
 
-    /** Расчёты на конец дня $date: задолженность по оплате труда и по налогам (начислено − выплачено). */
+    /** Расчёты на конец дня $date: задолженность по оплате труда и по налогам (начислено − выплачено с банковских счетов). */
     public static function liabilities(string $date): array
     {
         $lastPeriod = substr($date, 0, 7);
@@ -73,7 +78,8 @@ final class AnnualReport
         foreach (self::periodsWithBankIncome($lastPeriod) as $period) {
             $itpark = $itpark->plus(Accounting::pct(TaxesService::bankIncome($period)['total'], $s['itparkRate']));
         }
-        $paid = fn (array $cats) => self::sumUzs(AccTransaction::query()->where('direction', 'OUT')->whereIn('category', $cats)->whereDate('date', '<=', $date));
+        $paid = fn (array $cats) => self::sumUzs(AccTransaction::query()->where('acc_transactions.direction', 'OUT')->whereIn('acc_transactions.category', $cats)
+            ->whereDate('acc_transactions.date', '<=', $date));
 
         return [
             'salary' => $net->minus($paid(['SALARY'])),
@@ -94,10 +100,25 @@ final class AnnualReport
             ->selectRaw("DISTINCT DATE_FORMAT(acc_transactions.date, '%Y-%m') AS p")->pluck('p')->all();
     }
 
-    /** Сумма операций в UZS (USD — по курсу на дату операции, оплаты CRM — по их сумме в UZS). */
+    /**
+     * Сальдо переводов между банковскими счетами и кассой/картой по конец дня $date, UZS:
+     * снято с банка (перевод из банка в кассу/на карту) − внесено на банк (из кассы/с карты).
+     */
+    public static function withdrawn(string $date): BigDecimal
+    {
+        $q = fn (string $cat) => AccTransaction::query()->where('acc_transactions.category', $cat)->whereNotNull('acc_transactions.transfer_group')
+            ->whereDate('acc_transactions.date', '<=', $date)
+            ->whereExists(fn ($e) => $e->selectRaw('1')->from('acc_transactions as o')->join('acc_accounts as oa', 'oa.id', '=', 'o.account_id')
+                ->whereColumn('o.transfer_group', 'acc_transactions.transfer_group')->whereColumn('o.id', '<>', 'acc_transactions.id')
+                ->whereNull('o.deleted_at')->where('oa.kind', '<>', 'BANK'));
+
+        return self::sumUzs($q('TRANSFER_OUT'))->minus(self::sumUzs($q('TRANSFER_IN')));
+    }
+
+    /** Сумма операций по банковским счетам в UZS (USD — по курсу на дату операции, оплаты CRM — по их сумме в UZS). */
     private static function sumUzs($query): BigDecimal
     {
-        $rows = $query->leftJoin('acc_accounts as aa', 'aa.id', '=', 'acc_transactions.account_id')
+        $rows = $query->join('acc_accounts as aa', 'aa.id', '=', 'acc_transactions.account_id')->where('aa.kind', 'BANK')
             ->leftJoin('payments as pp', 'pp.id', '=', 'acc_transactions.payment_id')
             ->get(['acc_transactions.amount', 'acc_transactions.date', 'aa.currency', 'pp.amount_uzs']);
         $sum = BigDecimal::zero();
@@ -108,7 +129,7 @@ final class AnnualReport
         return $sum;
     }
 
-    /** Операции года по направлению и категориям, UZS. */
+    /** Операции года по банковским счетам по направлению и категориям, UZS. */
     private static function flow(int $year, string $direction, array $cats): BigDecimal
     {
         return self::sumUzs(AccTransaction::query()->where('acc_transactions.direction', $direction)->whereIn('acc_transactions.category', $cats)
@@ -165,21 +186,21 @@ final class AnnualReport
         $end = $year.'-12-31';
         [$m0, $m1] = [self::money($start), self::money($end)];
         [$l0, $l1] = [self::liabilities($start), self::liabilities($end)];
+        [$w0, $w1] = [self::withdrawn($start), self::withdrawn($end)];
         $sumL = fn ($l) => $l['salary']->plus($l['ndfl'])->plus($l['inps'])->plus($l['itpark']);
         $row = fn (string $acc, string $name, BigDecimal $a, BigDecimal $b) => [$acc, $name, $a, $b];
 
         return [
             'rows' => [
                 ['', 'АКТИВ', null, null],
-                ['', 'II. Оборотные активы — денежные средства', null, null],
-                $row('5010', 'Денежные средства в кассе', $m0['lines']['CASH'], $m1['lines']['CASH']),
+                ['', 'II. Оборотные активы — денежные средства на банковских счетах', null, null],
                 $row('5110', 'Денежные средства на расчётном счёте', $m0['lines']['BANK'], $m1['lines']['BANK']),
-                $row('5210', 'Денежные средства в иностранной валюте (в сумах по курсу на дату)', $m0['lines']['USD'], $m1['lines']['USD']),
-                $row('5500', 'Прочие денежные средства (корпоративная карта)', $m0['lines']['CARD'], $m1['lines']['CARD']),
+                $row('5210', 'Денежные средства в иностранной валюте на банковском счёте (в сумах по курсу на дату)', $m0['lines']['USD'], $m1['lines']['USD']),
                 $row('', 'Итого денежные средства / БАЛАНС (актив)', $m0['total'], $m1['total']),
                 ['', 'ПАССИВ', null, null],
                 ['', 'I. Источники собственных средств', null, null],
-                $row('8710', 'Нераспределённая прибыль (непокрытый убыток) и собственные средства', $m0['total']->minus($sumL($l0)), $m1['total']->minus($sumL($l1))),
+                $row('8710', 'Нераспределённая прибыль (непокрытый убыток) и собственные средства', $m0['total']->minus($sumL($l0))->plus($w0), $m1['total']->minus($sumL($l1))->plus($w1)),
+                $row('', 'Снято с банковских счетов в кассу и на карты (сальдо переводов; касса и карты в отчёт не входят)', $w0->negated(), $w1->negated()),
                 ['', 'II. Обязательства (текущие)', null, null],
                 $row('6710', 'Задолженность по оплате труда', $l0['salary'], $l1['salary']),
                 $row('6410', 'Задолженность по платежам в бюджет — НДФЛ', $l0['ndfl'], $l1['ndfl']),
@@ -190,6 +211,18 @@ final class AnnualReport
             ],
             'missingRate' => $m0['missingRate'] || $m1['missingRate'],
         ];
+    }
+
+    /** Налоги месяца, оплаченные с банковских счетов (категории TAX_* с этим периодом), UZS. */
+    private static function taxesPaid(string $period): array
+    {
+        $out = [];
+        foreach (['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK'] as $cat) {
+            $out[$cat] = self::sumUzs(AccTransaction::query()->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', $cat)
+                ->where('acc_transactions.period', $period));
+        }
+
+        return $out;
     }
 
     /** @return array{body:string,filename:string} */
@@ -204,8 +237,9 @@ final class AnnualReport
             ['ИНН (СТИР)', $company['inn'] ?: '—'],
             ['Год', (string) $year],
             ['Валюта отчёта', 'сум (UZS); счета в USD пересчитаны по курсу на дату'],
-            ['Как считается', 'Деньги — по операциям счетов; зарплата, НДФЛ, ИНПС и 1 % IT Park — по начислениям; остальные расходы — по факту оплаты.'],
-            ['Что дополнить', 'В баланс включены денежные средства и расчёты по зарплате и налогам. Основные средства, запасы, дебиторскую и кредиторскую задолженность перед контрагентами бухгалтер добавляет в форму №1 сам.'],
+            ['Какие счета', 'Только банковские счета (в сумах и в валюте). Наличные в кассе и операции по картам в отчёт не входят: ни в остатки денег, ни в доходы и расходы, ни в оплату зарплаты и налогов.'],
+            ['Как считается', 'Деньги — по операциям банковских счетов; зарплата, НДФЛ, ИНПС и 1 % IT Park — по начислениям, их оплата учитывается, только если она прошла с банковского счёта; остальные расходы — по факту оплаты с банковского счёта. Переводы между банком и кассой/картой — не доход и не расход: их сальдо показано отдельной строкой пассива.'],
+            ['Что дополнить', 'В баланс включены деньги на банковских счетах и расчёты по зарплате и налогам. Основные средства, запасы, дебиторскую и кредиторскую задолженность перед контрагентами бухгалтер добавляет в форму №1 сам.'],
             ['Проверка', 'Перед сдачей сверьте номера строк с действующими бланками форм №1 и №2.'],
             $b['missingRate'] ? ['Внимание', 'Нет курса USD на одну из дат — суммы в валюте посчитаны не полностью. Внесите курс в «Настройки → Справочники».'] : null,
         ])));
@@ -225,9 +259,10 @@ final class AnnualReport
             $period = $year.'-'.str_pad((string) $m, 2, '0', STR_PAD_LEFT);
             $t = TaxesService::forPeriod($period);
             $x = $t['taxes'];
-            $taxRows[] = [self::MONTHS[$i], self::num(Accounting::dec($x['TAX_NDFL']['base'])), self::num(Accounting::dec($x['TAX_NDFL']['due'])), self::num(Accounting::dec($x['TAX_NDFL']['paid'])),
-                self::num(Accounting::dec($x['TAX_INPS']['due'])), self::num(Accounting::dec($x['TAX_INPS']['paid'])),
-                self::num(Accounting::dec($t['bankIncome'])), self::num(Accounting::dec($x['TAX_ITPARK']['due'])), self::num(Accounting::dec($x['TAX_ITPARK']['paid']))];
+            $paidBank = self::taxesPaid($period);
+            $taxRows[] = [self::MONTHS[$i], self::num(Accounting::dec($x['TAX_NDFL']['base'])), self::num(Accounting::dec($x['TAX_NDFL']['due'])), self::num($paidBank['TAX_NDFL']),
+                self::num(Accounting::dec($x['TAX_INPS']['due'])), self::num($paidBank['TAX_INPS']),
+                self::num(Accounting::dec($t['bankIncome'])), self::num(Accounting::dec($x['TAX_ITPARK']['due'])), self::num($paidBank['TAX_ITPARK'])];
             foreach (AccPayroll::with('person')->where('period', $period)->get() as $r) {
                 $payRows[] = [self::MONTHS[$i], $r->person?->full_name, $r->person?->pinfl, (float) (string) $r->gross, (float) (string) $r->ndfl, (float) (string) $r->inps, (float) (string) $r->net,
                     $r->status === 'APPROVED' ? 'Утверждено' : 'Черновик'];
@@ -235,8 +270,8 @@ final class AnnualReport
         }
         $taxes = new Sheet('Налоги по месяцам', [
             ['header' => 'Месяц', 'width' => 12], ['header' => 'ФОТ (начислено)', 'money' => true, 'width' => 16], ['header' => 'НДФЛ к уплате', 'money' => true, 'width' => 15],
-            ['header' => 'НДФЛ оплачено', 'money' => true, 'width' => 15], ['header' => 'ИНПС к уплате', 'money' => true, 'width' => 14], ['header' => 'ИНПС оплачено', 'money' => true, 'width' => 14],
-            ['header' => 'Поступления на банк. счета', 'money' => true, 'width' => 18], ['header' => 'IT Park к уплате', 'money' => true, 'width' => 15], ['header' => 'IT Park оплачено', 'money' => true, 'width' => 15],
+            ['header' => 'НДФЛ оплачено (банк)', 'money' => true, 'width' => 15], ['header' => 'ИНПС к уплате', 'money' => true, 'width' => 14], ['header' => 'ИНПС оплачено (банк)', 'money' => true, 'width' => 14],
+            ['header' => 'Поступления на банк. счета', 'money' => true, 'width' => 18], ['header' => 'IT Park к уплате', 'money' => true, 'width' => 15], ['header' => 'IT Park оплачено (банк)', 'money' => true, 'width' => 15],
         ], $taxRows);
         $payroll = new Sheet('Зарплата за год', [
             ['header' => 'Месяц', 'width' => 12], ['header' => 'ФИО', 'width' => 28], ['header' => 'ПИНФЛ', 'width' => 16], ['header' => 'Начислено', 'money' => true, 'width' => 15],
@@ -244,17 +279,17 @@ final class AnnualReport
         ], $payRows);
 
         $accRows = [];
-        foreach (AccAccount::orderBy('sort')->orderBy('name')->get() as $a) {
+        foreach (AccAccount::where('kind', 'BANK')->orderBy('sort')->orderBy('name')->get() as $a) {
             $before = AccTransaction::where('account_id', $a->id)->whereDate('date', '<', $year.'-01-01')->selectRaw("SUM(CASE WHEN direction = 'IN' THEN amount ELSE -amount END) AS s")->value('s');
             $opening = $a->opening_date === null || $a->opening_date->format('Y') < (string) $year ? Accounting::dec($a->opening_balance) : BigDecimal::zero();
             $startBal = $opening->plus(Accounting::dec($before));
             $in = Accounting::dec(AccTransaction::where('account_id', $a->id)->where('direction', 'IN')->whereYear('date', $year)->sum('amount'));
             $out = Accounting::dec(AccTransaction::where('account_id', $a->id)->where('direction', 'OUT')->whereYear('date', $year)->sum('amount'));
             $openedThisYear = $a->opening_date !== null && $a->opening_date->format('Y') === (string) $year ? Accounting::dec($a->opening_balance) : BigDecimal::zero();
-            $accRows[] = [$a->name, ['BANK' => 'Банковский счёт', 'CASH' => 'Касса', 'CARD' => 'Карта'][$a->kind], $a->currency,
+            $accRows[] = [$a->name, 'Банковский счёт', $a->currency,
                 self::num($startBal), self::num($openedThisYear), self::num($in), self::num($out), self::num($startBal->plus($openedThisYear)->plus($in)->minus($out))];
         }
-        $accounts = new Sheet('Движение денег', [
+        $accounts = new Sheet('Движение денег (банк)', [
             ['header' => 'Счёт', 'width' => 26], ['header' => 'Вид', 'width' => 16], ['header' => 'Валюта'], ['header' => 'Остаток на 01.01', 'money' => true, 'width' => 16],
             ['header' => 'Начальный остаток (открыт в году)', 'money' => true, 'width' => 18], ['header' => 'Приход', 'money' => true, 'width' => 16],
             ['header' => 'Расход', 'money' => true, 'width' => 16], ['header' => 'Остаток на 31.12', 'money' => true, 'width' => 16],

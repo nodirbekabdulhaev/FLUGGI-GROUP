@@ -8,7 +8,9 @@ use App\Models\AccTransaction;
 use App\Models\AuditLog;
 use App\Services\Accounting\Accounting;
 use App\Services\Accounting\AnnualReport;
+use App\Services\Accounting\OperationsService;
 use App\Services\Accounting\TaxPayrollService;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Tests\TestCase;
 
 /** Годовой отчёт для налоговой: форма №2 по данным бухгалтерии, баланс сходится с прибылью года. */
@@ -49,15 +51,17 @@ class AnnualReportTest extends TestCase
         $lines = collect(AnnualReport::results(2026))->mapWithKeys(fn ($r) => [$r[0] => (string) $r[2]->toScale(2)]);
         $this->assertSame('38000000.00', $lines['010']);             // 40 − 2 (возврат)
         $this->assertSame('3000000.00', $lines['020']);
-        $this->assertSame('12300000.00', $lines['060']);             // ФОТ 10 млн + аренда 2 млн + вода/Wi-Fi 0,3 млн
+        $this->assertSame('10000000.00', $lines['060']);             // ФОТ 10 млн; аренда и вода/Wi-Fi оплачены из кассы — не входят
         $this->assertSame('460000.00', $lines['070']);               // IT Park 410 000 + банк 50 000
         $this->assertSame('1000000.00', $lines['090']);
-        $this->assertSame('23240000.00', $lines['270']);             // 35 − 12,76 + 1
+        $this->assertSame('25540000.00', $lines['270']);             // 35 − 10,46 + 1
 
         $b = AnnualReport::balance(2026)['rows'];
         $find = fn ($acc, $name = null) => collect($b)->first(fn ($r) => $r[0] === $acc && ($name === null || str_contains($r[1], $name)));
         $equity = $find('8710');
-        $this->assertSame('6000000.00', (string) $equity[2]->toScale(2));   // на 01.01: остатки 5 + 1 млн
+        $this->assertSame('5000000.00', (string) $equity[2]->toScale(2));   // на 01.01: только банк 5 млн (касса не входит)
+        $this->assertNull($find('5010'));                                     // строк кассы и карты нет
+        $this->assertNull($find('5500'));
         // Прирост собственных средств за год = чистая прибыль (баланс сходится с формой №2)
         $this->assertSame($lines['270'], (string) $equity[3]->minus($equity[2])->toScale(2));
         $this->assertSame(['10000.00', '410000.00', '0.00', '0.00'], [
@@ -71,5 +75,72 @@ class AnnualReportTest extends TestCase
         $this->assertTrue(AuditLog::where('entity_type', 'acc_annual_report')->exists());
         $this->actingAsUser($this->user('ROP'))->get('/accounting/annual-report?year=2026')->assertForbidden();
         $this->actingAsUser($accountant)->get('/accounting/taxes')->assertOk()->assertSee(t('accounting.annual.button'));
+    }
+
+    public function test_cash_and_card_operations_are_excluded_from_annual_report(): void
+    {
+        Accounting::forgetRates();
+        $this->as($this->user('ACCOUNTANT'));
+        $bank = $this->account(['name' => 'Bank', 'kind' => 'BANK', 'opening_balance' => '10000000', 'opening_date' => '2025-12-31']);
+        $cash = $this->account(['name' => 'Kassa', 'kind' => 'CASH', 'opening_balance' => '3000000', 'opening_date' => '2025-12-31']);
+        $card = $this->account(['name' => 'Karta', 'kind' => 'CARD', 'opening_balance' => '0', 'opening_date' => '2025-12-31']);
+        $person = AccPerson::create(['full_name' => 'Karimov Olim', 'monthly_salary' => '4000000', 'hired_at' => '2026-03-01', 'fired_at' => '2026-03-31']);
+
+        // Банк: выручка 20 млн, поставщик 2 млн, аренда 1 млн
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '20000000', '2026-03-05');
+        $this->op($bank, 'OUT', 'SUPPLIER', '2000000', '2026-03-06', ['counterparty' => 'Server MChJ']);
+        $this->op($bank, 'OUT', 'RENT', '1000000', '2026-03-07');
+        // Касса и карта: приходы и расходы — в отчёт не входят
+        $this->op($cash, 'IN', 'CLIENT_PAYMENT', '7000000', '2026-03-08');
+        $this->op($cash, 'IN', 'OTHER_INCOME', '500000', '2026-03-09');
+        $this->op($card, 'IN', 'CLIENT_PAYMENT', '900000', '2026-03-10');
+        $this->op($cash, 'OUT', 'SUPPLIER', '1500000', '2026-03-11', ['counterparty' => 'Naqd MChJ']);
+        $this->op($card, 'OUT', 'OTHER', '400000', '2026-03-12');
+        $this->op($card, 'OUT', 'BANK_FEE', '20000', '2026-03-12');
+        // Перевод с банка в кассу (снятие наличных) — не доход и не расход
+        OperationsService::transfer(['from_id' => $bank->id, 'to_id' => $cash->id, 'amount' => '3000000', 'amount_to' => null, 'date' => '2026-03-15', 'description' => null]);
+        // Зарплата: начислено 4 млн; на руки 3 696 000 выплачено из кассы — для отчёта не оплачено
+        TaxPayrollService::calculate('2026-03');
+        $this->op($cash, 'OUT', 'SALARY', '3696000', '2026-04-05', ['person_id' => $person->id, 'period' => '2026-03']);
+        $this->op($bank, 'OUT', 'TAX_NDFL', '300000', '2026-04-10', ['period' => '2026-03']);
+        $this->op($cash, 'OUT', 'TAX_INPS', '4000', '2026-04-10', ['period' => '2026-03']);
+
+        $lines = collect(AnnualReport::results(2026))->mapWithKeys(fn ($r) => [$r[0] => (string) $r[2]->toScale(2)]);
+        $this->assertSame('20000000.00', $lines['010']);   // только банк
+        $this->assertSame('2000000.00', $lines['020']);
+        $this->assertSame('5000000.00', $lines['060']);    // ФОТ 4 млн (начисление) + аренда с банка 1 млн
+        $this->assertSame('200000.00', $lines['070']);     // IT Park 1 % от 20 млн; комиссия по карте не входит
+        $this->assertSame('0.00', $lines['090']);          // прочий доход в кассу не входит
+        $this->assertSame('12800000.00', $lines['270']);
+
+        $b = AnnualReport::balance(2026)['rows'];
+        $find = fn ($acc, $name = null) => collect($b)->first(fn ($r) => $r[0] === $acc && ($name === null || str_contains($r[1], $name)));
+        $money = collect($b)->first(fn ($r) => str_contains($r[1], 'БАЛАНС (актив)'));
+        $this->assertSame(['10000000.00', '23700000.00'], [(string) $money[2]->toScale(2), (string) $money[3]->toScale(2)]); // 10 + 20 − 2 − 1 − 3 − 0,3
+        $equity = $find('8710');
+        $this->assertSame('10000000.00', (string) $equity[2]->toScale(2));
+        $this->assertSame($lines['270'], (string) $equity[3]->minus($equity[2])->toScale(2));   // прирост = прибыль
+        $this->assertSame('-3000000.00', (string) $find('', 'Снято с банковских')[3]->toScale(2));
+        // Выплаты из кассы задолженность не гасят
+        $this->assertSame(['3696000.00', '0.00', '4000.00', '200000.00'], [
+            (string) $find('6710')[3]->toScale(2), (string) $find('6410')[3]->toScale(2), (string) $find('6520')[3]->toScale(2), (string) $find('6990')[3]->toScale(2),
+        ]);
+        // Пассив сходится с активом
+        $passive = collect($b)->first(fn ($r) => str_contains($r[1], 'БАЛАНС (пассив)'));
+        $sum = $equity[3]->plus($find('', 'Снято с банковских')[3])->plus(collect($b)->first(fn ($r) => $r[1] === 'Итого обязательства')[3]);
+        $this->assertSame((string) $passive[3]->toScale(2), (string) $sum->toScale(2));
+
+        // В файле: лист движения денег — только банк, в пояснениях сказано про кассу и карты
+        $tmp = tempnam(sys_get_temp_dir(), 'xlsx');
+        file_put_contents($tmp, AnnualReport::build(2026)['body']);
+        $book = IOFactory::load($tmp);
+        @unlink($tmp);
+        $accounts = $book->getSheetByName('Движение денег (банк)')->toArray();
+        $this->assertSame(['Bank'], array_values(array_filter(array_column(array_slice($accounts, 1), 0))));
+        $notes = implode(' ', array_merge(...$book->getSheetByName('Пояснения')->toArray()));
+        $this->assertStringContainsString('Наличные в кассе и операции по картам в отчёт не входят', $notes);
+        $taxes = $book->getSheetByName('Налоги по месяцам')->toArray(null, true, false);
+        $this->assertEquals(0, $taxes[3][5]);   // март: ИНПС оплачено из кассы — для отчёта 0
+        $this->assertEquals(300000, $taxes[3][3]);
     }
 }
