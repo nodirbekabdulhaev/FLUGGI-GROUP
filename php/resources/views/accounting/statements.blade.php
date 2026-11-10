@@ -89,6 +89,10 @@
                         @if ($l['auto'] !== null && $l['src'] !== 'auto' && ! $l['v']->isEqualTo($l['auto']))<span class="block text-xs font-normal text-muted-foreground">{{ t('accounting.statements.inSystem') }}: {{ $fmt($l['auto']) }}</span>@endif</td>
                     <td class="text-xs"><span class="badge {{ ['auto' => 'badge-blue', 'manual' => 'badge-yellow', 'file' => 'badge-green', 'sum' => 'badge-gray', 'empty' => 'badge-gray'][$l['src']] ?? 'badge-gray' }}">{{ t('accounting.statements.src.'.$l['src']) }}</span>
                         @if ($l['src'] === 'auto' && \App\Support\Lang::has('accounting.statements.how.F'.$code))<span class="block text-muted-foreground">{{ t('accounting.statements.how.F'.$code) }}</span>
+                            @foreach ($parts[$code] ?? [] as [$pk, $pv, $pc])
+                                @continue($pv->isZero())
+                                <span class="block text-muted-foreground">· {{ t('accounting.statements.part.'.$pk) }}: {{ $fmt($pv) }}@if ($pc) <a class="link" href="/accounting/operations?{{ http_build_query(['direction' => explode(':', $pc)[0], 'category' => explode(':', $pc)[1], 'from' => $year.'-01-01', 'to' => $year.'-12-31']) }}">{{ t('accounting.statements.operations') }}</a>@endif</span>
+                            @endforeach
                         @elseif ($l['note'])<span class="block text-muted-foreground">{{ $l['note'] }}</span>@endif</td>
                     @if ($canManage)
                         <td>@if (in_array($code, $editable, true))<button type="button" class="btn btn-ghost btn-icon" aria-label="{{ t('common.edit') }}"

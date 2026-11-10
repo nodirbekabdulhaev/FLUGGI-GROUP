@@ -153,29 +153,50 @@ final class AnnualReport
      *
      * @return list<array{0:string,1:string,2:BigDecimal}>
      */
-    public static function results(int $year): array
+    /**
+     * Из чего складываются строки финрезультатов за год (UZS): выручка и возвраты, поставщики, зарплата по ведомостям и по сданным отчётам,
+     * аренда, коммунальные, прочие расходы, IT Park и налог с оборота, комиссии банка, прочие налоги, прочие доходы.
+     *
+     * @return array<string,BigDecimal>
+     */
+    public static function components(int $year): array
     {
-        $revenue = self::flow($year, 'IN', ['CLIENT_PAYMENT'])->minus(self::flow($year, 'OUT', ['CLIENT_PAYMENT']));
-        $cost = self::flow($year, 'OUT', ['SUPPLIER']);
-        $gross = BigDecimal::zero();
+        $payroll = BigDecimal::zero();
         $payrollPeriods = [];
         foreach (AccPayroll::where('period', 'like', $year.'-%')->get(['period', 'gross']) as $r) {
-            $gross = $gross->plus((string) $r->gross);
+            $payroll = $payroll->plus((string) $r->gross);
             $payrollPeriods[] = $r->period;
         }
-        // Месяцы без ведомости, но со сданным отчётом — доход людей из отчёта
-        $gross = $gross->plus(FiledReports::incomeWithoutPayroll($year, $payrollPeriods));
-        $admin = $gross->plus(self::flow($year, 'OUT', ['RENT', 'UTILITIES', 'OTHER']));
         $itpark = BigDecimal::zero();
         foreach (range(1, 12) as $m) {
             $per = $year.'-'.str_pad((string) $m, 2, '0', STR_PAD_LEFT);
             $sp = Accounting::settingsFor($per);
             $itpark = $itpark->plus(Accounting::pct(TaxesService::bankIncome($per)['total'], (string) BigDecimal::of($sp['itparkRate'])->plus($sp['turnoverRate'])));
         }
-        $otherOps = $itpark->plus(self::flow($year, 'OUT', ['BANK_FEE', 'TAX_OTHER']));
+
+        return [
+            'revenueIn' => self::flow($year, 'IN', ['CLIENT_PAYMENT']), 'revenueRefund' => self::flow($year, 'OUT', ['CLIENT_PAYMENT']),
+            'supplier' => self::flow($year, 'OUT', ['SUPPLIER']),
+            'salaryPayroll' => $payroll,
+            // Месяцы без ведомости, но со сданным отчётом — доход людей из отчёта
+            'salaryFiled' => FiledReports::incomeWithoutPayroll($year, $payrollPeriods),
+            'rent' => self::flow($year, 'OUT', ['RENT']), 'utilities' => self::flow($year, 'OUT', ['UTILITIES']), 'other' => self::flow($year, 'OUT', ['OTHER']),
+            'itpark' => $itpark, 'bankFee' => self::flow($year, 'OUT', ['BANK_FEE']), 'taxOther' => self::flow($year, 'OUT', ['TAX_OTHER']),
+            'otherIncome' => self::flow($year, 'IN', ['OTHER_INCOME']),
+        ];
+    }
+
+    public static function results(int $year): array
+    {
+        $c = self::components($year);
+        $revenue = $c['revenueIn']->minus($c['revenueRefund']);
+        $cost = $c['supplier'];
+        $gross = $c['salaryPayroll']->plus($c['salaryFiled']);
+        $admin = $gross->plus($c['rent'])->plus($c['utilities'])->plus($c['other']);
+        $otherOps = $c['itpark']->plus($c['bankFee'])->plus($c['taxOther']);
         $sales = BigDecimal::zero();
         $period = $sales->plus($admin)->plus($otherOps);
-        $otherIncome = self::flow($year, 'IN', ['OTHER_INCOME']);
+        $otherIncome = $c['otherIncome'];
         $grossProfit = $revenue->minus($cost);
         $operating = $grossProfit->minus($period)->plus($otherIncome);
         $profitTax = BigDecimal::zero();

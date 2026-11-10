@@ -115,6 +115,8 @@ class StatementsTest extends TestCase
         // Баланс сходится: актив = пассив, нераспределённая прибыль — сальдирующая
         $this->assertSame([true, 'balance'], [$c26['400']['v']->isEqualTo($c26['780']['v']), $c26['450']['src']]);
         $page = Statements::page(2026);
+        // Состав строки «Административные расходы»: зарплата по ведомости (gross) + аренда/коммунальные/прочее — видно, откуда сумма
+        $this->assertSame(['salaryPayroll', '5000000.00', 'salaryFiled'], [$page['parts']['060'][0][0], (string) $page['parts']['060'][0][1]->toScale(2), $page['parts']['060'][1][0]]);
         $this->assertSame((string) $c26['720']['v'], (string) $page['close']['720']['v']);
         $this->assertSame('5040200.00', (string) Statements::closing(2025)['340']['v']);   // 2025 из формы, а не по счетам
     }

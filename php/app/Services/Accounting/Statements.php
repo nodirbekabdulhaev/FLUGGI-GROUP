@@ -282,8 +282,27 @@ final class Statements
         // Расхождение: изменение нераспределённой прибыли за год и чистая прибыль по форме №2
         $change = $close['450']['v']->minus($open['450']['v']);
 
-        return ['year' => $year, 'asOf' => self::asOf($year), 'open' => $open, 'close' => $close, 'cur' => $cur, 'prior' => $prior,
+        return ['year' => $year, 'asOf' => self::asOf($year), 'parts' => self::parts($year), 'open' => $open, 'close' => $close, 'cur' => $cur, 'prior' => $prior,
             'checks' => ['equity' => $change->toScale(2), 'profit' => $profit->toScale(2), 'gap' => $change->minus($profit)->toScale(2)]];
+    }
+
+    /**
+     * Состав автоматических строк финрезультатов: код => список [ключ, сумма, категория операций для ссылки].
+     *
+     * @return array<string,list<array{0:string,1:BigDecimal,2:?string}>>
+     */
+    public static function parts(int $year): array
+    {
+        $c = AnnualReport::components($year);
+
+        return [
+            '010' => [['revenueIn', $c['revenueIn'], 'IN:CLIENT_PAYMENT'], ['revenueRefund', $c['revenueRefund']->negated(), 'OUT:CLIENT_PAYMENT']],
+            '020' => [['supplier', $c['supplier'], 'OUT:SUPPLIER']],
+            '060' => [['salaryPayroll', $c['salaryPayroll'], null], ['salaryFiled', $c['salaryFiled'], null], ['rent', $c['rent'], 'OUT:RENT'],
+                ['utilities', $c['utilities'], 'OUT:UTILITIES'], ['other', $c['other'], 'OUT:OTHER']],
+            '070' => [['itpark', $c['itpark'], null], ['bankFee', $c['bankFee'], 'OUT:BANK_FEE'], ['taxOther', $c['taxOther'], 'OUT:TAX_OTHER']],
+            '090' => [['otherIncome', $c['otherIncome'], 'IN:OTHER_INCOME']],
+        ];
     }
 
     // ─────────────────────────── Правки ───────────────────────────

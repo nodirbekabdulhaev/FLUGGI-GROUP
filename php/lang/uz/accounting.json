@@ -863,6 +863,21 @@
       "F060": "Qaydnoma va hisobotlar boʻyicha hisoblangan ish haqi + ijara, kommunal, boshqa",
       "F070": "IT Park va aylanma soligʻi ajratmalari, bank komissiyalari, boshqa soliqlar",
       "F090": "Yil davomida hisoblarga boshqa tushumlar"
-    }
+    },
+    "part": {
+      "revenueIn": "Mijozlarning bank hisoblariga toʻlovlari",
+      "revenueRefund": "Mijozlarga qaytarishlar",
+      "supplier": "Yetkazib beruvchilarga toʻlovlar",
+      "salaryPayroll": "Qaydnomalar boʻyicha ish haqi (hisoblangan)",
+      "salaryFiled": "Topshirilgan hisobotlar boʻyicha ish haqi (qaydnomasiz oylar)",
+      "rent": "Ijara",
+      "utilities": "Kommunal",
+      "other": "Boshqa xarajatlar («Boshqa xarajat» moddasi — oʻtkazmalar va shaxsiy xarajatlar yoʻqligini tekshiring)",
+      "itpark": "IT Park ajratmalari va aylanma soligʻi",
+      "bankFee": "Bank komissiyalari",
+      "taxOther": "Boshqa soliqlar va penya",
+      "otherIncome": "Boshqa tushumlar"
+    },
+    "operations": "operatsiyalar"
   }
 }

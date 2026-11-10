@@ -863,6 +863,21 @@
       "F060": "Payroll accrued by payrolls and reports + rent, utilities, other",
       "F070": "IT Park and turnover tax charges, bank fees, other taxes",
       "F090": "Other receipts to accounts in the year"
-    }
+    },
+    "part": {
+      "revenueIn": "Client payments to bank accounts",
+      "revenueRefund": "Refunds to clients",
+      "supplier": "Payments to suppliers",
+      "salaryPayroll": "Salary by payrolls (accrued)",
+      "salaryFiled": "Salary by filed reports (months without payroll)",
+      "rent": "Rent",
+      "utilities": "Utilities",
+      "other": "Other expenses («Other expense» article — check there are no transfers or personal spending)",
+      "itpark": "IT Park charges and turnover tax",
+      "bankFee": "Bank fees",
+      "taxOther": "Other taxes and penalties",
+      "otherIncome": "Other receipts"
+    },
+    "operations": "operations"
   }
 }
