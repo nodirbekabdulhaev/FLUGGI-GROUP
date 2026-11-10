@@ -422,7 +422,8 @@
       "byAct": "soliq dalolatnomasi boʻyicha {date} ga"
     },
     "startLate": "Saldo hisobi {from} dan boshlangan, topshirilgan hisobotlar esa {first} dan bor: {from} gacha boʻlgan hisob-kitoblar va toʻlovlar hisobga olinmaydi, shuning uchun soxta ortiqcha toʻlov chiqishi mumkin. «Qaysi oydan hisoblash» maydonini tozalang:",
-    "anchored": "Yil boshidagi saldo {year} yil uchun soliq solishtirma dalolatnomasidan olingan."
+    "anchored": "Yil boshidagi saldo {year} yil uchun soliq solishtirma dalolatnomasidan olingan.",
+    "noActs": "Soliq solishtirma dalolatnomalari yuklanmagan: saldo {from} dan zanjir boʻyicha hisoblanadi va soliq bilan mos kelmaydi. Dalolatnomalarni yuklang:"
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",

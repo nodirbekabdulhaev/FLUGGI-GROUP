@@ -422,7 +422,8 @@
       "byAct": "per the tax office act at {date}"
     },
     "startLate": "The balance starts from {from} while filed reports exist from {first}: accruals and payments before {from} are not counted, so a false overpayment can appear. Clear «Track from month» in",
-    "anchored": "The balance at the start of the year is taken from the {year} reconciliation act."
+    "anchored": "The balance at the start of the year is taken from the {year} reconciliation act.",
+    "noActs": "Tax office reconciliation acts are not uploaded: the balance is chained from {from} and will not match the tax office. Upload the acts in"
   },
   "settings": {
     "title": "Accounting settings",

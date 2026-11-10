@@ -321,10 +321,14 @@ class FiledReportsTest extends TestCase
         $this->assertSame(['376000.00', '401000.00', '0.00', '5000.00'], [$y['years'][2025]['due'], $y['years'][2025]['paid'], $y['years'][2025]['debt'], $y['years'][2025]['over']]);
         $this->assertSame([2024, 2025], array_keys($y['acts']));
 
-        // Ручное начало учёта отключает привязку к актам
+        // Ручное начало учёта раньше января года акту не мешает; позже января — свой остаток «на ноль», акт не применяется
         Accounting::saveSettings(['taxBalanceFrom' => '2024-10']);
-        $this->assertFalse(TaxesService::forPeriod('2025-02')['anchored']);
-        Accounting::saveSettings(['taxBalanceFrom' => '']);
+        $this->assertTrue(TaxesService::forPeriod('2025-02')['anchored']);
+        Accounting::saveSettings(['taxBalanceFrom' => '2025-02', 'taxOpeningNdfl' => '1000']);
+        $zero = TaxesService::forPeriod('2025-02');
+        $this->assertSame([false, '2025-02', '1000.00'], [$zero['anchored'], $zero['balanceFrom'], $zero['taxes']['TAX_NDFL']['opening']]);
+        Accounting::saveSettings(['taxBalanceFrom' => '', 'taxOpeningNdfl' => '0']);
+        $this->assertTrue(TaxesService::forPeriod('2025-02')['actsLoaded']);
 
         // Страницы на всех языках
         foreach (['uz', 'ru', 'en'] as $locale) {

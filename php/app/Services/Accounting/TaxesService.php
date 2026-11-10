@@ -97,22 +97,23 @@ final class TaxesService
             'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'], 'filed' => $cur['filed'], 'filedCovered' => ! $cur['filed'] && $cur['filedDue'] !== null,
             'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
-            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'anchored' => $anchor !== null, 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
+            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'anchored' => $anchor !== null, 'actsLoaded' => AccTaxAct::exists(), 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
         ];
     }
 
     /**
      * Сальдо на начало года из акта сверки налоговой: остаток на 31 декабря прошлого года (долг минус переплата) по налогам акта.
-     * Действует, если загружен годовой акт за прошлый год и начало учёта вручную не задано.
+     * Действует, если загружен годовой акт за прошлый год и начало учёта вручную не позже января этого года.
      *
      * @return array{from:string,year:int,opening:array<string,BigDecimal>}|null
      */
     public static function anchor(array $s, string $period): ?array
     {
-        if ($s['taxBalanceFrom'] !== '') {
+        $year = (int) substr($period, 0, 4);
+        // Начало учёта, заданное вручную позже начала года, отключает привязку к акту (своё сальдо «на ноль»); раннее — не мешает
+        if ($s['taxBalanceFrom'] !== '' && $s['taxBalanceFrom'] > $year.'-01') {
             return null;
         }
-        $year = (int) substr($period, 0, 4);
         $acts = AccTaxAct::where('year', $year - 1)->where('year_end', true)->get()->keyBy('tax_code');
         if ($acts->isEmpty()) {
             return null;
