@@ -37,7 +37,7 @@ final class Statements
         '730', '740', '750', '760'];
 
     /** Строки баланса, считаемые из системы, если значение не задано. */
-    public const B_AUTO = ['270', '280', '330', '340', '350', '360', '450', '680', '700', '720'];
+    public const B_AUTO = ['270', '280', '340', '350', '450', '680', '700', '720'];
 
     /** Итоги баланса: код => [слагаемые, вычитаемые]. Порядок — от нижних к верхним. */
     public const B_SUM = [
@@ -97,20 +97,20 @@ final class Statements
         return $today < $end && substr($today, 0, 4) === (string) $year ? $today : $end;
     }
 
-    /** Остатки счетов по видам на конец дня $date, UZS: CASH, BANK, USD (банк в валюте), CARD. */
+    /** Остатки банковских счетов на конец дня $date, UZS: BANK (в сумах) и USD (в валюте). Касса и карты в формы не входят — только расчётные счета. */
     private static function accountBalances(string $date): array
     {
-        $out = ['CASH' => BigDecimal::zero(), 'BANK' => BigDecimal::zero(), 'USD' => BigDecimal::zero(), 'CARD' => BigDecimal::zero()];
+        $out = ['BANK' => BigDecimal::zero(), 'USD' => BigDecimal::zero()];
         $flows = AccTransaction::query()->whereDate('date', '<=', $date)
             ->selectRaw("account_id, SUM(CASE WHEN direction = 'IN' THEN amount ELSE -amount END) AS s")->groupBy('account_id')->pluck('s', 'account_id');
-        foreach (AccAccount::all() as $a) {
+        foreach (AccAccount::where('kind', 'BANK')->get() as $a) {
             $opening = $a->opening_date === null || $a->opening_date->format('Y-m-d') <= $date ? Accounting::dec($a->opening_balance) : BigDecimal::zero();
             $balance = $opening->plus(Accounting::dec($flows[$a->id] ?? '0'));
             if ($a->currency === 'USD') {
                 $balance = Accounting::toUzs((string) $balance, 'USD', $date) ?? BigDecimal::zero();
-                $key = $a->kind === 'BANK' ? 'USD' : $a->kind;
+                $key = 'USD';
             } else {
-                $key = $a->kind;
+                $key = 'BANK';
             }
             $out[$key] = ($out[$key] ?? BigDecimal::zero())->plus($balance);
         }
@@ -118,12 +118,12 @@ final class Statements
         return $out;
     }
 
-    /** Выплаты зарплаты за период по дате платежа, UZS. */
+    /** Выплаты зарплаты с банковских счетов за период по дате платежа, UZS (касса и карты не входят). */
     private static function salaryPaid(string $from, string $to): BigDecimal
     {
         $sum = BigDecimal::zero();
         $rows = AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')
-            ->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereBetween('acc_transactions.date', [$from, $to])
+            ->where('a.kind', 'BANK')->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereBetween('acc_transactions.date', [$from, $to])
             ->get(['acc_transactions.amount', 'acc_transactions.date', 'a.currency']);
         foreach ($rows as $r) {
             $sum = $sum->plus(Accounting::toUzs((string) $r->amount, $r->currency, $r->date->toDateString()) ?? BigDecimal::zero());
@@ -151,7 +151,7 @@ final class Statements
         }
         $salary = $prev === null && $rows === 0 ? $zero : ($prev['720']['v'] ?? $zero)->plus($net)->minus(self::salaryPaid($year.'-01-01', $end));
 
-        return ['270' => $over($budget), '280' => $over(['TAX_INPS']), '330' => $acc['CASH'], '340' => $acc['BANK'], '350' => $acc['USD'], '360' => $acc['CARD'],
+        return ['270' => $over($budget), '280' => $over(['TAX_INPS']), '340' => $acc['BANK'], '350' => $acc['USD'],
             '680' => $debt($budget), '700' => $debt(['TAX_INPS']), '720' => $salary];
     }
 

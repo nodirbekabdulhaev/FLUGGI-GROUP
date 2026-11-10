@@ -849,10 +849,8 @@
     "how": {
       "B270": "Taxes: overpayment of income tax, social tax, turnover tax, IT Park (tax office balance, «Taxes» section)",
       "B280": "Taxes: INPS overpayment",
-      "B330": "«Cash» accounts: balance at the end of the period",
       "B340": "Bank accounts in sums: balance at the end of the period",
       "B350": "Foreign currency bank accounts: balance at the rate",
-      "B360": "«Card» accounts: balance at the end of the period",
       "B450": "Balancing line: assets − liabilities − other equity; comparison with net profit is above",
       "B680": "Taxes: debt of income tax, social tax, turnover tax, IT Park («Taxes» section)",
       "B700": "Taxes: INPS debt («Taxes» section)",

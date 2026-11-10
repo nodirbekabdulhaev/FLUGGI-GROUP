@@ -105,7 +105,12 @@ class StatementsTest extends TestCase
         AccPayroll::create(['person_id' => $person->id, 'period' => '2026-01', 'status' => 'APPROVED', 'gross' => '5000000', 'ndfl_rate' => '7.5', 'ndfl' => '375000', 'inps_rate' => '0.1', 'inps' => '5000', 'net' => '4620000']);
         AccTransaction::create(['account_id' => $bank->id, 'direction' => 'IN', 'category' => 'CLIENT_PAYMENT', 'amount' => '20000000', 'date' => '2026-02-01']);
         AccTransaction::create(['account_id' => $bank->id, 'direction' => 'OUT', 'category' => 'SALARY', 'amount' => '3000000', 'date' => '2026-01-20', 'person_id' => $person->id, 'period' => '2026-01']);
+        // Касса и карта в формы не входят — только расчётные счета; выплата зарплаты с карты не уменьшает долг по зарплате
+        $cash = AccAccount::create(['name' => 'Kassa', 'kind' => 'CASH', 'currency' => 'UZS', 'opening_balance' => '5000000', 'crm_methods' => []]);
+        $card = AccAccount::create(['name' => 'Karta', 'kind' => 'CARD', 'currency' => 'UZS', 'opening_balance' => '7000000', 'crm_methods' => []]);
+        AccTransaction::create(['account_id' => $card->id, 'direction' => 'OUT', 'category' => 'SALARY', 'amount' => '1000000', 'date' => '2026-01-25', 'person_id' => $person->id, 'period' => '2026-01']);
         $c26 = Statements::closing(2026);
+        $this->assertSame(['0.00', '0.00'], [(string) $c26['330']['v']->toScale(2), (string) $c26['360']['v']->toScale(2)]);
         $this->assertSame(['200000000.00', 'carry'], [(string) $c26['410']['v'], $c26['410']['src']]);
         $this->assertSame(['258892000.00', 'carry'], [(string) $c26['090']['v'], $c26['090']['src']]);
         // 720: 148 887 090 + 4 620 000 − 3 000 000
