@@ -413,7 +413,8 @@
       "debt": "Qarz",
       "over": "Ortiqcha toʻlov",
       "inOther": "shu jumladan «Boshqa soliqlar»: {sum}",
-      "explain": "JShDS ustuni — hisoblangan / toʻlangan. Toʻlovlar bitta toʻlov (yagona soliq toʻlovi) bilan oʻtsa va koʻchirmada bitta soliq deb yozilsa, alohida soliqlar boʻyicha buzilish boʻladi — barcha soliqlar boʻyicha «Farq»ga qarang: u toʻlovlar qanday taqsimlanganiga bogʻliq emas."
+      "explain": "JShDS ustuni — hisoblangan / toʻlangan. Toʻlovlar bitta toʻlov (yagona soliq toʻlovi) bilan oʻtsa va koʻchirmada bitta soliq deb yozilsa, alohida soliqlar boʻyicha buzilish boʻladi — barcha soliqlar boʻyicha «Farq»ga qarang: u toʻlovlar qanday taqsimlanganiga bogʻliq emas.",
+      "byAct": "soliq dalolatnomasi boʻyicha {date} ga"
     },
     "startLate": "Saldo hisobi {from} dan boshlangan, topshirilgan hisobotlar esa {first} dan bor: {from} gacha boʻlgan hisob-kitoblar va toʻlovlar hisobga olinmaydi, shuning uchun soxta ortiqcha toʻlov chiqishi mumkin. «Qaysi oydan hisoblash» maydonini tozalang:",
     "anchored": "Yil boshidagi saldo {year} yil uchun soliq solishtirma dalolatnomasidan olingan."
@@ -653,6 +654,7 @@
     "confirm": "Tanlangan guruhlar operatsiyalari koʻrsatilgan moddalarga oʻtkazilsinmi?",
     "apply": "Oʻtkazish",
     "done": "Oʻtkazilgan guruhlar: {groups}, operatsiyalar: {operations}.",
-    "check": "tekshirish"
+    "check": "tekshirish",
+    "inHint": "«Oʻtkazma (kirim)» moddasidagi kirimlar tushum hisoblanmaydi. Agar pul tizimda yoʻq hisobdan (masalan, mijozlar toʻlaydigan ikkilamchi hisoblardan) kelgan boʻlsa, bu haqiqiy kirim — «Mijoz toʻlovi» yoki «Boshqa daromad»ga oʻtkazing."
   }
 }

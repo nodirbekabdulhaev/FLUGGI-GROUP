@@ -413,7 +413,8 @@
       "debt": "Debt",
       "over": "Overpayment",
       "inOther": "incl. «Other taxes»: {sum}",
-      "explain": "The income tax column is accrued / paid. If payments go as one lump (a single tax payment) and are labelled as one tax in the statement, individual taxes will be skewed — look at the «Difference» for all taxes: it does not depend on how payments are split."
+      "explain": "The income tax column is accrued / paid. If payments go as one lump (a single tax payment) and are labelled as one tax in the statement, individual taxes will be skewed — look at the «Difference» for all taxes: it does not depend on how payments are split.",
+      "byAct": "per the tax office act at {date}"
     },
     "startLate": "The balance starts from {from} while filed reports exist from {first}: accruals and payments before {from} are not counted, so a false overpayment can appear. Clear «Track from month» in",
     "anchored": "The balance at the start of the year is taken from the {year} reconciliation act."
@@ -653,6 +654,7 @@
     "confirm": "Move the operations of the selected groups to the chosen articles?",
     "apply": "Move",
     "done": "Groups moved: {groups}, operations: {operations}.",
-    "check": "review"
+    "check": "review",
+    "inHint": "Receipts in the «Transfer (in)» article are not counted as revenue. If the money came from an account that is not in the system (for example secondary accounts that clients pay into), it is a real receipt — move it to «Client payment» or «Other income»."
   }
 }

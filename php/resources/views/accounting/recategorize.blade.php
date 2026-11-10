@@ -16,6 +16,7 @@
         @endforeach
     </div>
 
+    @if ($direction === 'IN')<p class="mb-3 flex items-start gap-2 text-sm text-warning"><x-icon name="alert" class="mt-0.5 shrink-0" />{{ t('accounting.recategorize.inHint') }}</p>@endif
     @if ($groups->isEmpty())
         <div class="card"><x-empty icon="check" :title="t('accounting.recategorize.empty')">{{ t('accounting.recategorize.emptyText') }}</x-empty></div>
     @else

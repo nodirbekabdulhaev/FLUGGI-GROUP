@@ -20,7 +20,13 @@ use Illuminate\Support\Collection;
  */
 final class BankRules
 {
-    private const MIGRATION = ['сворачивани', 'разворачивани', 'миграци', 'migratsiya', 'перенос остатка', 'qoldiqni ko', 'вторичных счетов', 'вторичных сч', 'на основной счет', 'на основной счёт'];
+    private const MIGRATION = ['сворачивани', 'разворачивани', 'миграци', 'migratsiya', 'перенос остатка', 'qoldiqni ko'];
+
+    /**
+     * Перевод со вторичных счетов на основной. Только расход: списание — перевод между своими счетами, а поступление на основной счёт
+     * часто и есть выручка (клиенты платят на вторичные счета, которых в системе нет), поэтому приход сам в переводы не попадает.
+     */
+    private const SWEEP_OUT = ['вторичных счетов', 'вторичных сч', 'на основной счет', 'на основной счёт'];
 
     private const ITPARK = ['itpark', 'it park', 'it-park', 'ит парк', 'ит-парк'];
 
@@ -74,6 +80,9 @@ final class BankRules
 
         if ($has(self::MIGRATION)) {
             return $pick($dir === 'IN' ? 'TRANSFER_IN' : 'TRANSFER_OUT', 'migration');
+        }
+        if ($dir === 'OUT' && $has(self::SWEEP_OUT)) {
+            return $pick('TRANSFER_OUT', 'sweep');
         }
         if ($dir === 'OUT') {
             if (preg_match(self::PENALTY_RE, $text)) {

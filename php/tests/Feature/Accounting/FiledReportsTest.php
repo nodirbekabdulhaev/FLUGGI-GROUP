@@ -315,6 +315,12 @@ class FiledReportsTest extends TestCase
         $this->assertSame(['-5000.00'], [$c['2025-46']['actBalance']]);
         $this->assertFalse($c->has('2024-199'));   // пеня только в акте
 
+        // Сверка по годам равна акту налоговой: начислено, оплачено, долг и переплата по всем налогам акта
+        $y = TaxesService::yearly('2025-02');
+        $this->assertSame(['300000.00', '252000.00', '20000.00', '0.00'], [$y['years'][2024]['due'], $y['years'][2024]['paid'], $y['years'][2024]['debt'], $y['years'][2024]['over']]);
+        $this->assertSame(['376000.00', '401000.00', '0.00', '5000.00'], [$y['years'][2025]['due'], $y['years'][2025]['paid'], $y['years'][2025]['debt'], $y['years'][2025]['over']]);
+        $this->assertSame([2024, 2025], array_keys($y['acts']));
+
         // Ручное начало учёта отключает привязку к актам
         Accounting::saveSettings(['taxBalanceFrom' => '2024-10']);
         $this->assertFalse(TaxesService::forPeriod('2025-02')['anchored']);
@@ -363,7 +369,9 @@ class FiledReportsTest extends TestCase
         $this->assertSame('TAX_TURNOVER', $rule('Давлат ғазначилиги', 'Айланмадан олинадиган солиқ'));
         $this->assertSame('OTHER', $rule('OOO Supplier', 'Оборотные средства'));
         $this->assertSame('TRANSFER_OUT', $rule('X', 'ПЕРЕВОД СРЕДСТВ СО ВТОРИЧНЫХ СЧЕТОВ НА ОСНОВНОЙ СЧЕТ'));
-        $this->assertSame('TRANSFER_IN', $rule('X', 'ПЕРЕВОД СРЕДСТВ СО ВТОРИЧНЫХ СЧЕТОВ НА ОСНОВНОЙ СЧЕТ', 'IN'));
+        // Поступление на основной счёт — выручка, сам в переводы не попадает; перенос остатка по-прежнему перевод
+        $this->assertSame('OTHER_INCOME', $rule('X', 'ПЕРЕВОД СРЕДСТВ СО ВТОРИЧНЫХ СЧЕТОВ НА ОСНОВНОЙ СЧЕТ', 'IN'));
+        $this->assertSame('TRANSFER_IN', $rule('X', 'Перенос остатка', 'IN'));
 
         $g = Recategorize::groups('OUT', 'TAX_OTHER');
         $this->assertSame(['OOO Supplier', 2, '6000000.00', ['2024' => '5000000.00', '2025' => '1000000.00']], [$g[0]['cp'], $g[0]['count'], (string) $g[0]['total']->toScale(2), array_map(fn ($v) => (string) $v->toScale(2), $g[0]['years'])]);
@@ -383,7 +391,7 @@ class FiledReportsTest extends TestCase
         $this->post('/accounting/recategorize', $payload('IN', 'OTHER_INCOME'))->assertSessionHas('ok');
         $this->assertSame(['TAX_OTHER', '2022-05'], [AccTransaction::where('description', 'Пеня по налогу')->value('category'), AccTransaction::where('description', 'Пеня по налогу')->value('period')]);
         $this->assertSame('SUPPLIER', AccTransaction::where('description', 'Оплата по договору аренды')->value('category'));
-        $this->assertSame(['TRANSFER_OUT', 'TRANSFER_IN'], [AccTransaction::where('direction', 'OUT')->where('amount', '5687748.25')->value('category'), AccTransaction::where('direction', 'IN')->value('category')]);
+        $this->assertSame(['TRANSFER_OUT', 'OTHER_INCOME'], [AccTransaction::where('direction', 'OUT')->where('amount', '5687748.25')->value('category'), AccTransaction::where('direction', 'IN')->value('category')]);
         $this->assertSame(0, AccTransaction::where('category', 'RENT')->count());
         $this->assertTrue(AuditLog::where('action', 'accounting.operations.recategorize')->exists());
         // Неверная статья и чужое направление не принимаются

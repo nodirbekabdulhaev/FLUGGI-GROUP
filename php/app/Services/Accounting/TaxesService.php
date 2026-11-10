@@ -196,7 +196,7 @@ final class TaxesService
      * Сверка с личным кабинетом налогоплательщика по годам: начислено и оплачено по всем налогам, долг и переплата на конец года
      * (как «Ҳисобланган / Тўланган / Қарздорлик / Ортиқча тўлов»). Остаток считается по каждому налогу отдельно.
      *
-     * @return array{from:string,years:array<string,array<string,string>>,total:array<string,string>}
+     * @return array{from:string,years:array<string,array<string,string>>,total:array<string,string>,acts:array<int,array{asOf:string,yearEnd:bool}>}
      */
     public static function yearly(string $to): array
     {
@@ -204,7 +204,7 @@ final class TaxesService
         $from = self::balanceFrom($s, $to);
         $zero = BigDecimal::zero();
         if ($from > $to) {
-            return ['from' => $from, 'years' => [], 'total' => []];
+            return ['from' => $from, 'years' => [], 'total' => [], 'acts' => []];
         }
         $years = [];
         $walk = self::walk($from, $to, $s);
@@ -234,6 +234,25 @@ final class TaxesService
                 }
             }
         }
+        // Годы с актом сверки: цифры налоговой — начислено, оплачено, долг (с пеней) и переплата по всем налогам акта
+        $actYears = [];
+        foreach (AccTaxAct::all()->groupBy('year') as $y => $list) {
+            if (! isset($years[$y])) {
+                continue;
+            }
+            $a = ['due' => $zero, 'paid' => $zero, 'debt' => $zero, 'over' => $zero];
+            foreach ($list as $r) {
+                $a['due'] = $a['due']->plus($r->accrued);
+                $a['paid'] = $a['paid']->plus($r->paid);
+                $a['debt'] = $a['debt']->plus($r->closing_debt)->plus($r->closing_penalty);
+                $a['over'] = $a['over']->plus($r->closing_overpay);
+            }
+            $ndfl = $list->firstWhere('tax_code', '46');
+            $years[$y] = $a + ['ndflDue' => $ndfl ? Accounting::dec($ndfl->accrued) : $zero, 'ndflPaid' => $ndfl ? Accounting::dec($ndfl->paid) : $zero,
+                'inpsDue' => $zero, 'inpsPaid' => $zero, 'itparkDue' => $zero, 'itparkPaid' => $zero, 'otherDue' => $zero, 'otherPaid' => $zero];
+            $first = $list->first();
+            $actYears[$y] = ['asOf' => $first->as_of->toDateString(), 'yearEnd' => (bool) $first->year_end];
+        }
         $total = ['due' => $zero, 'paid' => $zero];
         foreach ($years as $y) {
             $total['due'] = $total['due']->plus($y['due']);
@@ -241,7 +260,7 @@ final class TaxesService
         }
         $fmt = fn (array $row) => array_map(fn (BigDecimal $v) => (string) $v->toScale(2), $row);
 
-        return ['from' => $from, 'years' => array_map($fmt, $years), 'total' => $fmt($total)];
+        return ['from' => $from, 'years' => array_map($fmt, $years), 'total' => $fmt($total), 'acts' => $actYears];
     }
 
     /**
