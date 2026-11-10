@@ -11,6 +11,7 @@ use App\Models\Meeting;
 use App\Models\OutboxEvent;
 use App\Models\StageHistory;
 use App\Services\Crm\TimelineService;
+use App\Support\Format;
 
 /** Сценарий §84, шаги 3–8: лид → встреча → квалификация в клиента и сделку. */
 class LeadFlowTest extends CrmTestCase
@@ -198,7 +199,7 @@ class LeadFlowTest extends CrmTestCase
         $this->assertCount(1, $res['clients']);
         // На странице самого лида — ни «дубля», ни собственного клиента
         $page = $this->actingAsUser($this->manager)->get("/sales/leads/{$lead->id}")->assertOk();
-        $page->assertDontSee(t('leads.duplicates.title'))->assertDontSee(t('leads.duplicates.clientTitle'));
+        $page->assertDontSee('mb-4 rounded-md border border-warning/40', false)->assertDontSee('mb-6 rounded-md border border-primary/30', false);
         // Новый лид с теми же контактами: другой лид в работе — дубль; клиент — «уже есть среди клиентов», а не дубль
         $again = $this->newLead($this->manager, ['title' => 'Повторное обращение', 'phone' => '+998 90 123-45-67']);
         $res = $this->actingAsUser($this->manager)->getJson('/sales/leads/duplicates?phone=998901234567&except='.$again->id)->json();
@@ -206,7 +207,7 @@ class LeadFlowTest extends CrmTestCase
         $this->assertCount(1, $res['clients']);
         $third = $this->newLead($this->manager, ['title' => 'Третье обращение', 'phone' => '90 123 45 67']);
         $page = $this->actingAsUser($this->manager)->get("/sales/leads/{$again->id}")->assertOk();
-        $page->assertSee(t('leads.duplicates.title'))->assertSee('Третье обращение')->assertSee(t('leads.duplicates.clientTitle'));
+        $page->assertSee('mb-4 rounded-md border border-warning/40', false)->assertSee('mb-6 rounded-md border border-primary/30', false)->assertSee(Format::code('L', $third->number));
         $this->assertSame([$third->id], array_column($this->actingAsUser($this->manager)->getJson('/sales/leads/duplicates?phone=901234567&except='.$again->id)->json()['leads'], 'id'));
     }
 }
