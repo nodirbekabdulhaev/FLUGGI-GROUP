@@ -10,6 +10,7 @@
         '/accounting/taxes' => t('accounting.tabs.taxes'),
         '/accounting/tax-report' => t('accounting.tabs.taxReport'),
         '/accounting/filed-reports' => t('accounting.tabs.filed'),
+        '/accounting/statements' => t('accounting.tabs.statements'),
     ];
     if (access()->can('accounting.manage')) {
         $tabs['/accounting/settings'] = t('accounting.tabs.settings');

@@ -9,7 +9,9 @@ use App\Http\Controllers\Accounting\OverviewController;
 use App\Http\Controllers\Accounting\PayrollController;
 use App\Http\Controllers\Accounting\PeopleController;
 use App\Http\Controllers\Accounting\RecategorizeController;
+use App\Http\Controllers\Accounting\SalaryLinksController;
 use App\Http\Controllers\Accounting\SettingsController;
+use App\Http\Controllers\Accounting\StatementsController;
 use App\Http\Controllers\Accounting\TaxesController;
 use App\Http\Controllers\Accounting\TaxReportController;
 use Illuminate\Support\Facades\Route;
@@ -60,6 +62,8 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::post('/payroll/calculate', [PayrollController::class, 'calculate'])->middleware($manage)->name('payroll.calculate');
     Route::patch('/payroll/{id}', [PayrollController::class, 'update'])->whereUuid('id')->middleware($manage)->name('payroll.update');
     Route::post('/payroll/approve', [PayrollController::class, 'approve'])->middleware($manage)->name('payroll.approve');
+    Route::get('/payroll/link', [SalaryLinksController::class, 'index'])->middleware($manage)->name('payroll.link');
+    Route::post('/payroll/link', [SalaryLinksController::class, 'apply'])->middleware($manage)->name('payroll.link.apply');
     Route::post('/payroll/unapprove', [PayrollController::class, 'unapprove'])->middleware($manage)->name('payroll.unapprove');
 
     Route::get('/taxes', [TaxesController::class, 'index'])->middleware($read)->name('taxes');
@@ -77,6 +81,10 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::get('/filed-reports/{token}', [FiledReportsController::class, 'preview'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.preview');
     Route::post('/filed-reports/{token}/confirm', [FiledReportsController::class, 'confirm'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.confirm');
     Route::post('/filed-reports/{token}/cancel', [FiledReportsController::class, 'cancel'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.cancel');
+    // Баланс и финрезультаты: смотреть — accounting.read, править и загружать сданные формы — accounting.manage
+    Route::get('/statements', [StatementsController::class, 'index'])->middleware($read)->name('statements');
+    Route::post('/statements/line', [StatementsController::class, 'line'])->middleware($manage)->name('statements.line');
+    Route::post('/statements/import', [StatementsController::class, 'import'])->middleware($manage)->name('statements.import');
     Route::get('/annual-report', [TaxesController::class, 'annual'])->middleware($export)->name('annual');
 
     Route::get('/settings', [SettingsController::class, 'index'])->middleware($manage)->name('settings');

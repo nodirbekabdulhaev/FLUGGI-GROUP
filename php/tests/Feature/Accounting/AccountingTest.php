@@ -18,6 +18,7 @@ use App\Services\Accounting\AccountsService;
 use App\Services\Accounting\CrmImportService;
 use App\Services\Accounting\OperationsService;
 use App\Services\Accounting\OverviewService;
+use App\Services\Accounting\SalaryLinks;
 use App\Services\Accounting\TaxesService;
 use App\Services\Accounting\TaxPayrollService;
 use App\Services\Accounting\TaxReport;
@@ -429,9 +430,9 @@ class AccountingTest extends TestCase
     {
         $this->as($this->accountant);
         Accounting::saveSettings(['ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false]);
-        $names = ['Abdulxayev', 'Akbarova', 'Qodirov', 'Yuldashev'];
+        $names = ['Aliyev', 'Bekova', 'Karimov', 'Valiyev'];
         $big = array_map(fn ($n) => AccPerson::create(['full_name' => $n, 'monthly_salary' => '4500000', 'hired_at' => '2026-01-01']), $names);
-        $small = AccPerson::create(['full_name' => 'Xasanov', 'monthly_salary' => '1400000', 'hired_at' => '2026-05-01']);
+        $small = AccPerson::create(['full_name' => 'Saidov', 'monthly_salary' => '1400000', 'hired_at' => '2026-05-01']);
         TaxPayrollService::calculate('2026-11');
         $bank = $this->account(['name' => 'Bank']);
         // Весь месяц взят одной суммой на одну карту — 8 005 000 директору
@@ -471,6 +472,65 @@ class AccountingTest extends TestCase
         $off = TaxPayrollService::sheet('2026-11');
         $this->assertFalse($off['pooled']);
         $this->assertSame('8005000.00', $off['rows']->firstWhere('person_id', $big[0]->id)->paid);
+    }
+
+    public function test_salary_payments_are_linked_to_months_and_people_from_statement_text(): void
+    {
+        $this->as($this->accountant);
+        $ceo = AccPerson::create(['full_name' => 'Алиев Вали', 'passport_name' => "ALIYEV VALI KARIM O'G'LI", 'pinfl' => '10000000000007', 'monthly_salary' => '4500000']);
+        $other = AccPerson::create(['full_name' => 'Акбарова Райхоной', 'monthly_salary' => '4500000']);
+        $bank = $this->account(['name' => 'Bank']);
+        $mk = fn (string $date, string $amount, string $desc, ?string $cp = null, ?string $period = null) => $this->op($bank, 'OUT', 'SALARY', $amount, $date, ['counterparty' => $cp, 'description' => $desc, 'period' => $period ?? substr($date, 0, 7)]);
+        // Аванс за октябрь, выплаченный в конце сентября, и зарплата за декабрь, выплаченная в январе
+        $a = $mk('2026-09-28', '1600000', 'П/О, АВАНС ЗА ОКТЯБРЬ ЗАРПЛАТА', 'ALIYEV VALI KARIM O‘G‘LI');
+        $b = $mk('2026-01-12', '4000000', 'Зарплата за декабрь 2025 г.', 'Алиев Вали');
+        $c = $mk('2026-10-08', '5600000', 'П/О, ЗАРПЛАТА 8600000000000000 ALIYEV', "ALIYEV VALI KARIM O'G'LI");   // месяц в назначении не назван
+        $d = $mk('2026-03-05', '2000000', 'Oylik maosh fevral oyi uchun', 'Karimova');
+        $e = $mk('2026-05-06', '1000000', 'зарплата 04.2026 по ведомости', null, '2026-05');
+        $f = $mk('2026-06-06', '700000', 'аванс 50011234567890 за июнь', null, '2026-06');   // уже верно, ПИНФЛ чужого
+        $this->assertSame('2026-10', SalaryLinks::month('аванс за октябрь', '2026-09-28'));
+        $this->assertSame('2025-12', SalaryLinks::month('зарплата за декабрь', '2026-01-12'));
+        $this->assertSame('2026-02', SalaryLinks::month('oylik fevral uchun', '2026-03-05'));
+        $this->assertNull(SalaryLinks::month('ЗАРПЛАТА 8600000000000000', '2026-10-08'));
+
+        $plan = SalaryLinks::plan(2026);
+        $by = collect($plan['rows'])->keyBy('id');
+        $this->assertSame([6, 5], [$plan['total'], $plan['withMonth']]);
+        $this->assertSame(['2026-09', '2026-10', $ceo->id], [$by[$a->id]['oldPeriod'], $by[$a->id]['newPeriod'], $by[$a->id]['newPersonId']]);
+        $this->assertSame(['2025-12', $ceo->id], [$by[$b->id]['newPeriod'], $by[$b->id]['newPersonId']]);
+        $this->assertSame($ceo->id, $by[$c->id]['newPersonId']);   // период верный (месяц платежа), человек — по ФИО
+        $this->assertFalse($by[$c->id]['changePeriod']);
+        $this->assertSame('2026-02', $by[$d->id]['newPeriod']);
+        $this->assertNull($by[$d->id]['newPersonId']);   // получателя нет среди людей
+        $this->assertSame('2026-04', $by[$e->id]['newPeriod']);
+        $this->assertFalse($by->has($f->id));
+
+        // Применяем всё, кроме одной строки
+        $r = SalaryLinks::apply(2026, [$a->id, $b->id, $c->id, $e->id]);
+        $this->assertSame(4, $r['operations']);
+        $this->assertSame(['2026-10', $ceo->id], [$a->refresh()->period, $a->person_id]);
+        $this->assertSame('2025-12', $b->refresh()->period);
+        $this->assertSame('2026-03', $d->refresh()->period);   // не выбрана — осталась
+        $this->assertTrue(AuditLog::where('action', 'accounting.salary.link')->exists());
+
+        // Ведомость октября: выплаты без человека в общей сумме (раньше было «0»)
+        TaxPayrollService::calculate('2026-10');
+        $oct = TaxPayrollService::sheet('2026-10');
+        $this->assertSame(['7200000.00'], [$oct['totals']['paid']]);   // аванс 1 600 000 + зарплата 5 600 000
+        // Страница на всех языках и права
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            $html = $this->get('/accounting/payroll/link?year=2026')->assertOk()->getContent();
+            $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale: ключ без перевода");
+        }
+        $this->post('/accounting/payroll/link', ['year' => 2026, 'ids' => [$d->id]])->assertRedirect()->assertSessionHas('ok');
+        $this->assertSame('2026-02', $d->refresh()->period);
+        foreach (['ROP', 'MANAGER'] as $role) {
+            $this->actingAsUser($this->user($role));
+            $this->get('/accounting/payroll/link')->assertForbidden();
+            $this->post('/accounting/payroll/link', ['year' => 2026, 'ids' => [$d->id]])->assertForbidden();
+        }
     }
 
     public function test_taxes_due_paid_and_reports(): void

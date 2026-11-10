@@ -316,6 +316,33 @@ final class TaxesService
         return $rows;
     }
 
+    /**
+     * Сальдо налогов на конец месяца (плюс — долг, минус — переплата) по статьям TaxesService::CARRIED. Для декабря года с годовым актом
+     * сверки налоговой — по акту, иначе — по цепочке начислений и оплат (с привязкой к актам на январь).
+     *
+     * @return array<string,BigDecimal>
+     */
+    public static function balancesAt(string $period): array
+    {
+        $s = Accounting::settings();
+        $from = self::balanceFrom($s, $period);
+        $bal = array_fill_keys(self::CARRIED, BigDecimal::zero());
+        if ($from <= $period) {
+            $walk = self::walk($from, $period, $s);
+            $bal = end($walk)['balance'];
+        }
+        if (substr($period, 5) === '12') {
+            $acts = AccTaxAct::where('year', (int) substr($period, 0, 4))->where('year_end', true)->get()->keyBy('tax_code');
+            foreach (FiledReports::ACT_CODES as $code => $cat) {
+                if ($a = $acts->get((string) $code)) {
+                    $bal[$cat] = Accounting::dec($a->closing_debt)->minus($a->closing_overpay);
+                }
+            }
+        }
+
+        return $bal;
+    }
+
     /** Начало учёта сальдо: из настроек, иначе первый месяц с ведомостью, иначе сам месяц. */
     public static function balanceFrom(array $s, string $period): string
     {

@@ -386,7 +386,8 @@ final class TaxPayrollService
         $rows = AccPayroll::with('person')->where('period', $period)->get()->sortBy(fn ($r) => $r->person?->full_name)->values();
         $paid = self::paid($period);
         $pooled = $s['salaryPool'] && $rows->isNotEmpty();
-        $pool = array_reduce($paid, fn (BigDecimal $c, $v) => $c->plus($v), BigDecimal::zero());
+        // Общая выплата — все выплаты зарплаты месяца, в том числе из выписок без привязки к человеку
+        $pool = self::paidByPeriod($period, $period)[$period] ?? BigDecimal::zero();
         $alloc = $pooled ? self::allocate($pool, $rows->mapWithKeys(fn ($r) => [$r->person_id => Accounting::dec($r->net)])->all()) : [];
         $totals = array_fill_keys(['gross', 'ndfl', 'inps', 'net', 'paid', 'remaining'], BigDecimal::zero());
         foreach ($rows as $r) {

@@ -17,6 +17,7 @@
                 <form method="POST" action="/accounting/payroll/approve" onsubmit="return confirm(@js(t('accounting.payroll.approveConfirm')))">@csrf<input type="hidden" name="period" value="{{ $period }}">
                     <button class="btn btn-primary"><x-icon name="check" /> {{ t('accounting.payroll.approveAll') }}</button></form>
             @endif
+            <a href="/accounting/payroll/link?year={{ substr($period, 0, 4) }}" class="btn btn-outline"><x-icon name="link" /> {{ t('accounting.salaryLinks.button') }}</a>
             @if ($rows->contains('status', 'APPROVED'))
                 <form method="POST" action="/accounting/payroll/unapprove" onsubmit="return confirm(@js(t('accounting.payroll.unapproveConfirm')))">@csrf<input type="hidden" name="period" value="{{ $period }}">
                     <button class="btn btn-outline"><x-icon name="x" /> {{ t('accounting.payroll.unapproveAll') }}</button></form>
