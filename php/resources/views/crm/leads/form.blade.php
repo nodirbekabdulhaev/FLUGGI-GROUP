@@ -47,15 +47,21 @@
         </div>
     </div>
 
-    <div x-show="dups.leads.length || dups.clients.length" x-cloak class="rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
+    <div x-show="dups.leads.length" x-cloak class="rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
         <p class="font-medium text-warning">{{ t('leads.duplicates.title') }}</p>
         <p class="text-xs text-muted-foreground">{{ t('leads.duplicates.hint') }}</p>
         <ul class="mt-2 grid gap-1">
             <template x-for="d in dups.leads" :key="d.id">
                 <li><a class="link" :href="d.url" target="_blank" x-text="d.number + ' ' + d.title"></a> <span class="text-xs text-muted-foreground" x-text="'· ' + d.status + ' · ' + (d.owner ?? '')"></span></li>
             </template>
+        </ul>
+    </div>
+    <div x-show="dups.clients.length" x-cloak class="rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+        <p class="font-medium text-primary">{{ t('leads.duplicates.clientTitle') }}</p>
+        <p class="text-xs text-muted-foreground">{{ t('leads.duplicates.clientHint') }}</p>
+        <ul class="mt-2 grid gap-1">
             <template x-for="d in dups.clients" :key="d.id">
-                <li>{{ t('crm.fields.client') }}: <a class="link" :href="d.url" target="_blank" x-text="d.number + ' ' + d.title"></a> <span class="text-xs text-muted-foreground" x-text="'· ' + (d.owner ?? '')"></span></li>
+                <li><a class="link" :href="d.url" target="_blank" x-text="d.number + ' ' + d.title"></a> <span class="text-xs text-muted-foreground" x-text="'· ' + (d.owner ?? '')"></span></li>
             </template>
         </ul>
     </div>

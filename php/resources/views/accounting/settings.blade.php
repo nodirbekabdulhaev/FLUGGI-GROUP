@@ -16,6 +16,8 @@
                 <x-field name="inpsRate" inputmode="decimal" :label="t('accounting.settings.inpsRate')" :value="$settings['inpsRate']" required />
                 <label class="flex items-start gap-2 text-sm"><input type="checkbox" name="inpsWithinNdfl" value="1" class="mt-0.5" @checked(old('inpsWithinNdfl', $settings['inpsWithinNdfl']))>
                     <span>{{ t('accounting.settings.inpsWithinNdfl') }}<span class="block text-xs text-muted-foreground">{{ t('accounting.settings.inpsWithinNdflHint') }}</span></span></label>
+                <label class="flex items-start gap-2 text-sm"><input type="hidden" name="salaryPool" value="0"><input type="checkbox" name="salaryPool" value="1" class="mt-0.5" @checked(old('salaryPool', $settings['salaryPool']))>
+                    <span>{{ t('accounting.settings.salaryPool') }}<span class="block text-xs text-muted-foreground">{{ t('accounting.settings.salaryPoolHint') }}</span></span></label>
                 <x-field name="itparkRate" inputmode="decimal" :label="t('accounting.settings.itparkRate')" :hint="t('accounting.settings.itparkHint')" :value="$settings['itparkRate']" required />
                 <x-field name="socialRate" inputmode="decimal" :label="t('accounting.settings.socialRate')" :value="$settings['socialRate']" />
             </div>

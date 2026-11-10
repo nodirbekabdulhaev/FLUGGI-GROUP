@@ -191,10 +191,22 @@ class LeadFlowTest extends CrmTestCase
         // Чужие (вне области) записи не раскрываются
         $res = $this->actingAsUser($this->otherManager)->getJson('/sales/leads/duplicates?phone=901234567')->json();
         $this->assertSame([], $res['leads']);
-        // Клиент с тем же телефоном контакта
+        // Лид стал сделкой и клиентом — цепочка «лид → сделка → клиент» дублем не считается: лид исключён, клиент показан отдельно
         $this->convert($lead, $this->rop);
-        $res = $this->actingAsUser($this->manager)->getJson('/sales/leads/duplicates?phone=998901234567')->json();
+        $res = $this->actingAsUser($this->manager)->getJson('/sales/leads/duplicates?phone=998901234567')->assertOk()->json();
+        $this->assertSame([], $res['leads']);
         $this->assertCount(1, $res['clients']);
-        $this->actingAsUser($this->manager)->get("/sales/leads/{$lead->id}")->assertOk();
+        // На странице самого лида — ни «дубля», ни собственного клиента
+        $page = $this->actingAsUser($this->manager)->get("/sales/leads/{$lead->id}")->assertOk();
+        $page->assertDontSee(t('leads.duplicates.title'))->assertDontSee(t('leads.duplicates.clientTitle'));
+        // Новый лид с теми же контактами: другой лид в работе — дубль; клиент — «уже есть среди клиентов», а не дубль
+        $again = $this->newLead($this->manager, ['title' => 'Повторное обращение', 'phone' => '+998 90 123-45-67']);
+        $res = $this->actingAsUser($this->manager)->getJson('/sales/leads/duplicates?phone=998901234567&except='.$again->id)->json();
+        $this->assertSame([], $res['leads']);
+        $this->assertCount(1, $res['clients']);
+        $third = $this->newLead($this->manager, ['title' => 'Третье обращение', 'phone' => '90 123 45 67']);
+        $page = $this->actingAsUser($this->manager)->get("/sales/leads/{$again->id}")->assertOk();
+        $page->assertSee(t('leads.duplicates.title'))->assertSee('Третье обращение')->assertSee(t('leads.duplicates.clientTitle'));
+        $this->assertSame([$third->id], array_column($this->actingAsUser($this->manager)->getJson('/sales/leads/duplicates?phone=901234567&except='.$again->id)->json()['leads'], 'id'));
     }
 }

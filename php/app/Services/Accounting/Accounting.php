@@ -45,7 +45,7 @@ final class Accounting
      */
     public const DEFAULTS = [
         'ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5',
-        'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1',
+        'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1', 'salaryPool' => true,
         'socialRate' => '0', 'regimeFrom' => '',
         'earlierNdflRate' => '12', 'earlierInpsRate' => '0.1', 'earlierSocialRate' => '12', 'earlierTurnoverRate' => '4',
         'taxBalanceFrom' => '', 'taxOpeningNdfl' => '0', 'taxOpeningInps' => '0', 'taxOpeningItpark' => '0',
@@ -85,6 +85,7 @@ final class Accounting
             $s[$k] = (string) BigDecimal::of((string) $s[$k])->stripTrailingZeros();
         }
         $s['inpsWithinNdfl'] = (bool) $s['inpsWithinNdfl'];
+        $s['salaryPool'] = (bool) $s['salaryPool'];
         foreach (self::OPENING_KEYS as $k) {
             $s[$k] = (string) self::dec($s[$k])->toScale(2);
         }
@@ -136,6 +137,9 @@ final class Accounting
             if (array_key_exists($k, $input)) {
                 $new[$k] = in_array($k, ['taxBalanceFrom', 'regimeFrom'], true) ? trim((string) $input[$k]) : (string) self::dec($input[$k] ?? '0')->toScale(2);
             }
+        }
+        if (array_key_exists('salaryPool', $input)) {
+            $new['salaryPool'] = (bool) $input['salaryPool'];
         }
         if (array_key_exists('inpsWithinNdfl', $input)) {
             $new['inpsWithinNdfl'] = (bool) $input['inpsWithinNdfl'];

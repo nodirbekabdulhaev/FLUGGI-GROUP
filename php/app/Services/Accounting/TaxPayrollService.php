@@ -295,29 +295,123 @@ final class TaxPayrollService
         return array_map(fn (BigDecimal $v) => (string) $v->toScale(2), $out);
     }
 
+    /** Выплаты SALARY по месяцам [период => сумма UZS] — все люди вместе (общая выплата на одну карту). */
+    private static function paidByPeriod(string $from, string $to): array
+    {
+        $out = [];
+        $rows = AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')
+            ->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereBetween('acc_transactions.period', [$from, $to])
+            ->get(['acc_transactions.period', 'acc_transactions.amount', 'acc_transactions.date', 'a.currency']);
+        foreach ($rows as $r) {
+            $uzs = Accounting::toUzs((string) $r->amount, $r->currency, $r->date->toDateString()) ?? BigDecimal::zero();
+            $out[$r->period] = ($out[$r->period] ?? BigDecimal::zero())->plus($uzs);
+        }
+
+        return $out;
+    }
+
     /**
-     * Ведомость месяца: строки с выплачено/остаток и итоги.
+     * Общая сумма выплат поровну между всеми; у кого сумма на руки исчерпана — остаток делится между остальными.
+     * Если выплат больше, чем начислено всем, излишек делится поровну (у каждого остаток уходит в минус).
      *
-     * @return array{rows:Collection,totals:array<string,string>,paidOnly:Collection}
+     * @param  array<string,BigDecimal>  $caps  человек => сумма на руки
+     * @return array<string,BigDecimal> человек => доля выплаты
+     */
+    public static function allocate(BigDecimal $pool, array $caps): array
+    {
+        $zero = BigDecimal::zero();
+        $alloc = array_map(fn () => $zero, $caps);
+        if (! $caps || ! $pool->isPositive()) {
+            return $alloc;
+        }
+        $left = $pool->toScale(2);
+        $open = array_keys($caps);
+        $cent = BigDecimal::of('0.01');
+        while ($open && $left->isPositive()) {
+            $share = $left->dividedBy(count($open), 2, RoundingMode::DOWN);
+            $full = array_values(array_filter($open, fn ($k) => BigDecimal::max($caps[$k], $zero)->minus($alloc[$k])->isLessThanOrEqualTo($share)));
+            if ($full) {
+                foreach ($full as $k) {
+                    $room = BigDecimal::max($caps[$k], $zero)->minus($alloc[$k]);
+                    $alloc[$k] = $alloc[$k]->plus($room);
+                    $left = $left->minus($room);
+                }
+                $open = array_values(array_diff($open, $full));
+
+                continue;
+            }
+            foreach ($open as $k) {
+                $alloc[$k] = $alloc[$k]->plus($share);
+                $left = $left->minus($share);
+            }
+            // Остаток меньше копейки на человека — по копейке первым
+            foreach ($open as $k) {
+                if ($left->isLessThan($cent)) {
+                    break;
+                }
+                $alloc[$k] = $alloc[$k]->plus($cent);
+                $left = $left->minus($cent);
+            }
+            break;
+        }
+        if ($left->isPositive()) {
+            // Все исчерпаны: излишек поровну между всеми
+            $keys = array_keys($caps);
+            $share = $left->dividedBy(count($keys), 2, RoundingMode::DOWN);
+            foreach ($keys as $k) {
+                $alloc[$k] = $alloc[$k]->plus($share);
+                $left = $left->minus($share);
+            }
+            foreach ($keys as $k) {
+                if ($left->isLessThan($cent)) {
+                    break;
+                }
+                $alloc[$k] = $alloc[$k]->plus($cent);
+                $left = $left->minus($cent);
+            }
+        }
+
+        return $alloc;
+    }
+
+    /**
+     * Ведомость месяца: строки с выплачено/остаток, итоги, остаток за месяц и за год.
+     * При «salaryPool» все выплаты месяца (на одну карту) делятся поровну между людьми ведомости (allocate).
+     *
+     * @return array{rows:Collection,totals:array<string,string>,paidOnly:Collection,pooled:bool,pool:string,year:array<string,string>}
      */
     public static function sheet(string $period): array
     {
+        $s = Accounting::settings();
         $rows = AccPayroll::with('person')->where('period', $period)->get()->sortBy(fn ($r) => $r->person?->full_name)->values();
         $paid = self::paid($period);
+        $pooled = $s['salaryPool'] && $rows->isNotEmpty();
+        $pool = array_reduce($paid, fn (BigDecimal $c, $v) => $c->plus($v), BigDecimal::zero());
+        $alloc = $pooled ? self::allocate($pool, $rows->mapWithKeys(fn ($r) => [$r->person_id => Accounting::dec($r->net)])->all()) : [];
         $totals = array_fill_keys(['gross', 'ndfl', 'inps', 'net', 'paid', 'remaining'], BigDecimal::zero());
         foreach ($rows as $r) {
-            $p = Accounting::dec($paid[$r->person_id] ?? '0');
+            $p = $pooled ? $alloc[$r->person_id] : Accounting::dec($paid[$r->person_id] ?? '0');
             $r->setAttribute('paid', (string) $p->toScale(2));
             $r->setAttribute('remaining', (string) Accounting::dec($r->net)->minus($p)->toScale(2));
             foreach (['gross', 'ndfl', 'inps', 'net', 'paid', 'remaining'] as $k) {
                 $totals[$k] = $totals[$k]->plus($r->getAttribute($k));
             }
         }
-        // Выплаты людям без начисления за этот месяц — тоже показываем
+        // Выплаты людям без начисления за этот месяц — тоже показываем (при общей выплате они уже в общей сумме)
         $withRow = $rows->pluck('person_id')->all();
-        $paidOnly = AccPerson::whereIn('id', array_diff(array_keys($paid), $withRow))->get()
+        $paidOnly = $pooled ? collect() : AccPerson::whereIn('id', array_diff(array_keys($paid), $withRow))->get()
             ->each(fn ($p) => $p->setAttribute('paid', $paid[$p->id]));
 
-        return ['rows' => $rows, 'totals' => array_map(fn ($v) => (string) $v->toScale(2), $totals), 'paidOnly' => $paidOnly];
+        // За год: начислено на руки по ведомостям и все выплаты зарплаты за месяцы года
+        $year = substr($period, 0, 4);
+        $net = BigDecimal::zero();
+        foreach (AccPayroll::where('period', 'like', $year.'-%')->get(['net']) as $r) {
+            $net = $net->plus((string) $r->net);
+        }
+        $paidYear = array_reduce(self::paidByPeriod($year.'-01', $year.'-12'), fn (BigDecimal $c, $v) => $c->plus($v), BigDecimal::zero());
+        $fmt = fn (BigDecimal $v) => (string) $v->toScale(2);
+
+        return ['rows' => $rows, 'totals' => array_map($fmt, $totals), 'paidOnly' => $paidOnly, 'pooled' => $pooled, 'pool' => $fmt($pool),
+            'year' => ['year' => $year, 'net' => $fmt($net), 'paid' => $fmt($paidYear), 'remaining' => $fmt($net->minus($paidYear))]];
     }
 }

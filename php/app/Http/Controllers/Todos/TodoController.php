@@ -137,7 +137,7 @@ class TodoController extends Controller
             'day_of_month' => ['required', 'integer', 'min:1', 'max:28'],
             'month' => ['nullable', 'integer', 'min:1', 'max:12'],
             'remind_days_before' => ['sometimes', 'integer', 'min:0', 'max:30'],
-            'is_active' => ['sometimes', 'boolean'],
+            'is_active' => ['sometimes', 'nullable', 'boolean'],
         ]);
         if ($data['frequency'] === 'QUARTERLY' && ! empty($data['month']) && $data['month'] > 3) {
             throw ValidationException::withMessages(['month' => t('todos.errors.quarterMonth')]);

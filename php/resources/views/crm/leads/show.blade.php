@@ -64,15 +64,23 @@
         </div>
     </div>
 
-    @if ($duplicates['leads']->isNotEmpty() || $duplicates['clients']->isNotEmpty())
-        <div class="mb-6 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
+    @if ($duplicates['leads']->isNotEmpty())
+        <div class="mb-4 rounded-md border border-warning/40 bg-warning-soft p-3 text-sm">
             <p class="font-medium text-warning">{{ t('leads.duplicates.title') }}</p>
             <ul class="mt-1 grid gap-1">
                 @foreach ($duplicates['leads'] as $d)
                     <li><a class="link" href="{{ route('crm.leads.show', $d->id) }}">{{ \App\Support\Format::code('L', $d->number) }} {{ $d->title }}</a> <span class="text-xs text-muted-foreground">· {{ t('crm.status.lead.'.$d->status) }} · {{ $d->owner?->full_name }}</span></li>
                 @endforeach
+            </ul>
+        </div>
+    @endif
+    @if ($duplicates['clients']->isNotEmpty())
+        <div class="mb-6 rounded-md border border-primary/30 bg-primary/5 p-3 text-sm">
+            <p class="font-medium text-primary">{{ t('leads.duplicates.clientTitle') }}</p>
+            <p class="text-xs text-muted-foreground">{{ t('leads.duplicates.clientHint') }}</p>
+            <ul class="mt-1 grid gap-1">
                 @foreach ($duplicates['clients'] as $c)
-                    <li>{{ t('crm.fields.client') }}: <a class="link" href="{{ route('crm.clients.show', $c->id) }}">{{ \App\Support\Format::code('C', $c->number) }} {{ $c->name }}</a> <span class="text-xs text-muted-foreground">· {{ $c->owner?->full_name }}</span></li>
+                    <li><a class="link" href="{{ route('crm.clients.show', $c->id) }}">{{ \App\Support\Format::code('C', $c->number) }} {{ $c->name }}</a> <span class="text-xs text-muted-foreground">· {{ $c->owner?->full_name }}</span></li>
                 @endforeach
             </ul>
         </div>

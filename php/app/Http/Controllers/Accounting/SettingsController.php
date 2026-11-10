@@ -36,6 +36,9 @@ class SettingsController extends Controller
             'taxOpeningNdfl' => $opening, 'taxOpeningInps' => $opening, 'taxOpeningItpark' => $opening,
         ]);
         $data['inpsWithinNdfl'] = $request->boolean('inpsWithinNdfl');
+        if ($request->has('salaryPool')) {
+            $data['salaryPool'] = $request->boolean('salaryPool');
+        }
         Accounting::saveSettings($data);
 
         return back()->with('ok', t('accounting.settings.saved'));

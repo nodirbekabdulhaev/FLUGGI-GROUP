@@ -366,7 +366,12 @@
     "unapproveAll": "Undo approval",
     "unapproveConfirm": "Return all approved rows of the month to drafts? You can then edit and recalculate them. Payments stay.",
     "unapproveRowConfirm": "Undo approval for {name}? The row becomes a draft, payments stay.",
-    "unapproved": "Approval undone, rows: {count}"
+    "unapproved": "Approval undone, rows: {count}",
+    "pooledHint": "total payments, split equally",
+    "monthRemaining": "Left for the month",
+    "yearRemaining": "Left for {year}",
+    "yearHint": "Net accrued {net}, paid {paid}",
+    "poolNote": "Payments of the month: {pool}. They went as one sum to one card and are split equally between everyone; when someone net amount is used up, the rest is split between the others. Turn off in Settings."
   },
   "taxes": {
     "title": "Taxes",
@@ -458,7 +463,9 @@
     "earlierInpsRate": "INPS before IT Park, %",
     "earlierSocialRate": "Social tax before IT Park, %",
     "earlierTurnoverRate": "Turnover tax before IT Park, %",
-    "socialRate": "Social tax, % (IT Park — 0)"
+    "socialRate": "Social tax, % (IT Park — 0)",
+    "salaryPool": "Salary paid as one sum to one card — split between everyone",
+    "salaryPoolHint": "All salary payments of the month are split equally between the people of the payroll; when someone amount is used up, the rest is split between the others."
   },
   "errors": {
     "category": "This category cannot be used for this operation",

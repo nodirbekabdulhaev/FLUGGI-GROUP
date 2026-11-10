@@ -130,7 +130,13 @@
                 : ['action' => route('recurring.store'), 'method' => 'POST', 'title' => '', 'description' => '', 'kind' => 'REPORT', 'priority' => 'HIGH',
                     'frequency' => 'MONTHLY', 'day_of_month' => 4, 'month' => 1, 'remind_days_before' => 3, 'is_active' => true];
         @endphp
-        <div x-data="{ r: {} }" @rule-edit.window="r = $event.detail; $dispatch('open-modal', 'rule-form')">
+        @php
+            // После ошибки проверки форма открывается снова с тем, что ввёл человек
+            $ruleOld = old('_form') ? ['action' => old('_action'), 'method' => old('_method', 'POST'), 'title' => old('title', ''), 'description' => old('description', ''), 'kind' => old('kind', 'REPORT'),
+                'priority' => old('priority', 'HIGH'), 'frequency' => old('frequency', 'MONTHLY'), 'day_of_month' => old('day_of_month', 4), 'month' => old('month', 1),
+                'remind_days_before' => old('remind_days_before', 3), 'is_active' => (bool) old('is_active')] : null;
+        @endphp
+        <div x-data="{ r: @js($ruleOld ?? new \stdClass) }" @rule-edit.window="r = $event.detail; $dispatch('open-modal', 'rule-form')">
             <x-card :title="t('todos.recurringTitle')" :subtitle="t('todos.recurringText')" :padding="false">
                 <x-slot:actions>
                     @if ($access->roleCode === 'CEO')
@@ -171,6 +177,10 @@
                     @csrf
                     <input type="hidden" name="_method" :value="r.method">
                     <input type="hidden" name="_form" value="1">
+                    <input type="hidden" name="_action" :value="r.action">
+                    @if ($errors->any())
+                        <div class="rounded-2xl border border-danger/30 bg-danger/5 p-3 text-sm text-danger">@foreach ($errors->all() as $e)<p>{{ $e }}</p>@endforeach</div>
+                    @endif
                     <p class="hint">{{ t('todos.placeholdersHint') }} {прошлый_месяц}, {прошлый_квартал}, {прошлый_год}, {месяц}, {год}</p>
                     <div><label class="label" for="rt-title">{{ t('todos.title') }} <span class="text-danger">*</span></label>
                         <input id="rt-title" name="title" class="input" x-model="r.title" required maxlength="300">
@@ -195,7 +205,7 @@
                     </div>
                     <div><label class="label" for="rt-desc">{{ t('todos.description') }}</label>
                         <textarea id="rt-desc" name="description" rows="2" class="input" x-model="r.description"></textarea></div>
-                    <label class="flex items-center gap-2 text-sm"><input type="checkbox" name="is_active" value="1" x-model="r.is_active"> {{ t('todos.active') }}</label>
+                    <label class="flex items-center gap-2 text-sm"><input type="hidden" name="is_active" value="0"><input type="checkbox" name="is_active" value="1" :checked="!!r.is_active" @change="r.is_active = $event.target.checked"> {{ t('todos.active') }}</label>
                     <div class="flex justify-end gap-2">
                         <button type="button" class="btn btn-outline" @click="$dispatch('close-modal', 'rule-form')">{{ t('todos.cancel') }}</button>
                         <button class="btn btn-primary">{{ t('todos.save') }}</button>

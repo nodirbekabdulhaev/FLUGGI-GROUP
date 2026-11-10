@@ -421,6 +421,10 @@ final class LeadService
      * Возможные дубли (телефон — по последним 9 цифрам, Instagram — без @ и ссылки, email — без регистра)
      * среди лидов и клиентов, видимых пользователю. Предупреждение, а не запрет.
      *
+     * Дубль — только другой лид в работе. Лиды, уже ставшие сделкой и клиентом, дублем не считаются: это та же цепочка
+     * «лид → сделка → клиент». Клиент с теми же контактами показывается отдельно (контакт уже есть среди клиентов), а клиент
+     * самого лида и клиент, в которого перешли другие лиды этой цепочки, из списка исключаются.
+     *
      * @return array{leads: Collection<int, Lead>, clients: Collection<int, Client>}
      */
     public static function duplicates(?string $phone, ?string $instagram, ?string $email, ?string $exceptLeadId = null): array
@@ -435,9 +439,12 @@ final class LeadService
         // Цифры номера: убираем типичные разделители (+, пробел, дефис, скобки, точка)
         $digits = fn (string $col) => "RIGHT(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE($col, ''), '+', ''), ' ', ''), '-', ''), '(', ''), ')', ''), '.', ''), 9)";
         $access = access();
+        $ownClientId = $exceptLeadId ? Lead::withTrashed()->whereKey($exceptLeadId)->value('client_id') : null;
         $leads = $access->can('lead.read')
             ? CrmAccess::leads()->with(['owner', 'stage'])
+                ->where('status', '<>', 'CONVERTED')
                 ->when($exceptLeadId, fn ($q) => $q->where('id', '<>', $exceptLeadId))
+                ->when($ownClientId, fn ($q) => $q->where(fn ($w) => $w->whereNull('client_id')->orWhere('client_id', '<>', $ownClientId)))
                 ->where(function ($q) use ($p, $ig, $em, $digits) {
                     if ($p) {
                         $q->orWhereRaw($digits('phone').' = ?', [$p])->orWhereRaw($digits('whatsapp').' = ?', [$p]);
@@ -456,6 +463,7 @@ final class LeadService
             : collect();
         $clients = $access->can('client.read')
             ? CrmAccess::clients()->with('owner')
+                ->when($ownClientId, fn ($q) => $q->where('id', '<>', $ownClientId))
                 ->where(function ($q) use ($p, $ig, $em, $digits) {
                     if ($p) {
                         $q->orWhereRaw($digits('phone').' = ?', [$p])

@@ -22,6 +22,7 @@ use App\Services\Accounting\TaxesService;
 use App\Services\Accounting\TaxPayrollService;
 use App\Services\Accounting\TaxReport;
 use App\Support\Outbox;
+use Brick\Math\BigDecimal;
 use Tests\TestCase;
 
 /** Бухгалтерия: доступ, счета и остатки, переводы, удаление с причиной, оплаты из CRM, зарплата и налоги. */
@@ -271,6 +272,7 @@ class AccountingTest extends TestCase
         $acc = $this->account(['name' => 'Bank']);
         $this->post('/accounting/operations', ['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'SALARY', 'person_id' => $a->id, 'period' => '2026-09', 'amount' => '5000000', 'date' => '2026-10-05'])->assertSessionHasNoErrors();
         $this->op($acc, 'OUT', 'SALARY', '777', '2026-10-05', ['person_id' => $a->id, 'period' => '2026-08']);
+        Accounting::saveSettings(['salaryPool' => false]);   // выплаты по людям (общая выплата — в отдельном тесте)
         $sheet = TaxPayrollService::sheet('2026-09');
         $ra = $sheet['rows']->firstWhere('person_id', $a->id);
         $this->assertSame(['5000000.00', '4250000.00'], [$ra->paid, $ra->remaining]);
@@ -420,6 +422,54 @@ class AccountingTest extends TestCase
             $this->actingAsUser($this->user($role));
             $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER'])->assertForbidden();
         }
+    }
+
+    public function test_salary_paid_as_one_sum_is_split_between_everyone(): void
+    {
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false]);
+        $names = ['Abdulxayev', 'Akbarova', 'Qodirov', 'Yuldashev'];
+        $big = array_map(fn ($n) => AccPerson::create(['full_name' => $n, 'monthly_salary' => '4500000', 'hired_at' => '2026-01-01']), $names);
+        $small = AccPerson::create(['full_name' => 'Xasanov', 'monthly_salary' => '1400000', 'hired_at' => '2026-05-01']);
+        TaxPayrollService::calculate('2026-11');
+        $bank = $this->account(['name' => 'Bank']);
+        // Весь месяц взят одной суммой на одну карту — 8 005 000 директору
+        $this->op($bank, 'OUT', 'SALARY', '8005000', '2026-11-06', ['person_id' => $big[0]->id, 'period' => '2026-11']);
+
+        $sheet = TaxPayrollService::sheet('2026-11');
+        $this->assertTrue($sheet['pooled']);
+        $by = $sheet['rows']->keyBy('person_id');
+        // У Хасанова на руки 1 293 600 — исчерпано, остальное делится между четырьмя: (8 005 000 − 1 293 600) / 4
+        $this->assertSame(['1677850.00', '2480150.00'], [$by[$big[0]->id]->paid, $by[$big[0]->id]->remaining]);
+        $this->assertSame(['1677850.00', '1677850.00', '1677850.00'], [$by[$big[1]->id]->paid, $by[$big[2]->id]->paid, $by[$big[3]->id]->paid]);
+        $this->assertSame(['1293600.00', '0.00'], [$by[$small->id]->paid, $by[$small->id]->remaining]);
+        $this->assertSame(['17925600.00', '8005000.00', '9920600.00'], [$sheet['totals']['net'], $sheet['totals']['paid'], $sheet['totals']['remaining']]);
+        $this->assertSame(0, $sheet['paidOnly']->count());
+        // Остаток за год: начислено на руки за ноябрь минус все выплаты зарплаты за год
+        $this->op($bank, 'OUT', 'SALARY', '1000000', '2026-02-06', ['person_id' => $big[0]->id, 'period' => '2026-02']);
+        $this->assertSame(['2026', '17925600.00', '9005000.00', '8920600.00'], [$sheet['year']['year'], $sheet['year']['net'], TaxPayrollService::sheet('2026-11')['year']['paid'], TaxPayrollService::sheet('2026-11')['year']['remaining']]);
+
+        // Равное деление с исчерпанием, копейки и излишек
+        $big4 = fn (string $pool, array $caps) => array_map(fn ($v) => (string) $v->toScale(2), TaxPayrollService::allocate(BigDecimal::of($pool), array_map(fn ($c) => BigDecimal::of($c), $caps)));
+        $this->assertSame(['a' => '10.00', 'b' => '10.00', 'c' => '10.00'], $big4('30', ['a' => '100', 'b' => '100', 'c' => '100']));
+        $this->assertSame(['a' => '5.00', 'b' => '12.50', 'c' => '12.50'], $big4('30', ['a' => '5', 'b' => '100', 'c' => '100']));
+        $this->assertSame(['a' => '3.34', 'b' => '3.33', 'c' => '3.33'], $big4('10', ['a' => '100', 'b' => '100', 'c' => '100']));
+        $this->assertSame(['a' => '20.00', 'b' => '40.00'], $big4('60', ['a' => '20', 'b' => '100']));
+        $this->assertSame(['a' => '60.00', 'b' => '60.00'], $big4('120', ['a' => '50', 'b' => '50']));   // излишек поровну
+        $this->assertSame(['a' => '0.00'], $big4('0', ['a' => '50']));
+
+        // Страница на всех языках; настройка отключает деление
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            $html = $this->get('/accounting/payroll?period=2026-11')->assertOk()->getContent();
+            $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale: ключ без перевода");
+        }
+        $this->get('/accounting/payroll?period=2026-11')->assertSee(t('accounting.payroll.monthRemaining'));
+        Accounting::saveSettings(['salaryPool' => false]);
+        $off = TaxPayrollService::sheet('2026-11');
+        $this->assertFalse($off['pooled']);
+        $this->assertSame('8005000.00', $off['rows']->firstWhere('person_id', $big[0]->id)->paid);
     }
 
     public function test_taxes_due_paid_and_reports(): void

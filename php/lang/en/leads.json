@@ -39,7 +39,9 @@
   "createSubmit": "Create lead",
   "duplicates": {
     "title": "Possible duplicate",
-    "hint": "Records with the same phone, Instagram or email were found. Check them before creating."
+    "hint": "Other open leads with the same phone, Instagram or email were found. Check before creating.",
+    "clientTitle": "This contact is already among clients",
+    "clientHint": "Not a duplicate: the client is already in the base. On qualification pick them if it is the same client."
   },
   "errors": {
     "alreadyClosed": "The lead is already closed",

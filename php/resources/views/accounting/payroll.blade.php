@@ -28,6 +28,14 @@
     <p class="mb-4 text-sm text-muted-foreground">{{ t('accounting.payroll.ratesLine', ['ndfl' => $settings['ndflRate'], 'inps' => $settings['inpsRate']]) }}
         {{ $settings['inpsWithinNdfl'] ? t('accounting.payroll.inpsWithin') : t('accounting.payroll.inpsOnTop') }}</p>
 
+    @if ($rows->isNotEmpty())
+        <div class="mb-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <x-stat :label="t('accounting.payroll.net')" :value="money($totals['net'])" />
+            <x-stat :label="t('accounting.payroll.paid')" :value="money($totals['paid'])" :hint="$pooled ? t('accounting.payroll.pooledHint') : null" />
+            <x-stat :label="t('accounting.payroll.monthRemaining')" :value="money($totals['remaining'])" />
+            <x-stat :label="t('accounting.payroll.yearRemaining', ['year' => $year['year']])" :value="money($year['remaining'])" :hint="t('accounting.payroll.yearHint', ['net' => money($year['net']), 'paid' => money($year['paid'])])" />
+        </div>
+    @endif
     @if ($rows->isEmpty())
         <div class="card"><x-empty icon="wallet" :title="t('accounting.payroll.empty')">{{ $canManage ? t('accounting.payroll.emptyText') : '' }}</x-empty></div>
     @else
@@ -83,6 +91,7 @@
             </ul>
         </x-card>
     @endif
+    @if ($pooled)<p class="mt-3 text-xs text-muted-foreground">{{ t('accounting.payroll.poolNote', ['pool' => money($pool)]) }}</p>@endif
     <p class="mt-3 text-xs text-muted-foreground">{{ t('accounting.payroll.hint') }}</p>
 
     @if ($editing)

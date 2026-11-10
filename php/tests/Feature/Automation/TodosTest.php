@@ -81,6 +81,28 @@ class TodosTest extends TestCase
         $this->assertSame('⏰ Просрочено: Отправить счёт', Notification::where('type', 'todo.overdue')->value('title'));
     }
 
+    public function test_recurring_rule_form_creates_edits_and_keeps_input_on_error(): void
+    {
+        $this->actingAsUser($this->ceo);
+        $form = ['_form' => 1, '_action' => url('/recurring-todos'), 'title' => 'Аренда за {месяц}', 'frequency' => 'MONTHLY', 'day_of_month' => 5, 'remind_days_before' => 3, 'kind' => 'PAYMENT', 'priority' => 'HIGH', 'description' => ''];
+        // Как отправляет браузер: скрытое поле 0 и отмеченный флажок 1
+        $this->from('/todos?view=recurring')->post('/recurring-todos', array_replace($form, ['is_active' => '1']))->assertSessionHasNoErrors()->assertRedirect('/todos?view=recurring');
+        $rule = RecurringTodo::where('title', 'Аренда за {месяц}')->firstOrFail();
+        $this->assertTrue((bool) $rule->is_active);
+        // Пустое значение флажка раньше валило проверку молча — теперь форма проходит
+        $this->from('/todos?view=recurring')->put('/recurring-todos/'.$rule->id, array_replace($form, ['_action' => url('/recurring-todos/'.$rule->id), 'title' => 'Аренда новая', 'is_active' => '']))->assertSessionHasNoErrors();
+        $this->assertSame(['Аренда новая', false], [$rule->refresh()->title, (bool) $rule->is_active]);
+        $this->put('/recurring-todos/'.$rule->id, array_replace($form, ['title' => 'Аренда новая', 'is_active' => '0', 'day_of_month' => 6]))->assertSessionHasNoErrors();
+        $this->put('/recurring-todos/'.$rule->id, array_replace($form, ['title' => 'Аренда новая', 'is_active' => '1', 'day_of_month' => 7]))->assertSessionHasNoErrors();
+        $this->assertSame([7, true], [(int) $rule->refresh()->day_of_month, (bool) $rule->is_active]);
+
+        // Ошибка проверки: форма открывается снова с введённым и текстом ошибки (раньше — пустая, без причины)
+        $this->from('/todos?view=recurring')->post('/recurring-todos', ['title' => 'Налог — проверка', 'day_of_month' => 40, 'frequency' => 'MONTHLY', '_form' => 1, '_action' => url('/recurring-todos'),
+            'kind' => 'REPORT', 'priority' => 'HIGH', 'remind_days_before' => 2, 'is_active' => '1'])->assertSessionHasErrors('day_of_month');
+        $this->get('/todos?view=recurring')->assertOk()->assertSee('day_of_month\\u0022:40', false)->assertSee('u041d', false);
+        $this->assertSame(0, RecurringTodo::where('title', 'Налог — проверка')->count());
+    }
+
     public function test_tax_calendar_recurring_generation_without_duplicates(): void
     {
         $this->actingAsUser($this->manager)->post('/recurring-todos/tax-calendar')->assertForbidden();

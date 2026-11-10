@@ -39,7 +39,9 @@
   "createSubmit": "Lid yaratish",
   "duplicates": {
     "title": "Ehtimoliy takror",
-    "hint": "Xuddi shu telefon, Instagram yoki email bilan yozuvlar topildi. Yaratishdan oldin tekshiring."
+    "hint": "Xuddi shu telefon, Instagram yoki email bilan ishdagi boshqa lidlar topildi. Yaratishdan oldin tekshiring.",
+    "clientTitle": "Bu kontakt mijozlar orasida bor",
+    "clientHint": "Bu dublikat emas: mijoz bazada bor. Saralashda, agar bu oʻsha mijoz boʻlsa, uni tanlang."
   },
   "errors": {
     "alreadyClosed": "Lid allaqachon yopilgan",

@@ -366,7 +366,12 @@
     "unapproveAll": "Tasdiqni bekor qilish",
     "unapproveConfirm": "Oyning barcha tasdiqlangan qatorlari qoralamaga qaytarilsinmi? Ularni tuzatish va qayta hisoblash mumkin boʻladi. Toʻlovlar qoladi.",
     "unapproveRowConfirm": "Tasdiq bekor qilinsinmi — {name}? Qator qoralama boʻladi, toʻlovlar qoladi.",
-    "unapproved": "Tasdiq bekor qilindi, qatorlar: {count}"
+    "unapproved": "Tasdiq bekor qilindi, qatorlar: {count}",
+    "pooledHint": "umumiy toʻlov summasi, hammaga teng",
+    "monthRemaining": "Oy uchun qoldi",
+    "yearRemaining": "{year} yil uchun qoldi",
+    "yearHint": "Qoʻlga hisoblangan {net}, toʻlangan {paid}",
+    "poolNote": "Oy toʻlovlari: {pool}. Ular bitta kartaga yagona summada oʻtgan va hammaga teng boʻlingan; kimningdir qoʻliga tegadigan summa tugasa — qoldiq boshqalarga boʻlinadi. Oʻchirish — Sozlamalarda."
   },
   "taxes": {
     "title": "Soliqlar",
@@ -458,7 +463,9 @@
     "earlierInpsRate": "IT Parkgacha INPS, %",
     "earlierSocialRate": "IT Parkgacha ijtimoiy soliq, %",
     "earlierTurnoverRate": "IT Parkgacha aylanma soligʻi, %",
-    "socialRate": "Ijtimoiy soliq, % (IT Park — 0)"
+    "socialRate": "Ijtimoiy soliq, % (IT Park — 0)",
+    "salaryPool": "Ish haqi bitta kartaga yagona summada — hammaga boʻlish",
+    "salaryPoolHint": "Oyning barcha ish haqi toʻlovlari qaydnomadagi odamlar orasida teng boʻlinadi; kimningdir summasi tugaganda qoldiq boshqalarga boʻlinadi."
   },
   "errors": {
     "category": "Bunday operatsiya uchun bu toifani tanlab boʻlmaydi",
