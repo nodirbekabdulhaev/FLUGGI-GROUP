@@ -29,6 +29,7 @@ class TaxReportTest extends TestCase
     protected function setUp(): void
     {
         parent::setUp();
+        Accounting::saveSettings(['taxPayLag' => 0]);
         $this->accountant = $this->user('ACCOUNTANT');
     }
 

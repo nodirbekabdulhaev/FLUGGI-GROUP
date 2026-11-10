@@ -36,6 +36,7 @@ class AccountingTest extends TestCase
     {
         parent::setUp();
         Accounting::forgetRates();
+        Accounting::saveSettings(['taxPayLag' => 0]);   // большинство проверок — налоги и оплаты в одном месяце; оплата в следующем месяце — в FiledReportsTest
         $this->accountant = $this->user('ACCOUNTANT', attrs: ['full_name' => 'Buxgalter']);
         $this->ceo = $this->user('CEO', attrs: ['full_name' => 'Ceo Boss']);
     }

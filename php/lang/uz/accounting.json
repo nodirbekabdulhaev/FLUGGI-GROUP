@@ -423,7 +423,9 @@
     },
     "startLate": "Saldo hisobi {from} dan boshlangan, topshirilgan hisobotlar esa {first} dan bor: {from} gacha boʻlgan hisob-kitoblar va toʻlovlar hisobga olinmaydi, shuning uchun soxta ortiqcha toʻlov chiqishi mumkin. «Qaysi oydan hisoblash» maydonini tozalang:",
     "anchored": "Yil boshidagi saldo {year} yil uchun soliq solishtirma dalolatnomasidan olingan.",
-    "noActs": "Soliq solishtirma dalolatnomalari yuklanmagan: saldo {from} dan zanjir boʻyicha hisoblanadi va soliq bilan mos kelmaydi. Dalolatnomalarni yuklang:"
+    "noActs": "Soliq solishtirma dalolatnomalari yuklanmagan: saldo {from} dan zanjir boʻyicha hisoblanadi va soliq bilan mos kelmaydi. Dalolatnomalarni yuklang:",
+    "forMonth": "{pay} da toʻlanadiganlar — {month} soliqlari (keyingi oyda toʻlanadi).",
+    "upcoming": "{month} uchun hisoblangan — {next} da toʻlanadi:"
   },
   "settings": {
     "title": "Buxgalteriya sozlamalari",
@@ -466,7 +468,11 @@
     "earlierTurnoverRate": "IT Parkgacha aylanma soligʻi, %",
     "socialRate": "Ijtimoiy soliq, % (IT Park — 0)",
     "salaryPool": "Ish haqi bitta kartaga yagona summada — hammaga boʻlish",
-    "salaryPoolHint": "Oyning barcha ish haqi toʻlovlari qaydnomadagi odamlar orasida teng boʻlinadi; kimningdir summasi tugaganda qoldiq boshqalarga boʻlinadi."
+    "salaryPoolHint": "Oyning barcha ish haqi toʻlovlari qaydnomadagi odamlar orasida teng boʻlinadi; kimningdir summasi tugaganda qoldiq boshqalarga boʻlinadi.",
+    "taxPayLag": "Soliqlar qachon toʻlanadi",
+    "taxPayNext": "Keyingi oyda (oktyabr uchun — noyabrda)",
+    "taxPaySame": "Shu oyning oʻzida",
+    "taxPayLagHint": "Oy uchun JShDS, INPS va IT Park ajratmasi keyingi oyda toʻlanadi: noyabrdagi «toʻlanishi kerak» — oktyabr soliqlari, noyabr uchun hisoblangani dekabrda toʻlanadi."
   },
   "errors": {
     "category": "Bunday operatsiya uchun bu toifani tanlab boʻlmaydi",
@@ -643,7 +649,8 @@
     "onYearEnd": "31 dekabrga",
     "onDate": "{date} ga",
     "actsTitle": "Soliq solishtirma dalolatnomalari",
-    "how4": "«Солиштирма далолатнома» aktlari (har yil uchun xls): yil boshidagi saldo oʻtgan yil aktidan olinadi, quyida esa soliqlar boʻyicha solishtirish koʻrsatiladi."
+    "how4": "«Солиштирма далолатнома» aktlari (har yil uchun xls): yil boshidagi saldo oʻtgan yil aktidan olinadi, quyida esa soliqlar boʻyicha solishtirish koʻrsatiladi.",
+    "forMonth": "{month} soliqlari"
   },
   "recategorize": {
     "title": "Moddalarni tekshirish",

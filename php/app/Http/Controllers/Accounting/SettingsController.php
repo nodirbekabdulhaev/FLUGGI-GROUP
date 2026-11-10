@@ -36,6 +36,9 @@ class SettingsController extends Controller
             'taxOpeningNdfl' => $opening, 'taxOpeningInps' => $opening, 'taxOpeningItpark' => $opening,
         ]);
         $data['inpsWithinNdfl'] = $request->boolean('inpsWithinNdfl');
+        if ($request->has('taxPayLag')) {
+            $data['taxPayLag'] = (int) $request->input('taxPayLag') === 0 ? 0 : 1;
+        }
         if ($request->has('salaryPool')) {
             $data['salaryPool'] = $request->boolean('salaryPool');
         }

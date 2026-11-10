@@ -60,6 +60,7 @@
                     @php $b = BigDecimal::of($r['balance']); @endphp
                     <tr>
                         <td class="whitespace-nowrap font-medium"><a class="link" href="/accounting/taxes?period={{ $r['period'] }}">{{ \App\Services\Accounting\Accounting::monthLabel($r['period']) }}</a>
+                            @if ($r['accrual'] !== $r['period'])<span class="block text-xs font-normal text-muted-foreground">{{ t('accounting.filed.forMonth', ['month' => \App\Services\Accounting\Accounting::monthLabel($r['accrual'])]) }}</span>@endif
                             @if ($r['reset'])<span class="block text-xs font-normal text-primary" title="{{ t('accounting.filed.resetHint') }}">{{ t('accounting.filed.reset', ['sum' => money($r['opening'])]) }}</span>@endif</td>
                         <td class="text-right tabular-nums">{{ $r['people'] ?? '—' }}</td>
                         <td class="whitespace-nowrap text-right tabular-nums">{{ money($r['income']) }}</td>

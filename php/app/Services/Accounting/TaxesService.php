@@ -44,7 +44,6 @@ final class TaxesService
             $from = $anchor['from'];
         }
         $first = min($from, $period);
-        $sp = Accounting::settingsFor($period);
         $opening = array_fill_keys(self::CARRIED, BigDecimal::zero());
         if ($from <= $period) {
             $walk = self::walk($from, $period, $s);
@@ -53,6 +52,14 @@ final class TaxesService
             $opening = $lastRow['opening'];
         } else {
             $cur = self::monthly($first, $period)[$period];
+        }
+        // Ставки и режим — месяца, за который налог (при оплате в следующем месяце — прошлого)
+        $sp = Accounting::settingsFor($cur['accrualPeriod']);
+        // Что начислено за сам месяц и будет платиться в следующем
+        $upcoming = null;
+        if ($cur['accrualPeriod'] !== $period) {
+            $u = self::accrued($period, $period)[$period];
+            $upcoming = ['period' => $period, 'due' => array_map(fn (BigDecimal $v) => (string) $v->toScale(2), $u['due']), 'drafts' => $u['drafts']];
         }
 
         // Строки месяца: налоги действующего режима, а также прежние, по которым остался долг/переплата или были оплаты
@@ -97,7 +104,7 @@ final class TaxesService
             'payrollRows' => $cur['rows'], 'drafts' => $cur['drafts'], 'fromSalary' => $cur['fromSalary'], 'filed' => $cur['filed'], 'filedCovered' => ! $cur['filed'] && $cur['filedDue'] !== null,
             'bankIncome' => (string) $cur['bank']->toScale(2), 'missingRate' => $cur['missingRate'],
             'totalDue' => (string) $totalDue->toScale(2), 'totalPaid' => (string) $totalPaid->toScale(2),
-            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'anchored' => $anchor !== null, 'actsLoaded' => AccTaxAct::exists(), 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
+            'totalBalance' => (string) $totalBalance->toScale(2), 'balanceFrom' => $from, 'anchored' => $anchor !== null, 'accrualPeriod' => $cur['accrualPeriod'], 'upcoming' => $upcoming, 'actsLoaded' => AccTaxAct::exists(), 'firstFiled' => array_key_first($fm = FiledReports::map()['filed']),
         ];
     }
 
@@ -183,11 +190,12 @@ final class TaxesService
             $paid = $paid->plus($p);
             $balance = $w['balance']['TAX_NDFL'];
             $m = $w['period'];
-            $rows[] = ['period' => $m, 'people' => $fm['filed'][$m]['people'] ?? ($o['rows'] ?: null), 'income' => (string) $o['gross']->toScale(2),
+            $ap = $o['accrualPeriod'];
+            $rows[] = ['period' => $m, 'accrual' => $ap, 'people' => $fm['filed'][$ap]['people'] ?? ($o['rows'] ?: null), 'income' => (string) $o['gross']->toScale(2),
                 'due' => (string) $d->toScale(2), 'paid' => (string) $p->toScale(2), 'balance' => (string) $balance->toScale(2), 'reset' => $w['reset'],
                 'opening' => (string) $w['opening']['TAX_NDFL']->toScale(2),
                 'source' => $o['filed'] ? 'filed' : ($o['filedDue'] !== null ? 'covered' : ($o['rows'] ? 'payroll' : ($o['fromSalary'] ? 'salary' : 'none'))),
-                'filedMonth' => $o['filed'] ? (string) $fm['filed'][$m]['ndflMonthFiled']->toScale(2) : null];
+                'filedMonth' => $o['filed'] ? (string) $fm['filed'][$ap]['ndflMonthFiled']->toScale(2) : null];
         }
 
         return ['rows' => $rows, 'from' => $from, 'firstFiled' => array_key_first($fm['filed']), 'totalDue' => (string) $due->toScale(2), 'totalPaid' => (string) $paid->toScale(2), 'balance' => (string) $balance->toScale(2)];
@@ -320,12 +328,46 @@ final class TaxesService
         return (string) ($first ? min($first) : $period);
     }
 
+    private static function shift(string $period, int $months): string
+    {
+        return CarbonImmutable::createFromFormat('!Y-m', $period)->addMonthsNoOverflow($months)->format('Y-m');
+    }
+
     /**
-     * По месяцам [$from … $to]: к уплате, оплачено, база (начислено, поступления на банк).
+     * По месяцам [$from … $to]: к уплате в месяце, оплачено в месяце и база. Налоги платят в следующем месяце (настройка taxPayLag):
+     * «к уплате» в ноябре — это налоги за октябрь (ведомость, отчёт, поступления октября), а оплаты — платежи ноября.
+     * accrualPeriod — месяц, за который налог; upcoming (в forPeriod) — что начислено за сам месяц и будет платиться в следующем.
+     *
+     * @return array<string, array{due:array<string,BigDecimal>,paid:array<string,BigDecimal>,gross:BigDecimal,bank:BigDecimal,missingRate:bool,rows:int,drafts:int,accrualPeriod:string}>
+     */
+    private static function monthly(string $from, string $to): array
+    {
+        $lag = (int) Accounting::settings()['taxPayLag'];
+        if ($lag <= 0) {
+            $o = self::accrued($from, $to);
+            foreach ($o as $m => &$r) {
+                $r['accrualPeriod'] = $m;
+            }
+
+            return $o;
+        }
+        $raw = self::accrued(self::shift($from, -$lag), $to);
+        $out = [];
+        for ($m = CarbonImmutable::createFromFormat('!Y-m', $from); $m->format('Y-m') <= $to; $m = $m->addMonthNoOverflow()) {
+            $k = $m->format('Y-m');
+            $a = self::shift($k, -$lag);
+            $out[$k] = ['paid' => $raw[$k]['paid'], 'accrualPeriod' => $a] + $raw[$a];
+        }
+
+        return $out;
+    }
+
+    /**
+     * По месяцам [$from … $to]: начислено за месяц (налоги месяца без учёта срока платежа) и оплачено в месяце.
      *
      * @return array<string, array{due:array<string,BigDecimal>,paid:array<string,BigDecimal>,gross:BigDecimal,bank:BigDecimal,missingRate:bool,rows:int,drafts:int}>
      */
-    private static function monthly(string $from, string $to): array
+    private static function accrued(string $from, string $to): array
     {
         $zero = BigDecimal::zero();
         $out = [];

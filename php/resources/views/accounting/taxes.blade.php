@@ -27,9 +27,10 @@
         <x-stat :label="t('accounting.taxes.totalBalance')" :value="money($totalBalance)" :hint="t('accounting.taxes.totalBalanceHint')" />
         <x-stat :label="t('accounting.taxes.bankIncome')" :value="money($bankIncome)" :hint="t('accounting.taxes.bankIncomeHint')" />
     </div>
-    @if ($drafts)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.draftsWarning', ['count' => $drafts]) }}</p>@endif
+    @if ($drafts)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.draftsWarning', ['count' => $drafts]) }} <a class="link" href="/accounting/payroll?period={{ $accrualPeriod }}">{{ t('accounting.tabs.payroll') }}</a></p>@endif
+    @if ($accrualPeriod !== $period)<p class="mb-3 text-sm text-primary">{{ t('accounting.taxes.forMonth', ['month' => \App\Services\Accounting\Accounting::monthLabel($accrualPeriod), 'pay' => \App\Services\Accounting\Accounting::monthLabel($period)]) }}</p>@endif
     @if (! $payrollRows && $fromSalary)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.fromSalary') }} <a class="link" href="/accounting/people">{{ t('accounting.tabs.people') }}</a></p>
-    @elseif (! $payrollRows)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.noPayroll') }} <a class="link" href="/accounting/payroll?period={{ $period }}">{{ t('accounting.tabs.payroll') }}</a></p>@endif
+    @elseif (! $payrollRows)<p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.taxes.noPayroll') }} <a class="link" href="/accounting/payroll?period={{ $accrualPeriod }}">{{ t('accounting.tabs.payroll') }}</a></p>@endif
     @if ($missingRate)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.errors.noUsdRate') }}</p>@endif
 
     @if (! $actsLoaded && $canManage)<p class="mb-3 flex items-center gap-2 text-sm text-warning"><x-icon name="alert" />{{ t('accounting.taxes.noActs', ['from' => \App\Services\Accounting\Accounting::monthLabel($balanceFrom)]) }} <a class="link" href="/accounting/filed-reports">{{ t('accounting.tabs.filed') }}</a></p>@endif
@@ -86,6 +87,11 @@
             </tbody>
         </x-table>
         <p class="mt-2 text-xs text-muted-foreground">{{ t('accounting.taxes.yearly.explain') }}</p>
+    @endif
+    @if ($upcoming)
+        <p class="mt-3 text-sm text-muted-foreground">{{ t('accounting.taxes.upcoming', ['month' => \App\Services\Accounting\Accounting::monthLabel($upcoming['period']), 'next' => \App\Services\Accounting\Accounting::monthLabel(\Carbon\CarbonImmutable::createFromFormat('!Y-m', $upcoming['period'])->addMonth()->format('Y-m'))]) }}
+            @foreach (['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK'] as $c)@if (BigDecimal::of($upcoming['due'][$c])->isPositive()) · {{ t('accounting.category.'.$c) }} {{ money($upcoming['due'][$c]) }}@endif @endforeach
+            @if ($upcoming['drafts'])<span class="text-warning">· {{ t('accounting.taxes.draftsWarning', ['count' => $upcoming['drafts']]) }}</span>@endif</p>
     @endif
     <p class="mt-3 text-xs text-muted-foreground">{{ t('accounting.taxes.hint', ['ndfl' => $settings['ndflRate'], 'inps' => $settings['inpsRate'], 'itpark' => $settings['itparkRate']]) }}</p>
 @endsection

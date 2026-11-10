@@ -190,6 +190,7 @@ class CategoriesTest extends TestCase
         $make(['direction' => 'OUT', 'category' => 'RENT', 'amount' => '300000', 'date' => '2026-01-26']);
 
         // IT Park: база = 40 + 1 + 0,5 млн (статья с базой «Прочий доход» входит)
+        Accounting::saveSettings(['taxPayLag' => 0]);
         $this->assertSame('41500000.00', TaxesService::forPeriod('2026-01')['bankIncome']);
         $lines = collect(AnnualReport::results(2026))->mapWithKeys(fn ($r) => [$r[0] => (string) $r[2]->toScale(2)]);
         $this->assertSame('40000000.00', $lines['010']);

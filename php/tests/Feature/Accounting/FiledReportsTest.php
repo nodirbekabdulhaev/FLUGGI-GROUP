@@ -38,6 +38,7 @@ class FiledReportsTest extends TestCase
     {
         parent::setUp();
         Accounting::forgetRates();
+        Accounting::saveSettings(['taxPayLag' => 0]);
         $this->accountant = $this->user('ACCOUNTANT');
     }
 
@@ -280,6 +281,39 @@ class FiledReportsTest extends TestCase
             $this->post('/accounting/filed-reports', ['files' => [$files[0]]])->assertForbidden();
             $this->post($url.'/confirm')->assertForbidden();
         }
+    }
+
+    public function test_taxes_are_paid_in_the_next_month(): void
+    {
+        $this->load();
+        Accounting::saveSettings(['taxPayLag' => 1]);
+        $bank = AccAccount::create(['name' => 'Bank', 'kind' => 'BANK', 'currency' => 'UZS', 'opening_balance' => '0', 'crm_methods' => []]);
+        // Платёж января — за декабрь: 199 000 (НДФЛ декабря за вычетом ИНПС)
+        AccTransaction::create(['account_id' => $bank->id, 'direction' => 'OUT', 'category' => 'TAX_NDFL', 'amount' => '199000', 'date' => '2025-01-12']);
+
+        // Январь: к уплате — налоги за декабрь (отчёт декабря), начислено за январь будет платиться в феврале
+        $jan = TaxesService::forPeriod('2025-01');
+        $this->assertSame(['2024-12', '199000.00', '199000.00'], [$jan['accrualPeriod'], $jan['taxes']['TAX_NDFL']['due'], $jan['taxes']['TAX_NDFL']['paid']]);
+        $this->assertSame(['2025-01', '297000.00'], [$jan['upcoming']['period'], $jan['upcoming']['due']['TAX_NDFL']]);
+        $this->assertSame('99000.00', $jan['taxes']['TAX_NDFL']['balance']);   // платёж января закрыл декабрь; октябрь (99 000) остался
+        // Февраль: налоги за январь
+        $feb = TaxesService::forPeriod('2025-02');
+        $this->assertSame(['2025-01', '297000.00', '0.00', '396000.00'], [$feb['accrualPeriod'], $feb['taxes']['TAX_NDFL']['due'], $feb['taxes']['TAX_NDFL']['paid'], $feb['taxes']['TAX_NDFL']['balance']]);
+        // Сальдо: октябрь 99 000 не оплачен + январь 297 000; налоги февраля начислены, но платятся в марте
+        $l = collect(TaxesService::ndflLedger('2025-02')['rows'])->keyBy('period');
+        $this->assertSame(['2024-12', '2025-01'], [$l['2025-01']['accrual'], $l['2025-02']['accrual']]);
+        $this->assertSame('396000.00', $l['2025-02']['balance']);
+        // Страницы и настройка на всех языках
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            foreach (['/accounting/taxes?period=2025-02', '/accounting/filed-reports?to=2025-02', '/accounting/settings'] as $url) {
+                $html = $this->get($url)->assertOk()->getContent();
+                $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale $url: ключ без перевода");
+            }
+        }
+        $this->put('/accounting/settings', ['ndflBaseRate' => '12', 'inpsRate' => '0.1', 'itparkRate' => '1', 'taxPayLag' => '0'])->assertSessionHasNoErrors();
+        $this->assertSame(0, Accounting::settings()['taxPayLag']);
     }
 
     public function test_reconciliation_acts_anchor_the_balance_and_are_compared(): void

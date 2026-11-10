@@ -423,7 +423,9 @@
     },
     "startLate": "The balance starts from {from} while filed reports exist from {first}: accruals and payments before {from} are not counted, so a false overpayment can appear. Clear «Track from month» in",
     "anchored": "The balance at the start of the year is taken from the {year} reconciliation act.",
-    "noActs": "Tax office reconciliation acts are not uploaded: the balance is chained from {from} and will not match the tax office. Upload the acts in"
+    "noActs": "Tax office reconciliation acts are not uploaded: the balance is chained from {from} and will not match the tax office. Upload the acts in",
+    "forMonth": "Due in {pay} — taxes for {month} (paid in the next month).",
+    "upcoming": "Accrued for {month} — payable in {next}:"
   },
   "settings": {
     "title": "Accounting settings",
@@ -466,7 +468,11 @@
     "earlierTurnoverRate": "Turnover tax before IT Park, %",
     "socialRate": "Social tax, % (IT Park — 0)",
     "salaryPool": "Salary paid as one sum to one card — split between everyone",
-    "salaryPoolHint": "All salary payments of the month are split equally between the people of the payroll; when someone amount is used up, the rest is split between the others."
+    "salaryPoolHint": "All salary payments of the month are split equally between the people of the payroll; when someone amount is used up, the rest is split between the others.",
+    "taxPayLag": "When taxes are paid",
+    "taxPayNext": "Next month (October taxes in November)",
+    "taxPaySame": "The same month",
+    "taxPayLagHint": "Income tax, INPS and the IT Park charge of a month are paid in the next one: «due» in November are October taxes, and what is accrued for November is paid in December."
   },
   "errors": {
     "category": "This category cannot be used for this operation",
@@ -643,7 +649,8 @@
     "onYearEnd": "at 31 December",
     "onDate": "at {date}",
     "actsTitle": "Tax office reconciliation acts",
-    "how4": "«Солиштирма далолатнома» acts (xls for each year): the balance at the start of a year comes from the previous year act, and the reconciliation by tax is shown below."
+    "how4": "«Солиштирма далолатнома» acts (xls for each year): the balance at the start of a year comes from the previous year act, and the reconciliation by tax is shown below.",
+    "forMonth": "taxes for {month}"
   },
   "recategorize": {
     "title": "Review articles",
