@@ -119,7 +119,7 @@ final class Statements
     }
 
     /** Выплаты зарплаты с банковских счетов за период по дате платежа, UZS (касса и карты не входят). */
-    private static function salaryPaid(string $from, string $to): BigDecimal
+    public static function salaryPaid(string $from, string $to): BigDecimal
     {
         $sum = BigDecimal::zero();
         $rows = AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')

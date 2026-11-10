@@ -370,9 +370,10 @@
     "unapproved": "Approval undone, rows: {count}",
     "pooledHint": "total payments, split equally",
     "monthRemaining": "Left for the month",
-    "yearRemaining": "Left for {year}",
+    "yearRemaining": "Left for {year} (including debt of past years)",
     "yearHint": "Net accrued {net}, paid {paid}",
-    "poolNote": "Payments of the month: {pool}. They went as one sum to one card and are split equally between everyone; when someone net amount is used up, the rest is split between the others. Turn off in Settings."
+    "poolNote": "Payments of the month: {pool}. They went as one sum to one card and are split equally between everyone; when someone net amount is used up, the rest is split between the others. Turn off in Settings.",
+    "yearBreak": "From past years: {old} (was {oldTotal} on 1 January). For this year: {new}. Net accrued {net}, paid {paid}"
   },
   "taxes": {
     "title": "Taxes",

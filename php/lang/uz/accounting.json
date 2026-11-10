@@ -370,9 +370,10 @@
     "unapproved": "Tasdiq bekor qilindi, qatorlar: {count}",
     "pooledHint": "umumiy toʻlov summasi, hammaga teng",
     "monthRemaining": "Oy uchun qoldi",
-    "yearRemaining": "{year} yil uchun qoldi",
+    "yearRemaining": "{year} yil uchun qoldi (oldingi yillar qarzi bilan)",
     "yearHint": "Qoʻlga hisoblangan {net}, toʻlangan {paid}",
-    "poolNote": "Oy toʻlovlari: {pool}. Ular bitta kartaga yagona summada oʻtgan va hammaga teng boʻlingan; kimningdir qoʻliga tegadigan summa tugasa — qoldiq boshqalarga boʻlinadi. Oʻchirish — Sozlamalarda."
+    "poolNote": "Oy toʻlovlari: {pool}. Ular bitta kartaga yagona summada oʻtgan va hammaga teng boʻlingan; kimningdir qoʻliga tegadigan summa tugasa — qoldiq boshqalarga boʻlinadi. Oʻchirish — Sozlamalarda.",
+    "yearBreak": "Oldingi yillardan: {old} (1 yanvarda {oldTotal} edi). Shu yil uchun: {new}. Qoʻlga hisoblangan {net}, toʻlangan {paid}"
   },
   "taxes": {
     "title": "Soliqlar",

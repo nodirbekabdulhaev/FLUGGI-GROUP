@@ -34,7 +34,8 @@
             <x-stat :label="t('accounting.payroll.net')" :value="money($totals['net'])" />
             <x-stat :label="t('accounting.payroll.paid')" :value="money($totals['paid'])" :hint="$pooled ? t('accounting.payroll.pooledHint') : null" />
             <x-stat :label="t('accounting.payroll.monthRemaining')" :value="money($totals['remaining'])" />
-            <x-stat :label="t('accounting.payroll.yearRemaining', ['year' => $year['year']])" :value="money($year['remaining'])" :hint="t('accounting.payroll.yearHint', ['net' => money($year['net']), 'paid' => money($year['paid'])])" />
+            <x-stat :label="t('accounting.payroll.yearRemaining', ['year' => $year['year']])" :value="money($year['remaining'])"
+                    :hint="t('accounting.payroll.yearBreak', ['old' => money($year['carryLeft']), 'oldTotal' => money($year['carry']), 'new' => money($year['newLeft']), 'net' => money($year['net']), 'paid' => money($year['paid'])])" />
         </div>
     @endif
     @if ($rows->isEmpty())

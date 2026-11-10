@@ -12,6 +12,7 @@ use App\Models\AuditLog;
 use App\Models\User;
 use App\Services\Accounting\Accounting;
 use App\Services\Accounting\Statements;
+use App\Services\Accounting\TaxPayrollService;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\UploadedFile;
 use PhpOffice\PhpSpreadsheet\Cell\DataType;
@@ -111,6 +112,10 @@ class StatementsTest extends TestCase
         AccTransaction::create(['account_id' => $card->id, 'direction' => 'OUT', 'category' => 'SALARY', 'amount' => '1000000', 'date' => '2026-01-25', 'person_id' => $person->id, 'period' => '2026-01']);
         $c26 = Statements::closing(2026);
         $this->assertSame(['0.00', '0.00'], [(string) $c26['330']['v']->toScale(2), (string) $c26['360']['v']->toScale(2)]);
+        // Зарплата за год на странице «Зарплата»: долг прошлого года (148 887 090) + начислено − выплачено с банка (карта не в счёт); сколько из этого — прошлых лет
+        $sheet = TaxPayrollService::sheet('2026-01');
+        $this->assertSame(['148887090.00', '145887090.00', '4620000.00', '3000000.00', '150507090.00', '4620000.00'], [$sheet['year']['carry'], $sheet['year']['carryLeft'], $sheet['year']['net'],
+            $sheet['year']['paid'], $sheet['year']['remaining'], $sheet['year']['newLeft']]);
         $this->assertSame(['200000000.00', 'carry'], [(string) $c26['410']['v'], $c26['410']['src']]);
         $this->assertSame(['258892000.00', 'carry'], [(string) $c26['090']['v'], $c26['090']['src']]);
         // 720: 148 887 090 + 4 620 000 − 3 000 000

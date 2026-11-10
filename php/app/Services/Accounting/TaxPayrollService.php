@@ -403,16 +403,20 @@ final class TaxPayrollService
         $paidOnly = $pooled ? collect() : AccPerson::whereIn('id', array_diff(array_keys($paid), $withRow))->get()
             ->each(fn ($p) => $p->setAttribute('paid', $paid[$p->id]));
 
-        // За год: начислено на руки по ведомостям и все выплаты зарплаты за месяцы года
+        // За год: долг по зарплате прошлых лет на начало года (конец прошлого года по балансу) + начислено на руки по ведомостям года
+        // − выплачено с банковских счетов за год (выплаты идут сначала в погашение старого долга)
         $year = substr($period, 0, 4);
         $net = BigDecimal::zero();
         foreach (AccPayroll::where('period', 'like', $year.'-%')->get(['net']) as $r) {
             $net = $net->plus((string) $r->net);
         }
-        $paidYear = array_reduce(self::paidByPeriod($year.'-01', $year.'-12'), fn (BigDecimal $c, $v) => $c->plus($v), BigDecimal::zero());
+        $paidYear = Statements::salaryPaid($year.'-01-01', $year.'-12-31');
+        $carry = Statements::closing((int) $year - 1)['720']['v'];
+        $carryLeft = BigDecimal::max(BigDecimal::zero(), $carry->minus($paidYear));
         $fmt = fn (BigDecimal $v) => (string) $v->toScale(2);
 
         return ['rows' => $rows, 'totals' => array_map($fmt, $totals), 'paidOnly' => $paidOnly, 'pooled' => $pooled, 'pool' => $fmt($pool),
-            'year' => ['year' => $year, 'net' => $fmt($net), 'paid' => $fmt($paidYear), 'remaining' => $fmt($net->minus($paidYear))]];
+            'year' => ['year' => $year, 'carry' => $fmt($carry), 'carryLeft' => $fmt($carryLeft), 'net' => $fmt($net), 'paid' => $fmt($paidYear),
+                'remaining' => $fmt($carry->plus($net)->minus($paidYear)), 'newLeft' => $fmt($carry->plus($net)->minus($paidYear)->minus($carryLeft))]];
     }
 }
