@@ -284,7 +284,7 @@ final class TaxPayrollService
     {
         $out = [];
         $rows = AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')
-            ->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->where('acc_transactions.period', $period)
+            ->where('a.kind', 'BANK')->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->where('acc_transactions.period', $period)
             ->whereNotNull('acc_transactions.person_id')
             ->get(['acc_transactions.person_id', 'acc_transactions.amount', 'acc_transactions.date', 'a.currency']);
         foreach ($rows as $r) {
@@ -300,7 +300,7 @@ final class TaxPayrollService
     {
         $out = [];
         $rows = AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')
-            ->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereBetween('acc_transactions.period', [$from, $to])
+            ->where('a.kind', 'BANK')->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereBetween('acc_transactions.period', [$from, $to])
             ->get(['acc_transactions.period', 'acc_transactions.amount', 'acc_transactions.date', 'a.currency']);
         foreach ($rows as $r) {
             $uzs = Accounting::toUzs((string) $r->amount, $r->currency, $r->date->toDateString()) ?? BigDecimal::zero();

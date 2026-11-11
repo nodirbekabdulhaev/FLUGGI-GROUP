@@ -56,6 +56,8 @@
     "to": "To",
     "counterparty": "Counterparty",
     "person": "Employee (tax office)",
+    "employee": "CRM employee",
+    "employeeHint": "For cash and card choose a CRM employee; such payments stay out of the accounting reports.",
     "description": "Comment",
     "reason": "Reason for deletion",
     "fromAccount": "From account",
@@ -479,6 +481,7 @@
   "errors": {
     "category": "This category cannot be used for this operation",
     "personRequired": "Choose who the salary was paid to",
+    "employeeRequired": "Choose the employee who received the salary or commission",
     "periodRequired": "Choose the month the payment is for",
     "counterpartyRequired": "Enter the payee",
     "accountInactive": "The account is deactivated or not found",

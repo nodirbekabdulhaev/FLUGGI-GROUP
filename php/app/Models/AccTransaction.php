@@ -44,6 +44,11 @@ class AccTransaction extends Model
         return $this->belongsTo(AccPerson::class, 'person_id');
     }
 
+    public function employee(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'employee_id');
+    }
+
     public function payment(): BelongsTo
     {
         return $this->belongsTo(Payment::class, 'payment_id');

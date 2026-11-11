@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounting;
 use App\Http\Controllers\Controller;
 use App\Models\AccCategory;
 use App\Models\AccPerson;
+use App\Models\User;
 use App\Services\Accounting\Accounting;
 use App\Services\Accounting\AccountingExport;
 use App\Services\Accounting\AccountsService;
@@ -68,6 +69,7 @@ class OperationsController extends Controller
             'articles' => ['IN' => CategoriesService::options('IN'), 'OUT' => CategoriesService::options('OUT')],
             'filterArticles' => AccCategory::orderBy('direction')->orderBy('sort')->orderBy('name')->get(),
             'people' => AccPerson::orderByDesc('is_active')->orderBy('full_name')->get(['id', 'full_name', 'is_active']),
+            'employees' => User::where('status', 'ACTIVE')->orderBy('full_name')->get(['id', 'full_name']),
             'prefill' => $prefill,
             'canManage' => access()->can('accounting.manage'),
             'canExport' => access()->can('export.run'),
@@ -87,6 +89,7 @@ class OperationsController extends Controller
             'counterparty' => ['nullable', 'string', 'max:191'],
             'description' => ['nullable', 'string', 'max:2000'],
             'person_id' => ['nullable', 'uuid'],
+            'employee_id' => ['nullable', 'uuid'],
         ]);
         OperationsService::create($data);
 

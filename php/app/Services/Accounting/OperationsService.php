@@ -6,6 +6,7 @@ use App\Exceptions\BusinessRule;
 use App\Models\AccAccount;
 use App\Models\AccPerson;
 use App\Models\AccTransaction;
+use App\Models\User;
 use App\Support\Audit;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
@@ -98,14 +99,28 @@ final class OperationsService
         $d['description'] = trim((string) ($d['description'] ?? '')) ?: null;
         $d['period'] = ($d['period'] ?? null) ?: null;
         $d['person_id'] = ($d['person_id'] ?? null) ?: null;
+        $d['employee_id'] = ($d['employee_id'] ?? null) ?: null;
         if ($cat === 'SALARY') {
-            if (! $d['person_id']) {
-                throw new BusinessRule(t('accounting.errors.personRequired'), ['person_id' => t('accounting.errors.personRequired')]);
+            $kind = AccAccount::whereKey($d['account_id'])->value('kind');
+            if ($kind !== null && $kind !== 'BANK') {
+                // Касса/карта: получатель — сотрудник CRM; в бухгалтерские отчёты такая выплата не входит
+                if (! $d['employee_id']) {
+                    throw new BusinessRule(t('accounting.errors.employeeRequired'), ['employee_id' => t('accounting.errors.employeeRequired')]);
+                }
+                $employee = User::where('status', 'ACTIVE')->findOrFail($d['employee_id']);
+                $d['person_id'] = null;
+                $d['counterparty'] ??= $employee->full_name;
+            } else {
+                if (! $d['person_id']) {
+                    throw new BusinessRule(t('accounting.errors.personRequired'), ['person_id' => t('accounting.errors.personRequired')]);
+                }
+                $person = AccPerson::findOrFail($d['person_id']);
+                $d['employee_id'] = null;
+                $d['counterparty'] ??= $person->full_name;
             }
-            $person = AccPerson::findOrFail($d['person_id']);
-            $d['counterparty'] ??= $person->full_name;
         } else {
             $d['person_id'] = null;
+            $d['employee_id'] = null;
         }
         if (($cat === 'SALARY' || in_array($cat, Accounting::TAX_CATEGORIES, true)) && ! $d['period']) {
             throw new BusinessRule(t('accounting.errors.periodRequired'), ['period' => t('accounting.errors.periodRequired')]);
@@ -123,7 +138,7 @@ final class OperationsService
             $row = AccTransaction::create([
                 'account_id' => $acc->id, 'direction' => $d['direction'], 'category' => $d['category'], 'category_id' => $d['category_id'],
                 'amount' => (string) Accounting::dec($d['amount'])->toScale(2), 'date' => $d['date'], 'period' => $d['period'],
-                'counterparty' => $d['counterparty'], 'description' => $d['description'], 'person_id' => $d['person_id'],
+                'counterparty' => $d['counterparty'], 'description' => $d['description'], 'person_id' => $d['person_id'], 'employee_id' => $d['employee_id'],
                 'created_by_id' => access()->id(),
             ]);
             Audit::log('accounting.operation.create', 'acc_transaction', $row->id, self::snapshot($row));
@@ -196,14 +211,19 @@ final class OperationsService
             $tax = $category === 'SALARY' || in_array($category, Accounting::TAX_CATEGORIES, true);
             $period = $tax ? (($period ?: $row->period) ?: $row->date->format('Y-m')) : null;
             $personId = $category === 'SALARY' ? ($personId ?: $row->person_id) : null;
-            if ($category === 'SALARY' && ! $personId) {
+            $cashRow = $row->account && $row->account->kind !== 'BANK';
+            $employeeId = $category === 'SALARY' && $cashRow ? $row->employee_id : null;
+            if ($cashRow) {
+                $personId = null;
+            }
+            if ($category === 'SALARY' && ! $personId && ! ($cashRow && $employeeId)) {
                 throw new BusinessRule(t('accounting.errors.personRequired'), ['person_id' => t('accounting.errors.personRequired')]);
             }
             if ($category === 'SUPPLIER' && ! trim((string) $row->counterparty)) {
                 throw new BusinessRule(t('accounting.errors.counterpartyRequired'), ['category' => t('accounting.errors.counterpartyRequired')]);
             }
             $before = ['category' => $row->category, 'category_id' => $row->category_id, 'period' => $row->period, 'person_id' => $row->person_id];
-            $row->forceFill(['category' => $category, 'category_id' => $articleId, 'period' => $period, 'person_id' => $personId])->save();
+            $row->forceFill(['category' => $category, 'category_id' => $articleId, 'period' => $period, 'person_id' => $personId, 'employee_id' => $employeeId])->save();
             $after = ['category' => $category, 'category_id' => $articleId, 'period' => $period, 'person_id' => $personId];
             Audit::log('accounting.operation.recategorize', 'acc_transaction', $row->id, Audit::diff($before, $after, array_keys($after)));
 
@@ -257,7 +277,7 @@ final class OperationsService
     private static function snapshot(AccTransaction $r): array
     {
         $out = [];
-        foreach (['account_id', 'direction', 'category', 'category_id', 'amount', 'date', 'period', 'counterparty', 'description', 'person_id'] as $k) {
+        foreach (['account_id', 'direction', 'category', 'category_id', 'amount', 'date', 'period', 'counterparty', 'description', 'person_id', 'employee_id'] as $k) {
             $v = $r->getAttribute($k);
             if ($v !== null) {
                 $out[$k] = ['old' => null, 'new' => $k === 'date' ? $r->date->toDateString() : (string) $v];

@@ -56,6 +56,8 @@
     "to": "Gacha",
     "counterparty": "Kontragent",
     "person": "Xodim (soliq uchun)",
+    "employee": "CRM xodimi",
+    "employeeHint": "Kassa va karta uchun CRM xodimini tanlang; bunday toʻlov buxgalteriya hisobotlariga kirmaydi.",
     "description": "Izoh",
     "reason": "Oʻchirish sababi",
     "fromAccount": "Qaysi hisobdan",
@@ -479,6 +481,7 @@
   "errors": {
     "category": "Bunday operatsiya uchun bu toifani tanlab boʻlmaydi",
     "personRequired": "Ish haqi kimga toʻlanganini koʻrsating",
+    "employeeRequired": "Ish haqi yoki komissiya toʻlangan xodimni koʻrsating",
     "periodRequired": "Toʻlov qaysi oy uchun ekanini koʻrsating",
     "counterpartyRequired": "Toʻlov oluvchini koʻrsating",
     "accountInactive": "Hisob oʻchirib qoʻyilgan yoki topilmadi",

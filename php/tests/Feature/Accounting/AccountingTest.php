@@ -426,6 +426,28 @@ class AccountingTest extends TestCase
         }
     }
 
+    public function test_cash_salary_goes_to_crm_employee_and_stays_out_of_reports(): void
+    {
+        $seller = $this->user('MANAGER', attrs: ['full_name' => 'Test Seller']);
+        $this->actingAsUser($this->accountant);
+        $cash = $this->account(['name' => 'Kassa', 'kind' => 'CASH']);
+        $bank = $this->account(['name' => 'Bank']);
+        $person = AccPerson::create(['full_name' => 'Test Person', 'monthly_salary' => '3000000', 'hired_at' => '2026-01-01']);
+        $this->post('/accounting/operations', ['_form' => 'op', 'account_id' => $cash->id, 'direction' => 'OUT', 'category' => 'SALARY',
+            'amount' => '1200000', 'date' => '2026-11-11', 'period' => '2026-11', 'person_id' => $person->id])->assertSessionHasErrors('employee_id');
+        $this->post('/accounting/operations', ['_form' => 'op', 'account_id' => $cash->id, 'direction' => 'OUT', 'category' => 'SALARY',
+            'amount' => '1200000', 'date' => '2026-11-11', 'period' => '2026-11', 'employee_id' => $seller->id])->assertSessionHasNoErrors();
+        $row = AccTransaction::where('account_id', $cash->id)->first();
+        $this->assertSame([$seller->id, null, 'Test Seller'], [$row->employee_id, $row->person_id, $row->counterparty]);
+        // Банк по-прежнему требует человека из ведомости
+        $this->post('/accounting/operations', ['_form' => 'op', 'account_id' => $bank->id, 'direction' => 'OUT', 'category' => 'SALARY',
+            'amount' => '500000', 'date' => '2026-11-11', 'period' => '2026-11'])->assertSessionHasErrors('person_id');
+        $this->get('/accounting/operations')->assertOk()->assertSee('Test Seller');
+        // В зарплатную ведомость кассовая выплата не попадает
+        TaxPayrollService::calculate('2026-11');
+        $this->assertSame('0.00', TaxPayrollService::sheet('2026-11')['totals']['paid']);
+    }
+
     public function test_salary_paid_as_one_sum_is_split_between_everyone(): void
     {
         $this->as($this->accountant);

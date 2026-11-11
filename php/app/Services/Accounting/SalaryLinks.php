@@ -92,7 +92,7 @@ final class SalaryLinks
             }
         }
         $ops = AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')
-            ->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereNull('acc_transactions.payment_id')
+            ->where('a.kind', 'BANK')->where('acc_transactions.direction', 'OUT')->where('acc_transactions.category', 'SALARY')->whereNull('acc_transactions.payment_id')
             ->whereBetween('acc_transactions.date', [$year.'-01-01', $year.'-12-31'])
             ->orderBy('acc_transactions.date')->get(['acc_transactions.*', 'a.currency']);
         $rows = [];

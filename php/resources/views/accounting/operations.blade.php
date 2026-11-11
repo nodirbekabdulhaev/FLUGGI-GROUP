@@ -90,7 +90,7 @@
                                 @if ($op->payment_id)<span class="block"><x-badge color="blue">{{ t('accounting.operations.fromCrm') }}</x-badge></span>@endif
                                 @if ($op->source === 'BANK_IMPORT')<span class="block"><x-badge>{{ t('accounting.operations.fromBank') }}</x-badge></span>@endif
                             </td>
-                            <td class="max-w-xs">{{ $op->person?->full_name ?? $op->counterparty ?? '—' }}
+                            <td class="max-w-xs">{{ ($op->person ?? $op->employee)?->full_name ?? $op->counterparty ?? '—' }}
                                 @if ($op->description)<span class="block truncate text-xs text-muted-foreground" title="{{ $op->description }}">{{ $op->description }}</span>@endif
                             </td>
                             <td class="whitespace-nowrap">{{ $op->account?->name }}</td>
@@ -115,7 +115,7 @@
                     <li class="flex items-start justify-between gap-3 p-4 text-sm">
                         <div class="min-w-0">
                             <p class="font-medium">{{ $op->article?->name ?? t('accounting.category.'.$op->category) }}@if ($op->payment_id) <x-badge color="blue">{{ t('accounting.operations.fromCrm') }}</x-badge>@endif</p>
-                            <p class="truncate text-muted-foreground">{{ $op->person?->full_name ?? $op->counterparty ?? '—' }}</p>
+                            <p class="truncate text-muted-foreground">{{ ($op->person ?? $op->employee)?->full_name ?? $op->counterparty ?? '—' }}</p>
                             @if ($op->article)<p class="text-xs text-muted-foreground">{{ t('accounting.category.'.$op->category) }}</p>@endif
                             <p class="text-xs text-muted-foreground">{{ d($op->date) }} · {{ $op->account?->name }}@if ($op->period) · {{ $op->period }}@endif</p>
                         </div>
@@ -140,7 +140,7 @@
             @if ($active->isEmpty())
                 <p class="text-sm text-muted-foreground">{{ t('accounting.accounts.emptyText') }}</p>
             @else
-            <form method="POST" action="/accounting/operations" class="space-y-4" x-data="{ dir: @js($dir), cat: @js($cat), bases: @js((object) $articleBases), get base() { return this.bases[this.cat] ?? this.cat } }">
+            <form method="POST" action="/accounting/operations" class="space-y-4" x-data="{ dir: @js($dir), cat: @js($cat), acc: @js((string) old('account_id', $prefill['p_account'] ?? array_key_first($activeOptions))), kinds: @js((object) $accounts->pluck('kind', 'id')->all()), get cashAcc() { return (this.kinds[this.acc] ?? 'BANK') !== 'BANK' }, bases: @js((object) $articleBases), get base() { return this.bases[this.cat] ?? this.cat } }">
                 @csrf
                 <input type="hidden" name="_form" value="op">
                 <input type="hidden" name="direction" :value="dir">
@@ -148,7 +148,7 @@
                     <button type="button" class="btn" :class="dir === 'IN' ? 'btn-primary' : 'btn-outline'" @click="dir = 'IN'; cat = 'OTHER_INCOME'">{{ t('accounting.direction.IN') }}</button>
                     <button type="button" class="btn" :class="dir === 'OUT' ? 'btn-primary' : 'btn-outline'" @click="dir = 'OUT'; cat = 'SUPPLIER'">{{ t('accounting.direction.OUT') }}</button>
                 </div>
-                <x-select name="account_id" :label="t('accounting.fields.account')" :options="$activeOptions" :value="old('account_id', $prefill['p_account'] ?? array_key_first($activeOptions))" required />
+                <x-select name="account_id" x-model="acc" :label="t('accounting.fields.account')" :options="$activeOptions" :value="old('account_id', $prefill['p_account'] ?? array_key_first($activeOptions))" required />
                 <div>
                     <label class="label" for="op-cat-in">{{ t('accounting.fields.category') }}</label>
                     @foreach (['IN', 'OUT'] as $d)
@@ -176,9 +176,12 @@
                     <x-field name="amount" inputmode="decimal" data-money :label="t('accounting.fields.amount')" :value="old('amount', $prefill['p_amount'] ?? null)" required />
                     <x-field name="date" type="date" :label="t('accounting.fields.date')" :value="old('date', \App\Support\Format::today()->toDateString())" required />
                 </div>
-                <div x-show="base === 'SALARY'" x-cloak>
+                <div x-show="base === 'SALARY' && !cashAcc" x-cloak>
                     <x-select name="person_id" :label="t('accounting.fields.person')" :placeholder="'—'" :options="$people->mapWithKeys(fn ($p) => [$p->id => $p->full_name.($p->is_active ? '' : ' ('.t('accounting.people.inactive').')')])->all()" :value="old('person_id', $prefill['p_person'] ?? null)" />
                     @if ($people->isEmpty())<p class="hint">{{ t('accounting.people.emptyText') }}</p>@endif
+                </div>
+                <div x-show="base === 'SALARY' && cashAcc" x-cloak>
+                    <x-select name="employee_id" :label="t('accounting.fields.employee')" :placeholder="'—'" :options="$employees->pluck('full_name', 'id')->all()" :value="old('employee_id')" :hint="t('accounting.fields.employeeHint')" />
                 </div>
                 <div x-show="base === 'SALARY' || base.startsWith('TAX_')" x-cloak>
                     <x-field name="period" type="month" :label="t('accounting.fields.period')" :hint="t('accounting.operations.periodHint')" :value="old('period', $prefill['p_period'] ?? null)" />
