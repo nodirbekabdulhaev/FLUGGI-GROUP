@@ -4,6 +4,7 @@ use App\Http\Controllers\Accounting\AccountsController;
 use App\Http\Controllers\Accounting\BankImportController;
 use App\Http\Controllers\Accounting\CategoriesController;
 use App\Http\Controllers\Accounting\FiledReportsController;
+use App\Http\Controllers\Accounting\LoansController;
 use App\Http\Controllers\Accounting\OperationsController;
 use App\Http\Controllers\Accounting\OverviewController;
 use App\Http\Controllers\Accounting\PayrollController;
@@ -76,6 +77,18 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::post('/recategorize', [RecategorizeController::class, 'apply'])->middleware($manage)->name('recategorize.apply');
     Route::get('/other-taxes', fn () => redirect('/accounting/recategorize?category=TAX_OTHER'))->middleware($manage);
     // Сданные отчёты: сальдо НДФЛ смотреть — accounting.read, загружать файлы — accounting.manage
+    Route::get('/loans', [LoansController::class, 'index'])->middleware($read)->name('loans');
+    Route::post('/loans', [LoansController::class, 'store'])->middleware($manage)->name('loans.store');
+    Route::get('/loans/{id}', [LoansController::class, 'show'])->whereUuid('id')->middleware($read)->name('loans.show');
+    Route::put('/loans/{id}', [LoansController::class, 'update'])->whereUuid('id')->middleware($manage)->name('loans.update');
+    Route::delete('/loans/{id}', [LoansController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('loans.destroy');
+    Route::post('/loans/{id}/schedule', [LoansController::class, 'schedule'])->whereUuid('id')->middleware($manage)->name('loans.schedule');
+    Route::post('/loans/{id}/import', [LoansController::class, 'import'])->whereUuid('id')->middleware($manage)->name('loans.import');
+    Route::put('/loan-payments/{id}', [LoansController::class, 'updatePayment'])->whereUuid('id')->middleware($manage)->name('loans.payment.update');
+    Route::delete('/loan-payments/{id}', [LoansController::class, 'deletePayment'])->whereUuid('id')->middleware($manage)->name('loans.payment.delete');
+    Route::post('/loan-payments/{id}/paid', [LoansController::class, 'paid'])->whereUuid('id')->middleware($manage)->name('loans.payment.paid');
+    Route::delete('/loan-payments/{id}/paid', [LoansController::class, 'unpaid'])->whereUuid('id')->middleware($manage)->name('loans.payment.unpaid');
+
     Route::get('/filed-reports', [FiledReportsController::class, 'index'])->middleware($read)->name('filed');
     Route::post('/filed-reports', [FiledReportsController::class, 'upload'])->middleware($manage)->name('filed.upload');
     Route::get('/filed-reports/{token}', [FiledReportsController::class, 'preview'])->where('token', '[A-Za-z0-9]{40}')->middleware($manage)->name('filed.preview');

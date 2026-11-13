@@ -8,6 +8,7 @@ use App\Models\Attendance;
 use App\Models\JobRun;
 use App\Models\User;
 use App\Models\WorkSchedule;
+use App\Services\Accounting\LoansService;
 use App\Services\Analytics\ClientInsights;
 use App\Services\Notifications\Notifier;
 use App\Services\People\AttendanceCheckout;
@@ -49,6 +50,7 @@ final class Scheduler
             ['name' => 'recurring-todos', 'due' => self::dailyAt('07:00')],
             ['name' => 'client-health', 'due' => self::dailyAt('06:00')],
             ['name' => 'payroll', 'due' => self::monthlyAt('09:00')],
+            ['name' => 'loan-reminders', 'due' => self::dailyAt('08:00')],
         ];
     }
 
@@ -140,6 +142,7 @@ final class Scheduler
             'recurring-todos' => RecurringTodoService::generate($now),
             'client-health' => self::clientHealth($now),
             'payroll' => self::payroll($now),
+            'loan-reminders' => LoansService::remind($now),
         };
     }
 
