@@ -1,0 +1,32 @@
+{
+  "title": "Work schedules",
+  "subtitle": "A role schedule applies to all employees with that role; an individual schedule applies to selected employees.",
+  "new": "New schedule",
+  "edit": "Edit schedule",
+  "saved": "Schedule saved",
+  "name": "Name",
+  "role": "For role",
+  "noRole": "Not role-based (selected employees)",
+  "start": "Start",
+  "end": "End",
+  "days": "Working days",
+  "grace": "Grace period, min",
+  "active": "Active",
+  "inactive": "Disabled",
+  "users": "Employees on this schedule",
+  "usersHint": "An individual schedule overrides the role schedule.",
+  "weekdays": {
+    "1": "Mon",
+    "2": "Tue",
+    "3": "Wed",
+    "4": "Thu",
+    "5": "Fri",
+    "6": "Sat",
+    "7": "Sun"
+  },
+  "errors": {
+    "days": "Select working days",
+    "endBeforeStart": "End is earlier than start",
+    "roleClash": "This role already has the schedule “{name}”"
+  }
+}

@@ -1,0 +1,12 @@
+{
+  "label": "Period",
+  "today": "Today",
+  "month": "This month",
+  "quarter": "This quarter",
+  "year": "This year",
+  "custom": "Custom period",
+  "from": "From",
+  "to": "To",
+  "apply": "Apply",
+  "week": "This week"
+}

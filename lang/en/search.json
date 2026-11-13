@@ -1,0 +1,19 @@
+{
+  "open": "Global search",
+  "placeholder": "Search…",
+  "title": "Search the CRM",
+  "hint": "Client, lead, deal, project, number (D-00012) or phone",
+  "minLength": "Enter at least 2 characters",
+  "searching": "Searching…",
+  "nothing": "Nothing found for “{q}”",
+  "kinds": {
+    "client": "Clients",
+    "lead": "Leads",
+    "deal": "Deals",
+    "project": "Projects",
+    "contract": "Contracts",
+    "task": "Tasks",
+    "user": "Employees"
+  },
+  "contract": "Contract {number}"
+}

@@ -1,0 +1,22 @@
+{
+  "resources/css/app.css": {
+    "file": "assets/app-4U_lppDa.css",
+    "src": "resources/css/app.css",
+    "isEntry": true
+  },
+  "resources/js/app.js": {
+    "file": "assets/app-_l4XeKTS.js",
+    "name": "app",
+    "src": "resources/js/app.js",
+    "isEntry": true,
+    "dynamicImports": [
+      "resources/js/charts-core.js"
+    ]
+  },
+  "resources/js/charts-core.js": {
+    "file": "assets/charts-core-Baj_86jY.js",
+    "name": "charts-core",
+    "src": "resources/js/charts-core.js",
+    "isDynamicEntry": true
+  }
+}

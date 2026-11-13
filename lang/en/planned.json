@@ -1,0 +1,14 @@
+{
+  "title": "Section under development",
+  "text": "“{section}” will be implemented in Phase {phase}: {phaseName}. This section does not work yet and shows no data.",
+  "phases": {
+    "2": "CRM — leads, clients, deals, pipeline, meetings",
+    "3": "Sales — proposals, contracts, payments",
+    "4": "Projects — projects, tasks, team, Kanban",
+    "5": "Finance — revenue, expenses, profit, commissions",
+    "6": "KPI — targets, metrics, attendance, payroll",
+    "7": "Telegram — bot, notifications, reminders, reports",
+    "8": "Analytics — dashboards, forecast, LTV, conversions"
+  },
+  "roadmap": "Phase roadmap — see ARCHITECTURE.md"
+}

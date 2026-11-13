@@ -1,0 +1,18 @@
+{
+  "view": {
+    "label": "View",
+    "kanban": "Kanban",
+    "list": "List"
+  },
+  "kanban": {
+    "add": "Add",
+    "addTo": "Add to “{name}”",
+    "empty": "Empty"
+  },
+  "color": {
+    "label": "Colour",
+    "presets": "Presets",
+    "custom": "Custom colour (HEX)",
+    "choose": "Choose colour {color}"
+  }
+}

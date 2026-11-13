@@ -1,0 +1,15 @@
+{
+  "greeting": "Hello, {name}",
+  "subtitle": "{role}{team, select, none {} other { · {team}}}",
+  "metricsTitle": "Metrics",
+  "metricsPending": "Revenue, profit, payments, leads and projects will appear here once the corresponding modules are implemented (Phase 2–5). We don’t show made-up numbers.",
+  "periodSelected": "Selected period: {period}",
+  "teamTitle": "Sales teams",
+  "teamEmpty": "No teams yet",
+  "members": "{count, plural, one {# employee} other {# employees}}",
+  "noHead": "No Sales head (ROP) assigned",
+  "accessTitle": "My sections",
+  "accessText": "Sections available to your role",
+  "available": "Available",
+  "plannedPhase": "Phase {phase}"
+}

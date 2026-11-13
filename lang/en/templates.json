@@ -1,0 +1,27 @@
+{
+  "title": "Project templates",
+  "subtitle": "A set of tasks created in a project based on the deal’s service (spec §62)",
+  "new": "New template",
+  "edit": "Edit template",
+  "saved": "Template saved",
+  "empty": "No templates",
+  "name": "Name",
+  "service": "Service",
+  "noService": "No service (manual only)",
+  "description": "Description",
+  "active": "Active",
+  "inactive": "Disabled",
+  "tasks": "Template tasks",
+  "addTask": "Add task",
+  "taskTitle": "Task",
+  "role": "Role",
+  "anyRole": "Any",
+  "offset": "Start, days",
+  "duration": "Duration, days",
+  "count": "{count, plural, one {# task} other {# tasks}}",
+  "hint": "Start — how many days after the project start the task begins; duration — how many days are allotted to it.",
+  "errors": {
+    "noTasks": "The template has no tasks"
+  },
+  "removeTask": "Remove task"
+}
