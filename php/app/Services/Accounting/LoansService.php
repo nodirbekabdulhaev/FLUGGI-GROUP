@@ -289,9 +289,12 @@ final class LoansService
                 if ($text === '' || is_numeric($text)) {
                     continue;
                 }
+                // Одна колонка — одна роль («Дата платежа» — это дата, а не сумма платежа)
                 foreach ($headers as $key => $words) {
                     if (! isset($found[$key]) && collect($words)->contains(fn ($w) => str_contains($text, $w))) {
                         $found[$key] = $c;
+
+                        break;
                     }
                 }
             }

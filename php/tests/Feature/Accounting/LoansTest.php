@@ -64,7 +64,7 @@ class LoansTest extends TestCase
         $rows = $loan->payments()->get();
         $this->assertCount(2, $rows);
         $this->assertSame(['2026-12-10', '2027-01-10'], $rows->map(fn ($r) => $r->due_date->toDateString())->all());
-        $this->assertSame('2800000.00', (string) $rows[0]->interest);
+        $this->assertSame(['2800000.00', '7800000.00'], [(string) $rows[0]->interest, (string) $rows[0]->total]);
         // Повторная загрузка с «заменить» не плодит дубли, оплаченное сохраняется
         $this->post('/accounting/loan-payments/'.$rows[0]->id.'/paid');
         $this->post('/accounting/loans/'.$loan->id.'/import', ['file' => UploadedFile::fake()->createWithContent('plan.csv', $csv), 'replace' => '1']);
