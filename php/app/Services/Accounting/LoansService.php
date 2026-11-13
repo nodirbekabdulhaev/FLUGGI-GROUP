@@ -7,6 +7,7 @@ use App\Domain\Tasks;
 use App\Exceptions\BusinessRule;
 use App\Models\AccLoan;
 use App\Models\AccLoanPayment;
+use App\Models\AccTransaction;
 use App\Models\Todo;
 use App\Services\Finance\Input;
 use App\Services\Notifications\Notifier;
@@ -349,11 +350,133 @@ final class LoansService
         return null;
     }
 
+    // ── В отчётность и сверка с операциями ───────────────────────────────────
+
+    private static function uzs(string $amount, string $currency, string $date): BigDecimal
+    {
+        return Accounting::toUzs($amount, $currency, $date) ?? BigDecimal::zero();
+    }
+
+    /**
+     * Долг по кредитам на дату (UZS) для строк баланса: «краткосрочные» — основной долг к уплате в ближайшие 12 месяцев, «долгосрочные» — остальное.
+     * Остаток = сумма кредита − основной долг по платежам, оплаченным к дате; кредиты, выданные позже даты, не учитываются.
+     *
+     * @return array{short:BigDecimal,long:BigDecimal}
+     */
+    public static function balancesAt(string $end): array
+    {
+        $short = $long = BigDecimal::zero();
+        $limit = CarbonImmutable::parse($end)->addYear()->toDateString();
+        foreach (AccLoan::with('payments')->get() as $loan) {
+            if ($loan->start_date && $loan->start_date->toDateString() > $end) {
+                continue;
+            }
+            $paid = $due = BigDecimal::zero();
+            foreach ($loan->payments as $p) {
+                if ($p->paid_at && $p->paid_at->toDateString() <= $end) {
+                    $paid = $paid->plus($p->principal);
+                } elseif ($p->due_date->toDateString() <= $limit) {
+                    $due = $due->plus($p->principal);
+                }
+            }
+            $left = BigDecimal::max(Accounting::dec($loan->principal)->minus($paid), BigDecimal::zero());
+            $cur = BigDecimal::min($left, $due);
+            $short = $short->plus(self::uzs((string) $cur, $loan->currency, $end));
+            $long = $long->plus(self::uzs((string) $left->minus($cur), $loan->currency, $end));
+        }
+
+        return ['short' => $short, 'long' => $long];
+    }
+
+    /** Расходы в виде процентов за год (UZS): проценты платежей графика, срок которых уже наступил (не позже сегодня и конца года). */
+    public static function interestFor(int $year): BigDecimal
+    {
+        $to = min($year.'-12-31', Tasks::companyDate(now()));
+        $sum = BigDecimal::zero();
+        foreach (AccLoan::with('payments')->get() as $loan) {
+            foreach ($loan->payments as $p) {
+                $d = $p->due_date->toDateString();
+                if ($d >= $year.'-01-01' && $d <= $to && (! $loan->start_date || $d >= $loan->start_date->toDateString())) {
+                    $sum = $sum->plus(self::uzs((string) $p->interest, $loan->currency, $d));
+                }
+            }
+        }
+
+        return $sum;
+    }
+
+    /** Категории, которые можно перенести в «Кредит» автоматически (не налоги, не зарплата, не оплаты клиентов). */
+    private const MATCH_OUT = ['OTHER', 'BANK_FEE', 'SUPPLIER', 'LOAN_PAYMENT'];
+
+    private const MATCH_IN = ['OTHER_INCOME', 'CLIENT_PAYMENT', 'LOAN_RECEIPT'];
+
+    /**
+     * Находит в банковских операциях оплату платежей графика и поступление кредита: расход на сумму платежа (±1) с датой около срока
+     * отмечает платёж оплаченным и получает статью «Погашение кредита»; приход на сумму кредита около даты выдачи — «Получение кредита».
+     *
+     * @return array{paid:int,received:int}
+     */
+    public static function autoMatch(?string $loanId = null): array
+    {
+        $paid = $received = 0;
+        $loans = AccLoan::with(['payments' => fn ($q) => $q->orderBy('due_date')])->where('is_active', true)
+            ->when($loanId, fn ($q) => $q->whereKey($loanId))->get();
+        if ($loans->isEmpty()) {
+            return ['paid' => 0, 'received' => 0];
+        }
+        $taken = AccLoanPayment::whereNotNull('transaction_id')->pluck('transaction_id')->flip();
+        $base = fn (string $dir, array $cats, string $currency) => AccTransaction::query()->join('acc_accounts as a', 'a.id', '=', 'acc_transactions.account_id')
+            ->where('a.kind', 'BANK')->where('a.currency', $currency)->where('acc_transactions.direction', $dir)->whereIn('acc_transactions.category', $cats)
+            ->whereNull('acc_transactions.payment_id')->whereNull('acc_transactions.transfer_group')->whereNull('acc_transactions.category_id');
+        foreach ($loans as $loan) {
+            foreach ($loan->payments as $p) {
+                if ($p->paid_at || $p->transaction_id) {
+                    continue;
+                }
+                $due = $p->due_date;
+                $op = $base('OUT', self::MATCH_OUT, $loan->currency)
+                    ->whereBetween('acc_transactions.date', [$due->subDays(7)->toDateString(), $due->addDays(14)->toDateString()])
+                    ->whereBetween('acc_transactions.amount', [(string) Accounting::dec($p->total)->minus(1), (string) Accounting::dec($p->total)->plus(1)])
+                    ->get(['acc_transactions.*'])->reject(fn ($o) => $taken->has($o->id))
+                    ->sortBy(fn ($o) => abs($o->date->diffInDays($due)))->first();
+                if (! $op) {
+                    continue;
+                }
+                $taken->put($op->id, 0);
+                DB::transaction(function () use ($p, $op) {
+                    $p->update(['paid_at' => $op->date->toDateString(), 'paid_amount' => (string) $op->amount, 'transaction_id' => $op->id]);
+                    if ($op->category !== 'LOAN_PAYMENT') {
+                        AccTransaction::whereKey($op->id)->update(['category' => 'LOAN_PAYMENT', 'period' => null]);
+                    }
+                    if ($p->todo_id) {
+                        Todo::where('id', $p->todo_id)->where('status', 'OPEN')->update(['status' => 'DONE', 'completed_at' => now()]);
+                    }
+                    Audit::log('accounting.loan.matched', 'acc_loan', $p->loan_id, ['due_date' => ['old' => null, 'new' => $p->due_date->toDateString()], 'transaction' => ['old' => null, 'new' => $op->id]]);
+                });
+                $paid++;
+            }
+            if ($loan->start_date) {
+                $in = $base('IN', self::MATCH_IN, $loan->currency)
+                    ->whereBetween('acc_transactions.date', [$loan->start_date->subDays(10)->toDateString(), $loan->start_date->addDays(10)->toDateString()])
+                    ->whereBetween('acc_transactions.amount', [(string) Accounting::dec($loan->principal)->minus(1), (string) Accounting::dec($loan->principal)->plus(1)])
+                    ->where('acc_transactions.category', '<>', 'LOAN_RECEIPT')->get(['acc_transactions.id']);
+                foreach ($in as $row) {
+                    AccTransaction::whereKey($row->id)->update(['category' => 'LOAN_RECEIPT']);
+                    Audit::log('accounting.loan.received', 'acc_loan', $loan->id, ['transaction' => ['old' => null, 'new' => $row->id]]);
+                    $received++;
+                }
+            }
+        }
+
+        return ['paid' => $paid, 'received' => $received];
+    }
+
     // ── Напоминания ─────────────────────────────────────────────────────────
 
     /** Задача планировщика: за remind_days дней до срока неоплаченного платежа создаёт дело ответственному (один раз на платёж). */
     public static function remind(?\DateTimeInterface $now = null): array
     {
+        self::autoMatch();
         $today = Tasks::companyDate($now ?? now());
         $created = 0;
         $rows = AccLoanPayment::query()->join('acc_loans as l', 'l.id', '=', 'acc_loan_payments.loan_id')

@@ -236,6 +236,7 @@ final class BankImportService
                 ]);
                 $t['created']++;
             }
+            LoansService::autoMatch();
             $check = self::balanceCheck($acc, $data);
             Audit::log('accounting.bank_import', 'acc_account', $acc->id, [
                 'import' => ['old' => null, 'new' => [

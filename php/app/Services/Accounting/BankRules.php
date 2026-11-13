@@ -15,6 +15,7 @@ use Illuminate\Support\Collection;
  *     только у получателя) → TAX_OTHER; тариф/комиссия → BANK_FEE;
  *     зарплата/аванс → SALARY; оплата по договору → SUPPLIER;
  *  4. свой же ИНН компании или пополнение своего счёта → перевод;
+ *     погашение кредита (слово «кредит» в назначении) → LOAN_PAYMENT, поступление кредита → LOAN_RECEIPT (не выручка и не расход);
  *  5. приходы по договору/за услуги → CLIENT_PAYMENT; иначе OTHER_INCOME / OTHER.
  * Слова подобраны так, чтобы срабатывать и на выписках, где ҳ/қ/ғ потеряны при выгрузке («соли?»).
  */
@@ -43,6 +44,9 @@ final class BankRules
 
     /** Слова «налог» только у получателя: в назначении платежа поставщику они встречаются часто («в т. ч. налог …») и налогом не являются. */
     private const BUDGET_PAYEE = ['солиқ', 'соли?', 'налог', 'soliq'];
+
+    /** Кредит: поступление кредита и погашение (основной долг, проценты) — не выручка и не обычный расход. */
+    private const LOAN = ['кредит', 'kredit', 'qarz mablag'];
 
     private const BANK_FEE = ['начисленные %%', 'тариф', 'комисси', 'komissiya', 'tarif', 'плата за обслуживание', 'xizmat haqi'];
 
@@ -89,11 +93,14 @@ final class BankRules
                 return $pick('TAX_OTHER', 'penalty');
             }
             foreach ([['TAX_ITPARK', self::ITPARK, 'itpark'], ['TAX_INPS', self::INPS, 'inps'], ['TAX_NDFL', self::NDFL, 'ndfl'],
-                ['TAX_SOCIAL', self::SOCIAL, 'social'], ['TAX_TURNOVER', self::TURNOVER, 'turnover'], ['TAX_OTHER', [...self::BUDGET, ...array_filter(self::BUDGET_PAYEE, fn ($w) => str_contains($payee, $w))], 'budget'], ['BANK_FEE', self::BANK_FEE, 'bankFee'], ['SALARY', self::SALARY, 'salary']] as [$cat, $words, $rule]) {
+                ['TAX_SOCIAL', self::SOCIAL, 'social'], ['TAX_TURNOVER', self::TURNOVER, 'turnover'], ['TAX_OTHER', [...self::BUDGET, ...array_filter(self::BUDGET_PAYEE, fn ($w) => str_contains($payee, $w))], 'budget'], ['LOAN_PAYMENT', self::LOAN, 'loan'], ['BANK_FEE', self::BANK_FEE, 'bankFee'], ['SALARY', self::SALARY, 'salary']] as [$cat, $words, $rule]) {
                 if ($has($words)) {
                     return $pick($cat, $rule);
                 }
             }
+        }
+        if ($dir === 'IN' && $has(self::LOAN)) {
+            return $pick('LOAN_RECEIPT', 'loan');
         }
         $inn = preg_replace('/\D+/', '', (string) ($row['inn'] ?? ''));
         $own = preg_replace('/\D+/', '', (string) $companyInn);

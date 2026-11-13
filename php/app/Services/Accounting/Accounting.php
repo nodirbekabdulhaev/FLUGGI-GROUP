@@ -23,14 +23,14 @@ final class Accounting
     /** Способы оплаты CRM (payments.method). */
     public const CRM_METHODS = ['CASH', 'BANK', 'CARD', 'TRANSFER', 'OTHER'];
 
-    public const IN_CATEGORIES = ['CLIENT_PAYMENT', 'OTHER_INCOME', 'TRANSFER_IN'];
+    public const IN_CATEGORIES = ['CLIENT_PAYMENT', 'OTHER_INCOME', 'LOAN_RECEIPT', 'TRANSFER_IN'];
 
-    public const OUT_CATEGORIES = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER', 'CLIENT_PAYMENT', 'TRANSFER_OUT'];
+    public const OUT_CATEGORIES = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER', 'LOAN_PAYMENT', 'CLIENT_PAYMENT', 'TRANSFER_OUT'];
 
     /** Категории, доступные при ручном вводе (переводы — отдельной формой, возвраты клиентам — из CRM). */
-    public const MANUAL_IN = ['OTHER_INCOME', 'CLIENT_PAYMENT'];
+    public const MANUAL_IN = ['OTHER_INCOME', 'CLIENT_PAYMENT', 'LOAN_RECEIPT'];
 
-    public const MANUAL_OUT = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER'];
+    public const MANUAL_OUT = ['SALARY', 'TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER', 'SUPPLIER', 'RENT', 'UTILITIES', 'BANK_FEE', 'OTHER', 'LOAN_PAYMENT'];
 
     public const TAX_CATEGORIES = ['TAX_NDFL', 'TAX_INPS', 'TAX_ITPARK', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER'];
 

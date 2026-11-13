@@ -142,6 +142,7 @@ final class OperationsService
                 'created_by_id' => access()->id(),
             ]);
             Audit::log('accounting.operation.create', 'acc_transaction', $row->id, self::snapshot($row));
+            LoansService::autoMatch();
 
             return $row;
         });

@@ -37,7 +37,7 @@ final class Statements
         '730', '740', '750', '760'];
 
     /** Строки баланса, считаемые из системы, если значение не задано. */
-    public const B_AUTO = ['270', '280', '340', '350', '450', '680', '700', '720'];
+    public const B_AUTO = ['270', '280', '340', '350', '450', '570', '680', '700', '720', '730'];
 
     /** Итоги баланса: код => [слагаемые, вычитаемые]. Порядок — от нижних к верхним. */
     public const B_SUM = [
@@ -56,7 +56,7 @@ final class Statements
         '410', '420', '430', '440', '450', '460', '470', '480', '490', '500', '510', '520', '530', '540', '550', '560', '570', '580', '590', '600', '610', '620', '630',
         '640', '650', '660', '670', '680', '690', '700', '710', '720', '730', '740', '750', '760', '770', '780'];
 
-    public const F_AUTO = ['010', '020', '050', '060', '070', '090'];
+    public const F_AUTO = ['010', '020', '050', '060', '070', '090', '180'];
 
     public const F_INPUT = ['010', '020', '050', '060', '070', '080', '090', '120', '130', '140', '150', '160', '180', '190', '200', '210', '230', '250', '260'];
 
@@ -151,7 +151,9 @@ final class Statements
         }
         $salary = $prev === null && $rows === 0 ? $zero : ($prev['720']['v'] ?? $zero)->plus($net)->minus(self::salaryPaid($year.'-01-01', $end));
 
-        return ['270' => $over($budget), '280' => $over(['TAX_INPS']), '340' => $acc['BANK'], '350' => $acc['USD'],
+        $loans = LoansService::balancesAt($end);
+
+        return ['270' => $over($budget), '280' => $over(['TAX_INPS']), '340' => $acc['BANK'], '350' => $acc['USD'], '570' => $loans['long'], '730' => $loans['short'],
             '680' => $debt($budget), '700' => $debt(['TAX_INPS']), '720' => $salary];
     }
 
@@ -302,6 +304,7 @@ final class Statements
                 ['utilities', $c['utilities'], 'OUT:UTILITIES'], ['other', $c['other'], 'OUT:OTHER']],
             '070' => [['itpark', $c['itpark'], null], ['bankFee', $c['bankFee'], 'OUT:BANK_FEE'], ['taxOther', $c['taxOther'], 'OUT:TAX_OTHER']],
             '090' => [['otherIncome', $c['otherIncome'], 'IN:OTHER_INCOME']],
+            '180' => [['loanInterest', $c['loanInterest'], null]],
         ];
     }
 

@@ -2,11 +2,14 @@
 
 namespace Tests\Feature\Accounting;
 
+use App\Models\AccAccount;
 use App\Models\AccLoan;
 use App\Models\AccLoanPayment;
+use App\Models\AccTransaction;
 use App\Models\Todo;
 use App\Models\User;
 use App\Services\Accounting\LoansService;
+use App\Services\Accounting\Statements;
 use App\Services\Automation\Scheduler;
 use Illuminate\Http\UploadedFile;
 use Tests\TestCase;
@@ -91,5 +94,36 @@ class LoansTest extends TestCase
         $this->post('/accounting/loan-payments/'.$payment->id.'/paid');
         $this->assertSame('DONE', $todo->fresh()->status);
         $this->assertContains('loan-reminders', Scheduler::names());
+    }
+
+    public function test_payments_and_receipt_are_found_in_operations_and_reach_the_statements(): void
+    {
+        $this->actingAsUser($this->accountant);
+        $bank = AccAccount::create(['name' => 'Bank', 'kind' => 'BANK', 'currency' => 'UZS', 'opening_balance' => '0', 'crm_methods' => []]);
+        $rows = [];
+        foreach (range(0, 35) as $i) {
+            $rows[] = ['due_date' => now()->setDate(2025, 2, 10)->addMonthsNoOverflow($i)->format('Y-m-d'), 'principal' => '1000000', 'interest' => '100000'];
+        }
+        $this->post('/accounting/loans', $this->loanData(['principal' => '36000000', 'start_date' => '2025-01-15', 'rows' => $rows]))->assertSessionHasNoErrors();
+        $loan = AccLoan::firstOrFail();
+        $in = AccTransaction::create(['account_id' => $bank->id, 'direction' => 'IN', 'category' => 'OTHER_INCOME', 'amount' => '36000000', 'date' => '2025-01-15']);
+        $out = AccTransaction::create(['account_id' => $bank->id, 'direction' => 'OUT', 'category' => 'OTHER', 'amount' => '1100000', 'date' => '2025-02-11']);
+        $other = AccTransaction::create(['account_id' => $bank->id, 'direction' => 'OUT', 'category' => 'OTHER', 'amount' => '1100000.50', 'date' => '2025-02-11']);
+        $this->assertSame(['paid' => 1, 'received' => 1], LoansService::autoMatch());
+        $this->assertSame('LOAN_RECEIPT', $in->fresh()->category);
+        $this->assertSame('LOAN_PAYMENT', $out->fresh()->category);
+        $first = $loan->payments()->first();
+        $this->assertSame([$out->id, '2025-02-11'], [$first->transaction_id, $first->paid_at->toDateString()]);
+        $this->assertSame(['paid' => 0, 'received' => 0], LoansService::autoMatch());
+        // Баланс на конец 2025: выплачен 1 млн; неоплаченные платежи 2025 (10 шт.) и 2026 (12 шт.) — краткосрочный долг, остальное долгосрочный
+        $b = LoansService::balancesAt('2025-12-31');
+        $this->assertSame(['22000000.00', '13000000.00'], [(string) $b['short']->toScale(2), (string) $b['long']->toScale(2)]);
+        $this->assertSame('1100000.00', (string) LoansService::interestFor(2025)->toScale(2));
+        $this->assertSame('1100000.00', (string) Statements::results(2025)['180']['v']->toScale(2));
+        $close = Statements::closing(2025);
+        $this->assertSame(['13000000.00', '22000000.00'], [(string) $close['570']['v']->toScale(2), (string) $close['730']['v']->toScale(2)]);
+        // Поступление кредита и погашение долга не попадают в выручку и прочие доходы; найденный платёж — не расход
+        $this->assertSame('0.00', (string) Statements::results(2025)['090']['v']->toScale(2));
+        $this->assertSame('1100000.50', (string) Statements::results(2025)['060']['v']->toScale(2));   // только несовпавший расход
     }
 }

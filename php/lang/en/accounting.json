@@ -41,7 +41,9 @@
     "OTHER": "Other expense",
     "TRANSFER_OUT": "Transfer (out)",
     "TAX_SOCIAL": "Social tax",
-    "TAX_TURNOVER": "Turnover tax"
+    "TAX_TURNOVER": "Turnover tax",
+    "LOAN_RECEIPT": "Loan received",
+    "LOAN_PAYMENT": "Loan repayment"
   },
   "fields": {
     "account": "Account",
@@ -879,7 +881,8 @@
       "itpark": "IT Park charges and turnover tax",
       "bankFee": "Bank fees",
       "taxOther": "Other taxes and penalties",
-      "otherIncome": "Other receipts"
+      "otherIncome": "Other receipts",
+      "loanInterest": "Loan interest (per payment schedule, already due)"
     },
     "operations": "operations"
   },
@@ -964,6 +967,11 @@
       "noRows": "No payment with a date and an amount was found",
       "file": "Could not read the file “{name}”",
       "type": "Only Excel (.xlsx, .xls) and CSV files are accepted"
-    }
+    },
+    "match": "find payments in operations",
+    "matched": "Payments found in operations: {n}",
+    "matchNone": "No new payments found",
+    "fromOp": "Operation",
+    "autoHint": "Payments are found automatically: an expense for the payment amount in the bank statement or Operations (±1, date near the due date) marks the payment and gets the “Loan repayment” category. The loan receipt gets “Loan received”."
   }
 }

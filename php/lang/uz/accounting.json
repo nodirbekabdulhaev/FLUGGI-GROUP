@@ -41,7 +41,9 @@
     "OTHER": "Boshqa chiqim",
     "TRANSFER_OUT": "Oʻtkazma (hisobdan chiqim)",
     "TAX_SOCIAL": "Ijtimoiy soliq",
-    "TAX_TURNOVER": "Aylanmadan olinadigan soliq"
+    "TAX_TURNOVER": "Aylanmadan olinadigan soliq",
+    "LOAN_RECEIPT": "Kredit olish",
+    "LOAN_PAYMENT": "Kreditni toʻlash"
   },
   "fields": {
     "account": "Hisob",
@@ -879,7 +881,8 @@
       "itpark": "IT Park ajratmalari va aylanma soligʻi",
       "bankFee": "Bank komissiyalari",
       "taxOther": "Boshqa soliqlar va penya",
-      "otherIncome": "Boshqa tushumlar"
+      "otherIncome": "Boshqa tushumlar",
+      "loanInterest": "Kreditlar boʻyicha foizlar (toʻlov jadvali boʻyicha, muddati kelgan)"
     },
     "operations": "operatsiyalar"
   },
@@ -964,6 +967,11 @@
       "noRows": "Sana va summali bironta toʻlov topilmadi",
       "file": "«{name}» faylini oʻqib boʻlmadi",
       "type": "Faqat Excel (.xlsx, .xls) va CSV fayllar mos"
-    }
+    },
+    "match": "operatsiyalardan toʻlovlarni topish",
+    "matched": "Operatsiyalardan topilgan toʻlovlar: {n}",
+    "matchNone": "Yangi toʻlovlar topilmadi",
+    "fromOp": "Operatsiya",
+    "autoHint": "Toʻlov oʻzi topiladi: bank koʻchirmasi yoki «Operatsiyalar»dagi toʻlov summasiga teng chiqim (±1 soʻm, muddat atrofida) toʻlovni belgilaydi va «Kreditni toʻlash» moddasini oladi. Kredit kelishi — «Kredit olish»."
   }
 }

@@ -84,6 +84,7 @@ Route::prefix('/accounting')->name('accounting.')->group(function () use ($read,
     Route::delete('/loans/{id}', [LoansController::class, 'destroy'])->whereUuid('id')->middleware($manage)->name('loans.destroy');
     Route::post('/loans/{id}/schedule', [LoansController::class, 'schedule'])->whereUuid('id')->middleware($manage)->name('loans.schedule');
     Route::post('/loans/{id}/import', [LoansController::class, 'import'])->whereUuid('id')->middleware($manage)->name('loans.import');
+    Route::post('/loans/{id}/match', [LoansController::class, 'match'])->whereUuid('id')->middleware($manage)->name('loans.match');
     Route::put('/loan-payments/{id}', [LoansController::class, 'updatePayment'])->whereUuid('id')->middleware($manage)->name('loans.payment.update');
     Route::delete('/loan-payments/{id}', [LoansController::class, 'deletePayment'])->whereUuid('id')->middleware($manage)->name('loans.payment.delete');
     Route::post('/loan-payments/{id}/paid', [LoansController::class, 'paid'])->whereUuid('id')->middleware($manage)->name('loans.payment.paid');

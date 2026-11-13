@@ -105,6 +105,14 @@ class LoansController extends Controller
         return back()->with('ok', t('accounting.loans.imported', ['n' => $n]));
     }
 
+    /** Найти оплаты платежей этого кредита среди банковских операций. */
+    public function match(string $id): RedirectResponse
+    {
+        $r = LoansService::autoMatch($id);
+
+        return back()->with('ok', $r['paid'] || $r['received'] ? t('accounting.loans.matched', ['n' => $r['paid'] + $r['received']]) : t('accounting.loans.matchNone'));
+    }
+
     public function updatePayment(Request $request, string $id): RedirectResponse
     {
         Input::normalize($request, ['principal', 'interest', 'total']);

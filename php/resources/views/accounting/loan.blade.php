@@ -21,6 +21,8 @@
         <x-stat :label="t('accounting.loans.leftTotal')" :value="money((string) $stats['leftTotal'], $cur)" :hint="t('accounting.loans.leftInterest', ['sum' => money((string) $stats['leftInterest'], $cur)])" />
     </div>
     @if ($loan->note)<p class="mb-4 text-sm text-muted-foreground">{{ $loan->note }}</p>@endif
+    <p class="mb-2 text-sm text-muted-foreground">{{ t('accounting.loans.autoHint') }}
+        @if ($canManage)<form method="POST" action="/accounting/loans/{{ $loan->id }}/match" class="inline">@csrf <button class="link">{{ t('accounting.loans.match') }}</button></form>@endif</p>
     <p class="mb-3 text-sm text-muted-foreground">{{ t('accounting.loans.remindInfo', ['days' => $loan->remind_days, 'user' => $loan->owner?->full_name ?? '—']) }}</p>
 
     @if ($canManage)
@@ -69,6 +71,7 @@
                     <td class="whitespace-nowrap text-right font-medium tabular-nums">{{ money((string) $p->total, $cur) }}</td>
                     <td class="whitespace-nowrap">
                         @if ($p->paid_at)<x-badge color="green">{{ t('accounting.loans.paid', ['date' => d($p->paid_at)]) }}</x-badge>
+                            @if ($p->transaction_id)<a class="block text-xs link" href="/accounting/operations?category=LOAN_PAYMENT">{{ t('accounting.loans.fromOp') }}</a>@endif
                             @if ($p->paid_amount !== null && (string) $p->paid_amount !== (string) $p->total)<span class="block text-xs text-muted-foreground">{{ money((string) $p->paid_amount, $cur) }}</span>@endif
                         @elseif ($late)<x-badge color="red">{{ t('accounting.loans.late') }}</x-badge>
                         @else<x-badge color="gray">{{ t('accounting.loans.waiting') }}</x-badge>@endif</td>

@@ -183,6 +183,7 @@ final class AnnualReport
             'rent' => self::flow($year, 'OUT', ['RENT']), 'utilities' => self::flow($year, 'OUT', ['UTILITIES']), 'other' => self::flow($year, 'OUT', ['OTHER']),
             'itpark' => $itpark, 'bankFee' => self::flow($year, 'OUT', ['BANK_FEE']), 'taxOther' => self::flow($year, 'OUT', ['TAX_OTHER']),
             'otherIncome' => self::flow($year, 'IN', ['OTHER_INCOME']),
+            'loanInterest' => LoansService::interestFor($year),
         ];
     }
 
@@ -200,6 +201,8 @@ final class AnnualReport
         $grossProfit = $revenue->minus($cost);
         $operating = $grossProfit->minus($period)->plus($otherIncome);
         $profitTax = BigDecimal::zero();
+        $interest = $c['loanInterest'];
+        $beforeTax = $operating->minus($interest);
 
         return [
             ['010', 'Чистая выручка от реализации продукции (товаров, работ и услуг)', $revenue],
@@ -211,9 +214,10 @@ final class AnnualReport
             ['070', '  прочие операционные расходы (в т. ч. отчисления IT Park, банковские комиссии)', $otherOps],
             ['090', 'Прочие доходы от основной деятельности', $otherIncome],
             ['100', 'Прибыль (убыток) от основной деятельности (стр. 030 − 040 + 090)', $operating],
-            ['220', 'Прибыль (убыток) до уплаты налога на прибыль', $operating],
+            ['180', 'Расходы в виде процентов (по кредитам, график платежей)', $interest],
+            ['220', 'Прибыль (убыток) до уплаты налога на прибыль', $beforeTax],
             ['230', 'Налог на прибыль (резидент IT Park — освобождён)', $profitTax],
-            ['270', 'Чистая прибыль (убыток) отчётного периода', $operating->minus($profitTax)],
+            ['270', 'Чистая прибыль (убыток) отчётного периода', $beforeTax->minus($profitTax)],
         ];
     }
 
