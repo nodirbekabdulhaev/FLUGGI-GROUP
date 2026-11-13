@@ -1,0 +1,98 @@
+# PHP-версия для виртуального хостинга (Beget): тесты на MySQL, затем сборка (код + vendor + стили)
+# публикуется в ветку `hosting`. На хостинге: bash deploy/beget/update.sh
+name: Hosting (PHP)
+
+on:
+  push:
+    branches: [main, claude/fluggi-crm-project-system-h3s3a3]
+    paths: ['php/**', '.github/workflows/hosting.yml']
+  pull_request:
+    paths: ['php/**', '.github/workflows/hosting.yml']
+  workflow_dispatch:
+
+concurrency:
+  group: hosting-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { php: '8.2', mysql: 'mysql:5.7' }
+          - { php: '8.3', mysql: 'mysql:8.0' }
+    services:
+      mysql:
+        image: ${{ matrix.mysql }}
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: fluggi_php_test
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd="mysqladmin ping -proot" --health-interval=5s --health-timeout=5s --health-retries=20
+    defaults:
+      run:
+        working-directory: php
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: 3306
+      DB_USERNAME: root
+      DB_PASSWORD: root
+      DB_DATABASE: fluggi_php_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: pdo_mysql, mbstring, intl, gd, zip, sodium
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: composer install --no-interaction --no-progress --prefer-dist
+      - run: npm ci --no-audit --no-fund && npm run build
+      - run: cp .env.example .env && php artisan key:generate
+      - name: Триггеры MySQL без SUPER
+        run: mysql -h127.0.0.1 -uroot -proot -e "SET GLOBAL log_bin_trust_function_creators = 1"
+      - run: vendor/bin/pint --test
+      - run: vendor/bin/phpunit
+
+  publish:
+    needs: test
+    if: github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, intl, gd, zip
+          coverage: none
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Сборка
+        run: bash php/deploy/build.sh "$RUNNER_TEMP/fluggi"
+      - name: Публикация в ветку hosting
+        working-directory: ${{ runner.temp }}/fluggi
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init -q -b hosting
+          git config user.name "github-actions[bot]"
+          git config user.email "41898099+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Сборка ${GITHUB_SHA::7} из ${GITHUB_REF_NAME}"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" hosting
+      - name: Архив для ручной загрузки
+        run: cd "$RUNNER_TEMP" && zip -qr fluggi-hosting.zip fluggi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fluggi-hosting
+          path: ${{ runner.temp }}/fluggi-hosting.zip
+          retention-days: 14

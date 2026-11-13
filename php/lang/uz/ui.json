@@ -1,0 +1,18 @@
+{
+  "view": {
+    "label": "Koʻrinish",
+    "kanban": "Kanban",
+    "list": "Roʻyxat"
+  },
+  "kanban": {
+    "add": "Qoʻshish",
+    "addTo": "«{name}» ga qoʻshish",
+    "empty": "Boʻsh"
+  },
+  "color": {
+    "label": "Rang",
+    "presets": "Tayyor ranglar",
+    "custom": "Oʻz rangingiz (HEX)",
+    "choose": "{color} rangini tanlash"
+  }
+}

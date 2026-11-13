@@ -1,0 +1,640 @@
+<?php
+
+namespace Tests\Feature\Accounting;
+
+use App\Models\AccAccount;
+use App\Models\AccPayroll;
+use App\Models\AccPerson;
+use App\Models\AccTransaction;
+use App\Models\AuditLog;
+use App\Models\Client;
+use App\Models\Deal;
+use App\Models\DealStage;
+use App\Models\ExchangeRate;
+use App\Models\Payment;
+use App\Models\User;
+use App\Services\Accounting\Accounting;
+use App\Services\Accounting\AccountsService;
+use App\Services\Accounting\CrmImportService;
+use App\Services\Accounting\OperationsService;
+use App\Services\Accounting\OverviewService;
+use App\Services\Accounting\SalaryLinks;
+use App\Services\Accounting\TaxesService;
+use App\Services\Accounting\TaxPayrollService;
+use App\Services\Accounting\TaxReport;
+use App\Support\Outbox;
+use Brick\Math\BigDecimal;
+use Tests\TestCase;
+
+/** Бухгалтерия: доступ, счета и остатки, переводы, удаление с причиной, оплаты из CRM, зарплата и налоги. */
+class AccountingTest extends TestCase
+{
+    private User $accountant;
+
+    private User $ceo;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        Accounting::forgetRates();
+        Accounting::saveSettings(['taxPayLag' => 0]);   // большинство проверок — налоги и оплаты в одном месяце; оплата в следующем месяце — в FiledReportsTest
+        $this->accountant = $this->user('ACCOUNTANT', attrs: ['full_name' => 'Buxgalter']);
+        $this->ceo = $this->user('CEO', attrs: ['full_name' => 'Ceo Boss']);
+    }
+
+    private function account(array $attrs = []): AccAccount
+    {
+        return AccAccount::create($attrs + ['name' => 'Bank '.uniqid(), 'kind' => 'BANK', 'currency' => 'UZS', 'opening_balance' => '0', 'crm_methods' => []]);
+    }
+
+    private function op(AccAccount $acc, string $dir, string $cat, string $amount, string $date, array $extra = []): AccTransaction
+    {
+        return AccTransaction::create($extra + ['account_id' => $acc->id, 'direction' => $dir, 'category' => $cat, 'amount' => $amount, 'date' => $date]);
+    }
+
+    private function payment(array $attrs = []): Payment
+    {
+        $manager = $this->user('MANAGER');
+        $client = Client::create(['name' => 'Aziz Market', 'owner_id' => $manager->id]);
+        $deal = Deal::create(['title' => 'SMM', 'client_id' => $client->id, 'owner_id' => $manager->id, 'amount' => '9000000', 'amount_uzs' => '9000000',
+            'stage_id' => DealStage::where('code', 'PAID')->value('id'), 'status' => 'WON', 'won_at' => now(), 'created_by_id' => $manager->id]);
+
+        return Payment::create($attrs + ['deal_id' => $deal->id, 'client_id' => $client->id, 'amount' => '9000000', 'amount_uzs' => '9000000',
+            'type' => 'FULL', 'method' => 'BANK', 'status' => 'PAID', 'paid_at' => '2026-09-30 20:00:00', 'created_by_id' => $manager->id])->refresh();
+    }
+
+    private function publishPaid(Payment $p): void
+    {
+        Outbox::publish($p->type === 'REFUND' ? 'payment.refunded' : 'payment.paid', [
+            'paymentId' => $p->id, 'dealId' => $p->deal_id, 'amountUzs' => (string) $p->amount_uzs,
+            'managerId' => Deal::find($p->deal_id)->owner_id, 'teamId' => null, 'projectId' => null, 'projectCreated' => false,
+        ]);
+        Outbox::processBatch();
+    }
+
+    public function test_access_by_role(): void
+    {
+        $pages = ['/accounting', '/accounting/operations', '/accounting/accounts', '/accounting/people', '/accounting/payroll', '/accounting/taxes', '/accounting/settings'];
+        foreach ([$this->accountant, $this->ceo] as $u) {
+            $this->actingAsUser($u);
+            foreach ($pages as $url) {
+                $this->get($url)->assertOk();
+            }
+        }
+        // Бухгалтер: главная и профиль открываются без ошибок
+        $this->actingAsUser($this->accountant);
+        foreach (['/', '/dashboard', '/profile'] as $url) {
+            $this->assertLessThan(500, $this->get($url)->getStatusCode(), $url);
+        }
+        foreach (['ROP', 'MANAGER', 'EXECUTOR', 'PROJECT_MANAGER', 'HR_ADMIN'] as $role) {
+            $this->actingAsUser($this->user($role));
+            foreach ([...$pages, '/accounting/operations/export', '/accounting/taxes/export'] as $url) {
+                $this->get($url)->assertForbidden();
+            }
+            $this->post('/accounting/accounts', ['name' => 'X', 'kind' => 'CASH', 'currency' => 'UZS'])->assertForbidden();
+            $this->post('/accounting/payroll/calculate', ['period' => '2026-09'])->assertForbidden();
+        }
+        $this->assertSame(0, AccAccount::count());
+    }
+
+    public function test_accounts_balances_transfer_and_soft_delete(): void
+    {
+        $this->actingAsUser($this->accountant);
+        $this->post('/accounting/accounts', ['name' => 'Kapitalbank', 'kind' => 'BANK', 'bank_name' => 'Kapitalbank', 'account_number' => '2020 8000 1234 5678 9012',
+            'currency' => 'UZS', 'opening_balance' => '1 000 000', 'opening_date' => '2026-09-01', 'crm_methods' => ['BANK', 'TRANSFER']])->assertSessionHasNoErrors();
+        $this->post('/accounting/accounts', ['name' => 'Kassa', 'kind' => 'CASH', 'currency' => 'UZS', 'opening_balance' => '0'])->assertSessionHasNoErrors();
+        $bank = AccAccount::where('name', 'Kapitalbank')->first();
+        $cash = AccAccount::where('name', 'Kassa')->first();
+        $this->assertSame(['BANK', 'TRANSFER'], $bank->crm_methods);
+        $this->assertSame('20208000123456789012', $bank->account_number);
+        $this->assertTrue(AuditLog::where('action', 'accounting.account.create')->where('entity_id', $bank->id)->exists());
+
+        $post = fn (array $d) => $this->post('/accounting/operations', $d + ['account_id' => $bank->id, 'date' => '2026-09-10']);
+        $post(['direction' => 'IN', 'category' => 'OTHER_INCOME', 'amount' => '500 000'])->assertSessionHasNoErrors();
+        $post(['direction' => 'OUT', 'category' => 'RENT', 'amount' => '200000,50'])->assertSessionHasNoErrors();
+        // Обязательные поля по категориям, запрет авто-категорий, дата до начального остатка
+        $post(['direction' => 'OUT', 'category' => 'SALARY', 'amount' => '1', 'period' => '2026-09'])->assertSessionHasErrors('person_id');
+        $post(['direction' => 'OUT', 'category' => 'TAX_NDFL', 'amount' => '1'])->assertSessionHasErrors('period');
+        $post(['direction' => 'OUT', 'category' => 'SUPPLIER', 'amount' => '1'])->assertSessionHasErrors('counterparty');
+        $post(['direction' => 'IN', 'category' => 'TRANSFER_IN', 'amount' => '1'])->assertSessionHasErrors('category');
+        $post(['direction' => 'IN', 'category' => 'SALARY', 'amount' => '1'])->assertSessionHasErrors('category');
+        $post(['direction' => 'IN', 'category' => 'OTHER_INCOME', 'amount' => '0'])->assertSessionHasErrors('amount');
+        $post(['direction' => 'IN', 'category' => 'OTHER_INCOME', 'amount' => '5', 'date' => '2026-08-31'])->assertSessionHasErrors('date');
+        $this->assertSame('1299999.50', AccountsService::balance($bank->id));
+
+        // Перевод: снятие наличных — две связанные строки
+        $this->post('/accounting/operations/transfer', ['from_id' => $bank->id, 'to_id' => $bank->id, 'amount' => '1', 'date' => '2026-09-11'])->assertSessionHasErrors('to_id');
+        $this->post('/accounting/operations/transfer', ['from_id' => $bank->id, 'to_id' => $cash->id, 'amount' => '300000', 'date' => '2026-09-11', 'description' => 'Naqd'])->assertSessionHasNoErrors();
+        $pair = AccTransaction::whereNotNull('transfer_group')->orderBy('direction')->get();
+        $this->assertCount(2, $pair);
+        $this->assertSame($pair[0]->transfer_group, $pair[1]->transfer_group);
+        $this->assertSame([['IN', 'TRANSFER_IN', $cash->id], ['OUT', 'TRANSFER_OUT', $bank->id]], $pair->map(fn ($r) => [$r->direction, $r->category, $r->account_id])->all());
+        $this->assertSame('999999.50', AccountsService::balance($bank->id));
+        $this->assertSame('300000.00', AccountsService::balance($cash->id));
+
+        // Удаление — только с причиной; перевод удаляется целиком
+        $this->delete("/accounting/operations/{$pair[0]->id}", ['reason' => ''])->assertSessionHasErrors('reason');
+        $this->delete("/accounting/operations/{$pair[0]->id}", ['reason' => 'Ошибка ввода'])->assertSessionHasNoErrors();
+        $this->assertSame(0, AccTransaction::whereNotNull('transfer_group')->count());
+        $deleted = AccTransaction::onlyTrashed()->whereNotNull('transfer_group')->get();
+        $this->assertCount(2, $deleted);
+        $this->assertSame([$this->accountant->id, 'Ошибка ввода'], [$deleted[0]->deleted_by_id, $deleted[0]->delete_reason]);
+        $this->assertSame(2, AuditLog::where('action', 'accounting.operation.delete')->count());
+        $this->assertSame('1299999.50', AccountsService::balance($bank->id));
+        $this->assertSame('0.00', AccountsService::balance($cash->id));
+
+        // Счёт с операциями не удаляется, а отключается; отключённый не принимает операций
+        $this->delete("/accounting/accounts/{$cash->id}")->assertSessionHas('error');
+        $this->post("/accounting/accounts/{$cash->id}/active", ['active' => 0]);
+        $this->assertFalse($cash->refresh()->is_active);
+        $this->post('/accounting/operations', ['account_id' => $cash->id, 'direction' => 'IN', 'category' => 'OTHER_INCOME', 'amount' => '1', 'date' => '2026-09-12'])->assertSessionHasErrors('account_id');
+        $empty = $this->account(['name' => 'Empty']);
+        $this->delete("/accounting/accounts/{$empty->id}")->assertSessionHasNoErrors();
+        $this->assertNull(AccAccount::find($empty->id));
+        // Валюту счёта с операциями менять нельзя
+        $this->put("/accounting/accounts/{$bank->id}", ['name' => 'Kapitalbank', 'kind' => 'BANK', 'currency' => 'USD'])->assertSessionHasErrors('currency');
+
+        $this->get('/accounting/operations?account='.$bank->id.'&direction=OUT&q=')->assertOk()->assertSee(t('accounting.category.RENT'));
+        $this->get('/accounting/operations/export?period=2026-09')->assertOk()->assertHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    }
+
+    public function test_crm_payments_are_imported_idempotently_with_refunds(): void
+    {
+        $bank = $this->account(['name' => 'Bank', 'crm_methods' => ['BANK']]);
+        $usd = $this->account(['name' => 'USD', 'currency' => 'USD', 'crm_methods' => ['TRANSFER']]);
+        ExchangeRate::create(['currency' => 'USD', 'date' => '2026-09-01', 'rate_to_uzs' => '12650']);
+
+        $p = $this->payment();
+        $this->publishPaid($p);
+        $row = AccTransaction::where('payment_id', $p->id)->first();
+        // 2026-09-30 20:00 UTC = 2026-10-01 01:00 по Ташкенту
+        $this->assertSame([$bank->id, 'IN', 'CLIENT_PAYMENT', '9000000.00', '2026-10-01', 'Aziz Market', null],
+            [$row->account_id, $row->direction, $row->category, (string) $row->amount, $row->date->toDateString(), $row->counterparty, $row->created_by_id]);
+        $this->assertTrue(AuditLog::where('action', 'accounting.crm_import')->where('entity_id', $row->id)->exists());
+        // Повтор события — без дубля
+        $this->publishPaid($p);
+        $this->assertSame(1, AccTransaction::where('payment_id', $p->id)->count());
+
+        // Способа нет ни у одного счёта — пропуск
+        $cashPay = $this->payment(['method' => 'CASH']);
+        $this->publishPaid($cashPay);
+        $this->assertFalse(AccTransaction::where('payment_id', $cashPay->id)->exists());
+
+        // Долларовый счёт: оплата в сумах пересчитывается по курсу, в долларах — как есть
+        $t1 = $this->payment(['method' => 'TRANSFER', 'amount' => '12650000', 'amount_uzs' => '12650000']);
+        $t2 = $this->payment(['method' => 'TRANSFER', 'currency' => 'USD', 'exchange_rate' => '12650', 'amount' => '500', 'amount_uzs' => '6325000']);
+        $this->assertSame('imported', CrmImportService::import($t1->id));
+        $this->assertSame('imported', CrmImportService::import($t2->id));
+        $this->assertSame(['1000.00', '500.00'], [(string) AccTransaction::where('payment_id', $t1->id)->value('amount'), (string) AccTransaction::where('payment_id', $t2->id)->value('amount')]);
+        $this->assertSame('1500.00', AccountsService::balance($usd->id));
+
+        // Возврат — расход «Оплата клиента» на счёт по способу возврата
+        $refund = $this->payment(['type' => 'REFUND', 'refund_of_id' => $p->id, 'amount' => '1000000', 'amount_uzs' => '1000000', 'paid_at' => '2026-10-05 07:00:00']);
+        $this->publishPaid($refund);
+        $out = AccTransaction::where('payment_id', $refund->id)->first();
+        $this->assertSame(['OUT', 'CLIENT_PAYMENT', '1000000.00'], [$out->direction, $out->category, (string) $out->amount]);
+        $this->assertSame('8000000.00', AccountsService::balance($bank->id));
+
+        // Строку из CRM можно удалить (тестовая оплата) с причиной; оплата в CRM остаётся, повторно не импортируется
+        $this->actingAsUser($this->accountant)->get('/accounting/operations')->assertOk()->assertSee(t('accounting.operations.deleteCrmHint'));
+        $this->delete("/accounting/operations/{$out->id}", ['reason' => 'Тестовая оплата'])->assertSessionHasNoErrors();
+        $this->assertNotNull(AccTransaction::withTrashed()->find($out->id)->deleted_at);
+        $this->assertSame('9000000.00', AccountsService::balance($bank->id));
+        $this->assertSame('exists', CrmImportService::import($refund->id));
+        $this->assertNotNull(Payment::find($refund->id));
+
+        // Загрузка истории за период: новые оплаты загружаются, старые не дублируются; вне периода — нет
+        $old = $this->payment(['paid_at' => '2026-08-15 10:00:00', 'amount' => '2000000', 'amount_uzs' => '2000000']);
+        $late = $this->payment(['paid_at' => '2026-11-15 10:00:00']);
+        $pending = $this->payment(['status' => 'PENDING', 'paid_at' => null]);
+        $this->post('/accounting/import-crm', ['from' => '2026-08-01', 'to' => '2026-10-31'])->assertSessionHasNoErrors()
+            ->assertSessionHas('ok', t('accounting.import.done', ['imported' => 1, 'exists' => 4, 'skipped' => 1]));
+        $this->assertTrue(AccTransaction::where('payment_id', $old->id)->exists());
+        $this->assertFalse(AccTransaction::where('payment_id', $late->id)->exists());
+        $this->assertFalse(AccTransaction::where('payment_id', $pending->id)->exists());
+        $this->post('/accounting/import-crm', ['from' => '2026-08-01', 'to' => '2026-10-31']);
+        $this->assertSame([4, 5], [AccTransaction::whereNotNull('payment_id')->count(), AccTransaction::withTrashed()->whereNotNull('payment_id')->count()]);
+
+        // Начальный остаток: оплаты раньше его даты не загружаются
+        $bank->update(['opening_date' => '2026-09-01']);
+        AccTransaction::where('payment_id', $old->id)->forceDelete();
+        $this->assertSame('beforeOpening', CrmImportService::import($old->id));
+        $this->post('/accounting/import-crm', ['from' => '2026-10-31', 'to' => '2026-10-01'])->assertSessionHasErrors('to');
+        $this->actingAsUser($this->user('ROP'))->post('/accounting/import-crm', ['from' => '2026-08-01', 'to' => '2026-10-31'])->assertForbidden();
+    }
+
+    public function test_payroll_calculation_proration_rates_and_approval(): void
+    {
+        // По умолчанию ИНПС удерживается сверх НДФЛ (7,5 % + 0,1 %); здесь сначала — вариант «ИНПС в составе НДФЛ»
+        $this->assertFalse(Accounting::settings()['inpsWithinNdfl']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => true, 'itparkRate' => '1']);
+        $this->actingAsUser($this->accountant);
+        $this->post('/accounting/people', ['full_name' => 'Aliyev Aziz', 'pinfl' => '3120 1950 1234 56', 'position' => 'Direktor', 'monthly_salary' => '10 000 000', 'hired_at' => '2026-01-01', 'is_active' => 1])->assertSessionHasNoErrors();
+        $this->post('/accounting/people', ['full_name' => 'Karimova Dilnoza', 'monthly_salary' => '6000000', 'hired_at' => '2026-09-16', 'is_active' => 1])->assertSessionHasNoErrors();
+        $this->post('/accounting/people', ['full_name' => 'Fired', 'monthly_salary' => '5000000', 'hired_at' => '2026-01-01', 'fired_at' => '2026-08-31', 'is_active' => 1])->assertSessionHasNoErrors();
+        $this->post('/accounting/people', ['full_name' => 'Inactive', 'monthly_salary' => '5000000', 'is_active' => 0])->assertSessionHasNoErrors();
+        $this->post('/accounting/people', ['full_name' => 'Bad', 'monthly_salary' => '1', 'pinfl' => '123'])->assertSessionHasErrors('pinfl');
+        $this->post('/accounting/people', ['full_name' => 'Dup', 'monthly_salary' => '1', 'pinfl' => '31201950123456'])->assertSessionHasErrors('pinfl');
+        $this->post('/accounting/people', ['full_name' => 'Dates', 'monthly_salary' => '1', 'hired_at' => '2026-05-01', 'fired_at' => '2026-04-01'])->assertSessionHasErrors('fired_at');
+        $a = AccPerson::where('full_name', 'Aliyev Aziz')->first();
+        $b = AccPerson::where('full_name', 'Karimova Dilnoza')->first();
+        $this->assertSame('31201950123456', $a->pinfl);
+
+        $this->post('/accounting/payroll/calculate', ['period' => '2026-09'])->assertSessionHasNoErrors();
+        $rows = AccPayroll::where('period', '2026-09')->get()->keyBy('person_id');
+        $this->assertCount(2, $rows);
+        $vals = fn ($r) => [(string) $r->gross, (string) $r->ndfl, (string) $r->inps, (string) $r->net, $r->status];
+        $this->assertSame(['10000000.00', '750000.00', '10000.00', '9250000.00', 'DRAFT'], $vals($rows[$a->id]));
+        // Принята 16.09: 15 из 30 дней
+        $this->assertSame(['3000000.00', '225000.00', '3000.00', '2775000.00', 'DRAFT'], $vals($rows[$b->id]));
+
+        // Правка начисленного в черновике пересчитывает налоги
+        $this->patch("/accounting/payroll/{$rows[$b->id]->id}", ['gross' => '4000000'])->assertSessionHasNoErrors();
+        $this->assertSame(['4000000.00', '300000.00', '4000.00', '3700000.00', 'DRAFT'], $vals($rows[$b->id]->refresh()));
+
+        // Утверждение: строка больше не меняется и не пересчитывается
+        $this->post('/accounting/payroll/approve', ['period' => '2026-09', 'ids' => [$rows[$a->id]->id]])->assertSessionHasNoErrors();
+        $this->assertSame('APPROVED', $rows[$a->id]->refresh()->status);
+        $this->patch("/accounting/payroll/{$rows[$a->id]->id}", ['gross' => '1'])->assertSessionHas('error');
+        $a->update(['monthly_salary' => '20000000']);
+        $this->post('/accounting/payroll/calculate', ['period' => '2026-09']);
+        $this->assertSame('10000000.00', (string) $rows[$a->id]->refresh()->gross);
+        $this->assertSame('3000000.00', (string) $rows[$b->id]->refresh()->gross);
+
+        // Отмена утверждения: строка снова черновик и пересчитывается; кнопка «Отменить» в ведомости
+        $this->get('/accounting/payroll?period=2026-09')->assertOk()->assertSee('unapprove-row', false);
+        $this->post('/accounting/payroll/unapprove', ['period' => '2026-09', 'ids' => [$rows[$a->id]->id]])->assertSessionHasNoErrors()->assertSessionHas('ok');
+        $this->assertSame(['DRAFT', null], [$rows[$a->id]->refresh()->status, $rows[$a->id]->approved_at]);
+        $this->assertTrue(AuditLog::where('action', 'accounting.payroll.unapprove')->exists());
+        $a->update(['monthly_salary' => '10000000']);
+        $this->post('/accounting/payroll/approve', ['period' => '2026-09', 'ids' => [$rows[$a->id]->id]]);
+
+        // Выплачено — расходы SALARY с человеком и периодом
+        $acc = $this->account(['name' => 'Bank']);
+        $this->post('/accounting/operations', ['account_id' => $acc->id, 'direction' => 'OUT', 'category' => 'SALARY', 'person_id' => $a->id, 'period' => '2026-09', 'amount' => '5000000', 'date' => '2026-10-05'])->assertSessionHasNoErrors();
+        $this->op($acc, 'OUT', 'SALARY', '777', '2026-10-05', ['person_id' => $a->id, 'period' => '2026-08']);
+        Accounting::saveSettings(['salaryPool' => false]);   // выплаты по людям (общая выплата — в отдельном тесте)
+        $sheet = TaxPayrollService::sheet('2026-09');
+        $ra = $sheet['rows']->firstWhere('person_id', $a->id);
+        $this->assertSame(['5000000.00', '4250000.00'], [$ra->paid, $ra->remaining]);
+        $this->assertSame('12025000.00', $sheet['totals']['net']);
+
+        // ИНПС сверх НДФЛ: на руки = gross − НДФЛ − ИНПС
+        $this->put('/accounting/settings', ['ndflRate' => '7.5', 'inpsRate' => '0.1', 'itparkRate' => '1'])->assertSessionHasNoErrors();
+        $this->assertFalse(Accounting::settings()['inpsWithinNdfl']);
+        $this->post('/accounting/payroll/calculate', ['period' => '2026-09']);
+        $this->assertSame('2772000.00', (string) $rows[$b->id]->refresh()->net);
+
+        // Уволенный в середине месяца: 10 из 31 дня
+        $this->assertSame([10, 31], TaxPayrollService::employedDays('2025-01-01', '2026-10-10', '2026-10'));
+        $this->assertNull(TaxPayrollService::employedDays('2026-11-01', null, '2026-10'));
+
+        // Человека с начислениями нельзя удалить
+        $this->delete("/accounting/people/{$a->id}")->assertSessionHas('error');
+        $this->assertNotNull(AccPerson::find($a->id));
+        $this->assertTrue(AuditLog::where('action', 'accounting.payroll.approve')->exists());
+    }
+
+    public function test_tax_balance_carries_over_months(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        AccPerson::create(['full_name' => 'Aliyev Aziz', 'monthly_salary' => '10000000', 'hired_at' => '2026-01-01']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflBaseRate' => '7.5', 'benefitCode' => '', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '1']);
+        foreach (['2026-08', '2026-09', '2026-10'] as $m) {
+            TaxPayrollService::calculate($m);   // НДФЛ 750 000 в месяц
+        }
+        // Старые операции (2021) до начала учёта не дают «переплаты»
+        $this->op($bank, 'OUT', 'TAX_NDFL', '99000000', '2021-05-10', ['period' => '2021-05']);
+        // Август оплачен в сентябре (период по дате выписки), сентябрь — частично, без периода — по дате
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '10000000', '2026-08-20');                      // IT Park 100 000
+        $this->op($bank, 'OUT', 'TAX_NDFL', '750000', '2026-09-12', ['period' => '2026-09']);
+        $this->op($bank, 'OUT', 'TAX_NDFL', '1000000', '2026-10-12');
+        $this->op($bank, 'OUT', 'TAX_ITPARK', '150000', '2026-09-12', ['period' => '2026-09']);
+
+        $aug = TaxesService::forPeriod('2026-08');
+        $this->assertSame('2026-08', $aug['balanceFrom']);
+        $this->assertSame(['0.00', '750000.00', '0.00', '750000.00'], array_values(array_intersect_key($aug['taxes']['TAX_NDFL'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $sep = TaxesService::forPeriod('2026-09');
+        $this->assertSame(['750000.00', '750000.00', '750000.00', '750000.00'], array_values(array_intersect_key($sep['taxes']['TAX_NDFL'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $this->assertSame(['100000.00', '0.00', '150000.00', '-50000.00'], array_values(array_intersect_key($sep['taxes']['TAX_ITPARK'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $oct = TaxesService::forPeriod('2026-10');
+        $this->assertSame(['750000.00', '750000.00', '1000000.00', '500000.00'], array_values(array_intersect_key($oct['taxes']['TAX_NDFL'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $this->assertSame('-50000.00', $oct['taxes']['TAX_ITPARK']['opening']);
+
+        // Сальдо на начало из настроек: долг / переплата на начало учёта
+        $this->actingAsUser($this->accountant)->put('/accounting/settings', ['ndflBaseRate' => '7.5', 'inpsRate' => '0.1', 'itparkRate' => '1', 'taxBalanceFrom' => '2026-09',
+            'taxOpeningNdfl' => '-401 673,81', 'taxOpeningInps' => '', 'taxOpeningItpark' => '20000'])->assertSessionHasNoErrors()->assertSessionHas('ok');
+        $oct = TaxesService::forPeriod('2026-10');
+        $this->assertSame('2026-09', $oct['balanceFrom']);
+        $this->assertSame(['-401673.81', '-651673.81'], [$oct['taxes']['TAX_NDFL']['opening'], $oct['taxes']['TAX_NDFL']['balance']]);
+        $this->assertSame('-130000.00', $oct['taxes']['TAX_ITPARK']['opening']);    // 20 000 + 0 − 150 000
+        $this->assertSame('0.00', TaxesService::forPeriod('2026-08')['taxes']['TAX_NDFL']['opening']);   // до начала учёта — отдельно
+        // Месяц без ведомости (прошлые годы) — по окладам: июль 750 000 к уплате, переходит дальше
+        Accounting::saveSettings(['taxBalanceFrom' => '2026-07', 'taxOpeningNdfl' => '0', 'taxOpeningItpark' => '0']);
+        $jul = TaxesService::forPeriod('2026-07');
+        $this->assertSame([0, true, '750000.00', '10000.00'], [$jul['payrollRows'], $jul['fromSalary'], $jul['taxes']['TAX_NDFL']['due'], $jul['taxes']['TAX_INPS']['due']]);
+        $this->assertSame('750000.00', TaxesService::forPeriod('2026-08')['taxes']['TAX_NDFL']['opening']);
+        $this->get('/accounting/taxes?period=2026-07')->assertOk()->assertSee(t('accounting.taxes.fromSalary'));
+        $this->put('/accounting/settings', ['taxOpeningNdfl' => 'abc'])->assertSessionHasErrors('taxOpeningNdfl');
+        $this->get('/accounting/taxes?period=2026-10')->assertOk()->assertSee(t('accounting.taxes.opening'))->assertSee(t('accounting.taxes.overpaid'));
+        $this->get('/accounting/settings')->assertOk()->assertSee('taxOpeningItpark', false);
+    }
+
+    public function test_earlier_tax_regime_before_it_park(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        $p = AccPerson::create(['full_name' => 'ALIYEV AZIZ', 'pinfl' => '10000000000001', 'position' => 'Менеджер', 'monthly_salary' => '5000000', 'hired_at' => '2023-01-01']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false,
+            'itparkRate' => '1', 'regimeFrom' => '2023-04', 'taxBalanceFrom' => '2023-03']);
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '10000000', '2023-03-10');
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '20000000', '2023-04-10');
+        $this->op($bank, 'OUT', 'TAX_TURNOVER', '300000', '2023-04-15', ['period' => '2023-04']);
+
+        // Март 2023 — прежний режим: НДФЛ 12 % без льгот, соцналог 12 %, налог с оборота 4 %, IT Park нет
+        $this->assertSame('EARLIER', Accounting::settingsFor('2023-03')['regime']);
+        $mar = TaxesService::forPeriod('2023-03');
+        $this->assertSame(['TAX_NDFL', 'TAX_INPS', 'TAX_SOCIAL', 'TAX_TURNOVER', 'TAX_OTHER'], array_keys($mar['taxes']));
+        $this->assertSame(['600000.00', '5000.00', '600000.00', '400000.00'], [$mar['taxes']['TAX_NDFL']['due'], $mar['taxes']['TAX_INPS']['due'], $mar['taxes']['TAX_SOCIAL']['due'], $mar['taxes']['TAX_TURNOVER']['due']]);
+
+        // Апрель 2023 — IT Park: 7,5 % и 1 %; долг по налогу с оборота и соцналогу переходит, после оплаты 300 000 остаётся 100 000
+        $apr = TaxesService::forPeriod('2023-04');
+        $this->assertSame(['375000.00', '200000.00'], [$apr['taxes']['TAX_NDFL']['due'], $apr['taxes']['TAX_ITPARK']['due']]);
+        $this->assertSame(['400000.00', '0.00', '300000.00', '100000.00'], array_values(array_intersect_key($apr['taxes']['TAX_TURNOVER'], array_flip(['opening', 'due', 'paid', 'balance']))));
+        $this->assertSame('600000.00', $apr['taxes']['TAX_SOCIAL']['opening']);
+
+        // Ведомость марта — по ставке марта
+        TaxPayrollService::calculate('2023-03');
+        $this->assertSame('600000.00', (string) AccPayroll::where('period', '2023-03')->value('ndfl'));
+        TaxPayrollService::calculate('2023-04');
+        $this->assertSame('375000.00', (string) AccPayroll::where('period', '2023-04')->value('ndfl'));
+
+        // Отчёт в налоговую за апрель 2023: НДФЛ с начала года 3 × 600 000 + 375 000, льгота только за апрель
+        $r = collect(TaxReport::build('2023-04')['rows'])->firstWhere('personId', $p->id);
+        $this->assertSame(['20000000.00', '2175000.00', '375000.00'], [$r['ytdIncome'], $r['ytdNdfl'], $r['monthNdfl']]);
+        $this->assertSame(['1875000.00', '1875000.00'], [$r['benefits'][0]['ytd'], $r['benefits'][0]['month']]);
+
+        $this->actingAsUser($this->accountant)->get('/accounting/taxes?period=2023-03')->assertOk()->assertSee(t('accounting.category.TAX_TURNOVER'))
+            ->assertSee(t('accounting.taxes.regimeEarlier', ['turnover' => '4', 'ndfl' => '12', 'social' => '12']));
+        $this->get('/accounting/settings')->assertOk()->assertSee('earlierTurnoverRate', false);
+        $this->put('/accounting/settings', ['ndflBaseRate' => '12', 'inpsRate' => '0.1', 'itparkRate' => '1', 'regimeFrom' => '2023-13'])->assertSessionHasErrors('regimeFrom');
+    }
+
+    public function test_change_article_of_an_operation(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        $person = AccPerson::create(['full_name' => 'Aliyev Aziz', 'monthly_salary' => '5000000']);
+        $op = $this->op($bank, 'OUT', 'OTHER', '5687748.25', '2024-10-03', ['counterparty' => '"FLUGGI" MChJ', 'description' => 'ПЕРЕВОД СО ВТОРИЧНЫХ СЧЕТОВ']);
+        $this->actingAsUser($this->accountant);
+        $this->get('/accounting/operations')->assertOk()->assertSee(t('accounting.operations.changeArticle'));
+
+        // Свои переводы — не расход
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'TRANSFER_OUT'])->assertSessionHasNoErrors()->assertSessionHas('ok');
+        $this->assertSame('TRANSFER_OUT', $op->refresh()->category);
+        // Налог: месяц по дате, если не указан; в «прочий расход» — месяц очищается
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'TAX_NDFL'])->assertSessionHasNoErrors();
+        $this->assertSame(['TAX_NDFL', '2024-10'], [$op->refresh()->category, $op->period]);
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'TAX_NDFL', 'period' => '2024-09']);
+        $this->assertSame('2024-09', $op->refresh()->period);
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER']);
+        $this->assertSame(['OTHER', null], [$op->refresh()->category, $op->period]);
+        // Зарплата требует человека
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'SALARY'])->assertSessionHas('error');
+        $this->assertSame('OTHER', $op->refresh()->category);
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'SALARY', 'person_id' => $person->id, 'period' => '2024-10'])->assertSessionHasNoErrors();
+        $this->assertSame(['SALARY', $person->id, '2024-10'], [$op->refresh()->category, $op->person_id, $op->period]);
+        // Приходная статья расходу не подходит, неизвестная — тоже
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER_INCOME'])->assertSessionHas('error');
+        $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'NOPE'])->assertSessionHasErrors('category');
+        $this->assertTrue(AuditLog::where('action', 'accounting.operation.recategorize')->exists());
+
+        // Оплаты из CRM и парные переводы не меняются
+        $crm = $this->op($bank, 'IN', 'CLIENT_PAYMENT', '1000', '2024-10-04', ['payment_id' => $this->payment()->id]);
+        $this->patch("/accounting/operations/{$crm->id}/category", ['category' => 'OTHER_INCOME'])->assertSessionHas('error');
+        $this->assertSame('CLIENT_PAYMENT', $crm->refresh()->category);
+        $acc2 = $this->account(['name' => 'Bank 2']);
+        [$out] = OperationsService::transfer(['from_id' => $bank->id, 'to_id' => $acc2->id, 'amount' => '100', 'date' => '2024-10-05', 'description' => null]);
+        $this->patch("/accounting/operations/{$out->id}/category", ['category' => 'OTHER'])->assertSessionHas('error');
+        $this->assertSame('TRANSFER_OUT', $out->refresh()->category);
+
+        // Другие роли не меняют
+        foreach (['ROP', 'MANAGER'] as $role) {
+            $this->actingAsUser($this->user($role));
+            $this->patch("/accounting/operations/{$op->id}/category", ['category' => 'OTHER'])->assertForbidden();
+        }
+    }
+
+    public function test_cash_salary_goes_to_crm_employee_and_stays_out_of_reports(): void
+    {
+        $seller = $this->user('MANAGER', attrs: ['full_name' => 'Test Seller']);
+        $this->actingAsUser($this->accountant);
+        $cash = $this->account(['name' => 'Kassa', 'kind' => 'CASH']);
+        $bank = $this->account(['name' => 'Bank']);
+        $person = AccPerson::create(['full_name' => 'Test Person', 'monthly_salary' => '3000000', 'hired_at' => '2026-01-01']);
+        $this->post('/accounting/operations', ['_form' => 'op', 'account_id' => $cash->id, 'direction' => 'OUT', 'category' => 'SALARY',
+            'amount' => '1200000', 'date' => '2026-11-11', 'period' => '2026-11', 'person_id' => $person->id])->assertSessionHasErrors('employee_id');
+        $this->post('/accounting/operations', ['_form' => 'op', 'account_id' => $cash->id, 'direction' => 'OUT', 'category' => 'SALARY',
+            'amount' => '1200000', 'date' => '2026-11-11', 'period' => '2026-11', 'employee_id' => $seller->id])->assertSessionHasNoErrors();
+        $row = AccTransaction::where('account_id', $cash->id)->first();
+        $this->assertSame([$seller->id, null, 'Test Seller'], [$row->employee_id, $row->person_id, $row->counterparty]);
+        // Банк по-прежнему требует человека из ведомости
+        $this->post('/accounting/operations', ['_form' => 'op', 'account_id' => $bank->id, 'direction' => 'OUT', 'category' => 'SALARY',
+            'amount' => '500000', 'date' => '2026-11-11', 'period' => '2026-11'])->assertSessionHasErrors('person_id');
+        $this->get('/accounting/operations')->assertOk()->assertSee('Test Seller');
+        // В зарплатную ведомость кассовая выплата не попадает
+        TaxPayrollService::calculate('2026-11');
+        $this->assertSame('0.00', TaxPayrollService::sheet('2026-11')['totals']['paid']);
+    }
+
+    public function test_salary_paid_as_one_sum_is_split_between_everyone(): void
+    {
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflBaseRate' => '12', 'benefitCode' => '103848', 'benefitPercent' => '37.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false]);
+        $names = ['Aliyev', 'Bekova', 'Karimov', 'Valiyev'];
+        $big = array_map(fn ($n) => AccPerson::create(['full_name' => $n, 'monthly_salary' => '4500000', 'hired_at' => '2026-01-01']), $names);
+        $small = AccPerson::create(['full_name' => 'Saidov', 'monthly_salary' => '1400000', 'hired_at' => '2026-05-01']);
+        TaxPayrollService::calculate('2026-11');
+        $bank = $this->account(['name' => 'Bank']);
+        // Весь месяц взят одной суммой на одну карту — 8 005 000 директору
+        $this->op($bank, 'OUT', 'SALARY', '8005000', '2026-11-06', ['person_id' => $big[0]->id, 'period' => '2026-11']);
+
+        $sheet = TaxPayrollService::sheet('2026-11');
+        $this->assertTrue($sheet['pooled']);
+        $by = $sheet['rows']->keyBy('person_id');
+        // У Хасанова на руки 1 293 600 — исчерпано, остальное делится между четырьмя: (8 005 000 − 1 293 600) / 4
+        $this->assertSame(['1677850.00', '2480150.00'], [$by[$big[0]->id]->paid, $by[$big[0]->id]->remaining]);
+        $this->assertSame(['1677850.00', '1677850.00', '1677850.00'], [$by[$big[1]->id]->paid, $by[$big[2]->id]->paid, $by[$big[3]->id]->paid]);
+        $this->assertSame(['1293600.00', '0.00'], [$by[$small->id]->paid, $by[$small->id]->remaining]);
+        $this->assertSame(['17925600.00', '8005000.00', '9920600.00'], [$sheet['totals']['net'], $sheet['totals']['paid'], $sheet['totals']['remaining']]);
+        $this->assertSame(0, $sheet['paidOnly']->count());
+        // Остаток за год: начислено на руки за ноябрь минус все выплаты зарплаты за год
+        $this->op($bank, 'OUT', 'SALARY', '1000000', '2026-02-06', ['person_id' => $big[0]->id, 'period' => '2026-02']);
+        $this->assertSame(['2026', '17925600.00', '9005000.00', '8920600.00'], [$sheet['year']['year'], $sheet['year']['net'], TaxPayrollService::sheet('2026-11')['year']['paid'], TaxPayrollService::sheet('2026-11')['year']['remaining']]);
+
+        // Равное деление с исчерпанием, копейки и излишек
+        $big4 = fn (string $pool, array $caps) => array_map(fn ($v) => (string) $v->toScale(2), TaxPayrollService::allocate(BigDecimal::of($pool), array_map(fn ($c) => BigDecimal::of($c), $caps)));
+        $this->assertSame(['a' => '10.00', 'b' => '10.00', 'c' => '10.00'], $big4('30', ['a' => '100', 'b' => '100', 'c' => '100']));
+        $this->assertSame(['a' => '5.00', 'b' => '12.50', 'c' => '12.50'], $big4('30', ['a' => '5', 'b' => '100', 'c' => '100']));
+        $this->assertSame(['a' => '3.34', 'b' => '3.33', 'c' => '3.33'], $big4('10', ['a' => '100', 'b' => '100', 'c' => '100']));
+        $this->assertSame(['a' => '20.00', 'b' => '40.00'], $big4('60', ['a' => '20', 'b' => '100']));
+        $this->assertSame(['a' => '60.00', 'b' => '60.00'], $big4('120', ['a' => '50', 'b' => '50']));   // излишек поровну
+        $this->assertSame(['a' => '0.00'], $big4('0', ['a' => '50']));
+
+        // Страница на всех языках; настройка отключает деление
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            $html = $this->get('/accounting/payroll?period=2026-11')->assertOk()->getContent();
+            $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale: ключ без перевода");
+        }
+        $this->get('/accounting/payroll?period=2026-11')->assertSee(t('accounting.payroll.monthRemaining'));
+        Accounting::saveSettings(['salaryPool' => false]);
+        $off = TaxPayrollService::sheet('2026-11');
+        $this->assertFalse($off['pooled']);
+        $this->assertSame('8005000.00', $off['rows']->firstWhere('person_id', $big[0]->id)->paid);
+    }
+
+    public function test_salary_payments_are_linked_to_months_and_people_from_statement_text(): void
+    {
+        $this->as($this->accountant);
+        $ceo = AccPerson::create(['full_name' => 'Алиев Вали', 'passport_name' => "ALIYEV VALI KARIM O'G'LI", 'pinfl' => '10000000000007', 'monthly_salary' => '4500000']);
+        $other = AccPerson::create(['full_name' => 'Акбарова Райхоной', 'monthly_salary' => '4500000']);
+        $bank = $this->account(['name' => 'Bank']);
+        $mk = fn (string $date, string $amount, string $desc, ?string $cp = null, ?string $period = null) => $this->op($bank, 'OUT', 'SALARY', $amount, $date, ['counterparty' => $cp, 'description' => $desc, 'period' => $period ?? substr($date, 0, 7)]);
+        // Аванс за октябрь, выплаченный в конце сентября, и зарплата за декабрь, выплаченная в январе
+        $a = $mk('2026-09-28', '1600000', 'П/О, АВАНС ЗА ОКТЯБРЬ ЗАРПЛАТА', 'ALIYEV VALI KARIM O‘G‘LI');
+        $b = $mk('2026-01-12', '4000000', 'Зарплата за декабрь 2025 г.', 'Алиев Вали');
+        $c = $mk('2026-10-08', '5600000', 'П/О, ЗАРПЛАТА 8600000000000000 ALIYEV', "ALIYEV VALI KARIM O'G'LI");   // месяц в назначении не назван
+        $d = $mk('2026-03-05', '2000000', 'Oylik maosh fevral oyi uchun', 'Karimova');
+        $e = $mk('2026-05-06', '1000000', 'зарплата 04.2026 по ведомости', null, '2026-05');
+        $f = $mk('2026-06-06', '700000', 'аванс 50011234567890 за июнь', null, '2026-06');   // уже верно, ПИНФЛ чужого
+        $this->assertSame('2026-10', SalaryLinks::month('аванс за октябрь', '2026-09-28'));
+        $this->assertSame('2025-12', SalaryLinks::month('зарплата за декабрь', '2026-01-12'));
+        $this->assertSame('2026-02', SalaryLinks::month('oylik fevral uchun', '2026-03-05'));
+        $this->assertNull(SalaryLinks::month('ЗАРПЛАТА 8600000000000000', '2026-10-08'));
+
+        $plan = SalaryLinks::plan(2026);
+        $by = collect($plan['rows'])->keyBy('id');
+        $this->assertSame([6, 5], [$plan['total'], $plan['withMonth']]);
+        $this->assertSame(['2026-09', '2026-10', $ceo->id], [$by[$a->id]['oldPeriod'], $by[$a->id]['newPeriod'], $by[$a->id]['newPersonId']]);
+        $this->assertSame(['2025-12', $ceo->id], [$by[$b->id]['newPeriod'], $by[$b->id]['newPersonId']]);
+        $this->assertSame($ceo->id, $by[$c->id]['newPersonId']);   // период верный (месяц платежа), человек — по ФИО
+        $this->assertFalse($by[$c->id]['changePeriod']);
+        $this->assertSame('2026-02', $by[$d->id]['newPeriod']);
+        $this->assertNull($by[$d->id]['newPersonId']);   // получателя нет среди людей
+        $this->assertSame('2026-04', $by[$e->id]['newPeriod']);
+        $this->assertFalse($by->has($f->id));
+
+        // Применяем всё, кроме одной строки
+        $r = SalaryLinks::apply(2026, [$a->id, $b->id, $c->id, $e->id]);
+        $this->assertSame(4, $r['operations']);
+        $this->assertSame(['2026-10', $ceo->id], [$a->refresh()->period, $a->person_id]);
+        $this->assertSame('2025-12', $b->refresh()->period);
+        $this->assertSame('2026-03', $d->refresh()->period);   // не выбрана — осталась
+        $this->assertTrue(AuditLog::where('action', 'accounting.salary.link')->exists());
+
+        // Ведомость октября: выплаты без человека в общей сумме (раньше было «0»)
+        TaxPayrollService::calculate('2026-10');
+        $oct = TaxPayrollService::sheet('2026-10');
+        $this->assertSame(['7200000.00'], [$oct['totals']['paid']]);   // аванс 1 600 000 + зарплата 5 600 000
+        // Страница на всех языках и права
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            $html = $this->get('/accounting/payroll/link?year=2026')->assertOk()->getContent();
+            $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale: ключ без перевода");
+        }
+        $this->post('/accounting/payroll/link', ['year' => 2026, 'ids' => [$d->id]])->assertRedirect()->assertSessionHas('ok');
+        $this->assertSame('2026-02', $d->refresh()->period);
+        foreach (['ROP', 'MANAGER'] as $role) {
+            $this->actingAsUser($this->user($role));
+            $this->get('/accounting/payroll/link')->assertForbidden();
+            $this->post('/accounting/payroll/link', ['year' => 2026, 'ids' => [$d->id]])->assertForbidden();
+        }
+    }
+
+    public function test_taxes_due_paid_and_reports(): void
+    {
+        $bank = $this->account(['name' => 'Bank']);
+        $usdBank = $this->account(['name' => 'USD bank', 'currency' => 'USD']);
+        $cash = $this->account(['name' => 'Kassa', 'kind' => 'CASH']);
+        ExchangeRate::create(['currency' => 'USD', 'date' => '2026-09-01', 'rate_to_uzs' => '12500']);
+        $a = AccPerson::create(['full_name' => 'Aliyev Aziz', 'monthly_salary' => '10000000', 'hired_at' => '2026-01-01']);
+        AccPerson::create(['full_name' => 'Karimova Dilnoza', 'monthly_salary' => '6000000', 'hired_at' => '2026-09-16']);
+        $this->as($this->accountant);
+        Accounting::saveSettings(['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => true, 'itparkRate' => '1']);
+        TaxPayrollService::calculate('2026-09');
+
+        // База IT Park: поступления на банковские счета (оплаты клиентов и прочие доходы), без касс и переводов
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '9000000', '2026-09-05');
+        $this->op($bank, 'IN', 'OTHER_INCOME', '1000000', '2026-09-30');
+        $this->op($usdBank, 'IN', 'OTHER_INCOME', '100', '2026-09-20'); // 1 250 000 UZS
+        $this->op($cash, 'IN', 'OTHER_INCOME', '5000000', '2026-09-10');
+        $this->op($bank, 'IN', 'TRANSFER_IN', '7000000', '2026-09-11', ['transfer_group' => '00000000-0000-0000-0000-000000000001']);
+        $this->op($bank, 'IN', 'OTHER_INCOME', '3000000', '2026-10-01');
+        $this->op($bank, 'IN', 'OTHER_INCOME', '4000000', '2026-09-15')->delete();
+        // Оплаты налогов за период
+        $this->op($bank, 'OUT', 'TAX_NDFL', '500000', '2026-10-10', ['period' => '2026-09']);
+        $this->op($bank, 'OUT', 'TAX_NDFL', '1', '2026-10-10', ['period' => '2026-08']);
+        $this->op($bank, 'OUT', 'TAX_ITPARK', '112500', '2026-10-10', ['period' => '2026-09']);
+
+        $t = TaxesService::forPeriod('2026-09');
+        // НДФЛ: (750 000 + 225 000) − (10 000 + 3 000) = 962 000; ИНПС 13 000 → вместе 7,5 % от 13 000 000
+        $this->assertSame(['962000.00', '500000.00', '462000.00'], [$t['taxes']['TAX_NDFL']['due'], $t['taxes']['TAX_NDFL']['paid'], $t['taxes']['TAX_NDFL']['balance']]);
+        $this->assertSame(['13000.00', '0.00', '13000.00'], [$t['taxes']['TAX_INPS']['due'], $t['taxes']['TAX_INPS']['paid'], $t['taxes']['TAX_INPS']['balance']]);
+        $this->assertSame('11250000.00', $t['bankIncome']);
+        $this->assertSame(['112500.00', '112500.00', '0.00'], [$t['taxes']['TAX_ITPARK']['due'], $t['taxes']['TAX_ITPARK']['paid'], $t['taxes']['TAX_ITPARK']['balance']]);
+        $this->assertSame(2, $t['drafts']);
+        $this->assertFalse($t['missingRate']);
+
+        // ИНПС сверх НДФЛ — НДФЛ к уплате целиком
+        Accounting::saveSettings(['ndflRate' => '7.5', 'inpsRate' => '0.1', 'inpsWithinNdfl' => false, 'itparkRate' => '2']);
+        $t2 = TaxesService::forPeriod('2026-09');
+        $this->assertSame(['975000.00', '225000.00'], [$t2['taxes']['TAX_NDFL']['due'], $t2['taxes']['TAX_ITPARK']['due']]);
+        $this->assertTrue(AuditLog::where('action', 'accounting.settings')->exists());
+
+        // Страницы на всех языках, выгрузка отчёта, «Оплатить» с заполненной формой
+        foreach (['uz', 'ru', 'en'] as $locale) {
+            $this->accountant->update(['locale' => $locale]);
+            $this->actingAsUser($this->accountant);
+            foreach (['/accounting?period=2026-09', '/accounting/operations', '/accounting/operations?period=2026-09&category=TAX_NDFL', '/accounting/accounts', '/accounting/accounts?edit='.$bank->id,
+                '/accounting/people', '/accounting/people?edit='.$a->id, '/accounting/payroll?period=2026-09', '/accounting/taxes?period=2026-09', '/accounting/settings',
+                '/accounting/operations?new=OUT&p_category=TAX_INPS&p_period=2026-09&p_amount=13000&p_account='.$bank->id, '/accounting/operations?new=TRANSFER'] as $url) {
+                $html = $this->get($url)->assertOk()->getContent();
+                $this->assertDoesNotMatchRegularExpression('/(?<![\/\w])(accounting|sales|common)\.[a-z][A-Za-z_.]+/', strip_tags($html), "$locale $url: ключ без перевода");
+            }
+            $this->get('/accounting/taxes?period=2026-09')->assertSee(t('accounting.category.TAX_ITPARK'))->assertSee('p_category=TAX_INPS', false);
+        }
+        $row = AccPayroll::first();
+        $this->get('/accounting/payroll?period=2026-09&edit='.$row->id)->assertOk();
+        $res = $this->get('/accounting/taxes/export?period=2026-09')->assertOk();
+        $this->assertStringStartsWith('PK', $res->getContent());
+        $this->assertTrue(AuditLog::where('action', 'export.run')->where('entity_type', 'acc_tax_report')->exists());
+        $this->get('/accounting/operations?new=OUT&p_category=TAX_INPS&p_period=2026-09&p_amount=13000')->assertSee('value="13000"', false);
+
+        // Нет курса USD — суммы не теряются молча
+        ExchangeRate::query()->delete();
+        Accounting::forgetRates();
+        $this->assertTrue(TaxesService::forPeriod('2026-09')['missingRate']);
+    }
+
+    public function test_overview_shows_income_year_to_date(): void
+    {
+        $bank = $this->account();
+        $cash = $this->account(['kind' => 'CASH']);
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '5000000', '2026-02-10');
+        $this->op($bank, 'IN', 'OTHER_INCOME', '1000000', '2026-09-05');
+        $this->op($cash, 'IN', 'CLIENT_PAYMENT', '4000000', '2026-05-05');  // касса — не считается
+        $this->op($this->account(['kind' => 'CARD']), 'IN', 'OTHER_INCOME', '800000', '2026-06-01'); // карта — не считается
+        $this->op($bank, 'OUT', 'RENT', '2000000', '2026-03-01');
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '7000000', '2026-10-02'); // после выбранного месяца
+        $this->op($bank, 'IN', 'CLIENT_PAYMENT', '9000000', '2025-12-30'); // прошлый год
+        $this->op($bank, 'IN', 'TRANSFER_IN', '300000', '2026-04-01'); // перевод не считается
+        $y = OverviewService::yearToDate('2026-09');
+        $this->assertSame(['2026-01-01', '2026-09-30', '6000000.00'], [$y['from'], $y['to'], $y['income']]);
+        $this->actingAsUser($this->accountant)->get('/accounting?period=2026-09')->assertOk()
+            ->assertSee(t('accounting.overview.ytdIncome'))->assertSee(money('6000000.00'));
+    }
+}

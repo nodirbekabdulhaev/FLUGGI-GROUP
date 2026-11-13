@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_ENV: test
+  TZ: Asia/Tashkent
+  DATABASE_URL: mysql://fluggi:fluggi@127.0.0.1:3306/fluggi
+  TEST_DATABASE_URL: mysql://fluggi:fluggi@127.0.0.1:3306/fluggi_test
+  AUTH_SECRET: ci-secret-ci-secret-ci-secret-ci-secret-0000
+  APP_URL: http://localhost:3000
+  API_INTERNAL_URL: http://localhost:4000
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: fluggi
+          MYSQL_USER: fluggi
+          MYSQL_PASSWORD: fluggi
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval 5s --health-timeout 5s --health-retries 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm lint
+      - run: pnpm typecheck
+      - run: pnpm test
+      - name: Create test database
+        run: |
+          mysql -h 127.0.0.1 -uroot -proot -e "CREATE DATABASE fluggi_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; GRANT ALL ON fluggi_test.* TO 'fluggi'@'%'; SET GLOBAL log_bin_trust_function_creators = 1;"
+      - run: pnpm --filter @fluggi/api exec vitest run --project integration --no-file-parallelism
+      - run: pnpm build
+
+  e2e:
+    runs-on: ubuntu-latest
+    needs: check
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+          MYSQL_DATABASE: fluggi
+          MYSQL_USER: fluggi
+          MYSQL_PASSWORD: fluggi
+        ports: ['3306:3306']
+        options: >-
+          --health-cmd "mysqladmin ping -h 127.0.0.1 -uroot -proot" --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      SEED_DEMO: 'true'
+      SEED_DEMO_PASSWORD: E2eDemoPass2026
+      RATE_LIMIT_DISABLED: 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm build
+      - run: pnpm --filter @fluggi/db exec prisma migrate deploy
+      - run: mysql -h 127.0.0.1 -uroot -proot -e 'SET GLOBAL log_bin_trust_function_creators = 1'
+      - run: pnpm --filter @fluggi/db exec prisma db execute --schema prisma/schema.prisma --file prisma/protect.sql
+      - run: pnpm --filter @fluggi/db exec tsx prisma/seed.ts
+      - name: Start API and web
+        run: |
+          (cd apps/api && NODE_ENV=production node dist/main.js > ../../api.log 2>&1 &)
+          (cd apps/web && NODE_ENV=production pnpm start > ../../web.log 2>&1 &)
+          npx wait-on -t 60000 http://localhost:4000/api/v1/health http://localhost:3000/login
+      - run: pnpm exec playwright install --with-deps chromium
+      - run: pnpm test:e2e
+      - if: failure()
+        run: tail -n 200 api.log web.log
