@@ -1,0 +1,28 @@
+{
+  "title": "Vacancies",
+  "subtitle": "Applications from fluggi.uz. They do not go to sales leads.",
+  "all": "All",
+  "search": "Name, phone, email, vacancy",
+  "empty": "No applications",
+  "emptyText": "New applications from the website will appear here automatically.",
+  "date": "Date",
+  "candidate": "Candidate",
+  "contacts": "Contacts",
+  "vacancy": "Vacancy",
+  "message": "Message",
+  "status": "Status",
+  "note": "Note",
+  "noVacancy": "no vacancy given",
+  "page": "Website page",
+  "saved": "Saved",
+  "deleted": "Application deleted",
+  "deleteConfirm": "Delete the application?",
+  "notifyTitle": "New job application",
+  "statuses": {
+    "NEW": "New",
+    "VIEWED": "Viewed",
+    "INTERVIEW": "Interview",
+    "HIRED": "Hired",
+    "REJECTED": "Rejected"
+  }
+}

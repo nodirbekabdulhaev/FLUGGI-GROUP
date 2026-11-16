@@ -3,6 +3,7 @@
 namespace Tests\Feature\Integrations;
 
 use App\Models\Lead;
+use App\Models\VacancyApplication;
 use App\Models\WebsiteLead;
 use Tests\Feature\Notifications\CommsFixtures;
 use Tests\TestCase;
@@ -73,5 +74,23 @@ class WebsiteLeadsTest extends TestCase
         $this->send($this->body(['type' => 'unknown']))->assertStatus(422)->assertJsonValidationErrors('type');
         $this->send($this->body(['name' => 'A']))->assertStatus(422)->assertJsonValidationErrors('name');
         $this->assertSame(0, Lead::count());
+    }
+
+    public function test_vacancy_application_goes_to_vacancies_not_to_leads(): void
+    {
+        $r = $this->send($this->body(['external_id' => 'fluggi-web-9', 'type' => 'vacancy', 'name' => 'Test Kandidat', 'message' => null,
+            'product' => ['kind' => 'vacancy', 'slug' => 'php-dev', 'name' => 'PHP-разработчик']]));
+        $r->assertCreated();
+        $this->assertSame(0, Lead::count());
+        $app = VacancyApplication::findOrFail($r->json('id'));
+        $this->assertSame(['Test Kandidat', 'PHP-разработчик', 'NEW'], [$app->name, $app->vacancy_name, $app->status]);
+        $this->send($this->body(['external_id' => 'fluggi-web-9', 'type' => 'vacancy']))->assertStatus(409)->assertJson(['id' => $app->id]);
+        $this->assertSame(1, VacancyApplication::count());
+
+        $ceo = $this->user('CEO');
+        $this->actingAsUser($ceo)->get('/vacancies')->assertOk()->assertSee('Test Kandidat')->assertSee('PHP-разработчик');
+        $this->patch('/vacancies/'.$app->id, ['status' => 'INTERVIEW', 'comment' => 'Позвонить во вторник'])->assertSessionHasNoErrors();
+        $this->assertSame(['INTERVIEW', 'Позвонить во вторник'], [$app->fresh()->status, $app->fresh()->comment]);
+        $this->actingAsUser($this->user('MANAGER'))->get('/vacancies')->assertForbidden();
     }
 }

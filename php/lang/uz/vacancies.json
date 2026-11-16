@@ -1,0 +1,28 @@
+{
+  "title": "Vakansiyalar",
+  "subtitle": "fluggi.uz saytidan arizalar. Savdo lidlariga tushmaydi.",
+  "all": "Hammasi",
+  "search": "Ism, telefon, pochta, vakansiya",
+  "empty": "Arizalar yoʻq",
+  "emptyText": "Saytdan yangi arizalar shu yerda oʻzi paydo boʻladi.",
+  "date": "Sana",
+  "candidate": "Nomzod",
+  "contacts": "Aloqa",
+  "vacancy": "Vakansiya",
+  "message": "Xabar",
+  "status": "Holat",
+  "note": "Izoh",
+  "noVacancy": "vakansiya koʻrsatilmagan",
+  "page": "Saytdagi sahifa",
+  "saved": "Saqlandi",
+  "deleted": "Ariza oʻchirildi",
+  "deleteConfirm": "Arizani oʻchirasizmi?",
+  "notifyTitle": "Vakansiyaga yangi ariza",
+  "statuses": {
+    "NEW": "Yangi",
+    "VIEWED": "Koʻrilgan",
+    "INTERVIEW": "Suhbat",
+    "HIRED": "Qabul qilingan",
+    "REJECTED": "Rad etilgan"
+  }
+}

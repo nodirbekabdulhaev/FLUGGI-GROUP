@@ -2,6 +2,7 @@
 
 use App\Services\Finance\PartnerService;
 use App\Services\Smm\SmmAccess;
+use App\Services\Vacancies\VacancyService;
 
 /**
  * Левое меню (ТЗ §4). Подписи — lang/{uz,ru}/nav.json. any — пункт виден при любом из прав;
@@ -49,6 +50,7 @@ return [
         // Доход партнёра — только партнёру (второму CEO) и CEO; count — заявки, ждущие решения CEO
         ['key' => 'partner', 'href' => '/finance/partner', 'gate' => [PartnerService::class, 'navAllowed'], 'count' => [PartnerService::class, 'pendingCount']],
     ]],
+    ['key' => 'vacancies', 'href' => '/vacancies', 'icon' => 'briefcase', 'any' => ['vacancy.read'], 'count' => [VacancyService::class, 'newCount']],
     ['key' => 'accounting', 'href' => '/accounting', 'icon' => 'calculator', 'any' => ['accounting.read']],
     ['key' => 'kpi', 'href' => '/kpi', 'icon' => 'target', 'any' => ['kpi.read']],
     ['key' => 'attendance', 'href' => '/attendance', 'icon' => 'calendar-check', 'any' => ['attendance.read']],

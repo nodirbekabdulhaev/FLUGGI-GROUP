@@ -3,6 +3,7 @@
 namespace App\Services\Integrations;
 
 use App\Models\WebsiteLead;
+use App\Services\Vacancies\VacancyService;
 use Illuminate\Database\QueryException;
 
 /**
@@ -20,7 +21,7 @@ final class WebsiteLeads
     public static function receive(array $in): array
     {
         if ($row = WebsiteLead::where('external_id', $in['external_id'])->first()) {
-            return ['id' => $row->lead_id, 'duplicate' => false, 'existing' => true];
+            return ['id' => $row->vacancy_id ?? $row->lead_id, 'duplicate' => false, 'existing' => true];
         }
         try {
             $row = WebsiteLead::create(['external_id' => $in['external_id'], 'type' => $in['type'], 'payload' => $in]);
@@ -28,9 +29,22 @@ final class WebsiteLeads
             // Параллельный повтор: запись уже создана другим запросом
             $row = WebsiteLead::where('external_id', $in['external_id'])->first();
             if ($row) {
-                return ['id' => $row->lead_id, 'duplicate' => false, 'existing' => true];
+                return ['id' => $row->vacancy_id ?? $row->lead_id, 'duplicate' => false, 'existing' => true];
             }
             throw new \RuntimeException('website lead insert failed');
+        }
+        // Отклики на вакансии — в раздел «Вакансии», а не в лиды продаж
+        if ($in['type'] === 'vacancy') {
+            try {
+                $vacancy = VacancyService::createFromSite($in);
+            } catch (\Throwable $e) {
+                $row->delete();   // иначе повтор от сайта получил бы 409 без отклика
+
+                throw $e;
+            }
+            $row->update(['vacancy_id' => $vacancy->id]);
+
+            return ['id' => $vacancy->id, 'duplicate' => false, 'existing' => false];
         }
         $label = self::TYPE_LABELS[$in['type']] ?? $in['type'];
         $product = $in['product']['name'] ?? null;

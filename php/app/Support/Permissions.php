@@ -98,6 +98,9 @@ final class Permissions
         'smm.approve' => 'SMM: утверждение идей',
         'smm.finance' => 'SMM: финансы (оплата SMM, ставки за ролик, расходы)',
 
+        'vacancy.read' => 'Вакансии: просмотр откликов',
+        'vacancy.manage' => 'Вакансии: обработка откликов',
+
         'analytics.read' => 'Аналитика',
         'export.run' => 'Экспорт',
         'audit.read' => 'Журнал аудита',
@@ -181,7 +184,7 @@ final class Permissions
 
             'HR_ADMIN' => $all([
                 'kpi.read', 'kpi.target.manage', 'attendance.read', 'attendance.manage', 'schedule.manage',
-                'employee.read', 'employee.manage', 'settings.manage', 'reference.manage', 'export.run', 'audit.read',
+                'employee.read', 'employee.manage', 'settings.manage', 'reference.manage', 'export.run', 'audit.read', 'vacancy.read', 'vacancy.manage',
             ]) + $own(['payroll.read']),
 
             // Проект-менеджер направления: «Отдел» для проектов = проекты его направлений

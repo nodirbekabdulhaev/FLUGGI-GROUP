@@ -63,6 +63,7 @@ final class NotificationCatalog
         'smm.idea_status_changed' => ['EXECUTOR', 'PROJECT_MANAGER'],
         'smm.videographer_assigned' => ['EXECUTOR', 'PROJECT_MANAGER'],
         // Партнёр (второй CEO) обычно с ролью CEO; уведомление о решении приходит ему при любой роли
+        'vacancy.new' => ['HR_ADMIN'],
         'partner.payout_requested' => ['CEO'],
         'partner.payout_decided' => ['CEO'],
     ];

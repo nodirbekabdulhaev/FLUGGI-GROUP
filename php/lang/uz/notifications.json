@@ -95,6 +95,9 @@
     "attendance": {
       "no_checkout": "Siz ketishni belgilamadingiz",
       "auto_checkout": "Ketish belgilanmagan — kun tasdiqlashda"
+    },
+    "vacancy": {
+      "new": "Vakansiyaga yangi ariza"
     }
   },
   "events": {
