@@ -1,0 +1,17 @@
+{
+  "button": "Accountant package",
+  "title": "Accountant package",
+  "text": "A single Excel file with all CRM data for the year — for preparing the balance sheet (Form No. 1) and the income statement (Form No. 2).",
+  "year": "Year",
+  "download": "Download Excel",
+  "companyHint": "Name, TIN (INN) and tax regime are taken from",
+  "companyLink": "company settings",
+  "contents": {
+    "c1": "Notes: company details, how figures are calculated, what is not in the CRM",
+    "c2": "Summary by Form No. 2 line — for the year and by month",
+    "c3": "Contracts and payments for the year",
+    "c4": "Client settlements as of 31.12: receivables and advances received",
+    "c5": "Expenses with a suggested account (cost of sales / period expenses)",
+    "c6": "Payroll, commissions and projects"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "title": "Board colours",
+  "subtitle": "Each Kanban column is tinted with a light shade of its status colour",
+  "smm": "SMM: video statuses",
+  "tasks": "Projects: task statuses",
+  "stages": "Pipeline: lead and deal stages",
+  "stagesHint": "Stage colours are edited in References together with the name and probability.",
+  "openReferences": "Open references",
+  "saved": "Colours saved",
+  "readOnly": "Colours can be changed by the CEO or the references administrator.",
+  "errors": {
+    "hex": "Colour must be in #RRGGBB format"
+  }
+}

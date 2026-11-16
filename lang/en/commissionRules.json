@@ -1,0 +1,54 @@
+{
+  "title": "Commission rules",
+  "subtitle": "Accrued on every confirmed payment. If several rules match, the one with the highest priority applies.",
+  "new": "New rule",
+  "edit": "Edit rule",
+  "saved": "Rule saved",
+  "name": "Name",
+  "appliesTo": "Applies to",
+  "calcType": "Calculation",
+  "value": "Value",
+  "valuePct": "Percent, %",
+  "valueFixed": "Amount, UZS",
+  "priority": "Priority",
+  "active": "Active",
+  "inactive": "Disabled",
+  "conditions": "Conditions",
+  "noConditions": "No conditions — always applies",
+  "addCondition": "Add condition",
+  "match": "Applies if",
+  "all": "all conditions",
+  "any": "any condition",
+  "role": {
+    "MANAGER": "Manager",
+    "ROP": "Sales head (ROP)",
+    "SMM": "SMM specialist of the video"
+  },
+  "calc": {
+    "PERCENT_OF_PAYMENT": "% of payment",
+    "PERCENT_OF_PROFIT": "% of profit",
+    "FIXED_PER_DEAL": "Fixed amount per deal"
+  },
+  "calcHint": {
+    "PERCENT_OF_PAYMENT": "Percentage of each confirmed payment",
+    "PERCENT_OF_PROFIT": "Percentage of payment × project margin at the time of payment",
+    "FIXED_PER_DEAL": "Once — on the deal’s first payment"
+  },
+  "metric": {
+    "avg_check_usd": "Average deal size for the month, USD",
+    "avg_check_uzs": "Average deal size for the month, UZS",
+    "orders_count": "Orders for the month",
+    "revenue_uzs": "Revenue for the month, UZS",
+    "revenue_usd": "Revenue for the month, USD"
+  },
+  "empty": "No rules",
+  "metricLabel": "Metric",
+  "opLabel": "Comparison",
+  "removeCondition": "Remove condition",
+  "user": "Employee",
+  "userAll": "All employees with this role",
+  "userHint": "A personal rule overrides a general one with the same priority",
+  "valueLabel": "Value",
+  "or": "or",
+  "and": "and"
+}

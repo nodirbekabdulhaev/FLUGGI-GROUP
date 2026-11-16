@@ -1,0 +1,18 @@
+{
+  "view": {
+    "label": "Вид",
+    "kanban": "Kanban",
+    "list": "Список"
+  },
+  "kanban": {
+    "add": "Добавить",
+    "addTo": "Добавить в «{name}»",
+    "empty": "Пусто"
+  },
+  "color": {
+    "label": "Цвет",
+    "presets": "Готовые цвета",
+    "custom": "Свой цвет (HEX)",
+    "choose": "Выбрать цвет {color}"
+  }
+}

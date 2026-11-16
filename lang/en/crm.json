@@ -1,0 +1,294 @@
+{
+  "score": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "HOT": "Hot"
+  },
+  "priority": {
+    "LOW": "Low",
+    "MEDIUM": "Medium",
+    "HIGH": "High",
+    "URGENT": "Urgent"
+  },
+  "companySize": {
+    "SOLO": "Individual / sole proprietor",
+    "SMALL": "Small company",
+    "MEDIUM": "Mid-size company",
+    "LARGE": "Large company"
+  },
+  "status": {
+    "lead": {
+      "OPEN": "In progress",
+      "CONVERTED": "Deal",
+      "LOST": "Lost",
+      "REJECTED": "Declined",
+      "PAUSED": "Paused",
+      "NO_RESPONSE": "No response"
+    },
+    "deal": {
+      "OPEN": "In progress",
+      "WON": "Paid",
+      "LOST": "Lost",
+      "REJECTED": "Declined",
+      "PAUSED": "Paused",
+      "NO_RESPONSE": "No response"
+    }
+  },
+  "closeStatus": {
+    "LOST": "Lost",
+    "REJECTED": "Declined",
+    "PAUSED": "Paused",
+    "NO_RESPONSE": "No response"
+  },
+  "clientType": {
+    "COMPANY": "Company",
+    "PERSON": "Individual"
+  },
+  "health": {
+    "HEALTHY": "Healthy",
+    "ATTENTION": "Needs attention",
+    "RISK": "At risk",
+    "LOST": "Lost"
+  },
+  "meetingType": {
+    "ONLINE": "Online",
+    "OFFLINE": "In person",
+    "PHONE": "Phone",
+    "TELEGRAM": "Telegram",
+    "GOOGLE_MEET": "Google Meet",
+    "ZOOM": "Zoom"
+  },
+  "meetingStatus": {
+    "SCHEDULED": "Scheduled",
+    "CONFIRMED": "Confirmed",
+    "DONE": "Held",
+    "RESCHEDULED": "Rescheduled",
+    "CANCELLED": "Cancelled",
+    "NO_SHOW": "No-show"
+  },
+  "activity": {
+    "lead": {
+      "created": "Lead created",
+      "updated": "Lead details updated",
+      "assigned": "Owner assigned",
+      "stage_changed": "Stage changed",
+      "closed": "Lead closed",
+      "reopened": "Lead reopened",
+      "converted": "Lead qualified → deal"
+    },
+    "deal": {
+      "created": "Deal created",
+      "updated": "Deal details updated",
+      "amount_changed": "Amount changed",
+      "assigned": "Owner assigned",
+      "stage_changed": "Stage changed",
+      "closed": "Deal closed",
+      "reopened": "Deal reopened",
+      "imported_won": "Deal imported as won (no payments)"
+    },
+    "meeting": {
+      "created": "Meeting scheduled",
+      "updated": "Meeting updated",
+      "completed": "Meeting held"
+    },
+    "comment": {
+      "added": "Comment"
+    },
+    "client": {
+      "created": "Client created",
+      "updated": "Client details updated",
+      "assigned": "Owner changed"
+    },
+    "proposal": {
+      "created": "Proposal created",
+      "updated": "Proposal updated",
+      "approval_requested": "Proposal sent for approval",
+      "approved": "Proposal approved",
+      "sent": "Proposal sent",
+      "viewed": "Proposal viewed",
+      "accepted": "Proposal accepted",
+      "rejected": "Proposal rejected"
+    },
+    "contract": {
+      "created": "Contract created",
+      "sent": "Contract sent",
+      "in_approval": "Contract in approval",
+      "signed": "Contract signed",
+      "cancelled": "Contract cancelled"
+    },
+    "payment": {
+      "created": "Payment added",
+      "paid": "Payment received",
+      "refunded": "Refund",
+      "updated": "Payment updated"
+    },
+    "project": {
+      "created": "Project created",
+      "updated": "Project updated",
+      "status_changed": "Project status",
+      "template_applied": "Template applied",
+      "member_added": "Added to team",
+      "member_removed": "Removed from team",
+      "deleted": "Project deleted"
+    },
+    "task": {
+      "created": "Task created",
+      "updated": "Task updated",
+      "status_changed": "Task status",
+      "deleted": "Task deleted",
+      "commented": "Task comment"
+    },
+    "expense": {
+      "created": "Expense added"
+    },
+    "todo": {
+      "created": "Task assigned"
+    }
+  },
+  "fields": {
+    "title": "Title",
+    "contactName": "Contact name",
+    "companyName": "Company",
+    "phone": "Phone",
+    "telegram": "Telegram",
+    "whatsapp": "WhatsApp",
+    "instagram": "Instagram",
+    "email": "Email",
+    "website": "Website",
+    "city": "City",
+    "country": "Country",
+    "source": "Source",
+    "owner": "Owner",
+    "rop": "Sales head (ROP)",
+    "team": "Team",
+    "service": "Service",
+    "budget": "Budget",
+    "currency": "Currency",
+    "desiredDate": "Desired deadline",
+    "priority": "Priority",
+    "companySize": "Company size",
+    "interest": "Interest (1–5)",
+    "stage": "Stage",
+    "status": "Status",
+    "score": "Score",
+    "nextContactAt": "Next contact",
+    "lastContactAt": "Last contact",
+    "comment": "Comment",
+    "createdAt": "Created",
+    "amount": "Amount",
+    "probability": "Probability",
+    "expectedCloseDate": "Expected close date",
+    "client": "Client",
+    "contact": "Contact",
+    "type": "Type",
+    "industry": "Industry",
+    "position": "Position",
+    "startsAt": "Date and time",
+    "durationMin": "Duration, min",
+    "link": "Link or address",
+    "result": "Outcome",
+    "manager": "Manager",
+    "lossReason": "Reason",
+    "number": "No.",
+    "ownerAuto": "Automatic — the manager with the lightest workload",
+    "smmIdea": "SMM video",
+    "participants": "Meeting participants"
+  },
+  "common": {
+    "more": "More fields",
+    "less": "Hide",
+    "select": "Select",
+    "none": "Not selected",
+    "all": "All",
+    "close": "Close",
+    "reopen": "Reopen",
+    "assign": "Change owner",
+    "changeStage": "Change stage",
+    "edit": "Edit",
+    "delete": "Delete",
+    "deleteConfirm": "Delete “{name}”? The record will be hidden; its history is kept.",
+    "deleted": "Deleted",
+    "saved": "Saved",
+    "created": "Created",
+    "stageChanged": "Stage changed",
+    "closed": "Record closed",
+    "reopened": "Reopened",
+    "assigned": "Owner changed",
+    "newMeeting": "Schedule meeting",
+    "completeMeeting": "Mark as held",
+    "meetingCreated": "Meeting scheduled",
+    "meetingDone": "Meeting held",
+    "meetingUpdated": "Meeting updated",
+    "addComment": "Add comment",
+    "commentPlaceholder": "Write a comment…",
+    "send": "Send",
+    "sending": "Sending...",
+    "noComments": "No comments yet",
+    "noActivity": "No activity yet",
+    "noHistory": "No stage changes yet",
+    "noMeetings": "No meetings yet",
+    "durationOnStage": "in previous stage: {d}",
+    "auto": "automatic",
+    "planned": "Phase {phase}",
+    "plannedTab": "This section is coming in Phase {phase}",
+    "closeTitle": "Close record",
+    "closeHint": "For “Lost” and “Declined”, specify a reason — it is used in loss analytics.",
+    "byPhone": "Call",
+    "openInTelegram": "Open Telegram",
+    "commentAdded": "Comment added",
+    "dateFrom": "Created from",
+    "dateTo": "to",
+    "days": "{n} d",
+    "hours": "{n} h",
+    "minutes": "{n} min",
+    "deleteCommentConfirm": "Delete comment?",
+    "formErrors": "Check the form fields",
+    "meetingAt": "{label} on {date}",
+    "system": "System",
+    "assignedFromTo": "from {from} to {to}",
+    "bulkTransfer": "bulk transfer"
+  },
+  "errors": {
+    "ownerRole": "Only a manager or Sales head (ROP) can be the owner",
+    "ownerRoleField": "Select a manager or Sales head (ROP)",
+    "noOwners": "There are no managers or Sales heads (ROP) — add an employee to assign leads",
+    "commentRequired": "Write a comment",
+    "describeReason": "Describe the reason",
+    "ownCommentOnly": "You can delete only your own comments",
+    "reasonComment": "This reason requires a comment",
+    "reasonNotFound": "Reason not found",
+    "reasonRequired": "Specify a reason",
+    "selectOwner": "Select an owner",
+    "selectReason": "Select a reason"
+  },
+  "teams": {
+    "hasMembers": "This team has employees. Move them to another team first",
+    "headRop": "Only an active employee with the Sales head (ROP) role can lead a team",
+    "headRopField": "Select an employee with the Sales head (ROP) role",
+    "nameRequired": "Enter a name",
+    "nameTaken": "A team with this name already exists",
+    "team": "Team"
+  },
+  "validation": {
+    "required": "Required field",
+    "required_without": "Required field",
+    "string": "Invalid value",
+    "max": "Value is too long",
+    "min": "Value is too short or too small",
+    "numeric": "Enter a number",
+    "integer": "Enter a whole number",
+    "in": "Select a value from the list",
+    "uuid": "Invalid value",
+    "email": "Invalid email",
+    "date": "Invalid date and time",
+    "date_format": "Invalid date",
+    "regex": "Invalid format",
+    "boolean": "Invalid value",
+    "between": "Value is out of range",
+    "array": "Invalid value",
+    "gt": "Value must be greater than zero",
+    "money": "Invalid amount",
+    "phone": "Invalid phone number"
+  }
+}

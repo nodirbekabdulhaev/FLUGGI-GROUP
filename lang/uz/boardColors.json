@@ -1,0 +1,14 @@
+{
+  "title": "Doskalar ranglari",
+  "subtitle": "Kanban ustuni oʻz holati rangining ochiq tusiga boʻyaladi",
+  "smm": "SMM: rolik holatlari",
+  "tasks": "Loyihalar: vazifa holatlari",
+  "stages": "Voronka: lid va bitim bosqichlari",
+  "stagesHint": "Bosqich ranglari nomi va ehtimoli bilan birga maʼlumotnomalarda oʻzgartiriladi.",
+  "openReferences": "Maʼlumotnomalarni ochish",
+  "saved": "Ranglar saqlandi",
+  "readOnly": "Ranglarni CEO yoki maʼlumotnomalar administratori oʻzgartira oladi.",
+  "errors": {
+    "hex": "Rang #RRGGBB formatida boʻlishi kerak"
+  }
+}

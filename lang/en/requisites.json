@@ -1,0 +1,31 @@
+{
+  "tab": "Company details",
+  "title": "Client company details",
+  "saved": "Company details saved",
+  "cancel": "Cancel",
+  "save": "Save",
+  "edit": "Edit company details",
+  "fill": "Fill in company details",
+  "empty": "Company details not filled in",
+  "emptyText": "Required for the contract: legal name, TIN (INN), bank, signatory.",
+  "legalName": "Legal name",
+  "inn": "TIN (INN, 9 digits) or PINFL (14 digits)",
+  "oked": "OKED",
+  "director": "Signatory (full name)",
+  "directorPosition": "Signatory position",
+  "signerGenitive": "“Represented by …” (Russian genitive case)",
+  "signerGenitiveHint": "Used in the Russian contract text, e.g.: директора Каримова Алишера Бахтиёровича",
+  "basis": "Acting on the basis of",
+  "basisHint": "Russian genitive case, used in the Russian contract text: Устава, Доверенности № 5",
+  "vatCode": "VAT payer registration code",
+  "address": "Legal address",
+  "phone": "Phone",
+  "bank": "Bank",
+  "mfo": "MFO bank code",
+  "account": "Bank account number",
+  "errors": {
+    "inn": "TIN (INN) must be 9 digits, PINFL must be 14 digits",
+    "mfo": "MFO bank code must be 5 digits",
+    "account": "Bank account number must be 20 digits"
+  }
+}
