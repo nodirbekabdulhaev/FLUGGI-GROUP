@@ -139,6 +139,8 @@ class WebsiteLeadsTest extends TestCase
         $this->assertSame(['too_fast'], $app->assessment['flags']);
         $this->actingAsUser($this->user('CEO'))->get('/vacancies/'.$app->id)->assertOk()->assertSee('Опора команды')->assertSee('Слишком быстро прошёл')->assertSee('В резерв')->assertSee('Namangan')->assertSee('t.me/test_user');
         $this->get('/vacancies')->assertOk()->assertSee('data-card="'.$app->id.'"', false);
+        $this->from('/vacancies/'.$app->id)->delete('/vacancies/'.$app->id)->assertRedirect('/vacancies');
+        $this->assertNull(VacancyApplication::find($app->id));
     }
 
     public function test_company_vacancy_is_published_to_site_feed_at_once(): void

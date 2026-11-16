@@ -20,7 +20,12 @@
         .vac-pop { animation: vac-pop .6s ease-out both }
         @media (prefers-reduced-motion: reduce) { .vac-bar > span, .vac-pop { animation: none } }
     </style>
-    <x-page-header :title="$a->name" :subtitle="$a->vacancy_name ?: t('vacancies.noVacancy')" back="/vacancies" />
+    <x-page-header :title="$a->name" :subtitle="$a->vacancy_name ?: t('vacancies.noVacancy')" back="/vacancies">
+        @if ($canManage)
+            <form method="POST" action="/vacancies/{{ $a->id }}" onsubmit="return confirm(@js(t('vacancies.deleteConfirm')))">@csrf @method('DELETE')
+                <button class="btn btn-outline" aria-label="{{ t('common.delete') }}"><x-icon name="trash" /> {{ t('common.delete') }}</button></form>
+        @endif
+    </x-page-header>
 
     <div class="grid gap-4 lg:grid-cols-3">
         <div class="space-y-4 lg:col-span-1">

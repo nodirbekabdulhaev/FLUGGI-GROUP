@@ -59,7 +59,9 @@ class VacancyController extends Controller
     public function destroy(string $id): RedirectResponse
     {
         VacancyService::delete($id);
+        // С карточки кандидата возвращаемся к списку, с канбана — остаёмся на нём
+        $back = str_contains(url()->previous(), '/vacancies/'.$id) ? redirect('/vacancies') : back();
 
-        return back()->with('ok', t('vacancies.deleted'));
+        return $back->with('ok', t('vacancies.deleted'));
     }
 }
