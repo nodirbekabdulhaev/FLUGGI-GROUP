@@ -153,6 +153,26 @@ class BankImportTest extends TestCase
         $this->assertSame(['IN', '1500000.50', '2026-10-07'], [$c['rows'][0]['direction'], $c['rows'][0]['amount'], $c['rows'][0]['date']]);
     }
 
+    public function test_register_of_posted_documents_has_direction_by_our_account(): void
+    {
+        $our = '20208000100000000001';
+        $head = ['п/п', 'Номер док.', 'МФО', 'Счет клиента', 'Наименование клиента', 'ИНН кл-нт', 'МФО', 'Счет корреспондента', 'ИНН кор-т', 'Наименование корреспондента', 'Сумма документа', 'Назначение платежа', 'Дата'];
+        $rows = [
+            [''],
+            $head,
+            ['1.0', '01', '00001', '15501000000000000001', '"TEST" MCHJ ссудный счёт', '200000001', '00001', $our, null, '"TEST" MCHJ', '140000000.0', 'Выдача кредита', '13.11.2026'],
+            ['2.0', '3', '00001', $our, '"TEST" MCHJ', '200000001', '00001', '23106000000000000200', '200000001', '"TEST" MCHJ', '5000000.0', 'Перевод на свой счёт', '13.11.2026'],
+            ['3.0', '000003-ОПК', '00001', $our, '"TEST" MCHJ', '200000001', '00001', '16401000000000000001', null, 'Банк', '560.0', 'За плат.пор-560.00, за документ №3', '16.11.2026'],
+            ['4.0', 'Ведомость проведенных документов по счету', null, null, null, null, null, null, null, null, null, null, null],
+        ];
+        $r = BankStatement::read($this->xlsx($rows), 'xlsx');
+        $this->assertSame(['REGISTER', $our, 3], [$r['format'], $r['accountNumber'], count($r['rows'])]);
+        $this->assertSame([['IN', '140000000.00', '"TEST" MCHJ ссудный счёт'], ['OUT', '5000000.00', '"TEST" MCHJ'], ['OUT', '560.00', 'Банк']],
+            array_map(fn ($x) => [$x['direction'], $x['amount'], $x['counterparty']], $r['rows']));
+        $this->assertSame('BANK_FEE', BankRules::suggest(['direction' => 'OUT', 'purpose' => $r['rows'][2]['purpose'], 'counterparty' => 'Банк', 'inn' => null], collect(), '200000001')['category']);
+        $this->assertSame('TRANSFER_OUT', BankRules::suggest(['direction' => 'OUT', 'purpose' => 'Перевод на свой счёт', 'counterparty' => '"TEST" MCHJ', 'inn' => '200000001'], collect(), '200000001')['category']);
+    }
+
     public function test_auto_category_rules(): void
     {
         $s = fn (string $dir, string $purpose, string $cp = '', ?string $inn = null, $articles = null) => BankRules::suggest(

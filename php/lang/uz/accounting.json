@@ -151,7 +151,8 @@
     "format": "Format",
     "formats": {
       "CLASSIC": "Shaxsiy hisoblar koʻchirmasi",
-      "APP": "Bank ilovasidan yuklama"
+      "APP": "Bank ilovasidan yuklama",
+      "REGISTER": "Bajarilgan hujjatlar qaydnomasi"
     },
     "period": "Davr",
     "accountNumber": "Koʻchirmadagi hisob raqami",

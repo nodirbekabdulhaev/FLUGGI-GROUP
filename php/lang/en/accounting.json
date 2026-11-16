@@ -151,7 +151,8 @@
     "format": "Format",
     "formats": {
       "CLASSIC": "Account statement",
-      "APP": "Bank app export"
+      "APP": "Bank app export",
+      "REGISTER": "Register of posted documents"
     },
     "period": "Period",
     "accountNumber": "Account number in the statement",

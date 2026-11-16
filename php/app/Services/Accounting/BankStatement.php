@@ -16,6 +16,8 @@ use Throwable;
  * Разбор банковской выписки (XLSX, XLS или CSV). Формат определяется по заголовкам таблицы:
  *  - CLASSIC — «Выписка лицевых счетов»: шапка с номером счёта и остатками, колонки «Обороты по дебету»
  *    (деньги ушли со счёта) и «Обороты по кредиту» (пришли), строка «Итого» в конце;
+ *  - REGISTER — «Ведомость проведённых документов» (Infinbank и др.): колонки «Счёт клиента» (откуда) и «Счёт корреспондента» (куда),
+ *    «Сумма документа», без дебета/кредита: наш счёт — тот, что встречается в большинстве строк; он же — номер счёта выписки;
  *  - APP — выгрузка операций из приложения банка: «Turi» (Kirim/Chiqim), «Holati» (берутся только проведённые),
  *    «Summa», «Sana», плательщик и получатель. Номера счёта в файле нет — счёт выбирает пользователь.
  * Заголовки сравниваются без регистра, пробелов, переносов строк и знаков (русский и узбекский варианты).
@@ -130,6 +132,9 @@ final class BankStatement
     private static function parse(array $matrix): ?array
     {
         foreach ($matrix as $i => $row) {
+            if ($reg = self::registerColumns($row)) {
+                return self::register($matrix, $i, $reg);
+            }
             $cols = self::columns($row, self::CLASSIC);
             if (isset($cols['date'], $cols['debit'], $cols['credit'])) {
                 return self::classic($matrix, $i, $cols);
@@ -144,6 +149,75 @@ final class BankStatement
         }
 
         return null;
+    }
+
+    /** Колонки «Ведомости проведённых документов»: нужны счёт клиента, счёт корреспондента, сумма и дата. */
+    private static function registerColumns(array $header): ?array
+    {
+        $norm = array_map(fn ($c) => self::norm($c), $header);
+        $find = function (array $names) use ($norm) {
+            foreach ($names as $n) {
+                if (($i = array_search($n, $norm, true)) !== false) {
+                    return $i;
+                }
+            }
+
+            return null;
+        };
+        $cols = ['acc' => $find(['счетклиента']), 'cpAcc' => $find(['счеткорреспондента']), 'amount' => $find(['суммадокумента']), 'date' => $find(['дата'])];
+        if (in_array(null, $cols, true)) {
+            return null;
+        }
+
+        return $cols + ['doc' => $find(['номердок']), 'name' => $find(['наименованиеклиента']), 'inn' => $find(['инн клнт', 'иннклнт']),
+            'cpName' => $find(['наименованиекорреспондента']), 'cpInn' => $find(['иннкорт', 'иннкорр']), 'purpose' => $find(['назначениеплатежа'])];
+    }
+
+    private static function register(array $matrix, int $headerIdx, array $cols): array
+    {
+        $out = ['format' => 'REGISTER', 'accountNumber' => null, 'opening' => null, 'closing' => null, 'from' => null, 'to' => null, 'rows' => [], 'errors' => [], 'notCompleted' => 0];
+        $acc = fn ($v) => preg_replace('/\D+/', '', (string) $v);
+        $lines = [];
+        $count = count($matrix);
+        for ($i = $headerIdx + 1; $i < $count; $i++) {
+            $row = $matrix[$i];
+            $date = self::date($row[$cols['date']] ?? null);
+            $amount = self::amount($row[$cols['amount']] ?? null);
+            if ($date === null && $amount === null) {
+                continue;    // пустая строка, итог или подпись внизу ведомости
+            }
+            $lines[$i] = [$row, $date, $amount, $acc($row[$cols['acc']] ?? null), $acc($row[$cols['cpAcc']] ?? null)];
+        }
+        // Наш счёт — расчётный счёт, который есть в большинстве строк (с любой стороны проводки)
+        $freq = [];
+        foreach ($lines as [, , , $a, $b]) {
+            foreach (array_unique([$a, $b]) as $x) {
+                if (strlen($x) === 20) {
+                    $freq[$x] = ($freq[$x] ?? 0) + 1;
+                }
+            }
+        }
+        arsort($freq);
+        $ours = array_key_first($freq);
+        $out['accountNumber'] = $ours;
+        foreach ($lines as $i => [$row, $date, $amount, $a, $b]) {
+            $n = $i + 1;
+            $direction = $ours === null ? null : ($a === $ours ? 'OUT' : ($b === $ours ? 'IN' : null));
+            if ($date === null || $amount === null || BigDecimal::of($amount)->isZero() || $direction === null) {
+                $out['errors'][] = ['n' => $n, 'message' => $date === null ? t('accounting.bank.errors.date') : ($direction === null ? t('accounting.bank.errors.type') : t('accounting.bank.errors.amount'))];
+
+                continue;
+            }
+            $out['rows'][] = [
+                'n' => $n, 'date' => $date, 'direction' => $direction, 'amount' => $amount, 'doc' => self::text($row[$cols['doc'] ?? -1] ?? null),
+                'counterparty' => self::text($row[$direction === 'OUT' ? ($cols['cpName'] ?? -1) : ($cols['name'] ?? -1)] ?? null),
+                'inn' => self::text($row[$direction === 'OUT' ? ($cols['cpInn'] ?? -1) : ($cols['inn'] ?? -1)] ?? null),
+                'cpAccount' => $direction === 'OUT' ? $b : $a, 'purpose' => self::text($row[$cols['purpose'] ?? -1] ?? null),
+            ];
+            self::limit($out);
+        }
+
+        return self::period($out);
     }
 
     private static function classic(array $matrix, int $headerIdx, array $cols): array

@@ -48,7 +48,7 @@ final class BankRules
     /** Кредит: поступление кредита и погашение (основной долг, проценты) — не выручка и не обычный расход. */
     private const LOAN = ['кредит', 'kredit', 'qarz mablag'];
 
-    private const BANK_FEE = ['начисленные %%', 'тариф', 'комисси', 'komissiya', 'tarif', 'плата за обслуживание', 'xizmat haqi'];
+    private const BANK_FEE = ['начисленные %%', 'за плат.пор', 'за платпор', 'тариф', 'комисси', 'komissiya', 'tarif', 'плата за обслуживание', 'xizmat haqi'];
 
     private const SALARY = ['зарплат', 'заработн', 'аванс', 'ish haqi', 'ish xaqi', 'oylik', 'avans'];
 
