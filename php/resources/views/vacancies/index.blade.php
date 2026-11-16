@@ -2,19 +2,27 @@
 @section('title', t('vacancies.title'))
 @section('content')
     @php $colors = ['NEW' => 'blue', 'VIEWED' => 'gray', 'INTERVIEW' => 'yellow', 'HIRED' => 'green', 'REJECTED' => 'red']; @endphp
-    <x-page-header :title="t('vacancies.title')" :subtitle="t('vacancies.subtitle')" />
+    <x-page-header :title="t('vacancies.title')" :subtitle="t('vacancies.subtitle')">
+        <x-view-toggle :view="$view" key="vacancies" />
+        @if ($canManage)<form method="POST" action="/vacancies/rescore">@csrf <button class="btn btn-outline btn-sm"><x-icon name="refresh" /> {{ t('vacancies.rescore') }}</button></form>@endif
+    </x-page-header>
     <div class="mb-4 flex flex-wrap items-center gap-2">
-        <a href="/vacancies" @class(['btn btn-sm', empty($filters['status']) ? 'btn-primary' : 'btn-outline'])>{{ t('vacancies.all') }} · {{ array_sum($counts) }}</a>
+        @if ($view === 'list')
+        <a href="/vacancies?view=list" @class(['btn btn-sm', empty($filters['status']) ? 'btn-primary' : 'btn-outline'])>{{ t('vacancies.all') }} · {{ array_sum($counts) }}</a>
         @foreach (\App\Services\Vacancies\VacancyService::STATUSES as $s)
-            <a href="/vacancies?status={{ $s }}" @class(['btn btn-sm', ($filters['status'] ?? null) === $s ? 'btn-primary' : 'btn-outline'])>{{ t('vacancies.statuses.'.$s) }} · {{ $counts[$s] ?? 0 }}</a>
+            <a href="/vacancies?view=list&status={{ $s }}" @class(['btn btn-sm', ($filters['status'] ?? null) === $s ? 'btn-primary' : 'btn-outline'])>{{ t('vacancies.statuses.'.$s) }} · {{ $counts[$s] ?? 0 }}</a>
         @endforeach
+        @endif
         <form method="GET" class="ml-auto flex gap-2">
+            <input type="hidden" name="view" value="{{ $view }}">
             @if (! empty($filters['status']))<input type="hidden" name="status" value="{{ $filters['status'] }}">@endif
             <input type="search" name="q" value="{{ $filters['q'] ?? '' }}" class="input w-64" placeholder="{{ t('vacancies.search') }}" aria-label="{{ t('vacancies.search') }}">
         </form>
     </div>
 
-    @if ($items->isEmpty())
+    @if ($view === 'kanban')
+        @include('vacancies.partials.board')
+    @elseif ($items->isEmpty())
         <div class="card"><x-empty icon="briefcase" :title="t('vacancies.empty')">{{ t('vacancies.emptyText') }}</x-empty></div>
     @else
         <x-table>
@@ -25,7 +33,7 @@
             @foreach ($items as $a)
                 <tr>
                     <td class="whitespace-nowrap text-sm">{{ d($a->created_at) }}</td>
-                    <td class="font-medium">{{ $a->name }}
+                    <td class="font-medium"><a class="link" href="/vacancies/{{ $a->id }}">{{ $a->name }}</a>@if ($a->score !== null) <x-badge :color="['excellent' => 'green', 'strong' => 'blue', 'medium' => 'yellow', 'weak' => 'red'][$a->score_level] ?? 'gray'">{{ $a->score }}</x-badge>@endif
                         <span class="block text-xs font-normal"><a class="link" href="tel:{{ $a->phone }}">{{ $a->phone }}</a>@if ($a->email) · <a class="link" href="mailto:{{ $a->email }}">{{ $a->email }}</a>@endif</span></td>
                     <td>{{ $a->vacancy_name ?: '—' }}@if ($a->page_url)<a class="block text-xs link" href="{{ $a->page_url }}" target="_blank" rel="noopener noreferrer">{{ t('vacancies.page') }}</a>@endif</td>
                     <td class="max-w-xs text-sm text-muted-foreground">{{ $a->message ?: '—' }}</td>

@@ -24,5 +24,67 @@
     "INTERVIEW": "Suhbat",
     "HIRED": "Qabul qilingan",
     "REJECTED": "Rad etilgan"
-  }
+  },
+  "age": "{n} yosh",
+  "score": "Nomzod bahosi",
+  "noScore": "Test anketasi yoʻq — baho hisoblanmaydi.",
+  "levels": {
+    "excellent": "Ajoyib nomzod",
+    "strong": "Kuchli nomzod",
+    "medium": "Oʻrta daraja",
+    "weak": "Past natija"
+  },
+  "parts": {
+    "psych": "Psixologik testlar",
+    "skills": "Koʻnikmalar",
+    "languages": "Tillar",
+    "education": "Taʻlim",
+    "experience": "Tajriba"
+  },
+  "redFlags": "Past koʻrsatkichlar",
+  "scoreHow": "Baho = psixotestlar 40%, koʻnikmalar 25%, tillar 15%, taʻlim 10%, tajriba 10%. Boʻlim boʻlmasa, qolganlari qayta hisoblanadi.",
+  "about": "Oʻzi haqida",
+  "skills": "Koʻnikmalar",
+  "education": "Taʻlim",
+  "languages": "Tillar",
+  "psych": "Psixologik testlar",
+  "experience": "Ish tajribasi",
+  "testDefault": "Oʻyin testi",
+  "duration": "{min} daq",
+  "years": "{n} yil",
+  "decision": "HR qarori",
+  "rescore": "Baholarni qayta hisoblash",
+  "rescored": "Baholar qayta hisoblandi: {n}",
+  "traits": {
+    "discipline": "Intizom",
+    "responsibility": "Masʻuliyat",
+    "stress_resistance": "Stressga chidamlilik",
+    "teamwork": "Jamoada ishlash",
+    "learning": "Oʻrganuvchanlik",
+    "communication": "Muloqot"
+  },
+  "edu": {
+    "school": "maktab",
+    "college": "kollej",
+    "courses": "kurslar",
+    "bachelor": "bakalavr",
+    "university": "universitet",
+    "master": "magistratura",
+    "other": "taʻlim"
+  },
+  "lang": {
+    "ru": "Rus",
+    "uz": "Oʻzbek",
+    "en": "Ingliz",
+    "tr": "Turk",
+    "kk": "Qozoq",
+    "kz": "Qozoq",
+    "de": "Nemis",
+    "fr": "Fransuz",
+    "zh": "Xitoy",
+    "ko": "Koreys",
+    "ar": "Arab"
+  },
+  "kanbanHint": "Kartani boshqa holatga sudrang (telefonda — kartadan holatni tanlang). Raqam — nomzod bahosi.",
+  "moveFailed": "Holatni oʻzgartirib boʻlmadi — sahifani yangilang"
 }

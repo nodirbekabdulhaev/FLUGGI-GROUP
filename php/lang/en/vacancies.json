@@ -24,5 +24,67 @@
     "INTERVIEW": "Interview",
     "HIRED": "Hired",
     "REJECTED": "Rejected"
-  }
+  },
+  "age": "{n} y.o.",
+  "score": "Candidate score",
+  "noScore": "No test questionnaire — no score.",
+  "levels": {
+    "excellent": "Excellent candidate",
+    "strong": "Strong candidate",
+    "medium": "Average",
+    "weak": "Weak result"
+  },
+  "parts": {
+    "psych": "Psychological tests",
+    "skills": "Skills",
+    "languages": "Languages",
+    "education": "Education",
+    "experience": "Experience"
+  },
+  "redFlags": "Low scores",
+  "scoreHow": "Score = psych tests 40%, skills 25%, languages 15%, education 10%, experience 10%. Missing sections are re-weighted.",
+  "about": "About",
+  "skills": "Skills",
+  "education": "Education",
+  "languages": "Languages",
+  "psych": "Psychological tests",
+  "experience": "Work experience",
+  "testDefault": "Game test",
+  "duration": "{min} min",
+  "years": "{n} y.",
+  "decision": "HR decision",
+  "rescore": "Recalculate scores",
+  "rescored": "Scores recalculated: {n}",
+  "traits": {
+    "discipline": "Discipline",
+    "responsibility": "Responsibility",
+    "stress_resistance": "Stress resistance",
+    "teamwork": "Teamwork",
+    "learning": "Learning ability",
+    "communication": "Communication"
+  },
+  "edu": {
+    "school": "school",
+    "college": "college",
+    "courses": "courses",
+    "bachelor": "bachelor",
+    "university": "university",
+    "master": "master",
+    "other": "education"
+  },
+  "lang": {
+    "ru": "Russian",
+    "uz": "Uzbek",
+    "en": "English",
+    "tr": "Turkish",
+    "kk": "Kazakh",
+    "kz": "Kazakh",
+    "de": "German",
+    "fr": "French",
+    "zh": "Chinese",
+    "ko": "Korean",
+    "ar": "Arabic"
+  },
+  "kanbanHint": "Drag a card to another status (on a phone pick the status in the card). The number is the candidate score.",
+  "moveFailed": "Could not change the status — reload the page"
 }

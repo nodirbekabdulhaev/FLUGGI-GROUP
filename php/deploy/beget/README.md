@@ -106,3 +106,25 @@ cd ~/crm.fluggi.uz/fluggi && bash deploy/beget/update.sh
 Отклики на вакансии (`type: vacancy`) в лиды не попадают — они сохраняются в разделе «Вакансии» (права `vacancy.read` / `vacancy.manage`: CEO и HR; новую роль добавьте в «Роли и права»), ответ тот же, `id` — отклика.
 
 Лид получает источник «Сайт», стадию «Новый», ответственного по правилам распределения; тип заявки, продукт, страница, язык, секунды в демо и UTM записываются в комментарий.
+
+### Карточка кандидата (игровая форма вакансии)
+
+В заявку `type: vacancy` сайт добавляет необязательные блоки `candidate` и `assessment` — из них строится карточка кандидата и оценка 0–100 в разделе «Вакансии» (Kanban по статусам и карточка с анимацией):
+
+```json
+"candidate": {
+  "photo_url": "https://…/photo.jpg", "about": "О себе", "city": "Наманган", "birth_year": 2001, "experience_years": 2,
+  "education": [{"level": "school|college|courses|bachelor|master", "name": "…", "field": "…", "year_from": 2016, "year_to": 2019}],
+  "skills": [{"name": "PHP", "level": 4}],
+  "languages": [{"code": "ru", "level": "native"}, {"code": "en", "level": "b2"}],
+  "experience": [{"company": "…", "position": "…", "years": 1.5}],
+  "links": ["https://…"]
+},
+"assessment": {
+  "test_name": "Fluggi Quest", "duration_seconds": 600,
+  "traits": {"discipline": 80, "responsibility": 75, "stress_resistance": 70, "teamwork": 90, "learning": 85, "communication": 78}
+}
+```
+
+`level` навыка — 1–5, языка — `native`, `c2`…`a1`; черты теста — 0–100 (`discipline`, `responsibility`, `stress_resistance`, `teamwork`, `learning`, `communication`; другие тоже показываются). Фото — только ссылка `https`.
+Оценка (`App\Services\Vacancies\CandidateScore`): психотесты 40 %, навыки 25 %, языки 15 %, образование 10 %, опыт 10 %; отсутствующий раздел не учитывается, черта ниже 35 — красный флаг. После смены логики кнопка «Пересчитать оценки» обновляет все отклики.

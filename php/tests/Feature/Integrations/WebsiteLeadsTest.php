@@ -5,6 +5,7 @@ namespace Tests\Feature\Integrations;
 use App\Models\Lead;
 use App\Models\VacancyApplication;
 use App\Models\WebsiteLead;
+use App\Services\Vacancies\CandidateScore;
 use Tests\Feature\Notifications\CommsFixtures;
 use Tests\TestCase;
 
@@ -92,5 +93,34 @@ class WebsiteLeadsTest extends TestCase
         $this->patch('/vacancies/'.$app->id, ['status' => 'INTERVIEW', 'comment' => 'Позвонить во вторник'])->assertSessionHasNoErrors();
         $this->assertSame(['INTERVIEW', 'Позвонить во вторник'], [$app->fresh()->status, $app->fresh()->comment]);
         $this->actingAsUser($this->user('MANAGER'))->get('/vacancies')->assertForbidden();
+    }
+
+    public function test_candidate_card_from_game_form_is_scored_and_shown(): void
+    {
+        $candidate = ['photo_url' => 'https://example.com/photo.jpg', 'about' => 'Люблю чистый код', 'city' => 'Namangan', 'birth_year' => 2001, 'experience_years' => 2,
+            'education' => [['level' => 'college', 'name' => 'Test kollej', 'year_from' => 2016, 'year_to' => 2019]],
+            'skills' => [['name' => 'PHP', 'level' => 4], ['name' => 'SQL', 'level' => 5]],
+            'languages' => [['code' => 'ru', 'level' => 'native'], ['code' => 'en', 'level' => 'b2']]];
+        $assessment = ['test_name' => 'Fluggi Quest', 'duration_seconds' => 600, 'traits' => ['discipline' => 80, 'responsibility' => 80, 'stress_resistance' => 80, 'teamwork' => 80, 'learning' => 80, 'communication' => 80]];
+        $r = $this->send($this->body(['external_id' => 'fluggi-web-7', 'type' => 'vacancy', 'candidate' => $candidate, 'assessment' => $assessment,
+            'product' => ['kind' => 'vacancy', 'slug' => 'php-dev', 'name' => 'PHP-разработчик']]));
+        $r->assertCreated();
+        $app = VacancyApplication::findOrFail($r->json('id'));
+        $this->assertSame([74, 'strong'], [$app->score, $app->score_level]);
+        $this->assertSame([80, 68, 60, 100, 40], array_column($app->score_parts['parts'], 'score'));
+
+        $this->actingAsUser($this->user('CEO'))->get('/vacancies/'.$app->id)->assertOk()->assertSee('Test kollej')->assertSee('🇷🇺')->assertSee('Fluggi Quest')->assertSee('74');
+        $this->assertSame('VIEWED', $app->fresh()->status);
+        // Kanban: карточка в колонке «Просмотрен», перенос в «Собеседование» — JSON-запросом
+        $this->get('/vacancies')->assertOk()->assertSee('data-card="'.$app->id.'"', false);
+        $this->patchJson('/vacancies/'.$app->id, ['status' => 'INTERVIEW'])->assertOk()->assertJson(['ok' => true]);
+        $this->assertSame('INTERVIEW', $app->fresh()->status);
+        $this->get('/vacancies?view=list')->assertOk()->assertSee('Test Mijoz');
+
+        // Слабая дисциплина — красный флаг; без остальных разделов вес пересчитывается
+        $this->assertSame(['discipline'], CandidateScore::evaluate([], ['traits' => ['discipline' => 20, 'teamwork' => 90]])['flags']);
+        $this->assertSame(50, CandidateScore::evaluate([], ['traits' => ['discipline' => 20, 'teamwork' => 90]])['score']);
+        $this->assertNull(CandidateScore::evaluate([], [])['score']);
+        $this->send($this->body(['external_id' => 'fluggi-web-8', 'type' => 'vacancy', 'candidate' => ['photo_url' => 'http://insecure.example/p.jpg']]))->assertStatus(422);
     }
 }

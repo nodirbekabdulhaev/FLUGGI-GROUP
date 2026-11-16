@@ -38,16 +38,34 @@ final class VacancyService
     public static function createFromSite(array $in): VacancyApplication
     {
         $ctx = is_array($in['context'] ?? null) ? $in['context'] : [];
+        $profile = is_array($in['candidate'] ?? null) ? $in['candidate'] : null;
+        $assessment = is_array($in['assessment'] ?? null) ? $in['assessment'] : null;
+        $eval = $profile || $assessment ? CandidateScore::evaluate($profile ?? [], $assessment ?? []) : null;
         $row = DB::transaction(fn () => VacancyApplication::create([
             'external_id' => $in['external_id'], 'name' => $in['name'], 'phone' => $in['phone'], 'email' => $in['email'] ?? null, 'message' => $in['message'] ?? null,
             'vacancy_slug' => $in['product']['slug'] ?? null, 'vacancy_name' => $in['product']['name'] ?? null,
             'page_url' => isset($ctx['page_url']) ? mb_substr((string) $ctx['page_url'], 0, 1000) : null, 'locale' => $ctx['locale'] ?? null,
             'utm' => ! empty($in['utm']) ? $in['utm'] : null, 'site_created_at' => $in['created_at'] ?? null,
+            'profile' => $profile, 'assessment' => $assessment,
+            'score' => $eval['score'] ?? null, 'score_level' => $eval['level'] ?? null, 'score_parts' => $eval ? ['parts' => $eval['parts'], 'flags' => $eval['flags']] : null,
         ]));
         $ids = User::where('status', 'ACTIVE')->whereHas('role', fn ($q) => $q->whereIn('code', ['CEO', 'HR_ADMIN']))->pluck('id')->all();
-        Notifier::notify($ids, 'vacancy.new', fn () => [t('vacancies.notifyTitle'), $row->name.' — '.($row->vacancy_name ?: t('vacancies.noVacancy'))], '/vacancies');
+        Notifier::notify($ids, 'vacancy.new', fn () => [t('vacancies.notifyTitle'), $row->name.' — '.($row->vacancy_name ?: t('vacancies.noVacancy')).($row->score !== null ? ' · '.$row->score.'/100' : '')], '/vacancies');
 
         return $row;
+    }
+
+    /** Пересчитать оценку (после смены логики) для всех откликов с анкетой; возвращает число пересчитанных. */
+    public static function rescoreAll(): int
+    {
+        $n = 0;
+        foreach (VacancyApplication::where(fn ($q) => $q->whereNotNull('profile')->orWhereNotNull('assessment'))->get() as $row) {
+            $e = CandidateScore::evaluate($row->profile ?? [], $row->assessment ?? []);
+            $row->forceFill(['score' => $e['score'], 'score_level' => $e['level'], 'score_parts' => ['parts' => $e['parts'], 'flags' => $e['flags']]])->save();
+            $n++;
+        }
+
+        return $n;
     }
 
     public static function update(string $id, ?string $status, ?string $comment): VacancyApplication

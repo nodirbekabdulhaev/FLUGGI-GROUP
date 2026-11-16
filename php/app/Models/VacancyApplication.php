@@ -11,5 +11,5 @@ class VacancyApplication extends Model
 
     protected $table = 'vacancy_applications';
 
-    protected $casts = ['number' => 'integer', 'utm' => 'array', 'created_at' => 'datetime', 'updated_at' => 'datetime', 'deleted_at' => 'datetime'];
+    protected $casts = ['number' => 'integer', 'utm' => 'array', 'profile' => 'array', 'assessment' => 'array', 'score' => 'integer', 'score_parts' => 'array', 'created_at' => 'datetime', 'updated_at' => 'datetime', 'deleted_at' => 'datetime'];
 }
