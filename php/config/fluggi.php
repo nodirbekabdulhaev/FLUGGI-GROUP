@@ -25,6 +25,11 @@ return [
         'page_access_token' => env('META_PAGE_ACCESS_TOKEN'),
     ],
 
+    // Заявки с сайта fluggi.uz: POST /hooks/website-leads с заголовком Authorization: Bearer <токен>. Пусто — приём выключен
+    'website' => [
+        'leads_token' => env('WEBSITE_LEADS_TOKEN'),
+    ],
+
     // Web Push (системные уведомления со звуком): ключи VAPID — php artisan fluggi:webpush-keys
     'webpush' => [
         'public_key' => env('VAPID_PUBLIC_KEY'),

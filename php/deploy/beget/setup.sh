@@ -75,6 +75,7 @@ META_VERIFY_TOKEN=$(openssl rand -hex 16)
 META_PAGE_ACCESS_TOKEN=
 
 CRON_SECRET=$(openssl rand -hex 24)
+WEBSITE_LEADS_TOKEN=$(openssl rand -hex 24)
 ENV
   umask 022
 fi

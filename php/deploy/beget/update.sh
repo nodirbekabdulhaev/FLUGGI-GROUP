@@ -19,6 +19,13 @@ if [ -z "${FLUGGI_UPDATED:-}" ]; then
   FLUGGI_UPDATED=1 exec bash deploy/beget/update.sh
 fi
 
+# Токен приёма заявок с сайта: создаётся один раз, хранится только в .env (значение не выводится)
+if ! grep -qE '^WEBSITE_LEADS_TOKEN=.+' .env; then
+  sed -i '/^WEBSITE_LEADS_TOKEN=/d' .env
+  printf 'WEBSITE_LEADS_TOKEN=%s\n' "$(openssl rand -hex 24)" >> .env
+  echo "  создан WEBSITE_LEADS_TOKEN в .env (передайте его владельцу сайта безопасным способом)"
+fi
+
 PHP="$(bash deploy/beget/find-php.sh)"
 "$PHP" artisan down --retry=15 -q || true
 "$PHP" artisan fluggi:install
