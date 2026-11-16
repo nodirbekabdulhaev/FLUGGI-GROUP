@@ -41,6 +41,11 @@ final class VacancyService
         $profile = is_array($in['candidate'] ?? null) ? $in['candidate'] : null;
         $assessment = is_array($in['assessment'] ?? null) ? $in['assessment'] : null;
         $eval = $profile || $assessment ? CandidateScore::evaluate($profile ?? [], $assessment ?? []) : null;
+        // Сайт сам считает оценку (score, grade A–D): берём её; иначе оцениваем по нашей логике
+        if ($eval && is_numeric($assessment['score'] ?? null)) {
+            $site = max(0, min(100, (int) round((float) $assessment['score'])));
+            $eval = ['score' => $site, 'level' => CandidateScore::level($site), 'parts' => [], 'flags' => $eval['flags']];
+        }
         $row = DB::transaction(fn () => VacancyApplication::create([
             'external_id' => $in['external_id'], 'name' => $in['name'], 'phone' => $in['phone'], 'email' => $in['email'] ?? null, 'message' => $in['message'] ?? null,
             'vacancy_slug' => $in['product']['slug'] ?? null, 'vacancy_name' => $in['product']['name'] ?? null,
@@ -60,6 +65,9 @@ final class VacancyService
     {
         $n = 0;
         foreach (VacancyApplication::where(fn ($q) => $q->whereNotNull('profile')->orWhereNotNull('assessment'))->get() as $row) {
+            if (is_numeric($row->assessment['score'] ?? null)) {
+                continue;    // оценку посчитал сайт
+            }
             $e = CandidateScore::evaluate($row->profile ?? [], $row->assessment ?? []);
             $row->forceFill(['score' => $e['score'], 'score_level' => $e['level'], 'score_parts' => ['parts' => $e['parts'], 'flags' => $e['flags']]])->save();
             $n++;

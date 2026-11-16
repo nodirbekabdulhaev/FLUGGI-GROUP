@@ -15,7 +15,7 @@ final class CandidateScore
 {
     public const WEIGHTS = ['psych' => 40, 'skills' => 25, 'languages' => 15, 'education' => 10, 'experience' => 10];
 
-    public const TRAITS = ['discipline' => 1.3, 'responsibility' => 1.3, 'stress_resistance' => 1.0, 'teamwork' => 1.0, 'learning' => 1.0, 'communication' => 1.0];
+    public const TRAITS = ['discipline' => 1.3, 'responsibility' => 1.3, 'stress_resistance' => 1.0, 'teamwork' => 1.0, 'learning' => 1.0, 'communication' => 1.0, 'initiative' => 1.0, 'stability' => 1.0];
 
     private const LANG = ['native' => 100, 'c2' => 100, 'c1' => 90, 'b2' => 75, 'b1' => 60, 'a2' => 40, 'a1' => 25];
 

@@ -8,6 +8,9 @@
         $flags = $a->score_parts['flags'] ?? [];
         $flagOf = ['ru' => '🇷🇺', 'uz' => '🇺🇿', 'en' => '🇬🇧', 'tr' => '🇹🇷', 'kk' => '🇰🇿', 'kz' => '🇰🇿', 'tg' => '🇹🇯', 'ky' => '🇰🇬', 'de' => '🇩🇪', 'fr' => '🇫🇷', 'es' => '🇪🇸', 'it' => '🇮🇹', 'zh' => '🇨🇳', 'ko' => '🇰🇷', 'ja' => '🇯🇵', 'ar' => '🇸🇦', 'fa' => '🇮🇷', 'hi' => '🇮🇳'];
         $tone = ['excellent' => 'text-success', 'strong' => 'text-primary', 'medium' => 'text-warning', 'weak' => 'text-danger'][$a->score_level] ?? 'text-muted-foreground';
+        $lbl = fn (string $g, $k) => ($x = t('vacancies.'.$g.'.'.$k)) !== 'vacancies.'.$g.'.'.$k ? $x : (string) $k;
+        $site = isset($as['grade']) || isset($as['score']);
+        $city = $p['city'] ?? ($as['city'] ?? null);
         $bar = fn ($v) => $v >= 80 ? 'bg-success' : ($v >= 65 ? 'bg-primary' : ($v >= 50 ? 'bg-warning' : 'bg-danger'));
     @endphp
     <style>
@@ -28,9 +31,10 @@
                     <div class="mx-auto flex size-40 items-center justify-center rounded-full bg-primary/10 text-5xl font-bold text-primary">{{ mb_strtoupper(mb_substr($a->name, 0, 1)) }}</div>
                 @endif
                 <h2 class="mt-3 text-lg font-semibold">{{ $a->name }}</h2>
-                <p class="text-sm text-muted-foreground">@if (! empty($p['city'])){{ $p['city'] }}@endif @if (! empty($p['birth_year'])) · {{ t('vacancies.age', ['n' => (int) date('Y') - (int) $p['birth_year']]) }}@endif</p>
+                <p class="text-sm text-muted-foreground">@if ($city){{ $city }}@endif @if (! empty($p['birth_year'])) · {{ t('vacancies.age', ['n' => (int) date('Y') - (int) $p['birth_year']]) }}@endif</p>
                 <p class="mt-2 text-sm"><a class="link" href="tel:{{ $a->phone }}">{{ $a->phone }}</a>@if ($a->email)<br><a class="link" href="mailto:{{ $a->email }}">{{ $a->email }}</a>@endif</p>
-                @foreach ($p['links'] ?? [] as $l)<a class="link block truncate text-xs" href="{{ $l }}" target="_blank" rel="noopener noreferrer">{{ $l }}</a>@endforeach
+                @php $links = array_filter([...($p['links'] ?? []), $as['link'] ?? null]); @endphp
+                @foreach ($links as $l)<a class="link block truncate text-xs" href="{{ $l }}" target="_blank" rel="noopener noreferrer">{{ $l }}</a>@endforeach
             </x-card>
 
             <x-card :title="t('vacancies.score')" class="vac-pop text-center">
@@ -38,15 +42,21 @@
                     <p class="text-sm text-muted-foreground">{{ t('vacancies.noScore') }}</p>
                 @else
                     <p class="text-5xl font-bold tabular-nums {{ $tone }}">{{ $a->score }}<span class="text-xl text-muted-foreground">/100</span></p>
-                    <p class="mt-1 font-medium {{ $tone }}">{{ t('vacancies.levels.'.$a->score_level) }}</p>
+                    <p class="mt-1 font-medium {{ $tone }}">{{ t('vacancies.levels.'.$a->score_level) }}@if (! empty($as['grade'])) · {{ t('vacancies.grade') }} {{ $as['grade'] }}@endif</p>
+                    @if (! empty($as['recommendation']))<p class="mt-1 text-sm">{{ $lbl('recommendation', $as['recommendation']) }}</p>@endif
+                    @if (! empty($as['archetype']))<p class="mt-2 inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-sm font-medium text-primary">🎮 {{ $lbl('archetype', $as['archetype']) }}@if (isset($as['level'])) · {{ t('vacancies.gameLevel', ['n' => $as['level']]) }}@endif</p>@endif
                     <div class="mt-4 space-y-2 text-left">
+                        @foreach ($as['parts'] ?? [] as $k => $v)
+                            <div><div class="flex justify-between text-xs"><span>{{ $lbl('siteParts', $k) }}</span><span class="tabular-nums">{{ $k === 'penalty' ? '−' : '' }}{{ (int) $v }}</span></div>
+                                <div class="vac-bar h-2 overflow-hidden rounded-full bg-muted"><span class="block h-full rounded-full {{ $k === 'penalty' ? 'bg-danger' : $bar((float) $v) }}" style="width: {{ max(0, min(100, (float) $v)) }}%"></span></div></div>
+                        @endforeach
                         @foreach ($parts as $k => $part)
                             <div><div class="flex justify-between text-xs"><span>{{ t('vacancies.parts.'.$k) }} <span class="text-muted-foreground">· {{ $part['weight'] }}%</span></span><span class="tabular-nums">{{ $part['score'] }}</span></div>
                                 <div class="vac-bar h-2 overflow-hidden rounded-full bg-muted"><span class="block h-full rounded-full {{ $bar($part['score']) }}" style="width: {{ $part['score'] }}%"></span></div></div>
                         @endforeach
                     </div>
                     @if ($flags)<p class="mt-3 flex items-start gap-1 text-left text-xs text-danger"><x-icon name="alert" /> {{ t('vacancies.redFlags') }}: {{ collect($flags)->map(fn ($f) => t('vacancies.traits.'.$f))->implode(', ') }}</p>@endif
-                    <p class="mt-3 text-left text-xs text-muted-foreground">{{ t('vacancies.scoreHow') }}</p>
+                    <p class="mt-3 text-left text-xs text-muted-foreground">{{ $site ? t('vacancies.scoreHowSite') : t('vacancies.scoreHow') }}</p>
                 @endif
             </x-card>
         </div>
@@ -89,6 +99,18 @@
                             <span class="inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm"><span class="text-xl leading-none">{{ $flagOf[strtolower($l['code'])] ?? '🌐' }}</span>{{ t('vacancies.lang.'.strtolower($l['code'])) !== 'vacancies.lang.'.strtolower($l['code']) ? t('vacancies.lang.'.strtolower($l['code'])) : strtoupper($l['code']) }}
                                 @if (! empty($l['level']))<span class="rounded bg-primary/10 px-1.5 text-xs font-semibold text-primary">{{ strtoupper($l['level']) }}</span>@endif</span>
                         @endforeach
+                    </div>
+                </x-card>
+            @endif
+
+            @if ($site && (! empty($as['skills']) || ! empty($as['motivators']) || ! empty($as['experience']) || ! empty($as['badges']) || ! empty($as['flags'])))
+                <x-card :title="t('vacancies.gameCard')" class="vac-pop">
+                    <div class="space-y-3 text-sm">
+                        @if (! empty($as['experience']))<p><span class="text-muted-foreground">{{ t('vacancies.experience') }}:</span> <span class="font-medium">{{ $lbl('exp', $as['experience']) }}</span></p>@endif
+                        @foreach (['skills' => 'skill', 'motivators' => 'motivator', 'badges' => 'badge'] as $key => $grp)
+                            @if (! empty($as[$key]))<div><p class="mb-1 text-xs text-muted-foreground">{{ t('vacancies.'.$key) }}</p><div class="flex flex-wrap gap-1.5">@foreach ($as[$key] as $x)<span class="rounded-full border px-2.5 py-1 text-xs">{{ $lbl($grp, $x) }}</span>@endforeach</div></div>@endif
+                        @endforeach
+                        @if (! empty($as['flags']))<div><p class="mb-1 flex items-center gap-1 text-xs text-danger"><x-icon name="alert" class="size-3.5" />{{ t('vacancies.attention') }}</p><div class="flex flex-wrap gap-1.5">@foreach ($as['flags'] as $x)<span class="rounded-full bg-danger/10 px-2.5 py-1 text-xs text-danger">{{ $lbl('flag', $x) }}</span>@endforeach</div></div>@endif
                     </div>
                 </x-card>
             @endif

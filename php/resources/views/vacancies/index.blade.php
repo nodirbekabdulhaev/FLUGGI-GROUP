@@ -6,6 +6,7 @@
         <x-view-toggle :view="$view" key="vacancies" />
         @if ($canManage)<form method="POST" action="/vacancies/rescore">@csrf <button class="btn btn-outline btn-sm"><x-icon name="refresh" /> {{ t('vacancies.rescore') }}</button></form>@endif
     </x-page-header>
+    @include('vacancies.partials.tabs', ['active' => '/vacancies'])
     <div class="mb-4 flex flex-wrap items-center gap-2">
         @if ($view === 'list')
         <a href="/vacancies?view=list" @class(['btn btn-sm', empty($filters['status']) ? 'btn-primary' : 'btn-outline'])>{{ t('vacancies.all') }} · {{ array_sum($counts) }}</a>

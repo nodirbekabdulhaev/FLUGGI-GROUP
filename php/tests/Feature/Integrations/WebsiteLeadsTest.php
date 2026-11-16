@@ -4,6 +4,7 @@ namespace Tests\Feature\Integrations;
 
 use App\Models\Lead;
 use App\Models\VacancyApplication;
+use App\Models\VacancyPosting;
 use App\Models\WebsiteLead;
 use App\Services\Vacancies\CandidateScore;
 use Tests\Feature\Notifications\CommsFixtures;
@@ -122,5 +123,47 @@ class WebsiteLeadsTest extends TestCase
         $this->assertSame(50, CandidateScore::evaluate([], ['traits' => ['discipline' => 20, 'teamwork' => 90]])['score']);
         $this->assertNull(CandidateScore::evaluate([], [])['score']);
         $this->send($this->body(['external_id' => 'fluggi-web-8', 'type' => 'vacancy', 'candidate' => ['photo_url' => 'http://insecure.example/p.jpg']]))->assertStatus(422);
+    }
+
+    public function test_site_assessment_format_is_stored_and_shown(): void
+    {
+        $assessment = ['score' => 63, 'grade' => 'C', 'recommendation' => 'reserve', 'archetype' => 'stability', 'level' => 8,
+            'traits' => ['responsibility' => 79, 'teamwork' => 55, 'initiative' => 57, 'learning' => 83, 'stability' => 94, 'communication' => 92],
+            'badges' => ['learning', 'stability'], 'flags' => ['too_fast'], 'experience' => 'middle', 'skills' => ['clients', 'sales'], 'motivators' => ['growth', 'team'],
+            'city' => 'Namangan', 'link' => 'https://t.me/test_user', 'duration_seconds' => 112, 'parts' => ['profile' => 78, 'fit' => 61, 'completeness' => 60, 'penalty' => 10]];
+        $r = $this->send($this->body(['external_id' => 'fluggi-web-11', 'type' => 'vacancy', 'message' => 'Балл 63, оценка C', 'assessment' => $assessment,
+            'product' => ['kind' => 'vacancy', 'slug' => 'sales-manager', 'name' => 'Менеджер по продажам']]));
+        $r->assertCreated();
+        $app = VacancyApplication::findOrFail($r->json('id'));
+        $this->assertSame([63, 'medium', 'Балл 63, оценка C'], [$app->score, $app->score_level, $app->message]);
+        $this->assertSame(['too_fast'], $app->assessment['flags']);
+        $this->actingAsUser($this->user('CEO'))->get('/vacancies/'.$app->id)->assertOk()->assertSee('Опора команды')->assertSee('Слишком быстро прошёл')->assertSee('В резерв')->assertSee('Namangan')->assertSee('t.me/test_user');
+        $this->get('/vacancies')->assertOk()->assertSee('data-card="'.$app->id.'"', false);
+    }
+
+    public function test_company_vacancy_is_published_to_site_feed_at_once(): void
+    {
+        $this->actingAsUser($this->user('CEO'));
+        $this->post('/vacancies/postings', ['title_ru' => 'PHP-разработчик', 'title_en' => 'PHP Developer', 'description_ru' => 'Пишем CRM', 'city' => 'Наманган', 'employment' => 'FULL', 'status' => 'PUBLISHED'])
+            ->assertSessionHasNoErrors();
+        $this->post('/vacancies/postings', ['title_ru' => 'Дизайнер', 'employment' => 'REMOTE', 'status' => 'DRAFT'])->assertSessionHasNoErrors();
+        $p = VacancyPosting::where('title_ru', 'PHP-разработчик')->firstOrFail();
+        $this->assertSame('PUBLISHED', $p->status);
+        $this->assertMatchesRegularExpression('/^[a-z0-9-]+$/', $p->slug);
+        $this->assertNotNull($p->published_at);
+
+        $feed = $this->getJson('/hooks/website-vacancies')->assertOk()->assertHeader('Access-Control-Allow-Origin', '*')->json('vacancies');
+        $this->assertCount(1, $feed);
+        $this->assertSame(['PHP-разработчик', 'PHP Developer', 'PHP-разработчик'], [$feed[0]['title']['ru'], $feed[0]['title']['en'], $feed[0]['title']['uz']]);
+        $this->assertSame($p->slug, $feed[0]['slug']);
+        $this->get('/vacancies/postings')->assertOk()->assertSee('PHP-разработчик');
+
+        // Снятие с сайта и публикация черновика — сразу в ленте
+        $this->patch('/vacancies/postings/'.$p->id.'/status', ['status' => 'CLOSED'])->assertSessionHasNoErrors();
+        $this->assertCount(0, $this->getJson('/hooks/website-vacancies')->json('vacancies'));
+        $draft = VacancyPosting::where('title_ru', 'Дизайнер')->firstOrFail();
+        $this->patch('/vacancies/postings/'.$draft->id.'/status', ['status' => 'PUBLISHED']);
+        $this->assertSame(['Дизайнер'], array_column(array_column($this->getJson('/hooks/website-vacancies')->json('vacancies'), 'title'), 'ru'));
+        $this->actingAsUser($this->user('MANAGER'))->post('/vacancies/postings', ['title_ru' => 'X', 'employment' => 'FULL', 'status' => 'DRAFT'])->assertForbidden();
     }
 }

@@ -5,6 +5,7 @@ use App\Http\Controllers\Integrations\MetaWebhookController;
 use App\Http\Controllers\Integrations\PublicFormController;
 use App\Http\Controllers\Integrations\WebsiteLeadController;
 use App\Http\Controllers\Telegram\TelegramWebhookController;
+use App\Http\Controllers\Vacancies\PostingController;
 use App\Http\Middleware\GuestLocale;
 use Illuminate\Support\Facades\Route;
 
@@ -21,3 +22,6 @@ Route::post('/hooks/intake/{key}', [PublicFormController::class, 'submit'])->mid
 
 // Заявки с сайта fluggi.uz: JSON с токеном Bearer (WEBSITE_LEADS_TOKEN), защита от дублей по external_id
 Route::post('/hooks/website-leads', [WebsiteLeadController::class, 'store'])->middleware('throttle:120,1')->name('hooks.website-leads');
+
+// Лента опубликованных вакансий для сайта fluggi.uz (открытые данные), создаётся в CRM: Команда → Вакансии → Вакансии компании
+Route::get('/hooks/website-vacancies', [PostingController::class, 'feed'])->middleware('throttle:120,1')->name('hooks.website-vacancies');

@@ -128,3 +128,11 @@ cd ~/crm.fluggi.uz/fluggi && bash deploy/beget/update.sh
 
 `level` навыка — 1–5, языка — `native`, `c2`…`a1`; черты теста — 0–100 (`discipline`, `responsibility`, `stress_resistance`, `teamwork`, `learning`, `communication`; другие тоже показываются). Фото — только ссылка `https`.
 Оценка (`App\Services\Vacancies\CandidateScore`): психотесты 40 %, навыки 25 %, языки 15 %, образование 10 %, опыт 10 %; отсутствующий раздел не учитывается, черта ниже 35 — красный флаг. После смены логики кнопка «Пересчитать оценки» обновляет все отклики.
+
+### Формат оценки сайта и вакансии компании
+
+Если в `assessment` есть `score` (0–100) и `grade` (A–D), CRM берёт оценку сайта (`CandidateScore` считает только при её отсутствии). Показываются `recommendation`, `archetype`, `level`, `traits` (в т. ч. `initiative`, `stability`), `badges`, `flags`, `experience`, `skills`, `motivators`, `city`, `link`, `parts` (`profile`, `fit`, `completeness`, `penalty`).
+
+Вакансии создаются в CRM: Команда → Вакансии → «Вакансии компании» (статусы «Черновик», «Опубликована», «Закрыта»). Сайт читает опубликованные вакансии открытым запросом `GET https://<адрес CRM>/hooks/website-vacancies` (CORS открыт, ответ кэшируется на минуту):
+`{"vacancies": [{"slug": "php-developer", "title": {"ru": …, "uz": …, "en": …}, "description": {…}, "city": …, "employment": "FULL|PART|REMOTE|INTERN", "salary": …, "published_at": …}]}`.
+В отклике `product.slug` должен быть `slug` вакансии — так отклики привязываются к вакансии.

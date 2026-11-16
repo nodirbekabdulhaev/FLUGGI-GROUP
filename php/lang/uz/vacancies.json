@@ -61,7 +61,9 @@
     "stress_resistance": "Stressga chidamlilik",
     "teamwork": "Jamoada ishlash",
     "learning": "Oʻrganuvchanlik",
-    "communication": "Muloqot"
+    "communication": "Muloqot",
+    "initiative": "Tashabbuskorlik",
+    "stability": "Stressga chidamlilik"
   },
   "edu": {
     "school": "maktab",
@@ -86,5 +88,102 @@
     "ar": "Arab"
   },
   "kanbanHint": "Kartani boshqa holatga sudrang (telefonda — kartadan holatni tanlang). Raqam — nomzod bahosi.",
-  "moveFailed": "Holatni oʻzgartirib boʻlmadi — sahifani yangilang"
+  "moveFailed": "Holatni oʻzgartirib boʻlmadi — sahifani yangilang",
+  "grade": "sinf",
+  "gameLevel": "{n}-daraja",
+  "scoreHowSite": "Bahoni sayt hisobladi: sifatlar 60%, tajriba va koʻnikmalar 25%, anketa toʻliqligi 15%, minus jarimalar. Bu HR uchun yoʻnalish, tashxis emas.",
+  "gameCard": "Oʻyin anketasi",
+  "motivators": "Nima rag‘batlantiradi",
+  "badges": "Nishonlar",
+  "attention": "Eʼtibor bering",
+  "siteParts": {
+    "profile": "Sifatlar",
+    "fit": "Tajriba va koʻnikmalar",
+    "completeness": "Anketa toʻliqligi",
+    "penalty": "Jarimalar"
+  },
+  "recommendation": {
+    "invite": "Suhbatga taklif qilish",
+    "interview": "Suhbatga taklif qilish",
+    "consider": "Koʻrib chiqish",
+    "review": "Koʻrib chiqish",
+    "reserve": "Zaxiraga",
+    "weak": "Mos kelish past",
+    "reject": "Mos kelish past"
+  },
+  "archetype": {
+    "stability": "Jamoa tayanchi"
+  },
+  "exp": {
+    "none": "Tajribasiz",
+    "junior": "Boshlovchi",
+    "middle": "Oʻrta tajriba",
+    "senior": "Tajribali"
+  },
+  "skill": {
+    "clients": "Mijozlar bilan ishlash",
+    "sales": "Sotuv"
+  },
+  "motivator": {
+    "growth": "Oʻsish",
+    "team": "Jamoa"
+  },
+  "badge": {
+    "learning": "Tez oʻrganadi",
+    "stability": "Stressga chidamli"
+  },
+  "flag": {
+    "too_fast": "Juda tez oʻtgan",
+    "contradictory": "Qarama-qarshi javoblar",
+    "flat": "Shkalalarda bir xil javoblar",
+    "same_answers": "Shkalalarda bir xil javoblar"
+  },
+  "tabs": {
+    "applications": "Arizalar",
+    "postings": "Kompaniya vakansiyalari"
+  },
+  "postings": {
+    "title": "Kompaniya vakansiyalari",
+    "subtitle": "Vakansiya yarating — u darhol fluggi.uz saytida paydo boʻladi.",
+    "new": "Yangi vakansiya",
+    "edit": "Vakansiyani tahrirlash",
+    "titleRu": "Nomi (rus tilida)",
+    "titleUz": "Nomi (oʻzbek tilida)",
+    "titleEn": "Nomi (ingliz tilida)",
+    "description": "Tavsif, talablar, shartlar",
+    "city": "Shahar",
+    "salary": "Maosh",
+    "salaryHint": "masalan, 5 000 000 soʻmdan",
+    "employment": "Bandlik",
+    "status": "Holat",
+    "statusHint": "«Eʼlon qilingan» — saqlangandan keyin saytda darhol koʻrinadi.",
+    "slug": "Manzil (lotin harflarida)",
+    "slugHint": "Boʻsh qolsa, nomdan yaratiladi. Vakansiyani sayt arizalari bilan bogʻlaydi.",
+    "sort": "Tartib",
+    "emp": {
+      "FULL": "Toʻliq",
+      "PART": "Qisman",
+      "REMOTE": "Masofadan",
+      "INTERN": "Stajirovka"
+    },
+    "st": {
+      "DRAFT": "Qoralama",
+      "PUBLISHED": "Eʼlon qilingan",
+      "CLOSED": "Yopilgan"
+    },
+    "apps": "Arizalar",
+    "publish": "Saytda eʼlon qilish",
+    "unpublish": "Saytdan olib tashlash",
+    "createPublish": "Saqlash",
+    "empty": "Vakansiyalar yoʻq",
+    "emptyText": "Birinchi vakansiyani qoʻshing — saqlangandan soʻng saytda paydo boʻladi.",
+    "feedInfo": "Sayt eʼlon qilingan vakansiyalarni shu yerdan oladi:",
+    "created": "Vakansiya qoralama sifatida saqlandi",
+    "createdPublished": "Vakansiya yaratildi va saytda eʼlon qilindi",
+    "saved": "Saqlandi — oʻzgarishlar saytda darhol",
+    "publishedNow": "Vakansiya saytda eʼlon qilindi",
+    "statusChanged": "Holat oʻzgardi, saytda darhol yangilanadi",
+    "deleted": "Vakansiya oʻchirildi",
+    "deleteConfirm": "Vakansiyani oʻchirasizmi?"
+  }
 }
