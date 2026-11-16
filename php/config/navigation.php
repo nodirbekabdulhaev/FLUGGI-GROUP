@@ -38,6 +38,7 @@ return [
         ['key' => 'managers', 'href' => '/team/managers', 'any' => ['employee.read']],
         ['key' => 'rops', 'href' => '/team/rop', 'any' => ['employee.read']],
         ['key' => 'executors', 'href' => '/team/executors', 'any' => ['employee.read']],
+        ['key' => 'vacancies', 'href' => '/vacancies', 'any' => ['vacancy.read'], 'count' => [VacancyService::class, 'newCount']],
     ]],
     ['key' => 'finance', 'icon' => 'wallet', 'children' => [
         ['key' => 'revenue', 'href' => '/finance/revenue', 'any' => ['finance.read']],
@@ -50,7 +51,6 @@ return [
         // Доход партнёра — только партнёру (второму CEO) и CEO; count — заявки, ждущие решения CEO
         ['key' => 'partner', 'href' => '/finance/partner', 'gate' => [PartnerService::class, 'navAllowed'], 'count' => [PartnerService::class, 'pendingCount']],
     ]],
-    ['key' => 'vacancies', 'href' => '/vacancies', 'icon' => 'briefcase', 'any' => ['vacancy.read'], 'count' => [VacancyService::class, 'newCount']],
     ['key' => 'accounting', 'href' => '/accounting', 'icon' => 'calculator', 'any' => ['accounting.read']],
     ['key' => 'kpi', 'href' => '/kpi', 'icon' => 'target', 'any' => ['kpi.read']],
     ['key' => 'attendance', 'href' => '/attendance', 'icon' => 'calendar-check', 'any' => ['attendance.read']],
