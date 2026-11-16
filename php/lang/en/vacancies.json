@@ -1,0 +1,189 @@
+{
+  "title": "Vacancies",
+  "subtitle": "Applications from fluggi.uz. They do not go to sales leads.",
+  "all": "All",
+  "search": "Name, phone, email, vacancy",
+  "empty": "No applications",
+  "emptyText": "New applications from the website will appear here automatically.",
+  "date": "Date",
+  "candidate": "Candidate",
+  "contacts": "Contacts",
+  "vacancy": "Vacancy",
+  "message": "Message",
+  "status": "Status",
+  "note": "Note",
+  "noVacancy": "no vacancy given",
+  "page": "Website page",
+  "saved": "Saved",
+  "deleted": "Application deleted",
+  "deleteConfirm": "Delete the application?",
+  "notifyTitle": "New job application",
+  "statuses": {
+    "NEW": "New",
+    "VIEWED": "Viewed",
+    "INTERVIEW": "Interview",
+    "HIRED": "Hired",
+    "REJECTED": "Rejected"
+  },
+  "age": "{n} y.o.",
+  "score": "Candidate score",
+  "noScore": "No test questionnaire — no score.",
+  "levels": {
+    "excellent": "Excellent candidate",
+    "strong": "Strong candidate",
+    "medium": "Average",
+    "weak": "Weak result"
+  },
+  "parts": {
+    "psych": "Psychological tests",
+    "skills": "Skills",
+    "languages": "Languages",
+    "education": "Education",
+    "experience": "Experience"
+  },
+  "redFlags": "Low scores",
+  "scoreHow": "Score = psych tests 40%, skills 25%, languages 15%, education 10%, experience 10%. Missing sections are re-weighted.",
+  "about": "About",
+  "skills": "Skills",
+  "education": "Education",
+  "languages": "Languages",
+  "psych": "Psychological tests",
+  "experience": "Work experience",
+  "testDefault": "Game test",
+  "duration": "{min} min",
+  "years": "{n} y.",
+  "decision": "HR decision",
+  "rescore": "Recalculate scores",
+  "rescored": "Scores recalculated: {n}",
+  "traits": {
+    "discipline": "Discipline",
+    "responsibility": "Responsibility",
+    "stress_resistance": "Stress resistance",
+    "teamwork": "Teamwork",
+    "learning": "Learning ability",
+    "communication": "Communication",
+    "initiative": "Initiative",
+    "stability": "Stress resistance"
+  },
+  "edu": {
+    "school": "school",
+    "college": "college",
+    "courses": "courses",
+    "bachelor": "bachelor",
+    "university": "university",
+    "master": "master",
+    "other": "education"
+  },
+  "lang": {
+    "ru": "Russian",
+    "uz": "Uzbek",
+    "en": "English",
+    "tr": "Turkish",
+    "kk": "Kazakh",
+    "kz": "Kazakh",
+    "de": "German",
+    "fr": "French",
+    "zh": "Chinese",
+    "ko": "Korean",
+    "ar": "Arabic"
+  },
+  "kanbanHint": "Drag a card to another status (on a phone pick the status in the card). The number is the candidate score.",
+  "moveFailed": "Could not change the status — reload the page",
+  "grade": "grade",
+  "gameLevel": "level {n}",
+  "scoreHowSite": "Scored by the website: qualities 60%, experience and skills 25%, form completeness 15%, minus penalties. A guide for HR, not a diagnosis.",
+  "gameCard": "Game questionnaire",
+  "motivators": "Motivators",
+  "badges": "Badges",
+  "attention": "Pay attention to",
+  "siteParts": {
+    "profile": "Qualities",
+    "fit": "Experience and skills",
+    "completeness": "Completeness",
+    "penalty": "Penalties"
+  },
+  "recommendation": {
+    "invite": "Invite to interview",
+    "interview": "Invite to interview",
+    "consider": "Consider",
+    "review": "Consider",
+    "reserve": "Keep in reserve",
+    "weak": "Weak match",
+    "reject": "Weak match"
+  },
+  "archetype": {
+    "stability": "Team pillar"
+  },
+  "exp": {
+    "none": "No experience",
+    "junior": "Junior",
+    "middle": "Middle",
+    "senior": "Senior"
+  },
+  "skill": {
+    "clients": "Working with clients",
+    "sales": "Sales"
+  },
+  "motivator": {
+    "growth": "Growth",
+    "team": "Team"
+  },
+  "badge": {
+    "learning": "Fast learner",
+    "stability": "Stress-resistant"
+  },
+  "flag": {
+    "too_fast": "Finished too fast",
+    "contradictory": "Contradictory answers",
+    "flat": "Same answer on all scales",
+    "same_answers": "Same answer on all scales"
+  },
+  "tabs": {
+    "applications": "Applications",
+    "postings": "Company vacancies"
+  },
+  "postings": {
+    "title": "Company vacancies",
+    "subtitle": "Create a vacancy — it appears on fluggi.uz right away.",
+    "new": "New vacancy",
+    "edit": "Edit vacancy",
+    "titleRu": "Title (Russian)",
+    "titleUz": "Title (Uzbek)",
+    "titleEn": "Title (English)",
+    "description": "Description, requirements, conditions",
+    "city": "City",
+    "salary": "Salary",
+    "salaryHint": "e.g. from 5,000,000 UZS",
+    "employment": "Employment",
+    "status": "Status",
+    "statusHint": "“Published” — visible on the website right after saving.",
+    "slug": "Address (latin)",
+    "slugHint": "Empty — made from the title. Links the vacancy to website applications.",
+    "sort": "Order",
+    "emp": {
+      "FULL": "Full-time",
+      "PART": "Part-time",
+      "REMOTE": "Remote",
+      "INTERN": "Internship"
+    },
+    "st": {
+      "DRAFT": "Draft",
+      "PUBLISHED": "Published",
+      "CLOSED": "Closed"
+    },
+    "apps": "Applications",
+    "publish": "Publish on the website",
+    "unpublish": "Remove from the website",
+    "createPublish": "Save",
+    "empty": "No vacancies",
+    "emptyText": "Add the first vacancy — it appears on the website after saving.",
+    "feedInfo": "The website takes published vacancies from:",
+    "created": "Vacancy saved as a draft",
+    "createdPublished": "Vacancy created and published on the website",
+    "saved": "Saved — changes are on the website immediately",
+    "publishedNow": "Vacancy published on the website",
+    "statusChanged": "Status changed, the website updates immediately",
+    "deleted": "Vacancy deleted",
+    "deleteConfirm": "Delete the vacancy?"
+  }
+}

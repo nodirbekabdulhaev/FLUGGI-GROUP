@@ -1,0 +1,48 @@
+# Сборка для виртуального хостинга Beget: после каждого push собранный код (без node_modules)
+# публикуется в ветку `beget`. На хостинге: bash deploy/beget/pull-update.sh
+name: Beget build
+
+on:
+  push:
+    branches: [main, claude/fluggi-crm-project-system-h3s3a3]
+  workflow_dispatch:
+
+concurrency:
+  group: beget-build
+  cancel-in-progress: true
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Сборка
+        run: BUNDLE_DIR="$RUNNER_TEMP/bundle" bash deploy/beget/build-bundle.sh
+
+      - name: Публикация в ветку beget
+        working-directory: ${{ runner.temp }}/bundle
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git init -q -b beget
+          git config user.name "github-actions[bot]"
+          git config user.email "41898099+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -q -m "Сборка ${GITHUB_SHA::7} из ${GITHUB_REF_NAME}"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" beget
+
+      - name: Архив для ручной загрузки
+        run: cd "$RUNNER_TEMP" && mv bundle fluggi && zip -qr fluggi-beget.zip fluggi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fluggi-beget
+          path: ${{ runner.temp }}/fluggi-beget.zip
+          retention-days: 14

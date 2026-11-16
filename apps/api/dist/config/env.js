@@ -1,0 +1,92 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.loadEnv = loadEnv;
+exports.resetEnvCache = resetEnvCache;
+const zod_1 = require("zod");
+const envSchema = zod_1.z.object({
+    NODE_ENV: zod_1.z.enum(['development', 'test', 'production']).default('development'),
+    PORT: zod_1.z.coerce.number().int().positive().default(4000),
+    DATABASE_URL: zod_1.z.string().min(1, 'DATABASE_URL обязателен'),
+    AUTH_SECRET: zod_1.z.string().min(32, 'AUTH_SECRET должен быть не короче 32 символов'),
+    APP_URL: zod_1.z.url().default('http://localhost:3000'),
+    SESSION_TTL_DAYS: zod_1.z.coerce.number().int().min(1).max(90).default(7),
+    LOG_LEVEL: zod_1.z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
+    /** Значение для express `trust proxy` (за Nginx / Next.js rewrite). */
+    TRUST_PROXY: zod_1.z.string().default('loopback, linklocal, uniquelocal'),
+    /** Отключает rate limit (только для тестов). */
+    /** Telegram-бот (ТЗ §53). Без токена уведомления только в CRM. */
+    TELEGRAM_BOT_TOKEN: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined),
+    TELEGRAM_BOT_USERNAME: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v?.replace(/^@/, '') || undefined),
+    TELEGRAM_WEBHOOK_SECRET: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined),
+    /** polling — бот сам забирает сообщения (локально, без домена); webhook — Telegram присылает их на /api/v1/telegram/webhook */
+    TELEGRAM_MODE: zod_1.z.enum(['polling', 'webhook']).default('polling'),
+    /** Секрет для POST /api/v1/internal/cron (виртуальный хостинг: фоновые задачи по cron). Пусто — эндпоинт выключен. */
+    CRON_SECRET: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined)
+        .pipe(zod_1.z.string().min(16, 'CRON_SECRET должен быть не короче 16 символов').optional()),
+    TELEGRAM_API_BASE: zod_1.z.url().default('https://api.telegram.org'),
+    /** Прокси для запросов к Telegram, если сервер не видит api.telegram.org напрямую: http://, https:// или socks5:// */
+    TELEGRAM_PROXY_URL: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined)
+        .pipe(zod_1.z
+        .string()
+        .regex(/^(https?|socks5):\/\/.+/, 'Ожидается http://, https:// или socks5://')
+        .optional()),
+    /**
+     * Instagram / Facebook (Meta): Директ, комментарии, лид-формы таргета.
+     * Секрет приложения — проверка подписи webhook; токен проверки — при подключении webhook;
+     * токен страницы — ответы из CRM и чтение лидов таргета. Без них интеграция выключена.
+     */
+    META_APP_SECRET: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined),
+    META_VERIFY_TOKEN: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined),
+    META_PAGE_ACCESS_TOKEN: zod_1.z
+        .string()
+        .optional()
+        .transform((v) => v || undefined),
+    META_GRAPH_BASE: zod_1.z.url().default('https://graph.facebook.com/v21.0'),
+    /** Планировщик (напоминания, отчёты). false — выключить (тесты, отдельный API без worker). */
+    SCHEDULER_ENABLED: zod_1.z
+        .enum(['true', 'false'])
+        .default('true')
+        .transform((v) => v === 'true'),
+    RATE_LIMIT_DISABLED: zod_1.z
+        .enum(['true', 'false'])
+        .default('false')
+        .transform((v) => v === 'true'),
+});
+let cached;
+function loadEnv() {
+    if (cached)
+        return cached;
+    const parsed = envSchema.safeParse(process.env);
+    if (!parsed.success) {
+        const issues = parsed.error.issues.map((i) => `  ${i.path.join('.')}: ${i.message}`).join('\n');
+        throw new Error(`Некорректные переменные окружения:\n${issues}`);
+    }
+    cached = parsed.data;
+    return cached;
+}
+/** Для тестов: сбросить кэш после изменения process.env. */
+function resetEnvCache() {
+    cached = undefined;
+}
+//# sourceMappingURL=env.js.map

@@ -1,0 +1,23 @@
+{
+  "nav": {
+    "dashboard": "Bosh sahifa",
+    "sales": "Sotuvlar",
+    "leads": "Lidlar",
+    "deals": "Bitimlar",
+    "clients": "Mijozlar",
+    "projects": "Loyihalar",
+    "tasks": "Vazifalar",
+    "team": "Jamoa",
+    "employees": "Xodimlar",
+    "finance": "Moliya",
+    "settings": "Sozlamalar",
+    "profile": "Profil",
+    "logout": "Chiqish"
+  },
+  "auth": {
+    "title": "Fluggi tizimiga kirish",
+    "email": "Email",
+    "password": "Parol",
+    "submit": "Kirish"
+  }
+}

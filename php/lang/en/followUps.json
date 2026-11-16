@@ -1,0 +1,42 @@
+{
+  "title": "Follow-ups",
+  "subtitle": "Client touchpoints after projects are completed",
+  "views": {
+    "due": "Due today",
+    "pending": "All open",
+    "closed": "Closed"
+  },
+  "kinds": {
+    "CONTACT": "Contact the client",
+    "NEW_PROJECT": "Offer a new project",
+    "REPEAT_SALE": "Repeat sale"
+  },
+  "statuses": {
+    "PENDING": "Pending",
+    "DONE": "Done",
+    "SKIPPED": "Skipped"
+  },
+  "client": "Client",
+  "kind": "Action",
+  "project": "Project",
+  "due": "Due",
+  "owner": "Manager",
+  "status": "Status",
+  "overdue": "{days, plural, one {# day} other {# days}}",
+  "complete": "Close",
+  "completeTitle": "Contact outcome",
+  "result": "Outcome",
+  "resultPlaceholder": "What was agreed",
+  "createDeal": "Create a “Repeat sale” deal",
+  "skip": "Skip",
+  "done": "Done",
+  "closed": "Follow-up closed",
+  "dealCreated": "Deal {number} created",
+  "emptyTitle": "No follow-ups",
+  "emptyText": "They appear automatically after projects are completed.",
+  "dealTitle": "Repeat sale",
+  "errors": {
+    "closed": "This follow-up is already closed",
+    "dealOnlyDone": "A deal can be created only when marking as done"
+  }
+}
