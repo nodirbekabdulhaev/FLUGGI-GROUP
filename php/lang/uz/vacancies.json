@@ -185,5 +185,9 @@
     "statusChanged": "Holat oʻzgardi, saytda darhol yangilanadi",
     "deleted": "Vakansiya oʻchirildi",
     "deleteConfirm": "Vakansiyani oʻchirasizmi?"
-  }
+  },
+  "resume": "Rezyume",
+  "downloadPdf": "PDF yuklab olish",
+  "openOnSite": "Saytda ochish",
+  "resumeHint": "«PDF yuklab olish» rezyumeni bosib chiqarish oynasi bilan ochadi — «PDF sifatida saqlash»ni tanlang."
 }

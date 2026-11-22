@@ -12,6 +12,10 @@ use Illuminate\Support\Facades\DB;
 /** Отклики на вакансии, пришедшие с сайта: список, статус, заметка, уведомление HR и CEO о новом отклике. */
 final class VacancyService
 {
+    /** Колонки для списка и канбана (без тяжёлого HTML резюме). */
+    public const LIST_COLUMNS = ['id', 'number', 'external_id', 'name', 'phone', 'email', 'message', 'vacancy_slug', 'vacancy_name', 'page_url', 'locale', 'utm', 'profile', 'assessment', 'score',
+        'score_level', 'score_parts', 'resume_url', 'site_created_at', 'status', 'comment', 'updated_by_id', 'created_at', 'updated_at', 'deleted_at'];
+
     public const STATUSES = ['NEW', 'VIEWED', 'INTERVIEW', 'HIRED', 'REJECTED'];
 
     /** Число новых откликов (бейдж в меню). */
@@ -22,7 +26,7 @@ final class VacancyService
 
     public static function query(?string $status, ?string $q): Builder
     {
-        return VacancyApplication::query()
+        return VacancyApplication::query()->select(self::LIST_COLUMNS)
             ->when($status && in_array($status, self::STATUSES, true), fn ($b) => $b->where('status', $status))
             ->when($q, fn ($b) => $b->where(fn ($w) => $w->where('name', 'like', '%'.$q.'%')->orWhere('phone', 'like', '%'.$q.'%')->orWhere('email', 'like', '%'.$q.'%')->orWhere('vacancy_name', 'like', '%'.$q.'%')))
             ->orderByDesc('created_at');
@@ -39,6 +43,10 @@ final class VacancyService
     {
         $ctx = is_array($in['context'] ?? null) ? $in['context'] : [];
         $profile = is_array($in['candidate'] ?? null) ? $in['candidate'] : null;
+        $resumeHtml = $profile['resume_html'] ?? null;
+        $resumeUrl = $profile['resume_url'] ?? null;
+        unset($profile['resume_html'], $profile['resume_url']);
+        $profile = $profile ?: null;
         $assessment = is_array($in['assessment'] ?? null) ? $in['assessment'] : null;
         $eval = $profile || $assessment ? CandidateScore::evaluate($profile ?? [], $assessment ?? []) : null;
         // Сайт сам считает оценку (score, grade A–D): берём её; иначе оцениваем по нашей логике
@@ -51,7 +59,7 @@ final class VacancyService
             'vacancy_slug' => $in['product']['slug'] ?? null, 'vacancy_name' => $in['product']['name'] ?? null,
             'page_url' => isset($ctx['page_url']) ? mb_substr((string) $ctx['page_url'], 0, 1000) : null, 'locale' => $ctx['locale'] ?? null,
             'utm' => ! empty($in['utm']) ? $in['utm'] : null, 'site_created_at' => $in['created_at'] ?? null,
-            'profile' => $profile, 'assessment' => $assessment,
+            'profile' => $profile, 'assessment' => $assessment, 'resume_html' => $resumeHtml, 'resume_url' => $resumeUrl,
             'score' => $eval['score'] ?? null, 'score_level' => $eval['level'] ?? null, 'score_parts' => $eval ? ['parts' => $eval['parts'], 'flags' => $eval['flags']] : null,
         ]));
         $ids = User::where('status', 'ACTIVE')->whereHas('role', fn ($q) => $q->whereIn('code', ['CEO', 'HR_ADMIN']))->pluck('id')->all();
@@ -64,7 +72,7 @@ final class VacancyService
     public static function rescoreAll(): int
     {
         $n = 0;
-        foreach (VacancyApplication::where(fn ($q) => $q->whereNotNull('profile')->orWhereNotNull('assessment'))->get() as $row) {
+        foreach (VacancyApplication::select(self::LIST_COLUMNS)->where(fn ($q) => $q->whereNotNull('profile')->orWhereNotNull('assessment'))->get() as $row) {
             if (is_numeric($row->assessment['score'] ?? null)) {
                 continue;    // оценку посчитал сайт
             }

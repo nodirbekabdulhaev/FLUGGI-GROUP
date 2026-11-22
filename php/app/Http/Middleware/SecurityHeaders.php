@@ -17,7 +17,8 @@ class SecurityHeaders
             // Публичная форма заявки встраивается на сайт компании через iframe (embed.js)
             $response->headers->set('Content-Security-Policy', 'frame-ancestors *');
         } else {
-            $response->headers->set('X-Frame-Options', 'DENY');
+            // Резюме кандидата показывается во фрейме карточки CRM (страница сама отдаёт строгий CSP)
+            $response->headers->set('X-Frame-Options', $request->is('vacancies/*/resume') ? 'SAMEORIGIN' : 'DENY');
         }
         $response->headers->set('Referrer-Policy', 'strict-origin-when-cross-origin');
         $response->headers->set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');

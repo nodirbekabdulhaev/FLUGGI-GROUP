@@ -42,6 +42,8 @@ class WebsiteLeadController extends Controller
             'context.locale' => ['nullable', 'string', 'max:5'],
             'context.demo_seconds' => ['nullable', 'integer', 'min:0'],
             'candidate' => ['nullable', 'array'],
+            'candidate.resume_html' => ['nullable', 'string', 'max:400000'],
+            'candidate.resume_url' => ['nullable', 'url:https', 'max:1000'],
             'candidate.photo_url' => ['nullable', 'url:https', 'max:500'],
             'candidate.about' => ['nullable', 'string', 'max:3000'],
             'candidate.city' => ['nullable', 'string', 'max:100'],

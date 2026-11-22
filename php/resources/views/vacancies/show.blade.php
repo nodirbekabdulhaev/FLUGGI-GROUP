@@ -67,6 +67,21 @@
         </div>
 
         <div class="space-y-4 lg:col-span-2">
+            @if ($hasResumeHtml || $a->resume_url)
+                <x-card :title="t('vacancies.resume')" class="vac-pop">
+                    <div class="mb-3 flex flex-wrap gap-2">
+                        @if ($hasResumeHtml)<a class="btn btn-primary btn-sm" href="/vacancies/{{ $a->id }}/resume?print=1" target="_blank" rel="noopener"><x-icon name="download" /> {{ t('vacancies.downloadPdf') }}</a>@endif
+                        @if ($a->resume_url)<a class="btn btn-outline btn-sm" href="{{ $a->resume_url }}" target="_blank" rel="noopener noreferrer"><x-icon name="external" /> {{ t('vacancies.openOnSite') }}</a>@endif
+                    </div>
+                    @if ($hasResumeHtml)
+                        <iframe src="/vacancies/{{ $a->id }}/resume" title="{{ t('vacancies.resume') }}" sandbox class="h-[640px] w-full rounded-lg border bg-white" loading="lazy"></iframe>
+                    @else
+                        <iframe src="{{ $a->resume_url }}" title="{{ t('vacancies.resume') }}" sandbox="allow-scripts allow-same-origin allow-modals allow-downloads" referrerpolicy="no-referrer" class="h-[640px] w-full rounded-lg border bg-white" loading="lazy"></iframe>
+                    @endif
+                    <p class="mt-2 text-xs text-muted-foreground">{{ t('vacancies.resumeHint') }}</p>
+                </x-card>
+            @endif
+
             @if (! empty($p['about']) || $a->message)
                 <x-card :title="t('vacancies.about')" class="vac-pop"><p class="whitespace-pre-line text-sm">{{ $p['about'] ?? $a->message }}</p>
                     @if (! empty($p['about']) && $a->message)<p class="mt-2 whitespace-pre-line border-t pt-2 text-sm text-muted-foreground">{{ $a->message }}</p>@endif</x-card>

@@ -185,5 +185,9 @@
     "statusChanged": "Status changed, the website updates immediately",
     "deleted": "Vacancy deleted",
     "deleteConfirm": "Delete the vacancy?"
-  }
+  },
+  "resume": "Resume",
+  "downloadPdf": "Download PDF",
+  "openOnSite": "Open on the website",
+  "resumeHint": "“Download PDF” opens the resume with the print dialog — choose “Save as PDF”."
 }

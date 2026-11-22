@@ -169,4 +169,28 @@ class WebsiteLeadsTest extends TestCase
         $this->assertSame(['Дизайнер'], array_column(array_column($this->getJson('/hooks/website-vacancies')->json('vacancies'), 'title'), 'ru'));
         $this->actingAsUser($this->user('MANAGER'))->post('/vacancies/postings', ['title_ru' => 'X', 'employment' => 'FULL', 'status' => 'DRAFT'])->assertForbidden();
     }
+
+    public function test_resume_page_is_stored_and_served_with_strict_csp(): void
+    {
+        $html = '<html><body><h1>Резюме Test Rezyume</h1><script>alert(1)</script></body></html>';
+        $r = $this->send($this->body(['external_id' => 'fluggi-web-12', 'type' => 'vacancy', 'candidate' => ['resume_html' => $html, 'resume_url' => 'https://fluggi.uz/resume/1?signature=abc']]));
+        $r->assertCreated();
+        $app = VacancyApplication::findOrFail($r->json('id'));
+        $this->assertSame([$html, 'https://fluggi.uz/resume/1?signature=abc'], [$app->resume_html, $app->resume_url]);
+        $this->assertArrayNotHasKey('resume_html', $app->profile ?? []);
+
+        $ceo = $this->user('CEO');
+        $page = $this->actingAsUser($ceo)->get('/vacancies/'.$app->id.'/resume');
+        $page->assertOk()->assertSee('Резюме Test Rezyume', false);
+        $this->assertStringContainsString('sandbox', $page->headers->get('Content-Security-Policy'));
+        $this->assertStringContainsString("default-src 'none'", $page->headers->get('Content-Security-Policy'));
+        $this->assertSame('SAMEORIGIN', $page->headers->get('X-Frame-Options'));
+        $this->assertStringNotContainsString('print()', $page->getContent());
+        $this->get('/vacancies/'.$app->id.'/resume?print=1')->assertOk()->assertSee('print()', false);
+        $this->get('/vacancies/'.$app->id)->assertOk()->assertSee('/vacancies/'.$app->id.'/resume', false)->assertSee('Скачать PDF');
+        $this->get('/vacancies')->assertOk();
+        $this->get('/vacancies?view=list')->assertOk();
+        $this->actingAsUser($this->user('MANAGER'))->get('/vacancies/'.$app->id.'/resume')->assertForbidden();
+        $this->send($this->body(['external_id' => 'fluggi-web-13', 'type' => 'vacancy', 'candidate' => ['resume_url' => 'http://insecure.example/r']]))->assertStatus(422);
+    }
 }

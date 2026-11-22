@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\Response;
 
 /** Раздел «Вакансии»: отклики с сайта, статусы и заметки HR. */
 class VacancyController extends Controller
@@ -37,7 +38,28 @@ class VacancyController extends Controller
             $a->refresh();
         }
 
-        return view('vacancies.show', ['a' => $a, 'canManage' => access()->can('vacancy.manage')]);
+        return view('vacancies.show', ['a' => $a, 'hasResumeHtml' => filled($a->resume_html), 'canManage' => access()->can('vacancy.manage')]);
+    }
+
+    /**
+     * Резюме кандидата (HTML от сайта) для фрейма карточки и печати в PDF. Содержимое чужое, поэтому строгий CSP: без скриптов сайта,
+     * без запросов на чужие адреса, кроме картинок и стилей по https; сценарий печати выполняется только по одноразовому nonce.
+     */
+    public function resume(Request $request, string $id): Response
+    {
+        $html = VacancyApplication::whereKey($id)->value('resume_html');
+        abort_if($html === null || $html === '', 404);
+        $nonce = base64_encode(random_bytes(16));
+        if ($request->boolean('print')) {
+            $script = '<script nonce="'.$nonce.'">addEventListener("load",function(){setTimeout(function(){print()},300)})</script>';
+            $html = stripos($html, '</body>') !== false ? preg_replace('~</body>~i', $script.'</body>', $html, 1) : $html.$script;
+        }
+
+        return response($html, 200, [
+            'Content-Type' => 'text/html; charset=utf-8',
+            'Content-Security-Policy' => "default-src 'none'; img-src https: data:; style-src 'unsafe-inline' https:; font-src https: data:; script-src 'nonce-".$nonce."'; sandbox allow-modals allow-scripts",
+            'Referrer-Policy' => 'no-referrer',
+        ]);
     }
 
     public function rescore(): RedirectResponse
