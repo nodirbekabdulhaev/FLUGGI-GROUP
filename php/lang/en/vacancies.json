@@ -189,5 +189,6 @@
   "resume": "Resume",
   "downloadPdf": "Download PDF",
   "openOnSite": "Open on the website",
-  "resumeHint": "“Download PDF” opens the resume with the print dialog — choose “Save as PDF”."
+  "resumeHint": "“Download PDF” opens the resume with the print dialog — choose “Save as PDF”.",
+  "sourceText": "Original text from the website"
 }

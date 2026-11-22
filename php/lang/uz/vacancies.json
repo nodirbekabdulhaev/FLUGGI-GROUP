@@ -189,5 +189,6 @@
   "resume": "Rezyume",
   "downloadPdf": "PDF yuklab olish",
   "openOnSite": "Saytda ochish",
-  "resumeHint": "«PDF yuklab olish» rezyumeni bosib chiqarish oynasi bilan ochadi — «PDF sifatida saqlash»ni tanlang."
+  "resumeHint": "«PDF yuklab olish» rezyumeni bosib chiqarish oynasi bilan ochadi — «PDF sifatida saqlash»ni tanlang.",
+  "sourceText": "Saytdan kelgan arizaning asl matni"
 }

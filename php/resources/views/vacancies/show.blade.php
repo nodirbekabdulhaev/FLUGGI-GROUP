@@ -82,9 +82,9 @@
                 </x-card>
             @endif
 
-            @if (! empty($p['about']) || $a->message)
-                <x-card :title="t('vacancies.about')" class="vac-pop"><p class="whitespace-pre-line text-sm">{{ $p['about'] ?? $a->message }}</p>
-                    @if (! empty($p['about']) && $a->message)<p class="mt-2 whitespace-pre-line border-t pt-2 text-sm text-muted-foreground">{{ $a->message }}</p>@endif</x-card>
+            @php $structured = $site || ! empty($p['skills']) || ! empty($p['languages']) || ! empty($as['traits']); @endphp
+            @if (! empty($p['about']) || (! $structured && $a->message))
+                <x-card :title="t('vacancies.about')" class="vac-pop"><p class="whitespace-pre-line text-sm">{{ $p['about'] ?? $a->message }}</p></x-card>
             @endif
 
             @if (! empty($p['skills']))
@@ -160,6 +160,10 @@
                             @if (isset($e['years']) && is_numeric($e['years']))<span class="text-muted-foreground"> · {{ t('vacancies.years', ['n' => $e['years']]) }}</span>@endif</li>
                     @endforeach</ul>
                 </x-card>
+            @endif
+
+            @if ($structured && $a->message)
+                <details class="card px-4 py-3 text-sm"><summary class="cursor-pointer font-medium">{{ t('vacancies.sourceText') }}</summary><p class="mt-2 whitespace-pre-line text-muted-foreground">{{ $a->message }}</p></details>
             @endif
 
             @if ($canManage)
