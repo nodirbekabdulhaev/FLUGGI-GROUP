@@ -47,22 +47,14 @@ class WebsiteLeadController extends Controller
             'candidate.city' => ['nullable', 'string', 'max:100'],
             'candidate.birth_year' => ['nullable', 'integer', 'min:1940', 'max:2020'],
             'candidate.experience_years' => ['nullable', 'numeric', 'min:0', 'max:60'],
-            'candidate.education' => ['nullable', 'array', 'max:10'],
-            'candidate.education.*.level' => ['nullable', 'string', 'max:20'],
-            'candidate.education.*.name' => ['nullable', 'string', 'max:191'],
-            'candidate.education.*.field' => ['nullable', 'string', 'max:191'],
-            'candidate.education.*.year_from' => ['nullable', 'integer', 'min:1950', 'max:2100'],
-            'candidate.education.*.year_to' => ['nullable', 'integer', 'min:1950', 'max:2100'],
+            'candidate.education' => ['nullable', 'array', 'max:20'],
             'candidate.skills' => ['nullable', 'array', 'max:30'],
             'candidate.skills.*.name' => ['required_with:candidate.skills', 'string', 'max:60'],
             'candidate.skills.*.level' => ['nullable', 'numeric', 'min:1', 'max:5'],
             'candidate.languages' => ['nullable', 'array', 'max:10'],
             'candidate.languages.*.code' => ['required_with:candidate.languages', 'string', 'max:5'],
             'candidate.languages.*.level' => ['nullable', 'string', 'max:10'],
-            'candidate.experience' => ['nullable', 'array', 'max:10'],
-            'candidate.experience.*.company' => ['nullable', 'string', 'max:191'],
-            'candidate.experience.*.position' => ['nullable', 'string', 'max:191'],
-            'candidate.experience.*.years' => ['nullable', 'numeric', 'min:0', 'max:60'],
+            'candidate.experience' => ['nullable', 'array', 'max:20'],
             'candidate.links' => ['nullable', 'array', 'max:5'],
             'candidate.links.*' => ['url:http,https', 'max:500'],
             'assessment' => ['nullable', 'array'],
@@ -96,6 +88,13 @@ class WebsiteLeadController extends Controller
             return response()->json(['message' => 'Validation failed', 'errors' => $v->errors()], 422);
         }
         $data = $v->validated();
+        // Образование и опыт: ключи записей у сайта могут быть любыми — сохраняем только скалярные значения, длину ограничиваем
+        foreach (['education', 'experience'] as $k) {
+            if (isset($data['candidate'][$k]) && is_array($data['candidate'][$k])) {
+                $data['candidate'][$k] = collect($data['candidate'][$k])->filter(fn ($x) => is_array($x))->take(20)->map(fn (array $row) => collect($row)->filter(fn ($x) => is_scalar($x) && $x !== '')
+                    ->map(fn ($x) => is_string($x) ? mb_substr($x, 0, 300) : $x)->take(12)->all())->values()->all();
+            }
+        }
         foreach (['utm', 'utm_last'] as $k) {
             $data[$k] = is_array($data[$k] ?? null) ? array_map(fn ($x) => is_scalar($x) ? mb_substr((string) $x, 0, 300) : null, array_slice($data[$k], 0, 10, true)) : null;
         }

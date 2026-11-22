@@ -99,7 +99,8 @@ class WebsiteLeadsTest extends TestCase
     public function test_candidate_card_from_game_form_is_scored_and_shown(): void
     {
         $candidate = ['photo_url' => 'https://example.com/photo.jpg', 'about' => 'Люблю чистый код', 'city' => 'Namangan', 'birth_year' => 2001, 'experience_years' => 2,
-            'education' => [['level' => 'college', 'name' => 'Test kollej', 'year_from' => 2016, 'year_to' => 2019]],
+            'education' => [['level' => 'college', 'name' => 'Test kollej', 'year_from' => 2016, 'year_to' => 2019], ['level' => 'Высшее образование, заочное', 'institution' => 'Test universitet', 'period' => '2019–2023']],
+            'experience' => [['company' => 'Test Firma', 'position' => 'Menejer', 'period' => '2022–2024']],
             'skills' => [['name' => 'PHP', 'level' => 4], ['name' => 'SQL', 'level' => 5]],
             'languages' => [['code' => 'ru', 'level' => 'native'], ['code' => 'en', 'level' => 'b2']]];
         $assessment = ['test_name' => 'Fluggi Quest', 'duration_seconds' => 600, 'traits' => ['discipline' => 80, 'responsibility' => 80, 'stress_resistance' => 80, 'teamwork' => 80, 'learning' => 80, 'communication' => 80]];
@@ -110,7 +111,7 @@ class WebsiteLeadsTest extends TestCase
         $this->assertSame([74, 'strong'], [$app->score, $app->score_level]);
         $this->assertSame([80, 68, 60, 100, 40], array_column($app->score_parts['parts'], 'score'));
 
-        $this->actingAsUser($this->user('CEO'))->get('/vacancies/'.$app->id)->assertOk()->assertSee('Test kollej')->assertSee('🇷🇺')->assertSee('Fluggi Quest')->assertSee('74');
+        $this->actingAsUser($this->user('CEO'))->get('/vacancies/'.$app->id)->assertOk()->assertSee('Test kollej')->assertSee('Test universitet')->assertSee('2019–2023')->assertSee('Test Firma')->assertSee('2022–2024')->assertSee('🇷🇺')->assertSee('Fluggi Quest')->assertSee('74');
         $this->assertSame('VIEWED', $app->fresh()->status);
         // Kanban: карточка в колонке «Просмотрен», перенос в «Собеседование» — JSON-запросом
         $this->get('/vacancies')->assertOk()->assertSee('data-card="'.$app->id.'"', false);

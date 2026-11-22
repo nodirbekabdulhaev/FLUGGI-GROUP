@@ -88,10 +88,15 @@
                 <x-card :title="t('vacancies.education')" class="vac-pop">
                     <ul class="space-y-2">
                         @foreach ($p['education'] as $e)
+                            @php
+                                $eName = $e['name'] ?? $e['institution'] ?? $e['school'] ?? $e['title'] ?? null;
+                                $eLevel = isset($e['level']) ? $lbl('edu', $e['level']) : null;
+                                $eUsed = ['name', 'institution', 'school', 'title', 'level'];
+                                $eRest = collect($e)->except($eUsed)->filter(fn ($x) => is_scalar($x))->map(fn ($x) => (string) $x)->implode(' · ');
+                            @endphp
                             <li class="flex gap-3 text-sm"><span class="mt-0.5 text-lg">{{ ['school' => '🏫', 'college' => '🎓', 'courses' => '📚', 'bachelor' => '🏛️', 'university' => '🏛️', 'master' => '🎓'][$e['level'] ?? ''] ?? '📘' }}</span>
-                                <span><span class="font-medium">{{ $e['name'] ?? '—' }}</span> <span class="text-muted-foreground">· {{ t('vacancies.edu.'.($e['level'] ?? 'other')) }}</span>
-                                    @if (! empty($e['field']))<span class="block text-muted-foreground">{{ $e['field'] }}</span>@endif
-                                    @if (! empty($e['year_from']) || ! empty($e['year_to']))<span class="block text-xs text-muted-foreground">{{ $e['year_from'] ?? '' }} — {{ $e['year_to'] ?? '…' }}</span>@endif</span></li>
+                                <span><span class="font-medium">{{ $eName ?? $eLevel ?? '—' }}</span>@if ($eName && $eLevel) <span class="text-muted-foreground">· {{ $eLevel }}</span>@endif
+                                    @if ($eRest)<span class="block text-xs text-muted-foreground">{{ $eRest }}</span>@endif</span></li>
                         @endforeach
                     </ul>
                 </x-card>
@@ -134,7 +139,11 @@
 
             @if (! empty($p['experience']))
                 <x-card :title="t('vacancies.experience')" class="vac-pop">
-                    <ul class="space-y-1 text-sm">@foreach ($p['experience'] as $e)<li><span class="font-medium">{{ $e['position'] ?? '—' }}</span> · {{ $e['company'] ?? '—' }}@if (isset($e['years'])) <span class="text-muted-foreground">· {{ t('vacancies.years', ['n' => $e['years']]) }}</span>@endif</li>@endforeach</ul>
+                    <ul class="space-y-1 text-sm">@foreach ($p['experience'] as $e)
+                        <li><span class="font-medium">{{ $e['position'] ?? '—' }}</span>@if (! empty($e['company'])) · {{ $e['company'] }}@endif
+                            @if (! empty($e['period']))<span class="text-muted-foreground"> · {{ $e['period'] }}</span>@endif
+                            @if (isset($e['years']) && is_numeric($e['years']))<span class="text-muted-foreground"> · {{ t('vacancies.years', ['n' => $e['years']]) }}</span>@endif</li>
+                    @endforeach</ul>
                 </x-card>
             @endif
 
