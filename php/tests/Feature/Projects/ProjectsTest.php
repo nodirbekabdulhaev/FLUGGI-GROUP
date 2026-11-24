@@ -56,6 +56,13 @@ class ProjectsTest extends TestCase
         $this->post("/projects/{$p->id}/members", ['user_id' => $this->executor->id])->assertSessionHasNoErrors();
     }
 
+    public function test_ceo_can_add_himself_to_project_team(): void
+    {
+        $p = $this->project();
+        $this->actingAsUser($this->ceo)->post("/projects/{$p->id}/members", ['user_id' => $this->ceo->id])->assertSessionHasNoErrors();
+        $this->assertTrue(ProjectMember::where('project_id', $p->id)->where('user_id', $this->ceo->id)->where('status', 'ACTIVE')->exists());
+    }
+
     public function test_project_manager_can_be_added_to_project_team(): void
     {
         $p = $this->project();

@@ -97,7 +97,7 @@
     "cancelReason": "Specify the reason for cancelling the project",
     "closed": "The project is closed",
     "deadlineBeforeStart": "The deadline is earlier than the start date",
-    "memberRole": "Executors, managers, Sales heads (ROP) and project managers can be added to a project team",
+    "memberRole": "Executors, managers, Sales heads (ROP), project managers and the CEO can be added to a project team",
     "noDirection": "No such direction",
     "openTasks": "The project cannot be completed: open tasks — {count}. Complete or cancel them",
     "ropRole": "The project’s Sales head (ROP) must be an employee with the ROP or CEO role",

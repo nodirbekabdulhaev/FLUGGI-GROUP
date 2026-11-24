@@ -262,11 +262,11 @@ final class ProjectService
         });
     }
 
-    /** Кого можно добавить в команду: активные исполнители, менеджеры, РОП и проект-менеджеры. */
+    /** Кого можно добавить в команду: активные исполнители, менеджеры, РОП, проект-менеджеры и CEO. */
     public static function candidates(): Collection
     {
         return User::with(['role:id,code', 'employee:id,user_id,specialty,specialties'])->where('status', 'ACTIVE')->where('project_participant', true)
-            ->whereHas('role', fn ($q) => $q->whereIn('code', ['EXECUTOR', 'MANAGER', 'ROP', 'PROJECT_MANAGER']))
+            ->whereHas('role', fn ($q) => $q->whereIn('code', ['EXECUTOR', 'MANAGER', 'ROP', 'PROJECT_MANAGER', 'CEO']))
             ->orderBy('full_name')->get();
     }
 
@@ -299,7 +299,7 @@ final class ProjectService
         if (! $user) {
             throw new BusinessRule(t('projects.errors.userNotFound'), ['user_id' => t('projects.errors.userNotFound')]);
         }
-        if (! in_array($user->role->code, ['EXECUTOR', 'MANAGER', 'ROP', 'PROJECT_MANAGER'], true)) {
+        if (! in_array($user->role->code, ['EXECUTOR', 'MANAGER', 'ROP', 'PROJECT_MANAGER', 'CEO'], true)) {
             throw new BusinessRule(t('projects.errors.memberRole'), ['user_id' => t('projects.errors.memberRole')]);
         }
         if (! $user->project_participant) {
