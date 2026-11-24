@@ -13,6 +13,7 @@ use App\Models\StoredFile;
 use App\Models\Task;
 use App\Models\TaskStatusHistory;
 use App\Models\User;
+use App\Services\Projects\ProjectService;
 use App\Services\Projects\TaskService;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -32,6 +33,16 @@ class ProjectsTest extends TestCase
     private function smmTemplate(): ProjectTemplate
     {
         return ProjectTemplate::where('name', 'SMM-проект')->firstOrFail();
+    }
+
+    public function test_project_manager_can_be_added_to_project_team(): void
+    {
+        $p = $this->project();
+        $pm = $this->user('PROJECT_MANAGER', attrs: ['full_name' => 'Test Proekt Menejer']);
+        $this->actingAsUser($this->rop)->post("/projects/{$p->id}/members", ['user_id' => $pm->id])->assertSessionHasNoErrors();
+        $this->assertTrue(ProjectMember::where('project_id', $p->id)->where('user_id', $pm->id)->where('status', 'ACTIVE')->exists());
+        $this->assertContains($pm->id, ProjectService::candidates()->pluck('id')->all());
+        $this->get("/projects/{$p->id}")->assertOk()->assertSee('Test Proekt Menejer');
     }
 
     public function test_template_team_kanban_review_and_completion(): void

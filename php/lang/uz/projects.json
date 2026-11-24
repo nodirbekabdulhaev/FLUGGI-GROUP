@@ -96,7 +96,7 @@
     "cancelReason": "Loyihani bekor qilish sababini koʻrsating",
     "closed": "Loyiha yopilgan",
     "deadlineBeforeStart": "Muddat boshlanish sanasidan oldin",
-    "memberRole": "Loyiha jamoasiga ijrochilar, menejerlar va savdo boʻlimi rahbarlari tayinlanadi",
+    "memberRole": "Loyiha jamoasiga ijrochilar, menejerlar, savdo boʻlimi rahbarlari va loyiha menejerlari tayinlanadi",
     "noDirection": "Bunday yoʻnalish yoʻq",
     "openTasks": "Loyihani yakunlab boʻlmaydi: ochiq vazifalar — {count}. Ularni yakunlang yoki bekor qiling",
     "ropRole": "Loyiha rahbari — savdo boʻlimi rahbari yoki CEO roli bilan xodim",
