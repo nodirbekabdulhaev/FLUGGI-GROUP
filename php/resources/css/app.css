@@ -102,9 +102,9 @@
     .kanban-title { @apply min-w-0 flex-1 truncate text-sm font-semibold; color: color-mix(in srgb, var(--col) 50%, #1e2a44); }
     .kanban-sub { @apply px-3 pb-2 text-xs; color: color-mix(in srgb, var(--col) 30%, #5b6b82); }
     .kanban-add-icon { @apply flex size-7 shrink-0 items-center justify-center rounded-full transition-colors hover:bg-white/70; color: color-mix(in srgb, var(--col) 60%, #1e2a44); }
-    .kanban-body { @apply grid min-h-24 flex-1 content-start gap-2 rounded-xl p-2 transition-colors; }
+    .kanban-body { @apply grid min-h-24 min-w-0 flex-1 content-start gap-2 rounded-xl p-2 transition-colors; grid-template-columns: minmax(0, 1fr); }
     .kanban-body.is-over { background: color-mix(in srgb, var(--col) 22%, transparent); outline: 2px dashed color-mix(in srgb, var(--col) 55%, white); outline-offset: -4px; }
-    .kanban-card { @apply rounded-xl border border-white bg-white p-3 text-sm shadow-soft transition-shadow hover:shadow-lift; }
+    .kanban-card { @apply min-w-0 max-w-full overflow-hidden rounded-xl border border-white bg-white p-3 text-sm shadow-soft transition-shadow hover:shadow-lift; overflow-wrap: anywhere; }
     .kanban-add { @apply mx-2 mb-2 flex h-10 items-center justify-center gap-1.5 rounded-xl border-2 border-dashed text-sm font-medium transition-colors; border-color: color-mix(in srgb, var(--col) 45%, white); color: color-mix(in srgb, var(--col) 60%, #1e2a44); background: rgb(255 255 255 / 0.35); }
     .kanban-add:hover { background: rgb(255 255 255 / 0.7); }
     .kanban-empty { @apply py-6 text-center text-xs; color: color-mix(in srgb, var(--col) 35%, #5b6b82); }
