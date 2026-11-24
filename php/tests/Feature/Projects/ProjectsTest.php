@@ -35,6 +35,16 @@ class ProjectsTest extends TestCase
         return ProjectTemplate::where('name', 'SMM-проект')->firstOrFail();
     }
 
+    public function test_rop_and_manager_get_20_percent_workload_by_default(): void
+    {
+        $p = $this->project();
+        $this->actingAsUser($this->rop);
+        $this->post("/projects/{$p->id}/members", ['user_id' => $this->manager->id])->assertSessionHasNoErrors();
+        $this->assertSame(20, (int) ProjectMember::where('project_id', $p->id)->where('user_id', $this->manager->id)->value('workload_pct'));
+        $this->post("/projects/{$p->id}/members", ['user_id' => $this->executor->id])->assertSessionHasNoErrors();
+        $this->assertNull(ProjectMember::where('project_id', $p->id)->where('user_id', $this->executor->id)->value('workload_pct'));
+    }
+
     public function test_project_manager_can_be_added_to_project_team(): void
     {
         $p = $this->project();

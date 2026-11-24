@@ -314,7 +314,7 @@ final class ProjectService
             $data = [
                 'role' => $role,
                 'roles' => $roles,
-                'workload_pct' => $input['workload_pct'] ?? null,
+                'workload_pct' => ($input['workload_pct'] ?? null) !== null && $input['workload_pct'] !== '' ? $input['workload_pct'] : (in_array($user->role->code, ['ROP', 'MANAGER'], true) ? 20 : null),
                 'deadline' => ($input['deadline'] ?? null) ?: null,
                 'status' => 'ACTIVE',
                 'assigned_by_id' => access()->id(),

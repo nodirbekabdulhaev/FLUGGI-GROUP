@@ -67,11 +67,11 @@
 @if ($canAssign)
     <x-modal name="member-add" :title="t('projects.team.add')" :open="$errors->hasAny(['user_id', 'workload_pct', 'roles', 'roles.*']) && ! old('_member')">
         <form method="POST" action="/projects/{{ $p->id }}/members" class="space-y-4"
-              x-data="{ roles: @js(array_values(array_filter((array) old('roles', [])))), spec: @js($candidates->mapWithKeys(fn ($c) => [$c->id => $c->employee?->specialtyList() ?? []])->all()) }">
+              x-data="{ load: @js(old('workload_pct', '')), lead: @js($candidates->filter(fn ($c) => in_array($c->role->code, ['ROP', 'MANAGER'], true))->pluck('id')->flip()->map(fn () => true)->all()), roles: @js(array_values(array_filter((array) old('roles', [])))), spec: @js($candidates->mapWithKeys(fn ($c) => [$c->id => $c->employee?->specialtyList() ?? []])->all()) }">
             @csrf
             <div>
                 <label class="label" for="m-user">{{ t('projects.team.user') }}<span class="text-danger"> *</span></label>
-                <select id="m-user" name="user_id" class="input" required @change="roles = [...(spec[$event.target.value] || [])]">
+                <select id="m-user" name="user_id" class="input" required @change="roles = [...(spec[$event.target.value] || [])]; load = lead[$event.target.value] ? 20 : ''">
                     <option value="">—</option>
                     @foreach ($candidates as $c)
                         @php($cs = $c->employee?->specialtyList() ?? [])
@@ -82,7 +82,9 @@
             </div>
             <x-specialty-picker name="roles" model="roles" id="m-roles" />
             <div class="grid gap-4 sm:grid-cols-2">
-                <x-field name="workload_pct" type="number" min="0" max="100" :label="t('projects.team.workload')" />
+                <div><label class="label" for="m-load">{{ t('projects.team.workload') }}</label>
+                    <input id="m-load" name="workload_pct" type="number" min="0" max="100" class="input" x-model="load">
+                    <p class="hint">{{ t('projects.team.workloadLeadHint') }}</p></div>
                 <x-field name="deadline" type="date" :label="t('projects.team.deadline')" />
             </div>
             <div class="flex justify-end gap-2">

@@ -6,6 +6,7 @@ use App\Exceptions\BusinessRule;
 use App\Models\ProjectCostLine;
 use App\Models\ProjectMember;
 use App\Services\Projects\ProjectAccess;
+use App\Services\Projects\ProjectService;
 use App\Support\Format;
 use Brick\Math\BigDecimal;
 use Illuminate\Support\Collection;
@@ -156,7 +157,12 @@ final class CostLineService
         }
         if (! empty($input['assignee_id'])
             && ! ProjectMember::where('project_id', $l->project_id)->where('user_id', $input['assignee_id'])->where('status', 'ACTIVE')->exists()) {
-            throw new BusinessRule(t('costLines.errors.notMember'), ['assignee_id' => t('costLines.errors.notMember')]);
+            // Не в команде проекта — добавляем его в команду с позицией этой строки (нужно право назначать в проекте)
+            if (! ProjectService::candidates()->first(fn ($u) => $u->id === $input['assignee_id'] && $u->role->code === 'EXECUTOR')) {
+                throw new BusinessRule(t('costLines.errors.notMember'), ['assignee_id' => t('costLines.errors.notMember')]);
+            }
+            ProjectService::addMember($l->project_id, ['user_id' => $input['assignee_id'], 'roles' => $l->specialty ? [$l->specialty] : []]);
+            $l->refresh();
         }
         DB::transaction(fn () => $l->update(array_intersect_key($input, array_flip(['quantity', 'rate', 'assignee_id'])) + ['status' => 'PLANNED', 'expense_id' => null]));
     }

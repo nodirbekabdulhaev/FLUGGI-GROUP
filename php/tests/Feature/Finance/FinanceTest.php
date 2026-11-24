@@ -13,6 +13,7 @@ use App\Models\OtherIncome;
 use App\Models\Payment;
 use App\Models\Project;
 use App\Models\ProjectCostLine;
+use App\Models\ProjectMember;
 use App\Models\Proposal;
 use App\Models\Tariff;
 use App\Models\WorkItem;
@@ -231,6 +232,11 @@ class FinanceTest extends TestCase
         $cover = ProjectCostLine::where('project_id', $p->id)->whereNull('assignee_id')->first();
         $ceo->post("/finance/cost-lines/{$cover->id}/accrue")->assertSessionHas('error');
         $ceo->patch("/finance/cost-lines/{$cover->id}", ['assignee_id' => $this->otherManager->id])->assertSessionHasErrors('assignee_id');
+        // Исполнитель не в команде проекта — при назначении строки он добавляется в команду сам
+        $outsider = $this->user('EXECUTOR', attrs: ['full_name' => 'Test Ispolnitel'], employee: ['specialty' => 'DESIGNER']);
+        $ceo->patch("/finance/cost-lines/{$cover->id}", ['assignee_id' => $outsider->id, 'quantity' => '1', 'rate' => '70000'])->assertSessionHasNoErrors();
+        $this->assertSame($outsider->id, $cover->fresh()->assignee_id);
+        $this->assertTrue(ProjectMember::where('project_id', $cover->project_id)->where('user_id', $outsider->id)->where('status', 'ACTIVE')->exists());
         $ceo->post("/finance/cost-lines/{$line->id}/accrue")->assertSessionHasNoErrors();
         $expense = Expense::where('category', 'EXECUTOR')->firstOrFail();
         $this->assertSame([$videographer->id, '960000.00'], [$expense->payee_user_id, (string) $expense->amount_uzs]);

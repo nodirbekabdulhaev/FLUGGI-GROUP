@@ -24,6 +24,9 @@
     }
     $canEditLines = access()->can('expense.update');
     $members = $p->team->where('status', 'ACTIVE');
+    // Исполнителем строки плана можно выбрать любого активного исполнителя: если его нет в команде, он добавится в неё сам
+    $memberIds = $members->pluck('user_id')->all();
+    $others = $canEditLines ? \App\Services\Projects\ProjectService::candidates()->filter(fn ($u) => $u->role->code === 'EXECUTOR' && ! in_array($u->id, $memberIds, true)) : collect();
     $editing = request('edit') ? $expenses['page']->getCollection()->firstWhere('id', request('edit')) : null;
     $editing = $editing?->can_edit ? $editing : null;
     $opts = \App\Http\Controllers\Finance\ExpensesController::formOptions($editing, $p->id);
@@ -71,11 +74,37 @@
                 </table>
             </div>
             @if ($canEditLines)
+                @php
+                    // Кому подходит строка: сначала участники команды и исполнители с нужной специальностью, остальные — ниже
+                    $hasSpec = fn ($u, $l) => in_array($l->specialty, $u->employee?->specialtyList() ?? [], true);
+                    $assigneeOptions = function ($l) use ($members, $others, $hasSpec) {
+                        $opts = [];
+                        foreach ($members->sortByDesc(fn ($m) => $m->user && $hasSpec($m->user, $l)) as $m) {
+                            $opts[$m->user_id] = $m->user->full_name;
+                        }
+                        foreach ($others->sortByDesc(fn ($u) => $hasSpec($u, $l)) as $u) {
+                            $opts[$u->id] = $u->full_name.' · '.t('costLines.willJoin');
+                        }
+
+                        return $opts;
+                    };
+                    // Если на специальность строки ровно один подходящий человек — он предложен сразу
+                    $suggest = [];
+                    foreach ($costLines->where('view_status', 'PLANNED') as $l) {
+                        if ($l->assignee_id || ! $l->specialty) {
+                            continue;
+                        }
+                        $fit = $members->filter(fn ($m) => $m->user && $hasSpec($m->user, $l))->pluck('user_id')->merge($others->filter(fn ($u) => $hasSpec($u, $l))->pluck('id'))->unique();
+                        if ($fit->count() === 1) {
+                            $suggest[$l->id] = $fit->first();
+                        }
+                    }
+                @endphp
                 @foreach ($costLines->where('view_status', 'PLANNED') as $l)
                     <x-modal :name="'cl-'.$l->id" :title="t('costLines.edit').': '.$l->label">
                         <form method="POST" action="/finance/cost-lines/{{ $l->id }}" class="space-y-4">
                             @csrf @method('PATCH')
-                            <x-select name="assignee_id" :id="'cl-user-'.$l->id" :label="t('costLines.assignee')" :hint="t('costLines.assigneeHint')" :value="$l->assignee_id" :placeholder="t('costLines.notAssigned')" :options="$members->pluck('user.full_name', 'user_id')->all()" />
+                            <x-select name="assignee_id" :id="'cl-user-'.$l->id" :label="t('costLines.assignee')" :hint="t('costLines.assigneeHint')" :placeholder="t('costLines.notAssigned')" :value="$l->assignee_id ?: $suggest[$l->id] ?? null" :options="$assigneeOptions($l)" />
                             <div class="grid gap-4 sm:grid-cols-2">
                                 @if ($l->kind === 'PIECE')
                                     <x-field name="quantity" :id="'cl-qty-'.$l->id" type="number" step="any" min="0.01" :label="t('costLines.quantity')" :value="rtrim(rtrim((string) $l->quantity, '0'), '.')" required />

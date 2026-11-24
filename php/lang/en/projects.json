@@ -84,7 +84,8 @@
     "positions": "Positions",
     "positionsHint": "You can pick several — each position is paid separately. The first one picked is the main one.",
     "mainPosition": "main",
-    "edit": "Positions and workload: {name}"
+    "edit": "Positions and workload: {name}",
+    "workloadLeadHint": "Default 20% for a Sales head (ROP) or a manager"
   },
   "direction": "Direction",
   "allDirections": "All directions",

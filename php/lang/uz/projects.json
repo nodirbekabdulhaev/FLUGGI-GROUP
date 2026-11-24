@@ -84,7 +84,8 @@
     "positions": "Lavozimlar",
     "positionsHint": "Bir nechtasini tanlash mumkin — har bir lavozim uchun alohida toʻlanadi. Birinchi tanlangani — asosiy.",
     "mainPosition": "asosiy",
-    "edit": "Lavozimlar va bandlik: {name}"
+    "edit": "Lavozimlar va bandlik: {name}",
+    "workloadLeadHint": "Savdo boʻlimi rahbari va menejer uchun odatiy 20%"
   },
   "direction": "Yoʻnalish",
   "allDirections": "Barcha yoʻnalishlar",

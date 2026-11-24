@@ -4,7 +4,7 @@
   "empty": "No plan: the accepted proposal has no package selected, or the package has no executor work items.",
   "work": "Work",
   "assignee": "Executor",
-  "assigneeHint": "Only active members of the project team. The employee’s personal rate is applied on assignment.",
+  "assigneeHint": "Team members and other executors (they join the team automatically). If exactly one person fits the specialty, they are suggested at once. The employee’s personal rate is applied on assignment.",
   "notAssigned": "Not assigned",
   "personalRate": "personal rate",
   "qtyRate": "Qty × rate",
@@ -31,5 +31,6 @@
     "cancelAccrued": "An accrued line cannot be cancelled — delete the expense instead",
     "noAssignee": "Assign an executor first",
     "notMember": "The executor must be on the project team"
-  }
+  },
+  "willJoin": "joins the team"
 }

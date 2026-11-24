@@ -4,7 +4,7 @@
   "empty": "Reja yoʻq: qabul qilingan TT da tarif tanlanmagan yoki tarifda ijrochilar ishlari yoʻq.",
   "work": "Ish",
   "assignee": "Ijrochi",
-  "assigneeHint": "Faqat loyiha jamoasining faol aʼzolari. Tayinlanganda xodimning shaxsiy stavkasi qoʻyiladi.",
+  "assigneeHint": "Jamoa aʼzolari va boshqa ijrochilar (ular jamoaga oʻzi qoʻshiladi). Kerakli mutaxassislikka mos yagona odam boʻlsa, u darhol taklif qilinadi. Tayinlanganda xodimning shaxsiy stavkasi qoʻyiladi.",
   "notAssigned": "Tayinlanmagan",
   "personalRate": "shaxsiy stavka",
   "qtyRate": "Soni × stavka",
@@ -31,5 +31,6 @@
     "cancelAccrued": "Hisoblangan qatorni bekor qilib boʻlmaydi — xarajatni oʻchiring",
     "noAssignee": "Avval ijrochini tayinlang",
     "notMember": "Ijrochi loyiha jamoasida boʻlishi kerak"
-  }
+  },
+  "willJoin": "jamoaga qoʻshiladi"
 }
