@@ -95,8 +95,10 @@ class UsersTest extends TestCase
         $this->assertNotNull($s->fresh()->revoked_at);
         $this->assertTrue(OutboxEvent::where('type', 'user.role_changed')->exists());
         // Сброс пароля
-        $c->post("/team/employees/{$this->manager->id}/reset-password")->assertSessionHas('tempPassword');
-        $this->assertTrue(Passwords::verify($this->manager->fresh()->password_hash, session('tempPassword')['password']));
+        $reset = $c->post("/team/employees/{$this->manager->id}/reset-password");
+        $reset->assertOk()->assertSee('data-testid="temp-password"', false);
+        preg_match('~data-testid="temp-password">([^<]+)<~', $reset->getContent(), $m);
+        $this->assertTrue(Passwords::verify($this->manager->fresh()->password_hash, html_entity_decode($m[1])));
         $this->assertTrue(AuditLog::where('action', 'user.reset_password')->exists());
     }
 

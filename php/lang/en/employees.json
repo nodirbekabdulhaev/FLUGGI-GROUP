@@ -199,5 +199,6 @@
     "tasksOverdue": "Tasks overdue now",
     "todosDone": "To-dos done",
     "todosOverdue": "To-dos overdue now"
-  }
+  },
+  "tempPasswordAfter": "The old password no longer works and the employee’s sessions are closed. They sign in with this password and can change it in “Profile”."
 }

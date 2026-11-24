@@ -199,5 +199,6 @@
     "tasksOverdue": "Hozir muddati oʻtgan vazifalar",
     "todosDone": "Bajarilgan ishlar",
     "todosOverdue": "Hozir muddati oʻtgan ishlar"
-  }
+  },
+  "tempPasswordAfter": "Eski parol endi ishlamaydi, xodimning seanslari tugatildi. Xodim shu parol bilan kiradi va «Profil»da uni almashtira oladi."
 }

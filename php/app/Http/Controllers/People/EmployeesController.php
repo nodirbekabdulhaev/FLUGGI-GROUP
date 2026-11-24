@@ -218,12 +218,14 @@ class EmployeesController extends Controller
         return back()->with('ok', t('employees.unblocked'));
     }
 
-    public function resetPassword(string $id): RedirectResponse
+    /** Новый пароль показывается прямо в ответе на запрос (не через сессию и перенаправление — иначе он мог потеряться). */
+    public function resetPassword(Request $request, string $id): RedirectResponse|View
     {
         $user = User::findOrFail($id);
         $password = UserService::resetPassword($id);
+        $previous = (string) parse_url(url()->previous(), PHP_URL_PATH);
 
-        return back()->with('tempPassword', ['name' => $user->full_name, 'password' => $password]);
+        return view('people.password-reset', ['name' => $user->full_name, 'password' => $password, 'back' => str_starts_with($previous, '/team/') ? $previous : '/team/employees']);
     }
 
     public function destroy(Request $request, string $id): RedirectResponse
