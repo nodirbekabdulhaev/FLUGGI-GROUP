@@ -109,6 +109,7 @@ final class UserService
                 'email' => $input['email'], 'full_name' => $input['full_name'], 'phone' => $input['phone'] ?? null,
                 'password_hash' => $hash, 'role_id' => $role->id, 'team_id' => $input['team_id'] ?? null, 'locale' => $input['locale'],
                 'meeting_participant' => (bool) ($input['meeting_participant'] ?? false),
+                'project_participant' => (bool) ($input['project_participant'] ?? true),
                 'meeting_slots' => isset($input['meeting_slots']) ? json_encode(MeetingSlots::settings($input['meeting_slots'])) : null,
             ]);
             $specialties = $input['role_code'] === 'EXECUTOR' ? SpecialtySet::normalize($input['specialties'] ?? []) : [];
@@ -139,6 +140,7 @@ final class UserService
             'role' => $u->role->code, 'position' => $u->employee?->position, 'specialty' => $u->employee?->specialty, 'specialties' => SpecialtySet::sorted($u->employee?->specialtyList()),
             'directions' => $u->directions->map(fn ($d) => $d->direction?->name)->sort()->implode(', '),
             'meetingParticipant' => (bool) $u->meeting_participant,
+            'projectParticipant' => (bool) $u->project_participant,
             'meetingSlots' => $u->meeting_participant || $u->meeting_slots ? self::slotsText(MeetingSlots::forUser($u)) : null,
         ];
     }
@@ -181,7 +183,7 @@ final class UserService
 
         return DB::transaction(function () use ($before, $input, $newRole, $roleChanged, $oldRole, $id) {
             $old = self::snapshot($before);
-            $data = array_intersect_key($input, array_flip(['email', 'full_name', 'phone', 'locale', 'team_id', 'meeting_participant']));
+            $data = array_intersect_key($input, array_flip(['email', 'full_name', 'phone', 'locale', 'team_id', 'meeting_participant', 'project_participant']));
             if (array_key_exists('meeting_slots', $input)) {
                 $data['meeting_slots'] = json_encode(MeetingSlots::settings($input['meeting_slots']));
             }

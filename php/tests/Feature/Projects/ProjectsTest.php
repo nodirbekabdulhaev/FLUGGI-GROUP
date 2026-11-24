@@ -45,6 +45,17 @@ class ProjectsTest extends TestCase
         $this->assertNull(ProjectMember::where('project_id', $p->id)->where('user_id', $this->executor->id)->value('workload_pct'));
     }
 
+    public function test_employee_without_project_participation_cannot_join_team(): void
+    {
+        $p = $this->project();
+        $this->actingAsUser($this->rop);
+        $this->executor->forceFill(['project_participant' => false])->save();
+        $this->assertNotContains($this->executor->id, ProjectService::candidates()->pluck('id')->all());
+        $this->post("/projects/{$p->id}/members", ['user_id' => $this->executor->id])->assertSessionHasErrors('user_id');
+        $this->executor->forceFill(['project_participant' => true])->save();
+        $this->post("/projects/{$p->id}/members", ['user_id' => $this->executor->id])->assertSessionHasNoErrors();
+    }
+
     public function test_project_manager_can_be_added_to_project_team(): void
     {
         $p = $this->project();

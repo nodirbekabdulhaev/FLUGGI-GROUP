@@ -200,5 +200,7 @@
     "todosDone": "Bajarilgan ishlar",
     "todosOverdue": "Hozir muddati oʻtgan ishlar"
   },
-  "tempPasswordAfter": "Eski parol endi ishlamaydi, xodimning seanslari tugatildi. Xodim shu parol bilan kiradi va «Profil»da uni almashtira oladi."
+  "tempPasswordAfter": "Eski parol endi ishlamaydi, xodimning seanslari tugatildi. Xodim shu parol bilan kiradi va «Profil»da uni almashtira oladi.",
+  "projectParticipant": "Loyihalarda ishtirok etadi",
+  "projectParticipantHint": "Xodimni loyiha jamoasiga qoʻshish va xarajatlar rejasida ijrochi etib tayinlash mumkin."
 }

@@ -265,7 +265,7 @@ final class ProjectService
     /** Кого можно добавить в команду: активные исполнители, менеджеры, РОП и проект-менеджеры. */
     public static function candidates(): Collection
     {
-        return User::with(['role:id,code', 'employee:id,user_id,specialty,specialties'])->where('status', 'ACTIVE')
+        return User::with(['role:id,code', 'employee:id,user_id,specialty,specialties'])->where('status', 'ACTIVE')->where('project_participant', true)
             ->whereHas('role', fn ($q) => $q->whereIn('code', ['EXECUTOR', 'MANAGER', 'ROP', 'PROJECT_MANAGER']))
             ->orderBy('full_name')->get();
     }
@@ -301,6 +301,9 @@ final class ProjectService
         }
         if (! in_array($user->role->code, ['EXECUTOR', 'MANAGER', 'ROP', 'PROJECT_MANAGER'], true)) {
             throw new BusinessRule(t('projects.errors.memberRole'), ['user_id' => t('projects.errors.memberRole')]);
+        }
+        if (! $user->project_participant) {
+            throw new BusinessRule(t('projects.errors.notParticipant'), ['user_id' => t('projects.errors.notParticipant')]);
         }
         // Позиции не выбраны — берутся специальности из карточки сотрудника
         $roles = self::inputRoles($input) ?: ($user->employee?->specialtyList() ?? []);

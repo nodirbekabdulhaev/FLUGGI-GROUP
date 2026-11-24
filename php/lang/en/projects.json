@@ -101,7 +101,8 @@
     "noDirection": "No such direction",
     "openTasks": "The project cannot be completed: open tasks — {count}. Complete or cancel them",
     "ropRole": "The project’s Sales head (ROP) must be an employee with the ROP or CEO role",
-    "userNotFound": "Employee not found or blocked"
+    "userNotFound": "Employee not found or blocked",
+    "notParticipant": "The employee is not marked as taking part in projects — enable it in their card"
   },
   "deleteConfirm": "Delete project “{name}” along with its tasks? The deal, payments and financial history will be kept.",
   "deleted": "Project deleted"

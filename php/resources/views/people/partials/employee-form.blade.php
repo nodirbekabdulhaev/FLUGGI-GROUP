@@ -41,6 +41,13 @@
         @endforeach
     </fieldset>
     <x-field name="position" :id="$mid.'-pos'" :label="t('employees.position')" :value="$u?->employee?->position" />
+    <div class="rounded-md border p-3">
+        <input type="hidden" name="project_participant" value="0">
+        <label class="flex items-start gap-2 text-sm">
+            <input type="checkbox" name="project_participant" value="1" class="mt-0.5" @checked((bool) old('project_participant', $u?->project_participant ?? true))>
+            <span><span class="font-medium">{{ t('employees.projectParticipant') }}</span><span class="block text-xs text-muted-foreground">{{ t('employees.projectParticipantHint') }}</span></span>
+        </label>
+    </div>
     <div class="grid gap-3 rounded-md border p-3" x-data="{ meet: @js((bool) old('meeting_participant', $u?->meeting_participant ?? false)) }">
         <input type="hidden" name="meeting_participant" value="0">
         <label class="flex items-start gap-2 text-sm">

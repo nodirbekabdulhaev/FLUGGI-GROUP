@@ -200,5 +200,7 @@
     "todosDone": "To-dos done",
     "todosOverdue": "To-dos overdue now"
   },
-  "tempPasswordAfter": "The old password no longer works and the employee’s sessions are closed. They sign in with this password and can change it in “Profile”."
+  "tempPasswordAfter": "The old password no longer works and the employee’s sessions are closed. They sign in with this password and can change it in “Profile”.",
+  "projectParticipant": "Takes part in projects",
+  "projectParticipantHint": "The employee can be added to a project team and assigned as an executor in the cost plan."
 }

@@ -122,6 +122,7 @@ class EmployeesController extends Controller
             'direction_ids' => ['nullable', 'array', 'max:20'],
             'direction_ids.*' => ['uuid'],
             'meeting_participant' => ['nullable', 'boolean'],
+            'project_participant' => ['nullable', 'boolean'],
             'meeting_days' => ['nullable', 'array', 'max:7'],
             'meeting_days.*' => ['integer', 'between:1,7', 'distinct'],
             'meeting_from' => ['nullable', 'date_format:H:i'],
@@ -158,6 +159,9 @@ class EmployeesController extends Controller
     private function meetingInput(Request $request, array &$data): void
     {
         $fields = ['meeting_days', 'meeting_from', 'meeting_to', 'meeting_slot'];
+        if (array_key_exists('project_participant', $data)) {
+            $data['project_participant'] = filter_var($data['project_participant'], FILTER_VALIDATE_BOOLEAN);
+        }
         $flag = $request->has('meeting_participant') ? (bool) ($data['meeting_participant'] ?? false) : null;
         $slotsSent = $request->hasAny($fields);
         foreach ($fields as $f) {
