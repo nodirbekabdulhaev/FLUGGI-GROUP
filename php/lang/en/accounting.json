@@ -137,7 +137,7 @@
     "subtitle": "Account turnover from the bank file: income and expenses go to the chosen account",
     "uploadTitle": "Statement file",
     "file": "File",
-    "fileHint": "Excel (.xlsx, .xls) or CSV up to 5 MB: an account statement or an operations export from the bank app.",
+    "fileHint": "Excel (.xlsx, .xls), CSV or a text file (.txt) up to 5 MB: an account statement, a register of posted documents or an export from the bank app.",
     "autoAccount": "Detect by the account number in the statement",
     "accountHint": "If the statement has an account number, the account with the same number is used. For a bank app export, choose the account.",
     "read": "Read file",
@@ -152,7 +152,8 @@
     "formats": {
       "CLASSIC": "Account statement",
       "APP": "Bank app export",
-      "REGISTER": "Register of posted documents"
+      "REGISTER": "Register of posted documents",
+      "TEXT": "Bank statement (text file)"
     },
     "period": "Period",
     "accountNumber": "Account number in the statement",

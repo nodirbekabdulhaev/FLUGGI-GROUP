@@ -137,7 +137,7 @@
     "subtitle": "Bank faylidagi hisob aylanmalari: kirim va chiqimlar tanlangan hisobga tushadi",
     "uploadTitle": "Koʻchirma fayli",
     "file": "Fayl",
-    "fileHint": "Excel (.xlsx, .xls) yoki CSV, 5 MB gacha: «Shaxsiy hisoblar koʻchirmasi» yoki bank ilovasidan operatsiyalar.",
+    "fileHint": "Excel (.xlsx, .xls), CSV yoki matn fayli (.txt), 5 MB gacha: «Shaxsiy hisoblar koʻchirmasi», «Bajarilgan hujjatlar qaydnomasi» yoki bank ilovasidan operatsiyalar.",
     "autoAccount": "Koʻchirmadagi hisob raqami boʻyicha aniqlash",
     "accountHint": "Koʻchirmada hisob raqami boʻlsa, xuddi shu raqamli hisob tanlanadi. Bank ilovasidan yuklangan fayl uchun hisobni tanlang.",
     "read": "Faylni oʻqish",
@@ -152,7 +152,8 @@
     "formats": {
       "CLASSIC": "Shaxsiy hisoblar koʻchirmasi",
       "APP": "Bank ilovasidan yuklama",
-      "REGISTER": "Bajarilgan hujjatlar qaydnomasi"
+      "REGISTER": "Bajarilgan hujjatlar qaydnomasi",
+      "TEXT": "Bankdan koʻchirma (matn fayli)"
     },
     "period": "Davr",
     "accountNumber": "Koʻchirmadagi hisob raqami",

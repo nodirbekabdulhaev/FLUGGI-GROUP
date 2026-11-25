@@ -82,6 +82,10 @@ final class BankRules
         $payee = self::lower((string) ($row['counterparty'] ?? ''));
         $pick = fn (string $cat, string $rule) => ['category' => $cat, 'category_id' => null, 'rule' => $rule];
 
+        // Выписка без названий и назначения (текстовая): о платеже говорит только счёт корреспондента
+        if (($byAccount = self::byAccount($row)) !== null) {
+            return $pick($byAccount[0], $byAccount[1]);
+        }
         if ($has(self::MIGRATION)) {
             return $pick($dir === 'IN' ? 'TRANSFER_IN' : 'TRANSFER_OUT', 'migration');
         }
@@ -112,6 +116,37 @@ final class BankRules
         }
 
         return $pick($dir === 'IN' ? 'OTHER_INCOME' : 'OTHER', 'default');
+    }
+
+    /**
+     * Счёт корреспондента: 16401 — доходы банка (комиссии), 15501 — ссудный счёт (кредит), 23402 — бюджет; счёт с тем же кодом клиента
+     * (цифры 10–17 номера, после ключевой цифры), что у нашего, — свой счёт в этом банке (перевод). Без номера счёта правило не применяется.
+     *
+     * @return array{0:string,1:string}|null
+     */
+    private static function byAccount(array $row): ?array
+    {
+        $cp = preg_replace('/\D+/', '', (string) ($row['cpAccount'] ?? ''));
+        if (strlen($cp) !== 20 || ! empty($row['purpose']) || ! empty($row['counterparty'])) {
+            return null;
+        }
+        $in = $row['direction'] === 'IN';
+        $own = preg_replace('/\D+/', '', (string) ($row['ownAccount'] ?? ''));
+        $prefix = substr($cp, 0, 5);
+        if ($prefix === '16401' && ! $in) {
+            return ['BANK_FEE', 'bankFee'];
+        }
+        if ($prefix === '15501') {
+            return [$in ? 'LOAN_RECEIPT' : 'LOAN_PAYMENT', 'loan'];
+        }
+        if ($prefix === '23402' && ! $in) {
+            return ['TAX_OTHER', 'budget'];
+        }
+        if (strlen($own) === 20 && substr($cp, 9, 8) === substr($own, 9, 8)) {
+            return [$in ? 'TRANSFER_IN' : 'TRANSFER_OUT', 'own'];
+        }
+
+        return null;
     }
 
     /** Ключевые слова статьи: через запятую, точку с запятой или с новой строки. */

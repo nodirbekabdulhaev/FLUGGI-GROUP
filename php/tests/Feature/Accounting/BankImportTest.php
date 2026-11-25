@@ -185,6 +185,32 @@ class BankImportTest extends TestCase
         }
     }
 
+    public function test_text_statement_is_read_and_categorised_by_correspondent_account(): void
+    {
+        $text = "Изг 25.11.2026           ВЫПИСКА ЛИЦЕВОГО СЧЕТА за  13.11.2026\n"
+            ."\"TEST\"MCHJ                                                Счет:     20208000100000000001\n"
+            ."Начало дня Пассив                    0.00         Конец дня Пассив            2,499,440.00\n"
+            ." NN !       Счет         ! N док-та ! ВО! МФО !     Оборот Дебет    !    Оборот Кредит  \n"
+            ."   1 16401000000000000001 000003-ОПК 06  01113                560.00                  0.00\n"
+            ."   2 23106000500000000200          3 21  01113        137,500,000.00                  0.00\n"
+            ."   3 15501000000000000001         01 01  01113                  0.00        140,000,000.00\n"
+            ."      Итого оборотов                                  137,500,560.00        140,000,000.00\n"
+            ."Изг 25.11.2026           ВЫПИСКА ЛИЦЕВОГО СЧЕТА за  16.11.2026\n"
+            ."\"TEST\"MCHJ                                                Счет:     20208000100000000001\n"
+            ."Начало дня Пассив            2,499,440.00         Конец дня Пассив            2,482,279.00\n"
+            ."   1 23402000300000000010          1 21  00014              9,957.00                  0.00\n"
+            ."   2 20208000100662897001        283 21  00439                  0.00          4,500,000.00\n";
+        $path = tempnam(sys_get_temp_dir(), 'bank').'.txt';
+        $this->files[] = $path;
+        file_put_contents($path, $text);
+        $r = BankStatement::read($path, 'txt');
+        $this->assertSame(['TEXT', '20208000100000000001', '0.00', '2482279.00', 5], [$r['format'], $r['accountNumber'], $r['opening'], $r['closing'], count($r['rows'])]);
+        $this->assertSame([['2026-11-13', 'OUT', '560.00', '000003-ОПК'], ['2026-11-13', 'OUT', '137500000.00', '3'], ['2026-11-13', 'IN', '140000000.00', '01'], ['2026-11-16', 'OUT', '9957.00', '1'], ['2026-11-16', 'IN', '4500000.00', '283']],
+            array_map(fn ($x) => [$x['date'], $x['direction'], $x['amount'], $x['doc']], $r['rows']));
+        $cat = fn ($x) => BankRules::suggest($x + ['ownAccount' => $r['accountNumber']], collect(), null)['category'];
+        $this->assertSame(['BANK_FEE', 'TRANSFER_OUT', 'LOAN_RECEIPT', 'TAX_OTHER', 'OTHER_INCOME'], array_map($cat, $r['rows']));
+    }
+
     public function test_auto_category_rules(): void
     {
         $s = fn (string $dir, string $purpose, string $cp = '', ?string $inn = null, $articles = null) => BankRules::suggest(

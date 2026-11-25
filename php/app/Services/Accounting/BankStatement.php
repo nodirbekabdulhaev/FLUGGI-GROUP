@@ -18,13 +18,14 @@ use Throwable;
  *    (деньги ушли со счёта) и «Обороты по кредиту» (пришли), строка «Итого» в конце;
  *  - REGISTER — «Ведомость проведённых документов» (Infinbank и др.): колонки «Счёт клиента» (откуда) и «Счёт корреспондента» (куда),
  *    «Сумма документа», без дебета/кредита: наш счёт — тот, что встречается в большинстве строк; он же — номер счёта выписки;
+ *  - TEXT — текстовая «ВЫПИСКА ЛИЦЕВОГО СЧЕТА за ДД.ММ.ГГГГ» (файл .txt из банка): по дню на блок, строки «NN Счёт Док ВО МФО Дебет Кредит»;
  *  - APP — выгрузка операций из приложения банка: «Turi» (Kirim/Chiqim), «Holati» (берутся только проведённые),
  *    «Summa», «Sana», плательщик и получатель. Номера счёта в файле нет — счёт выбирает пользователь.
  * Заголовки сравниваются без регистра, пробелов, переносов строк и знаков (русский и узбекский варианты).
  */
 final class BankStatement
 {
-    public const EXTENSIONS = ['xlsx', 'xls', 'csv'];
+    public const EXTENSIONS = ['xlsx', 'xls', 'csv', 'txt'];
 
     public const MAX_ROWS = 2000;
 
@@ -76,6 +77,9 @@ final class BankStatement
         $ext = mb_strtolower($ext);
         if (! in_array($ext, self::EXTENSIONS, true)) {
             throw new RowError(t('import.errors.fileType'));
+        }
+        if ($ext === 'txt') {
+            return self::textStatement((string) file_get_contents($path));
         }
         $sheets = self::sheets($path, $ext);
         foreach ($sheets as $matrix) {
@@ -159,6 +163,60 @@ final class BankStatement
         }
 
         return null;
+    }
+
+    /**
+     * Текстовая выписка: блоки «ВЫПИСКА ЛИЦЕВОГО СЧЕТА за ДД.ММ.ГГГГ» со строкой «Счет: …», остатками «Начало дня / Конец дня»
+     * и строками «NN счёт-корреспондент док ВО МФО дебет кредит». В файле нет названий и назначения платежа — только счёт корреспондента.
+     */
+    private static function textStatement(string $raw): array
+    {
+        if (! mb_check_encoding($raw, 'UTF-8')) {
+            $raw = (string) mb_convert_encoding($raw, 'UTF-8', 'Windows-1251');
+        }
+        $raw = (string) preg_replace('/^\xEF\xBB\xBF/', '', $raw);
+        $out = ['format' => 'TEXT', 'accountNumber' => null, 'opening' => null, 'closing' => null, 'from' => null, 'to' => null, 'rows' => [], 'errors' => [], 'notCompleted' => 0];
+        $day = null;
+        $n = 0;
+        foreach (preg_split('/\R/u', $raw) ?: [] as $line) {
+            $n++;
+            if (preg_match('/ВЫПИСКА\s+ЛИЦЕВОГО\s+СЧ[ЕЁ]ТА\s+за\s+(\d{2}\.\d{2}\.\d{4})/ui', $line, $m)) {
+                $day = self::date($m[1]);
+
+                continue;
+            }
+            if ($day !== null && preg_match('/Сч[её]т:\s*(\d{20})/u', $line, $m)) {
+                $out['accountNumber'] ??= $m[1];
+
+                continue;
+            }
+            if ($day !== null && preg_match('/Начало\s+дня\s+\S+\s+([\d,]+\.\d{2})\s+Конец\s+дня\s+\S+\s+([\d,]+\.\d{2})/u', $line, $m)) {
+                $out['opening'] ??= self::amount($m[1]);
+                $out['closing'] = self::amount($m[2]);
+
+                continue;
+            }
+            if ($day === null || ! preg_match('/^\s*(\d+)\s+(\d{20})\s+(?:(\S+)\s+)?(\d{2})\s+(\d{5})\s+([\d,]+\.\d{2})\s+([\d,]+\.\d{2})\s*$/u', $line, $m)) {
+                continue;
+            }
+            $debit = self::amount($m[6]);
+            $credit = self::amount($m[7]);
+            $hasDebit = $debit !== null && BigDecimal::of($debit)->isPositive();
+            $hasCredit = $credit !== null && BigDecimal::of($credit)->isPositive();
+            if ($hasDebit === $hasCredit) {
+                $out['errors'][] = ['n' => $n, 'message' => t('accounting.bank.errors.amount')];
+
+                continue;
+            }
+            $out['rows'][] = ['n' => $n, 'date' => $day, 'direction' => $hasDebit ? 'OUT' : 'IN', 'amount' => $hasDebit ? $debit : $credit,
+                'doc' => $m[3] !== '' ? $m[3] : null, 'counterparty' => null, 'inn' => null, 'cpAccount' => $m[2], 'purpose' => null];
+            self::limit($out);
+        }
+        if (! $out['rows'] && ! $out['errors']) {
+            throw new RowError(t('accounting.bank.errors.format'));
+        }
+
+        return self::period($out);
     }
 
     /** Колонки «Ведомости проведённых документов»: нужны счёт клиента, счёт корреспондента, сумма и дата. */

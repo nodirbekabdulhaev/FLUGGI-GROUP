@@ -15,7 +15,7 @@
                     @csrf
                     <div>
                         <label class="label" for="bank-file">{{ t('accounting.bank.file') }}<span class="text-danger"> *</span></label>
-                        <input id="bank-file" type="file" name="file" class="input" accept=".xlsx,.xls,.csv" required>
+                        <input id="bank-file" type="file" name="file" class="input" accept=".xlsx,.xls,.csv,.txt" required>
                         @error('file')<p class="error">{{ $message }}</p>@else<p class="hint">{{ t('accounting.bank.fileHint') }}</p>@enderror
                     </div>
                     <x-select name="account_id" :label="t('accounting.fields.account')" :placeholder="t('accounting.bank.autoAccount')"

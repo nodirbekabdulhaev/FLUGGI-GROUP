@@ -99,7 +99,7 @@ final class BankImportService
             ->orderBy('sort')->orderBy('name')->get()->filter(fn ($a) => in_array($a->base, Accounting::manual($a->direction), true))->values();
         $inn = (string) (Settings::company()['inn'] ?? '');
         foreach ($rows as &$r) {
-            $s = BankRules::suggest($r, $articles, $inn);
+            $s = BankRules::suggest($r + ['ownAccount' => $data['accountNumber'] ?? $account?->account_number], $articles, $inn);
             $r['category'] = $s['category_id'] ?? $s['category'];
             $r['base'] = $s['category'];
             $r['rule'] = $s['rule'];
