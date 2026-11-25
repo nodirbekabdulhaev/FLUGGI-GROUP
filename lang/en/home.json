@@ -1,0 +1,93 @@
+{
+  "agenda": {
+    "title": "My day",
+    "subtitle": "Meetings, tasks, to-dos and deadlines",
+    "ranges": {
+      "day": "Day",
+      "week": "Week",
+      "month": "Month",
+      "year": "Year"
+    },
+    "who": {
+      "me": "Mine",
+      "all": "Everyone"
+    },
+    "today": "Today",
+    "prev": "Back",
+    "next": "Forward",
+    "rangeLabel": "Period",
+    "whoLabel": "Whose records",
+    "empty": "Nothing planned",
+    "emptyText": "No meetings, tasks or deadlines for this period.",
+    "overdue": "Overdue",
+    "overdueCount": "Overdue: {count}",
+    "kinds": {
+      "meeting": "Meetings",
+      "task": "Tasks",
+      "todo": "To-dos",
+      "followUp": "Follow-ups",
+      "deal": "Deals to close",
+      "smm": "SMM publications",
+      "payment": "Expected payments"
+    },
+    "allDay": "all day",
+    "loading": "Loading…",
+    "error": "Could not load",
+    "retry": "Retry",
+    "allMeetings": "All meetings",
+    "slots": "Slots",
+    "allTodos": "All to-dos",
+    "total": "Total: {count}",
+    "participants": "Participants",
+    "join": "Link",
+    "openDay": "Open day",
+    "openMonth": "Open month"
+  },
+  "wallets": {
+    "title": "Wallets and accounts",
+    "subtitle": "Balances of active accounts",
+    "total": "Total in UZS",
+    "missingRate": "No USD rate for today — dollar accounts are not included in the total.",
+    "ytd": "Bank income since start of year",
+    "ytdHint": "{from} — {to}",
+    "empty": "No accounts yet",
+    "open": "Accounting",
+    "kinds": {
+      "BANK": "Bank",
+      "CASH": "Cash",
+      "CARD": "Card"
+    }
+  },
+  "charts": {
+    "salesTitle": "Revenue and payments",
+    "salesSub": "Last 12 months",
+    "revenue": "Revenue",
+    "collected": "Collected",
+    "sourcesTitle": "Lead sources",
+    "sourcesSub": "Leads in period",
+    "leads": "Leads",
+    "stagesTitle": "Deals by stage",
+    "stagesSub": "Open deals: {count} · {amount}",
+    "deals": "Deals",
+    "planTitle": "Monthly plan",
+    "planSub": "Collected vs “Revenue” target",
+    "plan": "Plan",
+    "fact": "Collected",
+    "forecast": "Forecast",
+    "kpiTitle": "My KPI",
+    "kpiSub": "Monthly target completion",
+    "expensesTitle": "Expenses by category",
+    "expensesSub": "For the period",
+    "amount": "Amount",
+    "smmTitle": "Published videos",
+    "smmSub": "By month, last 12 months",
+    "videos": "Videos",
+    "noData": "No data for the period",
+    "showTable": "Show table",
+    "total": "Total",
+    "share": "Share",
+    "conversion": "Conversion",
+    "losses": "Losses",
+    "forecastTitle": "Forecast and plan"
+  }
+}

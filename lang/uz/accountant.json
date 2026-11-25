@@ -1,0 +1,17 @@
+{
+  "button": "Buxgalter uchun paket",
+  "title": "Buxgalter uchun paket",
+  "text": "Yil boʻyicha CRM dagi barcha maʼlumotlar bitta Excel faylda — buxgalteriya balansi (1-shakl) va moliyaviy natijalar toʻgʻrisidagi hisobotni (2-shakl) tuzish uchun.",
+  "year": "Yil",
+  "download": "Excel yuklab olish",
+  "companyHint": "Nomi, STIR va soliq rejimi bu yerdan olinadi:",
+  "companyLink": "kompaniya sozlamalari",
+  "contents": {
+    "c1": "Izohlar: rekvizitlar, qanday hisoblangan, CRM da nima yoʻq",
+    "c2": "2-shakl satrlari boʻyicha jamlanma — yil va oylar kesimida",
+    "c3": "Yil davomidagi shartnomalar va toʻlovlar",
+    "c4": "31.12 holatiga mijozlar bilan hisob-kitoblar: debitorlik qarzi va olingan avanslar",
+    "c5": "Hisob raqami koʻrsatmasi bilan xarajatlar (tannarx / davr xarajatlari)",
+    "c6": "Ish haqi, komissiyalar va loyihalar"
+  }
+}

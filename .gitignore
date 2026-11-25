@@ -1,0 +1,10 @@
+/.env
+/.env.backup
+/storage/app/*
+!/storage/app/.gitignore
+/storage/framework/cache/data/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+/bootstrap/cache/*.php
+/public/storage

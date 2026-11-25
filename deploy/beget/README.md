@@ -1,0 +1,142 @@
+# Fluggi CRM на виртуальном хостинге Beget (PHP + MySQL)
+
+Обычный тариф «для сайтов»: PHP 8.2+, MySQL, cron. Node.js, Docker и SSH-окружение `-p222`
+**не нужны**. GitHub сам проверяет и собирает каждую версию и кладёт её в ветку **`hosting`**
+(вкладка Actions → «Hosting (PHP)»); на хостинге её нужно только скачать.
+
+## 1. Сайт, PHP и база
+
+1. Панель Beget → «Сайты» → создать сайт `crm.fluggi.uz`, привязать домен.
+2. Там же у сайта выбрать версию **PHP 8.2** или новее.
+3. Панель → «SSL» → бесплатный сертификат Let's Encrypt для домена.
+4. Панель → «MySQL» → создать базу, например `crm` (полное имя будет `ЛОГИН_crm`), задать пароль.
+   На Beget имя пользователя базы = имя базы, сервер — `localhost`.
+
+## 2. Установка
+
+SSH (обычный, **без** `ssh localhost -p222`):
+
+```bash
+ssh ЛОГИН@ЛОГИН.beget.tech
+cd ~/crm.fluggi.uz
+git clone --depth 1 -b hosting https://github.com/nodirbekabdulhaev/FLUGGI-GROUP.git fluggi
+cd fluggi && bash deploy/beget/setup.sh
+```
+
+Скрипт спросит домен, имя и пароль базы, email и имя CEO. Он:
+- создаст `.env` со случайными ключами (файл не в git, обновления его не трогают);
+- создаст таблицы, роли и права, справочники, первого CEO и покажет **пароль CEO один раз**;
+- направит сайт в папку `fluggi/public` (`public_html` станет ссылкой на неё; прежняя папка
+  сохранится как `public_html.beget-bak`) — код и `.env` из интернета недоступны;
+- напечатает команду для cron.
+
+Если в базе уже есть данные прежней версии CRM (на Node.js) — таблицы и данные подходят без
+переноса, пароли сотрудников прежние.
+
+**Доступ Beget с домашней папкой `public_html`** (например, отдельный SSH-доступ к сайту, как
+`fluggi_crm`): выше подняться нельзя — ставьте прямо в домашнюю папку, установщик сам это поймёт:
+
+```bash
+cd ~ && git clone --depth 1 -b hosting https://github.com/nodirbekabdulhaev/FLUGGI-GROUP.git crm
+cd crm && PHP_BIN=/usr/local/bin/php8.3 bash deploy/beget/setup.sh
+```
+
+CRM будет в папке `public_html/crm`, а `.htaccess` в корне сайта направит все запросы в
+`crm/public` — код и `.env` из интернета недоступны (проверено на Apache: 403/404).
+
+## 3. Cron
+
+Панель → «Cron» → добавить задачу **каждую минуту** с командой, которую напечатал `setup.sh`, например:
+
+```
+/usr/local/bin/php8.2 /home/ЛОГИН/crm.fluggi.uz/fluggi/artisan schedule:run >/dev/null 2>&1
+```
+
+Cron рассылает уведомления и Telegram, отмечает просрочки, создаёт напоминания и отчёты.
+
+## 4. Telegram-бот (по желанию)
+
+Впишите `TELEGRAM_BOT_TOKEN` и `TELEGRAM_BOT_USERNAME` в `~/crm.fluggi.uz/fluggi/.env`, затем:
+
+```bash
+cd ~/crm.fluggi.uz/fluggi && php8.2 artisan config:cache && php8.2 artisan fluggi:telegram-webhook
+```
+
+## 5. Уведомления со звуком (Web Push) и автопубликация в Instagram
+
+Ключи Web Push (`VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`) создаёт `fluggi:install` (и `update.sh`) один раз, если их нет
+в `.env`; вручную — `php8.2 artisan fluggi:webpush-keys && php8.2 artisan config:cache`. Ключи не менять: при смене
+все браузеры придётся подписать заново. Нужен HTTPS. На iPhone push работает в приложении с главного экрана (iOS 16.4+).
+
+Автопубликация в Instagram использует `META_PAGE_ACCESS_TOKEN` с правами `instagram_basic`, `instagram_content_publish`,
+`pages_read_engagement`; проверка — «Настройки → Интеграции → Проверить доступ к публикации». Файлы роликов хранятся
+в `storage/app/smm-media` и удаляются сразу после публикации. Большие видео загружаются частями по 4 МБ — достаточно
+`post_max_size` ≥ 8M (значение по умолчанию на Beget).
+
+## Обновление
+
+```bash
+cd ~/crm.fluggi.uz/fluggi && bash deploy/beget/update.sh
+```
+
+Скачает последнюю версию из ветки `hosting`, обновит таблицы и справочники (без потери данных),
+очистит кэш. `.env`, загруженные файлы и логи (`storage/`) не затрагиваются.
+
+Без git: GitHub → Actions → последняя сборка «Hosting (PHP)» → Artifacts → `fluggi-hosting`,
+распакуйте в `~/crm.fluggi.uz/fluggi` (поверх) и выполните `php8.2 artisan fluggi:install && php8.2 artisan optimize`.
+
+## Если что-то не работает
+
+- Ошибка 500: `~/crm.fluggi.uz/fluggi/storage/logs/laravel-ДАТА.log` (последние строки).
+- «PHP 8.2 не найден»: в SSH выполните `ls /usr/local/bin/php*` и запустите
+  `PHP_BIN=/usr/local/bin/php8.3 bash deploy/beget/setup.sh`.
+- Резервные копии базы и файлов делает Beget (панель → «Резервные копии»).
+- Сообщение «хостинг не разрешает триггеры» — не ошибка: это дополнительная защита журналов
+  и оплат на уровне БД, приложение защищает их и без неё.
+
+## Заявки с сайта fluggi.uz
+
+Сайт отправляет заявки в CRM: `POST https://<адрес CRM>/hooks/website-leads`, JSON, заголовок `Authorization: Bearer <токен>`.
+Токен — `WEBSITE_LEADS_TOKEN` в `.env` (создаётся при `update.sh`; посмотреть: `grep WEBSITE_LEADS_TOKEN .env`; владельцу сайта передавать безопасным способом, не в чат и не в репозиторий).
+
+- 201 `{"id": "<id лида>"}` — лид создан (`"duplicate": true` — в CRM уже был открытый лид с этим телефоном, к нему добавлена отметка «повторная заявка»);
+- 409 `{"id": "<id>"}` — заявка с таким `external_id` (или `Idempotency-Key`) уже принята, повторный запрос лид не создаёт;
+- 401 — неверный токен или приём выключен (токен пуст); 422 — поле не прошло проверку (`name` 2–100 знаков, `phone` в формате `+998XXXXXXXXX`, `type` — contact, callback, solution, service, demo, vacancy).
+
+Отклики на вакансии (`type: vacancy`) в лиды не попадают — они сохраняются в разделе «Вакансии» (права `vacancy.read` / `vacancy.manage`: CEO и HR; новую роль добавьте в «Роли и права»), ответ тот же, `id` — отклика.
+
+Лид получает источник «Сайт», стадию «Новый», ответственного по правилам распределения; тип заявки, продукт, страница, язык, секунды в демо и UTM записываются в комментарий.
+
+### Карточка кандидата (игровая форма вакансии)
+
+В заявку `type: vacancy` сайт добавляет необязательные блоки `candidate` и `assessment` — из них строится карточка кандидата и оценка 0–100 в разделе «Вакансии» (Kanban по статусам и карточка с анимацией):
+
+```json
+"candidate": {
+  "photo_url": "https://…/photo.jpg", "about": "О себе", "city": "Наманган", "birth_year": 2001, "experience_years": 2,
+  "education": [{"level": "school|college|courses|bachelor|master", "name": "…", "field": "…", "year_from": 2016, "year_to": 2019}],
+  "skills": [{"name": "PHP", "level": 4}],
+  "languages": [{"code": "ru", "level": "native"}, {"code": "en", "level": "b2"}],
+  "experience": [{"company": "…", "position": "…", "years": 1.5}],
+  "links": ["https://…"]
+},
+"assessment": {
+  "test_name": "Fluggi Quest", "duration_seconds": 600,
+  "traits": {"discipline": 80, "responsibility": 75, "stress_resistance": 70, "teamwork": 90, "learning": 85, "communication": 78}
+}
+```
+
+`level` навыка — 1–5, языка — `native`, `c2`…`a1`; черты теста — 0–100 (`discipline`, `responsibility`, `stress_resistance`, `teamwork`, `learning`, `communication`; другие тоже показываются). Фото — только ссылка `https`.
+Оценка (`App\Services\Vacancies\CandidateScore`): психотесты 40 %, навыки 25 %, языки 15 %, образование 10 %, опыт 10 %; отсутствующий раздел не учитывается, черта ниже 35 — красный флаг. После смены логики кнопка «Пересчитать оценки» обновляет все отклики.
+
+### Формат оценки сайта и вакансии компании
+
+Если в `assessment` есть `score` (0–100) и `grade` (A–D), CRM берёт оценку сайта (`CandidateScore` считает только при её отсутствии). Показываются `recommendation`, `archetype`, `level`, `traits` (в т. ч. `initiative`, `stability`), `badges`, `flags`, `experience`, `skills`, `motivators`, `city`, `link`, `parts` (`profile`, `fit`, `completeness`, `penalty`).
+
+Вакансии создаются в CRM: Команда → Вакансии → «Вакансии компании» (статусы «Черновик», «Опубликована», «Закрыта»). Сайт читает опубликованные вакансии открытым запросом `GET https://<адрес CRM>/hooks/website-vacancies` (CORS открыт, ответ кэшируется на минуту):
+`{"vacancies": [{"slug": "php-developer", "title": {"ru": …, "uz": …, "en": …}, "description": {…}, "city": …, "employment": "FULL|PART|REMOTE|INTERN", "salary": …, "published_at": …}]}`.
+В отклике `product.slug` должен быть `slug` вакансии — так отклики привязываются к вакансии.
+
+### Резюме кандидата
+
+В `candidate` отклика: `resume_html` (страница резюме одним HTML, до 400 КБ) и `resume_url` (подписанная https-ссылка на ту же страницу). В карточке кандидата резюме показывается во фрейме; «Скачать PDF» открывает его с окном печати браузера («Сохранить как PDF»). HTML сайта отдаётся со строгим CSP (без скриптов сайта, картинки и стили только по https), поэтому показывать его безопасно.
