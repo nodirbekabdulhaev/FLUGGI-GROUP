@@ -1,0 +1,41 @@
+# Локальная инфраструктура для разработки: MySQL 8 + MinIO (S3).
+services:
+  mysql:
+    image: mysql:8.0
+    command:
+      [
+        '--character-set-server=utf8mb4',
+        '--collation-server=utf8mb4_unicode_ci',
+        '--log-bin-trust-function-creators=1',
+      ]
+    environment:
+      MYSQL_ROOT_PASSWORD: fluggi-root
+      MYSQL_DATABASE: fluggi
+      MYSQL_USER: fluggi
+      MYSQL_PASSWORD: fluggi
+    ports:
+      - '3306:3306'
+    volumes:
+      - mysqldata:/var/lib/mysql
+      # Тестовая БД для интеграционных тестов
+      - ./deploy/mysql-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ['CMD-SHELL', 'mysqladmin ping -h 127.0.0.1 -ufluggi -pfluggi']
+      interval: 5s
+      retries: 20
+
+  minio:
+    image: minio/minio:latest
+    command: server /data --console-address ':9001'
+    environment:
+      MINIO_ROOT_USER: fluggi
+      MINIO_ROOT_PASSWORD: fluggi-minio-dev
+    ports:
+      - '9000:9000'
+      - '9001:9001'
+    volumes:
+      - miniodata:/data
+
+volumes:
+  mysqldata:
+  miniodata:

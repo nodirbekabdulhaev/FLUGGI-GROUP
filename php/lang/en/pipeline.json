@@ -1,0 +1,13 @@
+{
+  "title": "Pipeline",
+  "subtitle": "Drag a card to change its stage",
+  "leadsPart": "Leads",
+  "dealsPart": "Deals",
+  "total": "Pipeline",
+  "weighted": "Weighted forecast",
+  "empty": "Empty",
+  "convertFirst": "To turn a lead into a deal, it must be qualified — open the lead page.",
+  "wrongBoard": "A deal cannot be moved back to lead stages",
+  "moveTo": "Move to stage",
+  "more": "{count} more"
+}

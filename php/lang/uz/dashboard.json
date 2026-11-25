@@ -1,0 +1,15 @@
+{
+  "greeting": "Assalomu alaykum, {name}",
+  "subtitle": "{role}{team, select, none {} other { · {team}}}",
+  "metricsTitle": "Koʻrsatkichlar",
+  "metricsPending": "Tushum, foyda, toʻlovlar, lidlar va loyihalar tegishli modullar ishga tushirilgach (Phase 2–5) shu yerda paydo boʻladi. Biz oʻylab topilgan raqamlarni koʻrsatmaymiz.",
+  "periodSelected": "Tanlangan davr: {period}",
+  "teamTitle": "Sotuv boʻlimlari",
+  "teamEmpty": "Hozircha boʻlimlar yoʻq",
+  "members": "{count, plural, other {# ta xodim}}",
+  "noHead": "ROP tayinlanmagan",
+  "accessTitle": "Mening boʻlimlarim",
+  "accessText": "Rolingizga ochiq boʻlimlar",
+  "available": "Ishlaydi",
+  "plannedPhase": "Phase {phase}"
+}

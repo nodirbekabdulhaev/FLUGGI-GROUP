@@ -1,0 +1,37 @@
+{
+  "title": "Inbox",
+  "subtitle": "Instagram Direct and Instagram/Facebook comments. Replies are sent to the client from the CRM.",
+  "channel": "Channel",
+  "allChannels": "All channels",
+  "channels": {
+    "INSTAGRAM_DM": "Instagram Direct",
+    "INSTAGRAM_COMMENT": "Instagram comments",
+    "FACEBOOK_COMMENT": "Facebook comments"
+  },
+  "empty": "No messages yet",
+  "emptyText": "Once Instagram is connected (Settings → Integrations), Direct messages and comments will arrive here.",
+  "pick": "Select a conversation on the left",
+  "you": "You",
+  "lead": "lead",
+  "back": "Back",
+  "createLead": "Create lead",
+  "leadCreated": "Lead created",
+  "replyTo": "Replying to the selected comment:",
+  "replyMode": "How to reply",
+  "modePublic": "Publicly under the post",
+  "modePrivate": "Via Direct",
+  "pickComment": "click a comment",
+  "message": "Reply",
+  "placeholder": "Write a reply…",
+  "send": "Send",
+  "windowHint": "Instagram allows Direct replies within 24 hours of the client’s last message.",
+  "errors": {
+    "pickComment": "Select the comment you are replying to",
+    "foreignComment": "This comment is not from this conversation"
+  },
+  "notify": {
+    "direct": "💬 Instagram: {who}",
+    "comment": "💬 Comment: {who}",
+    "message": "message"
+  }
+}

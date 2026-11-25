@@ -1,0 +1,69 @@
+{
+  "title": "Hamkor daromadim",
+  "subtitle": "{name} — har bir loyiha sof foydasining {pct}%",
+  "subtitleNone": "Loyihalar sof foydasidan hamkor ulushi",
+  "notConfigured": "Hamkor tayinlanmagan",
+  "configure": "«Sozlamalar → Moliya» boʻlimida tayinlang",
+  "totals": {
+    "share": "Hamkor ulushi",
+    "net": "Loyihalar sof foydasi",
+    "paid": "Toʻlangan",
+    "requested": "Tasdiqlanmoqda",
+    "remaining": "Toʻlanishi qolgan"
+  },
+  "pendingTitle": "Toʻlov soʻrovlari: {count}",
+  "pendingText": "Pul hamkorga berilgandan keyin toʻlovni tasdiqlang.",
+  "pendingWait": "CEO qarorini kutmoqda.",
+  "col": {
+    "project": "Loyiha",
+    "amount": "Summa",
+    "requestedBy": "Soʻragan",
+    "comment": "Izoh",
+    "status": "Holat",
+    "revenue": "Qiymati",
+    "netProfit": "Sof foyda",
+    "share": "Hamkor ulushi",
+    "paid": "Toʻlangan",
+    "remaining": "Qoldiq",
+    "date": "Sana",
+    "decidedBy": "Qaror"
+  },
+  "approveConfirm": "{amount} toʻlovni tasdiqlaysizmi?",
+  "approve": "Tasdiqlash",
+  "reject": "Rad etish",
+  "projectsTitle": "Loyihalar boʻyicha ulush",
+  "projectsText": "Loyiha sof foydasining {pct}%; zarar boʻlsa ulush — 0.",
+  "noProjects": "Hozircha loyihalar yoʻq",
+  "onApproval": "tasdiqlanmoqda",
+  "request": "Toʻlov soʻrash",
+  "total": "Jami",
+  "historyTitle": "Toʻlovlar tarixi",
+  "noPayouts": "Hozircha toʻlovlar boʻlmagan",
+  "status": {
+    "REQUESTED": "Tasdiqlanmoqda",
+    "APPROVED": "Toʻlangan",
+    "REJECTED": "Rad etilgan"
+  },
+  "requestTitle": "Hamkorga toʻlov soʻrovi",
+  "remainingHint": "Koʻpi bilan soʻrash mumkin",
+  "cancel": "Bekor qilish",
+  "send": "Tasdiqlashga yuborish",
+  "rejectTitle": "Toʻlovni rad etish",
+  "rejectReason": "Rad etish sababi",
+  "requested": "Soʻrov CEO tasdigʻiga yuborildi",
+  "approved": "Toʻlov tasdiqlandi",
+  "rejected": "Toʻlov rad etildi",
+  "errors": {
+    "partnerUser": "Faol xodimni tanlang",
+    "notConfigured": "Moliya sozlamalarida hamkor tayinlanmagan",
+    "amount": "Noldan katta summani kiriting",
+    "overRemaining": "Summa toʻlanishi qolgan qoldiqdan katta ({amount})",
+    "decided": "Bu soʻrov boʻyicha qaror allaqachon qabul qilingan",
+    "reason": "Rad etish sababini kiriting"
+  },
+  "notify": {
+    "requested": "Hamkorga toʻlov soʻrovi: {name}",
+    "approved": "Hamkorga toʻlov tasdiqlandi",
+    "rejected": "Hamkorga toʻlov rad etildi"
+  }
+}
