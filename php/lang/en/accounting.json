@@ -201,7 +201,8 @@
       "date": "date not recognized",
       "amount": "amount not recognized",
       "type": "operation type (income/expense) not recognized",
-      "account": "The account is inactive or not found — choose an active account"
+      "account": "The account is inactive or not found — choose an active account",
+      "summary": "The file has only period totals (opening balance, turnovers, closing balance) and no individual operations, so there is nothing to import. Export a “Statement” or “Register of posted documents” for the period from the bank."
     }
   },
   "accounts": {

@@ -201,7 +201,8 @@
       "date": "sana aniqlanmadi",
       "amount": "summa aniqlanmadi",
       "type": "operatsiya turi (kirim/chiqim) aniqlanmadi",
-      "account": "Hisob oʻchirilgan yoki topilmadi — faol hisobni tanlang"
+      "account": "Hisob oʻchirilgan yoki topilmadi — faol hisobni tanlang",
+      "summary": "Faylda faqat davr yakunlari (kirish qoldigʻi, aylanmalar, chiqish qoldigʻi) bor, alohida operatsiyalar yoʻq — yuklash uchun hech narsa yoʻq. Bankdan kerakli davr uchun «Koʻchirma» yoki «Bajarilgan hujjatlar qaydnomasi»ni yuklab oling."
     }
   },
   "accounts": {

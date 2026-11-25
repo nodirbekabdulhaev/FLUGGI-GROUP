@@ -13,6 +13,7 @@ use App\Services\Accounting\AccountsService;
 use App\Services\Accounting\BankRules;
 use App\Services\Accounting\BankStatement;
 use App\Services\Accounting\TaxesService;
+use App\Services\Import\RowError;
 use App\Support\Settings;
 use Brick\Math\BigDecimal;
 use Illuminate\Http\UploadedFile;
@@ -171,6 +172,17 @@ class BankImportTest extends TestCase
             array_map(fn ($x) => [$x['direction'], $x['amount'], $x['counterparty']], $r['rows']));
         $this->assertSame('BANK_FEE', BankRules::suggest(['direction' => 'OUT', 'purpose' => $r['rows'][2]['purpose'], 'counterparty' => 'Банк', 'inn' => null], collect(), '200000001')['category']);
         $this->assertSame('TRANSFER_OUT', BankRules::suggest(['direction' => 'OUT', 'purpose' => 'Перевод на свой счёт', 'counterparty' => '"TEST" MCHJ', 'inn' => '200000001'], collect(), '200000001')['category']);
+    }
+
+    public function test_turnover_summary_without_operations_gets_a_clear_message(): void
+    {
+        $path = $this->xlsx([['МФО:1113 за период с 2026-10'], ['ДАТА', 'Входящий остаток', 'Оборот Дебет', 'Оборот Кредит', 'Исходящий остаток'], [null, '1000.0', '100.0', '0.0', '900.0']]);
+        try {
+            BankStatement::read($path, 'xlsx');
+            $this->fail('Ожидалась ошибка');
+        } catch (RowError $e) {
+            $this->assertStringContainsString(t('accounting.bank.errors.summary'), $e->getMessage());
+        }
     }
 
     public function test_auto_category_rules(): void

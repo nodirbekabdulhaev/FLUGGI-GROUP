@@ -77,9 +77,19 @@ final class BankStatement
         if (! in_array($ext, self::EXTENSIONS, true)) {
             throw new RowError(t('import.errors.fileType'));
         }
-        foreach (self::sheets($path, $ext) as $matrix) {
+        $sheets = self::sheets($path, $ext);
+        foreach ($sheets as $matrix) {
             if ($parsed = self::parse($matrix)) {
                 return $parsed;
+            }
+        }
+        // Оборотная ведомость: только остатки и обороты за период, без отдельных операций — загружать нечего
+        foreach ($sheets as $matrix) {
+            foreach (array_slice($matrix, 0, 15) as $row) {
+                $n = array_map(fn ($c) => self::norm($c), $row);
+                if (in_array('входящийостаток', $n, true) && count(array_filter($n, fn ($h) => str_starts_with($h, 'оборотдебет') || str_starts_with($h, 'оборотыподебету'))) > 0) {
+                    throw new RowError(t('accounting.bank.errors.summary'));
+                }
             }
         }
         throw new RowError(t('accounting.bank.errors.format'));
